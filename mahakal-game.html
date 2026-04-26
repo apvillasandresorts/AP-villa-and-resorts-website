@@ -821,6 +821,7 @@ const COLLECTIBLES = [
 const OBSTACLES = ['stone', 'fire', 'gate'];
 
 let lastSpawnZ = 1;
+let spawnTimer = 0;
 let diyaSpawnCooldown = 0;
 function spawn() {
   if (diyaSpawnCooldown <= 0) {
@@ -997,6 +998,13 @@ function loop(now) {
 }
 
 function update(dt) {
+
+spawnTimer++;
+
+if (spawnTimer > 35) {
+  spawn();
+  spawnTimer = 0;
+}
   runFrame++;
   if (diyaSpawnCooldown > 0) diyaSpawnCooldown--;
   // Speed scales with score
@@ -1024,7 +1032,7 @@ function update(dt) {
   if (player.magnetTimer > 0) player.magnetTimer--;
 
   // Spawn
-  spawn();
+
 
   // Move objects toward player (their z decreases as we move forward)
   for (const o of objects) {
