@@ -584,6 +584,10 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
         <div class="hud__value" id="score">0</div>
         <div class="hud__multiplier" id="multiplier">×2 Streak</div>
       </div>
+      <div class="hud__score-card" id="hits-card" style="margin-top:8px;">
+        <div class="hud__label">Hits</div>
+        <div class="hud__value" id="hits">0/3</div>
+      </div>
       <button class="hud__mute" id="mute-btn" style="margin-top:8px;" aria-label="Toggle sound">🔔</button>
     </div>
   </div>
@@ -755,6 +759,9 @@ let runFrame = 0;
 let streakCount = 0;
 let multiplier = 1;
 let blessingsCollected = 0;
+let hitCount = 0;
+const MAX_HITS = 3;
+let gameWon = false;
 
 const player = {
   lane: 1,            // 0,1,2 (left, center, right)
@@ -824,21 +831,21 @@ let lastSpawnZ = 1;
 let spawnTimer = 0;
 let diyaSpawnCooldown = 0;
 function spawn() {
+  // Spawn diya collectible with cooldown
   if (diyaSpawnCooldown <= 0) {
-  objects.push({
-    kind: 'collect',
-    subtype: 'diya',
-    color: '#C0531A',
-    glow: '#FFD27D',
-    points: 25,
-    lane: Math.floor(Math.random() * 3),
-    z: 1
-  });
-
-  diyaSpawnCooldown = 220;
-}
+    objects.push({
+      kind: 'collect',
+      subtype: 'diya',
+      color: '#C0531A',
+      glow: '#FFD27D',
+      points: 25,
+      lane: Math.floor(Math.random() * 3),
+      z: 1
+    });
+    diyaSpawnCooldown = 220;
+  }
   // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
-if (lastSpawnZ - distance < 0.20) return;
+  if (lastSpawnZ - distance < 0.20) return;
   lastSpawnZ = distance + 0.12 + Math.random() * 0.05;
 
   // Decide pattern
@@ -978,6 +985,7 @@ let nextRitualScore = 600;
 function startGame() {
   score = 0; speed = 0.012; speedTarget = 0.012; distance = 0; runFrame = 0;
   streakCount = 0; multiplier = 1; blessingsCollected = 0;
+  hitCount = 0; gameWon = false;
   player.lane = 1; player.laneX = 0; player.targetLaneX = 0;
   player.jumpY = 0; player.jumpVy = 0; player.jumping = false;
   player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
@@ -1078,9 +1086,19 @@ if (spawnTimer > 35) {
             objects.splice(i, 1);
             continue;
           }
-          // GAME OVER
-          gameOver();
-          return;
+          // Track hit - game over after 3 hits
+          hitCount++;
+          playHit();
+          if (hitCount >= MAX_HITS) {
+            // GAME OVER
+            gameOver();
+            return;
+          } else {
+            // Show remaining hits
+            showStreak('Hit ' + hitCount + '/' + MAX_HITS + '!');
+            objects.splice(i, 1);
+            continue;
+          }
         } else {
           // Dodged successfully — bonus
           score += 5;
@@ -1093,6 +1111,13 @@ if (spawnTimer > 35) {
 
   // Score scales with distance traveled too
   score += Math.floor(speed * 60);
+
+  // Check win condition at 1000 points
+  if (score >= 1000 && !gameWon) {
+    gameWon = true;
+    gameWin();
+    return;
+  }
 
   // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -1114,6 +1139,7 @@ if (spawnTimer > 35) {
   // Update score in DOM
   if (runFrame % 3 === 0) {
     $('score').textContent = Math.floor(score).toLocaleString('en-IN');
+    $('hits').textContent = hitCount + '/' + MAX_HITS;
   }
 
   // Ritual trigger
@@ -1675,7 +1701,41 @@ function gameOver() {
   }, 600);
 }
 
+// =========================================================================
+// WIN CONDITION - Score 1000 points
+// =========================================================================
+function gameWin() {
+  state = 'gameover';
+  playBell();
+  setTimeout(() => {
+    $('gameover__namo').textContent = '🙏 ॐ नमः शिवाय ॐ 🙏';
+    $('gameover__sub').textContent = 'You Have Won!';
+    $('gameover__score-label').textContent = 'Final Score';
+    $('gameover__score').textContent = Math.floor(score).toLocaleString('en-IN');
+    if (score > bestScore) {
+      bestScore = Math.floor(score);
+      localStorage.setItem('mahakal_best', String(bestScore));
+      $('best-line').classList.add('new');
+      $('best-line').innerHTML = '★ NEW BEST! ★ <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
+    } else {
+      $('best-line').classList.remove('new');
+      $('best-line').innerHTML = 'Best: <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
+    }
+    $('gameover__pitch').innerHTML = 'Mahakal has accepted your devotion.<br>You have completed the sacred path!';
+    $('gameover__scarcity').textContent = '★ Visit AP Villas & Resorts for Mahakal Darshan ★';
+    $('play-again-btn').textContent = '↻ Play Again';
+    $('gameover').classList.add('show');
+  }, 600);
+}
+
 $('play-again-btn').addEventListener('click', () => {
+  // Reset game over modal to default (loss) state
+  $('gameover__namo').textContent = '🙏 Har Har Mahadev 🙏';
+  $('gameover__sub').textContent = 'Your Run Has Ended';
+  $('gameover__score-label').textContent = 'Score';
+  $('gameover__pitch').innerHTML = 'Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em>';
+  $('gameover__scarcity').textContent = '★ Limited direct booking offers available today';
+  $('play-again-btn').textContent = '↻ Play Again';
   $('gameover').classList.remove('show');
   $('multiplier').classList.remove('active');
   $('best-score').textContent = bestScore.toLocaleString('en-IN');
