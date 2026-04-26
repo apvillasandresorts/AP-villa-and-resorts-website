@@ -831,7 +831,69 @@ let lastSpawnZ = 1;
 let spawnTimer = 0;
 let diyaSpawnCooldown = 0;
 function spawn() {
-  // Spawn diya collectible with cooldown
+  // Main spawn logic - obstacles should appear 3x more than diyas
+  // Check distance - spawn every ~0.12 z-units (more frequent)
+  if (lastSpawnZ - distance < 0.12) {
+    lastSpawnZ = distance + 0.08 + Math.random() * 0.04;
+    
+    // Decide pattern - 75% chance for obstacles, 25% for collectibles only
+    const r = Math.random();
+    if (r < 0.75) {
+      // OBSTACLE PATTERNS (75% of spawns) - 3x more than diyas
+      const obsCount = 1 + Math.floor(Math.random() * 2); // 1 or 2 obstacles
+      const usedLanes = [];
+      
+      for (let i = 0; i < obsCount; i++) {
+        let obsLane = Math.floor(Math.random() * 3);
+        // Make sure we don't use the same lane twice
+        while (usedLanes.includes(obsLane)) {
+          obsLane = Math.floor(Math.random() * 3);
+        }
+        usedLanes.push(obsLane);
+        
+        objects.push({ 
+          kind: 'obstacle', 
+          subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], 
+          lane: obsLane, 
+          z: 1 + i * 0.03 
+        });
+      }
+      
+      // Add collectibles in remaining lanes
+      for (let l = 0; l < 3; l++) {
+        if (!usedLanes.includes(l) && Math.random() < 0.5) {
+          const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+          objects.push({ 
+            kind: 'collect', 
+            subtype: c.type, 
+            color: c.color, 
+            glow: c.glow, 
+            points: c.points, 
+            lane: l, 
+            z: 1 + Math.random() * 0.05 
+          });
+        }
+      }
+    } else {
+      // COLLECTIBLE PATTERN (25% of spawns) - line of collectibles
+      const lane = Math.floor(Math.random() * 3);
+      const count = 2 + Math.floor(Math.random() * 3);
+      const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+      for (let i = 0; i < count; i++) {
+        objects.push({ 
+          kind: 'collect', 
+          subtype: c.type, 
+          color: c.color, 
+          glow: c.glow, 
+          points: c.points, 
+          lane, 
+          z: 1 + i * 0.04 
+        });
+      }
+    }
+  }
+  
+  // Spawn diya collectible separately with longer cooldown (less frequent than obstacles)
   if (diyaSpawnCooldown <= 0) {
     objects.push({
       kind: 'collect',
@@ -840,47 +902,9 @@ function spawn() {
       glow: '#FFD27D',
       points: 25,
       lane: Math.floor(Math.random() * 3),
-      z: 1
+      z: 1.1 + Math.random() * 0.1
     });
-    diyaSpawnCooldown = 220;
-  }
-  // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
-  if (lastSpawnZ - distance < 0.20) return;
-  lastSpawnZ = distance + 0.12 + Math.random() * 0.05;
-
-  // Decide pattern
-  const r = Math.random();
-  if (r < 0.65) {
-    // Single obstacle in random lane + sometimes coins in other lanes
-    const obsLane = Math.floor(Math.random() * 3);
-    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: obsLane, z: 1 });
-    // Sprinkle collectibles in other lanes
-    for (let l = 0; l < 3; l++) {
-      if (l !== obsLane && Math.random() < 0.45) {
-        const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-        objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane: l, z: 1 });
-      }
-    }
-  } else if (r < 0.85) {
-    // Line of collectibles in one lane, 3-5 in a row
-    const lane = Math.floor(Math.random() * 3);
-    const count = 2 + Math.floor(Math.random() * 2);
-    const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-    for (let i = 0; i < count; i++) {
-      objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane, z: 1 + i * 0.04 });
-    }
-  } else {
-    // Two obstacles + safe lane with coin trail
-    const a = Math.floor(Math.random() * 3);
-    let b = Math.floor(Math.random() * 3);
-    while (b === a) b = Math.floor(Math.random() * 3);
-    const safe = 3 - a - b;
-    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: a, z: 1 });
-    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: b, z: 1.02 });
-    const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-    for (let i = 0; i < 4; i++) {
-      objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane: safe, z: 1 + i * 0.04 });
-    }
+    diyaSpawnCooldown = 180; // Longer cooldown = diyas spawn less frequently
   }
 }
 
