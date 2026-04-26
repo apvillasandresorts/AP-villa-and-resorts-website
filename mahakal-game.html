@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
+<meta name="description" content="Play Path to Darshan — an immersive endless runner game inspired by Mahakaleshwar Temple. Run, collect rudraksha, ring temple bells, and earn Mahakal's blessings. Premium villas in Ujjain near Mahakaleshwar Jyotirlinga.">
+<meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Path to Darshan — A Mahakal Mini Game by AP Villas, Ujjain">
+<meta property="og:description" content="Run the sacred path. Earn Mahakal's blessings. A premium mini game by AP Villas & Resorts, Ujjain.">
+<meta property="og:type" content="game">
+<meta property="og:url" content="https://apvillasandresorts.in/mahakal-game.html">
+<meta property="og:image" content="villas/om_shanti/693419485.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/brand/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/brand/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/brand/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --gold: #C9A24F;
+  --gold-deep: #8C6512;
+  --gold-light: #E8CD8E;
+  --saffron: #C0531A;
+  --crimson: #8E1A2A;
+  --indigo: #1A2540;
+  --deep: #0A0E1A;
+  --stone: #1F2433;
+  --cream: #F4ECDB;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: #000; color: var(--cream); font-family: 'Inter', sans-serif; touch-action: none; }
+body { position: fixed; inset: 0; }
+
+/* ========== STAGE ========== */
+#stage { position: absolute; inset: 0; overflow: hidden; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ========== INTRO SCREEN ========== */
+.intro {
+  position: absolute; inset: 0; z-index: 50;
+  background: radial-gradient(ellipse at center bottom, #1A1208 0%, #000 70%);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.intro__doors {
+  position: absolute; inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+.intro__door {
+  flex: 1; height: 100%;
+  background: linear-gradient(180deg, #2a1d0f 0%, #1a1208 50%, #0d0805 100%);
+  position: relative;
+  box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+  transition: transform 3.2s cubic-bezier(0.7, 0, 0.3, 1);
+}
+.intro__door::before {
+  content: ''; position: absolute; inset: 12% 8%;
+  border: 2px solid rgba(201, 162, 79, 0.4);
+  border-radius: 50% 50% 0 0;
+}
+.intro__door::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 40px; height: 40px;
+  background: radial-gradient(circle, var(--gold) 0%, var(--gold-deep) 70%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 60px var(--gold), 0 0 120px var(--saffron);
+}
+.intro__door--left { transform-origin: left center; }
+.intro__door--right { transform-origin: right center; }
+.intro.opening .intro__door--left { transform: perspective(2000px) rotateY(-95deg); }
+.intro.opening .intro__door--right { transform: perspective(2000px) rotateY(95deg); }
+
+.intro__content {
+  position: relative; z-index: 10;
+  text-align: center;
+  opacity: 0; transform: translateY(20px) scale(0.95);
+  transition: all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.intro.show-content .intro__content { opacity: 1; transform: translateY(0) scale(1); }
+
+.intro__sanskrit {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(56px, 10vw, 120px);
+  font-weight: 600;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold), var(--gold-deep));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 60px rgba(201, 162, 79, 0.4);
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 24px rgba(201, 162, 79, 0.3));
+}
+.intro__small {
+  font-size: 12px; letter-spacing: 8px;
+  color: var(--gold-light); opacity: 0.65;
+  text-transform: uppercase;
+  margin-bottom: 56px;
+  font-weight: 500;
+}
+.intro__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 500;
+  color: var(--cream);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+.intro__title em { color: var(--gold); font-style: italic; }
+.intro__sub {
+  font-size: 14px; color: rgba(244, 236, 219, 0.65);
+  max-width: 460px; margin: 0 auto 48px;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+}
+.intro__btn {
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--deep);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  padding: 18px 48px;
+  border-radius: 999px;
+  border: none; cursor: pointer;
+  box-shadow: 0 12px 40px rgba(201, 162, 79, 0.5),
+              inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.intro__btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 20px 60px rgba(201, 162, 79, 0.7), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.intro__btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer { 0%, 70%, 100% { transform: translateX(-100%); } 35% { transform: translateX(100%); } }
+
+/* Floating diya */
+.intro__diya {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 24px;
+  background: radial-gradient(circle, var(--saffron) 0%, var(--gold) 50%, transparent 80%);
+  border-radius: 50%;
+  filter: blur(0.5px);
+  animation: flicker 1.6s ease-in-out infinite;
+  box-shadow: 0 0 40px var(--saffron), 0 0 80px var(--gold);
+  opacity: 0.8;
+}
+@keyframes flicker {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+  50% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+}
+
+/* ========== HUD ========== */
+.hud {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  pointer-events: none;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+.hud.show { opacity: 1; }
+.hud__group { display: flex; flex-direction: column; gap: 4px; }
+.hud__group--right { align-items: flex-end; }
+
+.hud__brand {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(15, 18, 30, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 162, 79, 0.18);
+  border-radius: 16px;
+  padding: 8px 14px;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.hud__brand:hover { background: rgba(15, 18, 30, 0.8); }
+.hud__brand img { width: 28px; height: 28px; }
+.hud__brand strong {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px; font-weight: 600; color: var(--gold-light);
+  letter-spacing: 1px;
+}
+
+.hud__score-card {
+  background: rgba(15, 18, 30, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 162, 79, 0.18);
+  border-radius: 16px;
+  padding: 10px 18px;
+  text-align: right;
+  min-width: 130px;
+}
+.hud__label {
+  font-size: 9px; letter-spacing: 2.5px;
+  color: rgba(232, 205, 142, 0.55);
+  text-transform: uppercase; font-weight: 600;
+}
+.hud__value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 600;
+  color: var(--gold-light);
+  line-height: 1;
+  margin-top: 2px;
+  font-feature-settings: 'tnum';
+}
+.hud__multiplier {
+  display: inline-block;
+  font-size: 11px; font-weight: 600;
+  color: var(--saffron);
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.hud__multiplier.active { opacity: 1; }
+
+.hud__best {
+  font-size: 10px; letter-spacing: 2px;
+  color: rgba(244, 236, 219, 0.5);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.hud__best span { color: var(--gold-light); font-weight: 600; }
+
+/* Mute button */
+.hud__mute {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(15, 18, 30, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 162, 79, 0.18);
+  color: var(--gold-light);
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+.hud__mute:hover { background: rgba(15, 18, 30, 0.8); }
+
+/* Streak indicator */
+.streak {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 96px; font-weight: 600;
+  color: var(--gold);
+  text-shadow: 0 0 40px var(--saffron), 0 0 80px var(--gold);
+  pointer-events: none; z-index: 25;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.streak.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* Blessing text floats */
+.blessing-float {
+  position: absolute; top: 30%; left: 50%;
+  transform: translate(-50%, 0);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--gold-light);
+  text-shadow: 0 0 30px rgba(201, 162, 79, 0.6);
+  pointer-events: none; z-index: 25;
+  opacity: 0;
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+/* ========== RITUAL MINI EVENT (bell tap) ========== */
+.ritual {
+  position: absolute; inset: 0; z-index: 40;
+  background: radial-gradient(ellipse at center, rgba(10, 14, 26, 0.85) 0%, rgba(0,0,0,0.95) 100%);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+.ritual.show { display: flex; animation: ritualIn 0.5s ease; }
+@keyframes ritualIn { from {opacity: 0;} to {opacity: 1;} }
+.ritual__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(28px, 4.5vw, 48px);
+  color: var(--gold-light);
+  margin-bottom: 8px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.ritual__sub {
+  font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(232, 205, 142, 0.6);
+  margin-bottom: 60px;
+  font-weight: 500;
+}
+.ritual__bell {
+  width: clamp(120px, 30vw, 200px);
+  height: clamp(140px, 32vw, 220px);
+  position: relative;
+  margin-bottom: 60px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.ritual__bell svg { width: 100%; height: 100%; filter: drop-shadow(0 0 30px rgba(201, 162, 79, 0.6)); }
+.ritual__bell.tapped { transform: scale(0.92); }
+.ritual__bell.tapped svg { animation: bellRing 0.6s ease-out; }
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-8deg); } 40% { transform: rotate(6deg); }
+  60% { transform: rotate(-4deg); } 80% { transform: rotate(2deg); }
+}
+
+.ritual__meter {
+  width: clamp(260px, 70vw, 420px);
+  height: 60px;
+  position: relative;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201, 162, 79, 0.2);
+  border-radius: 30px;
+  overflow: hidden;
+}
+.ritual__meter-fill {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 30%;
+  background: linear-gradient(90deg,
+    rgba(192, 83, 26, 0.2),
+    rgba(201, 162, 79, 0.5),
+    rgba(232, 205, 142, 0.9),
+    rgba(201, 162, 79, 0.5),
+    rgba(192, 83, 26, 0.2));
+  filter: blur(0px);
+}
+.ritual__meter-target {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 4px; height: 80%;
+  background: var(--gold);
+  border-radius: 2px;
+  box-shadow: 0 0 20px var(--gold);
+}
+.ritual__meter-cursor {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 6px; height: 100%;
+  background: var(--cream);
+  border-radius: 3px;
+  box-shadow: 0 0 16px white;
+}
+.ritual__hint {
+  margin-top: 24px;
+  font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(244, 236, 219, 0.55);
+  font-weight: 500;
+}
+
+/* ========== GAME OVER MODAL ========== */
+.gameover {
+  position: absolute; inset: 0; z-index: 60;
+  background: radial-gradient(ellipse at center, rgba(20, 14, 8, 0.92) 0%, rgba(0,0,0,0.98) 80%);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+}
+.gameover.show { display: flex; animation: gameOverIn 0.6s ease; }
+@keyframes gameOverIn { from {opacity: 0;} to {opacity: 1;} }
+.gameover__inner {
+  background: linear-gradient(180deg, rgba(31, 36, 51, 0.95) 0%, rgba(15, 18, 30, 0.95) 100%);
+  border: 1px solid rgba(201, 162, 79, 0.3);
+  border-radius: 28px;
+  padding: 40px 36px;
+  max-width: 460px; width: 100%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(201, 162, 79, 0.1);
+}
+.gameover__inner::before {
+  content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.gameover__namo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; font-weight: 600;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+  letter-spacing: 2px;
+}
+.gameover__sub {
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(232, 205, 142, 0.6);
+  font-weight: 500;
+  margin-bottom: 32px;
+}
+
+.gameover__score-label {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(244, 236, 219, 0.5);
+  margin-bottom: 4px;
+}
+.gameover__score {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 64px; font-weight: 600;
+  color: var(--gold-light);
+  line-height: 1;
+  margin-bottom: 8px;
+  font-feature-settings: 'tnum';
+}
+.gameover__best {
+  font-size: 12px; letter-spacing: 2px;
+  color: rgba(244, 236, 219, 0.6);
+  margin-bottom: 28px;
+}
+.gameover__best span { color: var(--gold); font-weight: 600; }
+.gameover__best.new {
+  color: var(--saffron);
+  font-weight: 600;
+  animation: pulseNew 1.5s ease-in-out infinite;
+}
+@keyframes pulseNew { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.gameover__divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 auto 28px; max-width: 280px;
+}
+.gameover__divider::before,
+.gameover__divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 162, 79, 0.4), transparent);
+}
+.gameover__divider span {
+  font-size: 18px; color: var(--gold);
+}
+
+.gameover__pitch {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500;
+  color: var(--cream);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.gameover__pitch em { color: var(--gold); font-style: italic; }
+.gameover__brand {
+  font-size: 13px; letter-spacing: 2px;
+  color: var(--gold-light);
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+.gameover__brand strong { font-family: 'Cormorant Garamond', serif; font-size: 16px; }
+
+.gameover__scarcity {
+  font-size: 11px; color: rgba(192, 83, 26, 0.85);
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.gameover__btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.go-btn {
+  padding: 14px 16px;
+  border: none; cursor: pointer;
+  border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+.go-btn--primary {
+  background: linear-gradient(135deg, var(--saffron), #A04416);
+  color: white;
+  grid-column: span 2;
+  font-size: 13px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(192, 83, 26, 0.35);
+}
+.go-btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(192, 83, 26, 0.5); }
+.go-btn--whatsapp {
+  background: #25D366; color: white;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+}
+.go-btn--whatsapp:hover { transform: translateY(-2px); }
+.go-btn--ghost {
+  background: transparent;
+  color: var(--gold-light);
+  border: 1px solid rgba(201, 162, 79, 0.3);
+}
+.go-btn--ghost:hover { background: rgba(201, 162, 79, 0.1); border-color: var(--gold); }
+.go-btn--play {
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--deep);
+  grid-column: span 2;
+  font-size: 13px;
+  padding: 16px;
+}
+.go-btn--play:hover { transform: translateY(-2px); }
+
+/* ========== TOUCH CONTROLS HINT (mobile) ========== */
+.tutorial {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 28;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.tutorial.show { opacity: 1; }
+.tutorial__icon { font-size: 48px; margin-bottom: 16px; opacity: 0.7; }
+.tutorial__text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; color: var(--gold-light);
+  margin-bottom: 8px;
+}
+.tutorial__sub {
+  font-size: 11px; letter-spacing: 3px; color: rgba(244, 236, 219, 0.5);
+  text-transform: uppercase;
+}
+
+/* ========== Particles bg ========== */
+.bg-particles {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(192, 83, 26, 0.06), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(201, 162, 79, 0.05), transparent 40%);
+}
+
+@media (max-width: 600px) {
+  .gameover__inner { padding: 32px 24px; }
+  .gameover__score { font-size: 56px; }
+  .gameover__pitch { font-size: 19px; }
+  .hud__value { font-size: 28px; }
+  .hud__score-card { min-width: 110px; padding: 8px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="bg-particles"></div>
+  <canvas id="game"></canvas>
+  <canvas id="fx"></canvas>
+
+  <!-- Intro screen -->
+  <div class="intro" id="intro">
+    <div class="intro__doors">
+      <div class="intro__door intro__door--left"></div>
+      <div class="intro__door intro__door--right"></div>
+    </div>
+    <div class="intro__content">
+      <div class="intro__sanskrit">हर हर महादेव</div>
+      <div class="intro__small">— HAR HAR MAHADEV —</div>
+      <div class="intro__title">Path to <em>Darshan</em></div>
+      <div class="intro__sub">Run the sacred path. Collect the blessings of Mahakal. A small offering of play, brought to you by AP Villas & Resorts, Ujjain.</div>
+      <button class="intro__btn" id="enter-btn">Enter the Temple</button>
+    </div>
+    <div class="intro__diya"></div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud" id="hud">
+    <div class="hud__group">
+      <a href="index.html" class="hud__brand">
+        <img src="assets/brand/logo-mark.svg" alt="AP Villas">
+        <strong>AP Villas</strong>
+      </a>
+      <div class="hud__best">Best: <span id="best-score">0</span></div>
+    </div>
+    <div class="hud__group hud__group--right">
+      <div class="hud__score-card">
+        <div class="hud__label">Score</div>
+        <div class="hud__value" id="score">0</div>
+        <div class="hud__multiplier" id="multiplier">×2 Streak</div>
+      </div>
+      <button class="hud__mute" id="mute-btn" style="margin-top:8px;" aria-label="Toggle sound">🔔</button>
+    </div>
+  </div>
+
+  <!-- Streak text -->
+  <div class="streak" id="streak"></div>
+
+  <!-- Tutorial -->
+  <div class="tutorial" id="tutorial">
+    <div class="tutorial__icon">↔</div>
+    <div class="tutorial__text">Swipe to change lanes</div>
+    <div class="tutorial__sub">Up to jump · Down to slide</div>
+  </div>
+
+  <!-- Ritual: Bell tap -->
+  <div class="ritual" id="ritual">
+    <div class="ritual__title">Ring the Sacred Bell</div>
+    <div class="ritual__sub">Tap when the cursor meets the gold mark</div>
+    <div class="ritual__bell" id="ritual-bell">
+      <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bellGrad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#E8CD8E"/>
+            <stop offset="50%" stop-color="#C9A24F"/>
+            <stop offset="100%" stop-color="#8C6512"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="100" cy="30" rx="14" ry="12" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
+        <rect x="92" y="38" width="16" height="14" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="1.5"/>
+        <path d="M 60 60 Q 60 50 100 50 Q 140 50 140 60 L 152 170 Q 100 185 48 170 Z" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
+        <ellipse cx="100" cy="170" rx="56" ry="10" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
+        <circle cx="100" cy="195" r="10" fill="#5B3F0A"/>
+        <line x1="100" y1="160" x2="100" y2="190" stroke="#5B3F0A" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="ritual__meter">
+      <div class="ritual__meter-fill"></div>
+      <div class="ritual__meter-target" id="meter-target"></div>
+      <div class="ritual__meter-cursor" id="meter-cursor"></div>
+    </div>
+    <div class="ritual__hint">Tap the bell · Perfect = combo bonus</div>
+  </div>
+
+  <!-- Game over -->
+  <div class="gameover" id="gameover">
+    <div class="gameover__inner">
+      <div class="gameover__namo">🙏 Har Har Mahadev 🙏</div>
+      <div class="gameover__sub">Your Run Has Ended</div>
+
+      <div class="gameover__score-label">Score</div>
+      <div class="gameover__score" id="final-score">0</div>
+      <div class="gameover__best" id="best-line">Best: <span id="final-best">0</span></div>
+
+      <div class="gameover__divider"><span>◆</span></div>
+
+      <div class="gameover__pitch">Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em></div>
+      <div class="gameover__brand"><strong>AP Villas & Resorts</strong> · 2 km from Mahakaleshwar Jyotirlinga</div>
+      <div class="gameover__scarcity">★ Limited direct booking offers available today</div>
+
+      <div class="gameover__btns">
+        <button class="go-btn go-btn--play" id="play-again-btn">↻ Play Again</button>
+        <a class="go-btn go-btn--primary" href="villas.html">Book Your Stay</a>
+        <a class="go-btn go-btn--whatsapp" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%20played%20your%20Mahakal%20game%20and%20I%27d%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener">💬 WhatsApp Us</a>
+        <a class="go-btn go-btn--ghost" href="index.html">Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blessing floats -->
+  <div class="blessing-float" id="blessing"></div>
+
+</div>
+
+<script>
+// =========================================================================
+// PATH TO DARSHAN — A Mahakal-themed endless runner
+// =========================================================================
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const game = $('game');
+const fx = $('fx');
+const ctx = game.getContext('2d');
+const fxCtx = fx.getContext('2d');
+
+let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+function resize() {
+  W = stage.clientWidth;
+  H = stage.clientHeight;
+  for (const c of [game, fx]) {
+    c.width = W * DPR; c.height = H * DPR;
+    c.style.width = W + 'px'; c.style.height = H + 'px';
+  }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  fxCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// =========================================================================
+// AUDIO (Web Audio synthesis — no files)
+// =========================================================================
+let audioCtx = null, muted = false;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq, dur, type='sine', vol=0.15, pitchEnd=null) {
+  if (muted || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  if (pitchEnd) osc.frequency.exponentialRampToValueAtTime(pitchEnd, audioCtx.currentTime + dur);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+function playBell() {
+  if (muted || !audioCtx) return;
+  // Layered bell using multiple sines
+  [880, 1320, 1760, 2640].forEach((f, i) => {
+    setTimeout(() => playTone(f, 1.6 - i*0.3, 'sine', 0.08 - i*0.012), i*8);
+  });
+}
+function playCollect() { playTone(880, 0.18, 'triangle', 0.10, 1320); }
+function playJump() { playTone(440, 0.15, 'sine', 0.08, 660); }
+function playSlide() { playTone(220, 0.18, 'sine', 0.06, 110); }
+function playHit() {
+  if (muted || !audioCtx) return;
+  const dur = 0.4;
+  const noise = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+  const data = noise.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+  const src = audioCtx.createBufferSource(); src.buffer = noise;
+  const g = audioCtx.createGain(); g.gain.value = 0.2;
+  const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+  src.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+  src.start();
+}
+function playPerfect() {
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.3, 'triangle', 0.10), i * 70));
+}
+
+$('mute-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  muted = !muted;
+  $('mute-btn').textContent = muted ? '🔕' : '🔔';
+});
+
+// =========================================================================
+// GAME STATE
+// =========================================================================
+const LANE_WIDTH_FAR = 0.05;     // lane spacing at horizon (fraction of screen W)
+const LANE_WIDTH_NEAR = 0.28;    // lane spacing at viewer
+const HORIZON_Y = 0.30;          // 30% from top
+const PLAYER_Y = 0.78;           // player's screen Y (78% from top)
+const VANISHING_X = 0.5;         // center
+
+let state = 'intro'; // intro, playing, ritual, gameover
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('mahakal_best') || '0');
+let speed = 0.012;               // base z-speed
+let speedTarget = 0.012;
+let distance = 0;
+let runFrame = 0;
+let streakCount = 0;
+let multiplier = 1;
+let blessingsCollected = 0;
+
+const player = {
+  lane: 1,            // 0,1,2 (left, center, right)
+  laneX: 0,           // current x offset (smoothed)
+  targetLaneX: 0,
+  jumpY: 0,
+  jumpVy: 0,
+  jumping: false,
+  sliding: false,
+  slideTimer: 0,
+  shieldTimer: 0,
+  magnetTimer: 0,
+};
+
+const objects = [];      // {type, lane, z, ...}
+const particles = [];    // visual fx
+const petals = [];       // ambient floating petals
+
+// Generate ambient floating petals on start
+function seedPetals() {
+  petals.length = 0;
+  for (let i = 0; i < 24; i++) {
+    petals.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vy: 0.3 + Math.random() * 0.6,
+      vx: (Math.random() - 0.5) * 0.3,
+      r: 2 + Math.random() * 4,
+      alpha: 0.2 + Math.random() * 0.4,
+      hue: Math.random() < 0.5 ? 30 : 18, // gold or saffron
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.04,
+    });
+  }
+}
+seedPetals();
+
+// =========================================================================
+// COORDINATE PROJECTION (3-lane perspective)
+// =========================================================================
+function project(z, laneOrX, jumpY = 0) {
+  // z: 0 (close) → 1 (far). lane: -1, 0, 1 OR continuous laneX
+  const t = Math.min(Math.max(z, 0), 1);
+  // Vanishing into HORIZON_Y; nearest at PLAYER_Y
+  const screenY = HORIZON_Y * H * t + PLAYER_Y * H * (1 - t);
+  // Lane width interpolated
+  const laneSpacing = LANE_WIDTH_FAR * W * t + LANE_WIDTH_NEAR * W * (1 - t);
+  const screenX = VANISHING_X * W + laneOrX * laneSpacing;
+  // Scale (perspective)
+  const scale = 0.15 + 0.85 * (1 - t);
+  return { x: screenX, y: screenY - jumpY * scale, scale };
+}
+
+// =========================================================================
+// OBSTACLES & COLLECTIBLES SPAWNING
+// =========================================================================
+const COLLECTIBLES = [
+  { type: 'rudraksha', points: 10, color: '#8B4513', glow: '#D4691A' },
+  { type: 'belpatra',  points: 15, color: '#3D7A4D', glow: '#7FB87E' },
+  { type: 'diya',      points: 25, color: '#C0531A', glow: '#FFD27D' },
+  { type: 'damru',     points: 40, color: '#8C6512', glow: '#E8CD8E' },
+  { type: 'orb',       points: 50, color: '#3D5099', glow: '#A8B5E8' },
+];
+const OBSTACLES = ['stone', 'fire', 'gate'];
+
+let lastSpawnZ = 1;
+function spawn() {
+  // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
+  if (lastSpawnZ - distance < 0.15) return;
+  lastSpawnZ = distance + 0.18 + Math.random() * 0.06;
+
+  // Decide pattern
+  const r = Math.random();
+  if (r < 0.55) {
+    // Single obstacle in random lane + sometimes coins in other lanes
+    const obsLane = Math.floor(Math.random() * 3);
+    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: obsLane, z: 1 });
+    // Sprinkle collectibles in other lanes
+    for (let l = 0; l < 3; l++) {
+      if (l !== obsLane && Math.random() < 0.45) {
+        const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+        objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane: l, z: 1 });
+      }
+    }
+  } else if (r < 0.85) {
+    // Line of collectibles in one lane, 3-5 in a row
+    const lane = Math.floor(Math.random() * 3);
+    const count = 3 + Math.floor(Math.random() * 3);
+    const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+    for (let i = 0; i < count; i++) {
+      objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane, z: 1 + i * 0.04 });
+    }
+  } else {
+    // Two obstacles + safe lane with coin trail
+    const a = Math.floor(Math.random() * 3);
+    let b = Math.floor(Math.random() * 3);
+    while (b === a) b = Math.floor(Math.random() * 3);
+    const safe = 3 - a - b;
+    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: a, z: 1 });
+    objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: b, z: 1.02 });
+    const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+    for (let i = 0; i < 4; i++) {
+      objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane: safe, z: 1 + i * 0.04 });
+    }
+  }
+}
+
+// =========================================================================
+// CONTROLS
+// =========================================================================
+let touchStart = null;
+function changeLane(dir) {
+  if (state !== 'playing') return;
+  const newLane = Math.max(0, Math.min(2, player.lane + dir));
+  if (newLane !== player.lane) {
+    player.lane = newLane;
+    player.targetLaneX = newLane - 1;
+    playSlide();
+  }
+}
+function jump() {
+  if (state !== 'playing' || player.jumping || player.sliding) return;
+  player.jumping = true;
+  player.jumpVy = 16;
+  playJump();
+}
+function slide() {
+  if (state !== 'playing' || player.jumping || player.sliding) return;
+  player.sliding = true;
+  player.slideTimer = 40;
+  playSlide();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (state === 'ritual') {
+    if (e.key === ' ' || e.key === 'Enter') ritualTap();
+    return;
+  }
+  if (state !== 'playing') return;
+  if (e.key === 'ArrowLeft' || e.key === 'a') changeLane(-1);
+  else if (e.key === 'ArrowRight' || e.key === 'd') changeLane(1);
+  else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') { e.preventDefault(); jump(); }
+  else if (e.key === 'ArrowDown' || e.key === 's') slide();
+});
+
+stage.addEventListener('touchstart', (e) => {
+  ensureAudio();
+  if (state === 'ritual') { ritualTap(); return; }
+  if (e.touches.length === 1) {
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  }
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  const absX = Math.abs(dx), absY = Math.abs(dy);
+  if (dt < 600 && Math.max(absX, absY) > 20) {
+    if (absX > absY) {
+      if (dx > 0) changeLane(1); else changeLane(-1);
+    } else {
+      if (dy < 0) jump(); else slide();
+    }
+  }
+  touchStart = null;
+}, { passive: true });
+
+// Keyboard fallback for mouse on desktop
+stage.addEventListener('click', () => ensureAudio());
+
+// =========================================================================
+// INTRO SEQUENCE
+// =========================================================================
+function startIntro() {
+  setTimeout(() => $('intro').classList.add('show-content'), 700);
+}
+startIntro();
+
+$('enter-btn').addEventListener('click', () => {
+  ensureAudio();
+  playBell();
+  $('intro').classList.add('opening');
+  setTimeout(() => {
+    $('intro').style.display = 'none';
+    $('hud').classList.add('show');
+    $('best-score').textContent = bestScore.toLocaleString('en-IN');
+    state = 'playing';
+    if (!localStorage.getItem('mahakal_played_before')) {
+      $('tutorial').classList.add('show');
+      setTimeout(() => $('tutorial').classList.remove('show'), 3500);
+      localStorage.setItem('mahakal_played_before', '1');
+    }
+    startGame();
+  }, 2200);
+});
+
+// =========================================================================
+// MAIN LOOP
+// =========================================================================
+let last = performance.now();
+let nextRitualScore = 600;
+
+function startGame() {
+  score = 0; speed = 0.012; speedTarget = 0.012; distance = 0; runFrame = 0;
+  streakCount = 0; multiplier = 1; blessingsCollected = 0;
+  player.lane = 1; player.laneX = 0; player.targetLaneX = 0;
+  player.jumpY = 0; player.jumpVy = 0; player.jumping = false;
+  player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
+  objects.length = 0; particles.length = 0;
+  lastSpawnZ = 1; nextRitualScore = 600;
+  state = 'playing';
+  loop(performance.now());
+}
+
+function loop(now) {
+  if (state !== 'playing') return;
+  const dt = Math.min(33, now - last);
+  last = now;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  runFrame++;
+  // Speed scales with score
+  speedTarget = 0.012 + Math.min(0.025, score / 60000);
+  speed += (speedTarget - speed) * 0.01;
+  distance += speed * dt / 16;
+
+  // Player smooth lane
+  player.laneX += (player.targetLaneX - player.laneX) * 0.22;
+
+  // Jump physics
+  if (player.jumping) {
+    player.jumpY += player.jumpVy;
+    player.jumpVy -= 1.0;
+    if (player.jumpY <= 0) { player.jumpY = 0; player.jumpVy = 0; player.jumping = false; }
+  }
+  // Slide timer
+  if (player.sliding) {
+    player.slideTimer--;
+    if (player.slideTimer <= 0) player.sliding = false;
+  }
+
+  // Shield/magnet decay
+  if (player.shieldTimer > 0) player.shieldTimer--;
+  if (player.magnetTimer > 0) player.magnetTimer--;
+
+  // Spawn
+  spawn();
+
+  // Move objects toward player (their z decreases as we move forward)
+  for (const o of objects) {
+    o.z -= speed * dt / 16;
+    // Collect by magnet
+    if (o.kind === 'collect' && player.magnetTimer > 0 && o.z < 0.5 && o.z > 0) {
+      // Pull toward player lane
+      o.lane += (player.lane - o.lane) * 0.15;
+    }
+  }
+
+  // Collisions / collection
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i];
+    // Player at z near 0, in lane (0,1,2), at jumpY
+    const sameLane = Math.abs((o.lane !== undefined ? o.lane : 1) - player.lane) < 0.6;
+    if (o.z < 0.07 && o.z > -0.05 && sameLane) {
+      if (o.kind === 'collect') {
+        // Collect
+        const points = (o.points || 10) * multiplier;
+        score += points;
+        blessingsCollected++;
+        streakCount++;
+        if (streakCount % 5 === 0) {
+          multiplier = Math.min(8, multiplier + 1);
+          showStreak('×' + multiplier + ' Streak!');
+          $('multiplier').classList.add('active');
+          $('multiplier').textContent = '×' + multiplier + ' Streak';
+        }
+        spawnCollectParticles(o);
+        playCollect();
+        objects.splice(i, 1);
+        continue;
+      } else if (o.kind === 'obstacle') {
+        const dodge = (o.subtype === 'fire' && player.sliding) ||
+                      (o.subtype === 'stone' && player.jumping) ||
+                      (o.subtype === 'gate' && (player.jumping || player.sliding));
+        if (!dodge) {
+          if (player.shieldTimer > 0) {
+            // Shield absorbs
+            player.shieldTimer = 0;
+            spawnShieldBreak();
+            playPerfect();
+            objects.splice(i, 1);
+            continue;
+          }
+          // GAME OVER
+          gameOver();
+          return;
+        } else {
+          // Dodged successfully — bonus
+          score += 5;
+        }
+      }
+    }
+    // Off screen
+    if (o.z < -0.1) objects.splice(i, 1);
+  }
+
+  // Score scales with distance traveled too
+  score += Math.floor(speed * 60);
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    p.x += p.vx; p.y += p.vy;
+    p.vy += p.gravity || 0;
+    p.alpha = Math.max(0, p.life / p.maxLife);
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Petals (background ambience)
+  for (const p of petals) {
+    p.x += p.vx; p.y += p.vy;
+    p.rot += p.vrot;
+    if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+  }
+
+  // Update score in DOM
+  if (runFrame % 3 === 0) {
+    $('score').textContent = Math.floor(score).toLocaleString('en-IN');
+  }
+
+  // Ritual trigger
+  if (score >= nextRitualScore) {
+    nextRitualScore += 800 + Math.random() * 600;
+    startRitual();
+  }
+}
+
+// =========================================================================
+// RENDER
+// =========================================================================
+function render() {
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+  fxCtx.clearRect(0, 0, W, H);
+
+  // Background — gradient sky + temple wall hint
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0A0E1A');
+  grad.addColorStop(0.30, '#1A1208');
+  grad.addColorStop(0.60, '#0F0A04');
+  grad.addColorStop(1, '#000');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Distant temple silhouette
+  drawTempleSilhouette();
+
+  // Floor / path with perspective
+  drawFloor();
+
+  // Lane stones (glowing path stones)
+  drawPathStones();
+
+  // Petals (background)
+  for (const p of petals) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = `hsla(${p.hue}, 80%, 65%, ${p.alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Sort objects by z descending (far to near)
+  objects.sort((a, b) => b.z - a.z);
+
+  // Draw objects
+  for (const o of objects) {
+    if (o.z > 1.0 || o.z < -0.1) continue;
+    if (o.kind === 'obstacle') drawObstacle(o);
+    else drawCollectible(o);
+  }
+
+  // Player
+  drawPlayer();
+
+  // FX particles (on top)
+  for (const p of particles) {
+    fxCtx.save();
+    fxCtx.globalAlpha = p.alpha;
+    fxCtx.fillStyle = p.color;
+    fxCtx.beginPath();
+    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    fxCtx.fill();
+    if (p.glow) {
+      fxCtx.shadowColor = p.color; fxCtx.shadowBlur = 20;
+      fxCtx.fill();
+    }
+    fxCtx.restore();
+  }
+
+  // Vignette
+  const vGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W, H) * 0.3, W/2, H/2, Math.max(W, H) * 0.7);
+  vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  vGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vGrad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawTempleSilhouette() {
+  // Distant temple roofline at horizon
+  ctx.save();
+  ctx.fillStyle = 'rgba(20, 14, 8, 0.9)';
+  const h = HORIZON_Y * H;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.15, h);
+  ctx.lineTo(W * 0.18, h - 40);
+  ctx.lineTo(W * 0.22, h - 60);
+  ctx.lineTo(W * 0.26, h - 80);
+  ctx.lineTo(W * 0.3, h - 60);
+  ctx.lineTo(W * 0.35, h - 100);
+  ctx.lineTo(W * 0.40, h - 70);
+  ctx.lineTo(W * 0.45, h - 50);
+  ctx.lineTo(W * 0.5, h - 130); // central spire
+  ctx.lineTo(W * 0.55, h - 50);
+  ctx.lineTo(W * 0.60, h - 70);
+  ctx.lineTo(W * 0.65, h - 100);
+  ctx.lineTo(W * 0.70, h - 60);
+  ctx.lineTo(W * 0.74, h - 80);
+  ctx.lineTo(W * 0.78, h - 60);
+  ctx.lineTo(W * 0.82, h - 40);
+  ctx.lineTo(W * 0.85, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Glowing sanctum at center
+  const cx = W * 0.5, cy = h - 100;
+  const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 100);
+  glowGrad.addColorStop(0, 'rgba(255, 180, 80, 0.5)');
+  glowGrad.addColorStop(0.5, 'rgba(192, 83, 26, 0.2)');
+  glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(cx - 100, cy - 80, 200, 160);
+  ctx.restore();
+}
+
+function drawFloor() {
+  // Trapezoidal stone floor
+  ctx.save();
+  const horizonY = HORIZON_Y * H;
+  const playerY = PLAYER_Y * H;
+  const horizWidth = W * 0.18;
+  const nearWidth = W * 1.8;
+
+  const grad = ctx.createLinearGradient(0, horizonY, 0, H);
+  grad.addColorStop(0, '#1A1208');
+  grad.addColorStop(0.5, '#1F1A12');
+  grad.addColorStop(1, '#0A0805');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - horizWidth/2, horizonY);
+  ctx.lineTo(W/2 + horizWidth/2, horizonY);
+  ctx.lineTo(W/2 + nearWidth/2, H);
+  ctx.lineTo(W/2 - nearWidth/2, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Center path glow
+  const pathGrad = ctx.createLinearGradient(0, horizonY, 0, H);
+  pathGrad.addColorStop(0, 'rgba(192, 83, 26, 0.15)');
+  pathGrad.addColorStop(1, 'rgba(192, 83, 26, 0.02)');
+  ctx.fillStyle = pathGrad;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - W*0.04, horizonY);
+  ctx.lineTo(W/2 + W*0.04, horizonY);
+  ctx.lineTo(W/2 + W*0.5, H);
+  ctx.lineTo(W/2 - W*0.5, H);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawPathStones() {
+  // Animated stones moving toward camera (scrolling road texture)
+  const stoneCount = 18;
+  for (let i = 0; i < stoneCount; i++) {
+    const z = ((i / stoneCount) + (1 - (distance % 1))) % 1;
+    const p = project(z, 0);
+    const w = 0.3 * W * (1 - z) + 0.04 * W * z;
+    const h = 6 * (1 - z) + 1;
+    ctx.save();
+    ctx.fillStyle = `rgba(80, 50, 20, ${0.3 + 0.5 * (1 - z)})`;
+    ctx.fillRect(p.x - w/2, p.y - h/2, w, h);
+    // Side glow torches
+    if (i % 3 === 0) {
+      const torchSize = (1 - z) * 24 + 4;
+      const tx1 = p.x - w/2 - torchSize * 0.6;
+      const tx2 = p.x + w/2 + torchSize * 0.6;
+      drawTorch(tx1, p.y, torchSize);
+      drawTorch(tx2, p.y, torchSize);
+    }
+    ctx.restore();
+  }
+}
+
+function drawTorch(x, y, size) {
+  ctx.save();
+  // Flame
+  const grad = ctx.createRadialGradient(x, y - size/2, 0, x, y - size/2, size * 0.8);
+  const flicker = 0.85 + Math.sin(runFrame * 0.3 + x) * 0.15;
+  grad.addColorStop(0, `rgba(255, 220, 100, ${0.9 * flicker})`);
+  grad.addColorStop(0.4, `rgba(192, 83, 26, ${0.6 * flicker})`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x - size, y - size * 1.5, size * 2, size * 2);
+  ctx.restore();
+}
+
+function drawCollectible(o) {
+  const lane = o.lane !== undefined ? o.lane : 1;
+  const p = project(o.z, lane - 1);
+  const size = 18 * p.scale + 4;
+  const t = runFrame * 0.08 + (lane * 1.3) + (o.z * 6);
+  const bob = Math.sin(t) * 4 * p.scale;
+
+  ctx.save();
+  ctx.translate(p.x, p.y - size - bob);
+
+  // Glow
+  ctx.shadowColor = o.glow;
+  ctx.shadowBlur = 30 * p.scale;
+  ctx.fillStyle = o.glow;
+  ctx.globalAlpha = 0.45;
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.85, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Body — varies by type
+  ctx.shadowBlur = 0;
+  if (o.subtype === 'rudraksha') {
+    ctx.fillStyle = o.color;
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2); ctx.fill();
+    // Bead lines
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1 * p.scale;
+    for (let a = 0; a < 6; a++) {
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a / 3 * Math.PI) * size * 0.7, Math.sin(a / 3 * Math.PI) * size * 0.7);
+      ctx.lineTo(-Math.cos(a / 3 * Math.PI) * size * 0.7, -Math.sin(a / 3 * Math.PI) * size * 0.7);
+      ctx.stroke();
+    }
+  } else if (o.subtype === 'belpatra') {
+    ctx.fillStyle = o.color;
+    // Three-leaf shape
+    for (let i = -1; i <= 1; i++) {
+      ctx.save();
+      ctx.rotate((i * 60) * Math.PI / 180);
+      ctx.beginPath();
+      ctx.ellipse(0, -size * 0.5, size * 0.3, size * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if (o.subtype === 'diya') {
+    // Lamp
+    ctx.fillStyle = o.color;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.2, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Flame
+    ctx.fillStyle = '#FFD27D';
+    ctx.beginPath();
+    const flameH = size * 0.7 + Math.sin(runFrame * 0.4) * 2;
+    ctx.moveTo(0, -size * 0.2);
+    ctx.quadraticCurveTo(size * 0.2, -flameH * 0.5, 0, -flameH);
+    ctx.quadraticCurveTo(-size * 0.2, -flameH * 0.5, 0, -size * 0.2);
+    ctx.fill();
+  } else if (o.subtype === 'damru') {
+    // Hour-glass
+    ctx.fillStyle = o.color;
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.5, size * 0.5, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.3, -size * 0.5);
+    ctx.lineTo(size * 0.3, -size * 0.5);
+    ctx.lineTo(size * 0.3, size * 0.5);
+    ctx.lineTo(-size * 0.3, size * 0.5);
+    ctx.closePath(); ctx.fill();
+  } else { // orb
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.7);
+    g.addColorStop(0, '#FFFFFF');
+    g.addColorStop(0.5, o.glow);
+    g.addColorStop(1, o.color);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawObstacle(o) {
+  const p = project(o.z, o.lane - 1);
+  const size = 36 * p.scale + 6;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  if (o.subtype === 'stone') {
+    // Stone barrier (jumpable)
+    ctx.fillStyle = '#3a2c1c';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 12 * p.scale;
+    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, size * 0.6);
+    ctx.shadowBlur = 0;
+    // Highlight
+    ctx.fillStyle = '#5a4530';
+    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, 4 * p.scale);
+    // Bottom shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-size * 0.6, 0, size * 1.2, 6 * p.scale);
+  } else if (o.subtype === 'fire') {
+    // Fire pit (slide-able)
+    const grad = ctx.createRadialGradient(0, -size * 0.2, 0, 0, -size * 0.2, size * 0.8);
+    grad.addColorStop(0, '#FFC04D');
+    grad.addColorStop(0.4, '#C0531A');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    const flameH = size * 0.8 + Math.sin(runFrame * 0.4 + o.z * 10) * 4;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.5, 0);
+    ctx.quadraticCurveTo(-size * 0.4, -flameH * 0.6, 0, -flameH);
+    ctx.quadraticCurveTo(size * 0.4, -flameH * 0.6, size * 0.5, 0);
+    ctx.closePath(); ctx.fill();
+    // Coals
+    ctx.fillStyle = '#3a1f0a';
+    ctx.beginPath(); ctx.ellipse(0, 0, size * 0.5, size * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  } else { // gate (jump or slide)
+    // Tall pillar with closing motion
+    ctx.fillStyle = '#2a1d0f';
+    ctx.shadowColor = 'rgba(192, 83, 26, 0.4)'; ctx.shadowBlur = 16 * p.scale;
+    ctx.fillRect(-size * 0.5, -size * 1.2, size * 1.0, size * 1.2);
+    ctx.shadowBlur = 0;
+    // Gold trim
+    ctx.fillStyle = '#8C6512';
+    ctx.fillRect(-size * 0.5, -size * 1.2, size * 1.0, 3 * p.scale);
+    ctx.fillRect(-size * 0.5, -size * 0.6, size * 1.0, 2 * p.scale);
+    // Center symbol
+    ctx.fillStyle = '#C9A24F';
+    ctx.beginPath(); ctx.arc(0, -size * 0.6, size * 0.12, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const p = project(0, player.laneX, player.jumpY);
+  const size = 30;
+  ctx.save();
+  ctx.translate(p.x, p.y - size);
+
+  // Shield aura
+  if (player.shieldTimer > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(168, 181, 232, ' + (0.3 + Math.sin(runFrame * 0.3) * 0.1) + ')';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(168, 181, 232, 0.6)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, size * 1.4, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Magnet aura
+  if (player.magnetTimer > 0) {
+    ctx.fillStyle = 'rgba(232, 205, 142, 0.2)';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.8 + Math.sin(runFrame * 0.4) * 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Body silhouette (saffron-clad pilgrim)
+  if (player.sliding) {
+    // Sliding pose — shorter and wider
+    ctx.fillStyle = '#1F2A44';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#C0531A'; // saffron robe
+    ctx.beginPath();
+    ctx.ellipse(0, -2, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Standing
+    ctx.fillStyle = '#C0531A'; // robe
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.4, 0);
+    ctx.lineTo(-size * 0.5, -size * 0.7);
+    ctx.lineTo(-size * 0.3, -size * 0.95);
+    ctx.lineTo(size * 0.3, -size * 0.95);
+    ctx.lineTo(size * 0.5, -size * 0.7);
+    ctx.lineTo(size * 0.4, 0);
+    ctx.closePath();
+    ctx.fill();
+    // Head
+    ctx.fillStyle = '#5C3A1A';
+    ctx.beginPath();
+    ctx.arc(0, -size * 1.05, size * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    // Tilak
+    ctx.fillStyle = '#D4691A';
+    ctx.fillRect(-1, -size * 1.15, 2, 5);
+
+    // Running animation — leg bob
+    const legBob = Math.sin(runFrame * 0.4) * 3;
+    ctx.fillStyle = '#1F2A44';
+    ctx.fillRect(-size * 0.25, 0, size * 0.18, size * 0.25 + legBob);
+    ctx.fillRect(size * 0.07, 0, size * 0.18, size * 0.25 - legBob);
+  }
+
+  // Glow on jump
+  if (player.jumping) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(232, 205, 142, 0.25)';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, size * 0.8, size * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Shadow
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, player.jumpY * 0.3 + 2, size * 0.5, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// =========================================================================
+// PARTICLE EFFECTS
+// =========================================================================
+function spawnCollectParticles(o) {
+  const lane = o.lane !== undefined ? o.lane : 1;
+  const p = project(o.z, lane - 1);
+  for (let i = 0; i < 14; i++) {
+    const angle = (i / 14) * Math.PI * 2;
+    particles.push({
+      x: p.x, y: p.y - 20,
+      vx: Math.cos(angle) * (1 + Math.random() * 3),
+      vy: Math.sin(angle) * (1 + Math.random() * 3) - 1,
+      r: 2 + Math.random() * 2,
+      color: o.glow || '#C9A24F',
+      glow: true,
+      gravity: 0.1,
+      life: 600, maxLife: 600, alpha: 1
+    });
+  }
+}
+function spawnShieldBreak() {
+  const p = project(0, player.laneX, player.jumpY);
+  for (let i = 0; i < 30; i++) {
+    const angle = (i / 30) * Math.PI * 2;
+    particles.push({
+      x: p.x, y: p.y - 20,
+      vx: Math.cos(angle) * 6,
+      vy: Math.sin(angle) * 6,
+      r: 3, color: '#A8B5E8', glow: true,
+      gravity: 0.1, life: 800, maxLife: 800, alpha: 1
+    });
+  }
+}
+
+// =========================================================================
+// STREAK / BLESSING TEXT
+// =========================================================================
+function showStreak(text) {
+  const el = $('streak');
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 900);
+}
+const BLESSINGS = [
+  'Mahakal walks with you',
+  'Your darshan is near',
+  'You are protected',
+  'The path is sacred',
+  'Bhakti is your shield',
+  'Mahadev sees your effort',
+];
+function showBlessing() {
+  const el = $('blessing');
+  el.textContent = BLESSINGS[Math.floor(Math.random() * BLESSINGS.length)];
+  el.style.transition = 'none';
+  el.style.opacity = '0';
+  el.style.transform = 'translate(-50%, 30px)';
+  requestAnimationFrame(() => {
+    el.style.transition = 'all 1.8s ease';
+    el.style.opacity = '1';
+    el.style.transform = 'translate(-50%, -20px)';
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translate(-50%, -50px)';
+    }, 1500);
+  });
+}
+setInterval(() => { if (state === 'playing' && Math.random() < 0.3) showBlessing(); }, 8000);
+
+// =========================================================================
+// RITUAL — Bell tap mini event
+// =========================================================================
+let ritualCursor = 0, ritualTargetX = 50, ritualDir = 1, ritualRunning = false, ritualSolved = false;
+function startRitual() {
+  if (state !== 'playing') return;
+  state = 'ritual';
+  ritualRunning = true; ritualSolved = false;
+  ritualCursor = 0; ritualDir = 1;
+  ritualTargetX = 30 + Math.random() * 40; // 30-70%
+  $('meter-target').style.left = ritualTargetX + '%';
+  $('ritual').classList.add('show');
+  $('ritual-bell').classList.remove('tapped');
+  ritualLoop();
+}
+function ritualLoop() {
+  if (!ritualRunning) return;
+  ritualCursor += ritualDir * 0.9;
+  if (ritualCursor > 100) { ritualCursor = 100; ritualDir = -1; }
+  if (ritualCursor < 0) { ritualCursor = 0; ritualDir = 1; }
+  $('meter-cursor').style.left = ritualCursor + '%';
+  if (ritualRunning) requestAnimationFrame(ritualLoop);
+}
+function ritualTap() {
+  if (!ritualRunning || ritualSolved) return;
+  ritualSolved = true;
+  ritualRunning = false;
+  $('ritual-bell').classList.add('tapped');
+  const distToTarget = Math.abs(ritualCursor - ritualTargetX);
+  let outcome;
+  if (distToTarget < 5) {
+    outcome = 'perfect';
+    score += 200 * multiplier;
+    player.shieldTimer = 600;
+    playPerfect(); playBell();
+    showStreak('PERFECT!');
+  } else if (distToTarget < 15) {
+    outcome = 'good';
+    score += 100;
+    player.magnetTimer = 400;
+    playBell();
+    showStreak('Good!');
+  } else {
+    outcome = 'miss';
+    score += 30;
+    playTone(220, 0.4, 'sawtooth', 0.08);
+  }
+  setTimeout(() => {
+    $('ritual').classList.remove('show');
+    state = 'playing';
+    last = performance.now();
+    loop(performance.now());
+  }, 1200);
+}
+
+// =========================================================================
+// GAME OVER
+// =========================================================================
+function gameOver() {
+  state = 'gameover';
+  playHit();
+  setTimeout(() => {
+    if (score > bestScore) {
+      bestScore = Math.floor(score);
+      localStorage.setItem('mahakal_best', String(bestScore));
+      $('best-line').classList.add('new');
+      $('best-line').innerHTML = '★ NEW BEST! ★ <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
+    } else {
+      $('best-line').classList.remove('new');
+      $('best-line').innerHTML = 'Best: <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
+    }
+    $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
+    $('gameover').classList.add('show');
+  }, 600);
+}
+
+$('play-again-btn').addEventListener('click', () => {
+  $('gameover').classList.remove('show');
+  $('multiplier').classList.remove('active');
+  $('best-score').textContent = bestScore.toLocaleString('en-IN');
+  startGame();
+});
+
+// Initial display of best
+$('best-score').textContent = bestScore.toLocaleString('en-IN');
+
+// Prevent page scroll on game area touches (mobile)
+document.body.addEventListener('touchmove', (e) => {
+  if (e.target.closest('#stage')) e.preventDefault();
+}, { passive: false });
+
+</script>
+</body>
+</html>
