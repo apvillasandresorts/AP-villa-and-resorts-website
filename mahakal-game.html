@@ -823,12 +823,12 @@ const OBSTACLES = ['stone', 'fire', 'gate'];
 let lastSpawnZ = 1;
 function spawn() {
   // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
-  if (lastSpawnZ - distance < 0.25) return;
-  lastSpawnZ = distance + 0.18 + Math.random() * 0.06;
+if (lastSpawnZ - distance < 0.20) return;
+  lastSpawnZ = distance + 0.12 + Math.random() * 0.05;
 
   // Decide pattern
   const r = Math.random();
-  if (r < 0.55) {
+  if (r < 0.45) {
     // Single obstacle in random lane + sometimes coins in other lanes
     const obsLane = Math.floor(Math.random() * 3);
     objects.push({ kind: 'obstacle', subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], lane: obsLane, z: 1 });
@@ -842,7 +842,7 @@ function spawn() {
   } else if (r < 0.85) {
     // Line of collectibles in one lane, 3-5 in a row
     const lane = Math.floor(Math.random() * 3);
-    const count = 3 + Math.floor(Math.random() * 3);
+    const count = 2 + Math.floor(Math.random() * 2);
     const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
     for (let i = 0; i < count; i++) {
       objects.push({ kind: 'collect', subtype: c.type, color: c.color, glow: c.glow, points: c.points, lane, z: 1 + i * 0.04 });
