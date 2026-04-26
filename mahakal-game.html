@@ -821,7 +821,22 @@ const COLLECTIBLES = [
 const OBSTACLES = ['stone', 'fire', 'gate'];
 
 let lastSpawnZ = 1;
+let diyaSpawnCooldown = 0;
 function spawn() {
+  if (diyaSpawnCooldown <= 0) {
+  objects.push({
+    kind: 'collect',
+    subtype: 'diya',
+    color: '#C0531A',
+    glow: '#FFD27D',
+    points: 25,
+    lane: Math.floor(Math.random() * 3),
+    z: 1
+  });
+
+  diyaSpawnCooldown = 220;
+  return;
+}
   // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
 if (lastSpawnZ - distance < 0.20) return;
   lastSpawnZ = distance + 0.12 + Math.random() * 0.05;
@@ -983,6 +998,7 @@ function loop(now) {
 
 function update(dt) {
   runFrame++;
+  if (diyaSpawnCooldown > 0) diyaSpawnCooldown--;
   // Speed scales with score
   speedTarget = 0.012 + Math.min(0.025, score / 60000);
   speed += (speedTarget - speed) * 0.01;
