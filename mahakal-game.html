@@ -638,7 +638,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="gameover__sub">Your Run Has Ended</div>
 
       <div class="gameover__score-label">Score</div>
-      <div class="gameover__score" id="final-score">0</div>
+      <div class="gameover__score" id="final-score" id="gameover__score">0</div>
       <div class="gameover__best" id="best-line">Best: <span id="final-best">0</span></div>
 
       <div class="gameover__divider"><span>◆</span></div>
@@ -1016,17 +1016,27 @@ function startGame() {
   objects.length = 0; particles.length = 0;
   lastSpawnZ = 1; nextRitualScore = 600;
   state = 'playing';
-  loop(performance.now());
+  // Reset timing
+  last = performance.now();
+  // Start the loop if not already running
+  if (!gameLoopId) {
+    gameLoopId = requestAnimationFrame(loop);
+  }
 }
 
 function loop(now) {
-  if (state !== 'playing') return;
+  // Always continue the loop, only skip update/render based on state
   const dt = Math.min(33, now - last);
   last = now;
-  update(dt);
-  render();
-  requestAnimationFrame(loop);
+  
+  if (state === 'playing') {
+    update(dt);
+    render();
+  }
+  
+  gameLoopId = requestAnimationFrame(loop);
 }
+let gameLoopId = null;
 
 function update(dt) {
 
@@ -1497,6 +1507,7 @@ function drawObstacle(o) {
 function drawPlayer() {
   const p = project(0, player.laneX, player.jumpY);
   const size = 30;
+  const runPhase = runFrame * 0.15;
   ctx.save();
   ctx.translate(p.x, p.y - size);
 
@@ -1532,31 +1543,180 @@ function drawPlayer() {
     ctx.ellipse(0, -2, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Standing
-    ctx.fillStyle = '#C0531A'; // robe
+    // Standing/ Running pose - improved character
+    
+    // Running animation
+    const legBob = Math.sin(runPhase) * 4;
+    const armSwing = Math.sin(runPhase) * 6;
+    const bodyBob = Math.abs(Math.sin(runPhase)) * 2;
+    
+    // Shadow on ground
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
-    ctx.moveTo(-size * 0.4, 0);
-    ctx.lineTo(-size * 0.5, -size * 0.7);
-    ctx.lineTo(-size * 0.3, -size * 0.95);
-    ctx.lineTo(size * 0.3, -size * 0.95);
-    ctx.lineTo(size * 0.5, -size * 0.7);
-    ctx.lineTo(size * 0.4, 0);
+    ctx.ellipse(0, size * 0.15, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Legs (darker shade)
+    ctx.fillStyle = '#2A1A10';
+    // Back leg
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.15 + legBob * 0.3, size * 0.05, size * 0.12, size * 0.25, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    // Front leg
+    ctx.beginPath();
+    ctx.ellipse(size * 0.1 - legBob * 0.3, size * 0.05, size * 0.12, size * 0.25, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Feet (bare)
+    ctx.fillStyle = '#4A3020';
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.15 + legBob * 0.5, size * 0.25, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(size * 0.1 - legBob * 0.5, size * 0.25, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Ankle bells (ghunghroo)
+    const bellRing1 = Math.sin(runPhase * 2) * 0.3;
+    const bellRing2 = Math.sin(runPhase * 2 + 1) * 0.3;
+    ctx.fillStyle = '#D4AF37';
+    ctx.strokeStyle = '#8B6914';
+    ctx.lineWidth = 1;
+    // Left ankle bell
+    ctx.beginPath();
+    ctx.arc(-size * 0.15 + legBob * 0.5, size * 0.22, 3 + bellRing1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // Right ankle bell
+    ctx.beginPath();
+    ctx.arc(size * 0.1 - legBob * 0.5, size * 0.22, 3 + bellRing2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Main robe (dhoti) - saffron color
+    const robeGrad = ctx.createLinearGradient(-size * 0.5, 0, size * 0.5, 0);
+    robeGrad.addColorStop(0, '#A04018');
+    robeGrad.addColorStop(0.3, '#C0531A');
+    robeGrad.addColorStop(0.5, '#D4652A');
+    robeGrad.addColorStop(0.7, '#C0531A');
+    robeGrad.addColorStop(1, '#A04018');
+    ctx.fillStyle = robeGrad;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.45, 0);
+    ctx.quadraticCurveTo(-size * 0.5, -size * 0.3, -size * 0.35, -size * 0.5);
+    ctx.lineTo(-size * 0.2, -size * 0.75);
+    ctx.lineTo(size * 0.2, -size * 0.75);
+    ctx.lineTo(size * 0.35, -size * 0.5);
+    ctx.quadraticCurveTo(size * 0.5, -size * 0.3, size * 0.45, 0);
     ctx.closePath();
     ctx.fill();
-    // Head
+    
+    // Robe fold lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.15, -size * 0.5);
+    ctx.quadraticCurveTo(0, -size * 0.2, size * 0.15, -size * 0.5);
+    ctx.stroke();
+    
+    // Sacred thread (janeu) - horizontal line
+    ctx.fillStyle = '#D4AF37';
+    ctx.fillRect(-size * 0.35, -size * 0.55, size * 0.7, 2);
+    
+    // Upper body (angavastram)
+    const upperGrad = ctx.createLinearGradient(-size * 0.4, -size * 0.5, size * 0.4, -size * 0.5);
+    upperGrad.addColorStop(0, '#8B3010');
+    upperGrad.addColorStop(0.5, '#B84520');
+    upperGrad.addColorStop(1, '#8B3010');
+    ctx.fillStyle = upperGrad;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.4, -size * 0.5);
+    ctx.lineTo(-size * 0.45, -size * 0.7);
+    ctx.lineTo(size * 0.45, -size * 0.7);
+    ctx.lineTo(size * 0.4, -size * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Arms (running motion)
+    ctx.fillStyle = '#C0531A';
+    // Left arm
+    ctx.save();
+    ctx.translate(-size * 0.35, -size * 0.55);
+    ctx.rotate((-armSwing) * Math.PI / 180);
+    ctx.fillRect(-4, 0, 8, size * 0.25);
+    // Hand
+    ctx.fillStyle = '#4A3020';
+    ctx.beginPath();
+    ctx.arc(0, size * 0.25, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Right arm
+    ctx.fillStyle = '#C0531A';
+    ctx.save();
+    ctx.translate(size * 0.35, -size * 0.55);
+    ctx.rotate((armSwing) * Math.PI / 180);
+    ctx.fillRect(-4, 0, 8, size * 0.25);
+    // Hand
+    ctx.fillStyle = '#4A3020';
+    ctx.beginPath();
+    ctx.arc(0, size * 0.25, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Neck
     ctx.fillStyle = '#5C3A1A';
     ctx.beginPath();
-    ctx.arc(0, -size * 1.05, size * 0.18, 0, Math.PI * 2);
+    ctx.rect(-size * 0.08, -size * 0.82, size * 0.16, size * 0.1);
     ctx.fill();
-    // Tilak
-    ctx.fillStyle = '#D4691A';
-    ctx.fillRect(-1, -size * 1.15, 2, 5);
-
-    // Running animation — leg bob
-    const legBob = Math.sin(runFrame * 0.4) * 3;
-    ctx.fillStyle = '#1F2A44';
-    ctx.fillRect(-size * 0.25, 0, size * 0.18, size * 0.25 + legBob);
-    ctx.fillRect(size * 0.07, 0, size * 0.18, size * 0.25 - legBob);
+    
+    // Head
+    ctx.fillStyle = '#3A2010';
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.95, size * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Hair (top knot - shikha)
+    ctx.fillStyle = '#1A0A00';
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 1.1, 4, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Tilak (sacred mark)
+    ctx.fillStyle = '#C0531A';
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.88);
+    ctx.lineTo(-3, -size * 0.92);
+    ctx.lineTo(0, -size * 0.85);
+    ctx.lineTo(3, -size * 0.92);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Third eye (optional subtle mark)
+    ctx.fillStyle = 'rgba(139, 0, 0, 0.6)';
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.98, 1.5, 1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Face features
+    ctx.fillStyle = '#2A1510';
+    // Eyes
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.08, -size * 0.96, 2, 1.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(size * 0.08, -size * 0.96, 2, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Trishul (trident) outline on back
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.5, -size * 0.6);
+    ctx.lineTo(-size * 0.55, -size * 0.9);
+    ctx.moveTo(size * 0.5, -size * 0.6);
+    ctx.lineTo(size * 0.55, -size * 0.9);
+    ctx.moveTo(0, -size * 0.55);
+    ctx.lineTo(0, -size * 0.95);
+    ctx.stroke();
   }
 
   // Glow on jump
@@ -1568,14 +1728,6 @@ function drawPlayer() {
     ctx.fill();
     ctx.restore();
   }
-
-  // Shadow
-  ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.beginPath();
-  ctx.ellipse(0, player.jumpY * 0.3 + 2, size * 0.5, size * 0.12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
 
   ctx.restore();
 }
@@ -1662,15 +1814,17 @@ function startRitual() {
   $('meter-target').style.left = ritualTargetX + '%';
   $('ritual').classList.add('show');
   $('ritual-bell').classList.remove('tapped');
-  ritualLoop();
+  // Start ritual animation loop
+  ritualLoopId = requestAnimationFrame(ritualLoop);
 }
+let ritualLoopId = null;
 function ritualLoop() {
   if (!ritualRunning) return;
   ritualCursor += ritualDir * 0.9;
   if (ritualCursor > 100) { ritualCursor = 100; ritualDir = -1; }
   if (ritualCursor < 0) { ritualCursor = 0; ritualDir = 1; }
   $('meter-cursor').style.left = ritualCursor + '%';
-  if (ritualRunning) requestAnimationFrame(ritualLoop);
+  if (ritualRunning) ritualLoopId = requestAnimationFrame(ritualLoop);
 }
 function ritualTap() {
   if (!ritualRunning || ritualSolved) return;
@@ -1697,10 +1851,16 @@ function ritualTap() {
     playTone(220, 0.4, 'sawtooth', 0.08);
   }
   setTimeout(() => {
+    // Cancel ritual loop properly
+    if (ritualLoopId) {
+      cancelAnimationFrame(ritualLoopId);
+      ritualLoopId = null;
+    }
     $('ritual').classList.remove('show');
     state = 'playing';
+    // Reset timing to prevent large dt jump
     last = performance.now();
-    loop(performance.now());
+    // Loop continues running, state check handles the rest
   }, 1200);
 }
 
@@ -1763,6 +1923,9 @@ $('play-again-btn').addEventListener('click', () => {
   $('gameover').classList.remove('show');
   $('multiplier').classList.remove('active');
   $('best-score').textContent = bestScore.toLocaleString('en-IN');
+  // Reset hits display
+  $('hits').textContent = '0/3';
+  // Start fresh game
   startGame();
 });
 
