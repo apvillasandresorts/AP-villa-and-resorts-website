@@ -823,7 +823,7 @@ const OBSTACLES = ['stone', 'fire', 'gate'];
 let lastSpawnZ = 1;
 function spawn() {
   // Roughly spawn at z=1 (far), one cluster every ~0.18 z-units
-  if (lastSpawnZ - distance < 0.15) return;
+  if (lastSpawnZ - distance < 0.40) return;
   lastSpawnZ = distance + 0.18 + Math.random() * 0.06;
 
   // Decide pattern
