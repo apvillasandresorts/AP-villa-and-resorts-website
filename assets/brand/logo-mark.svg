@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="700" height="700" font-family="'Cormorant Garamond', 'Playfair Display', 'Georgia', 'Times New Roman', serif">
+  
+  <g transform="translate(350, 350)">
+    <!-- Top finial -->
+    <g transform="translate(0, -255)">
+      <path d="M -18,12 Q -20,-3 -11,-17 Q 0,-30 11,-17 Q 20,-3 18,12 Z" fill="#B88A2C"/>
+      <circle cx="-34" cy="8" r="4" fill="#B88A2C" opacity="0.85"/>
+      <circle cx="34" cy="8" r="4" fill="#B88A2C" opacity="0.85"/>
+      <line x1="-48" y1="20" x2="48" y2="20" stroke="#B88A2C" stroke-width="1.6" opacity="0.5"/>
+    </g>
+    <!-- Outer ring -->
+    <circle cx="0" cy="0" r="220" fill="none" stroke="#B88A2C" stroke-width="4"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="0" r="200" fill="none" stroke="#B88A2C" stroke-width="1" opacity="0.55"/>
+    <!-- Inner cream -->
+    <circle cx="0" cy="0" r="198" fill="#FAF6EE"/>
+    <!-- 8 cardinal dots -->
+    <g fill="#B88A2C" opacity="0.85">
+      <circle cx="0" cy="-211" r="4.5"/><circle cx="0" cy="211" r="4.5"/>
+      <circle cx="-211" cy="0" r="4.5"/><circle cx="211" cy="0" r="4.5"/>
+      <circle cx="-149" cy="-149" r="3.2"/><circle cx="149" cy="-149" r="3.2"/>
+      <circle cx="-149" cy="149" r="3.2"/><circle cx="149" cy="149" r="3.2"/>
+    </g>
+    <!-- AP monogram - clean, properly spaced, NOT italic -->
+    <text x="0" y="50" text-anchor="middle" font-size="240" font-weight="600"
+          fill="#1F2A44" letter-spacing="-2">AP</text>
+    <!-- Bottom flourish -->
+    <line x1="-72" y1="100" x2="72" y2="100" stroke="#B88A2C" stroke-width="1.4" opacity="0.7"/>
+    <circle cx="0" cy="100" r="3.5" fill="#B88A2C"/>
+    <!-- Bottom finial -->
+    <g transform="translate(0, 258)">
+      <line x1="-28" y1="-12" x2="28" y2="-12" stroke="#B88A2C" stroke-width="1.6" opacity="0.5"/>
+      <circle cx="-34" cy="-8" r="3.5" fill="#B88A2C" opacity="0.85"/>
+      <circle cx="34" cy="-8" r="3.5" fill="#B88A2C" opacity="0.85"/>
+      <path d="M -11,-3 Q 0,14 11,-3 L 0,18 Z" fill="#B88A2C"/>
+    </g>
+  </g>
+</svg>
