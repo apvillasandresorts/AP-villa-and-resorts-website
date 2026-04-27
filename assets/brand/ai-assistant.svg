@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <!-- Saffron robe gradient -->
+    <linearGradient id="robeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#A04018"/>
+      <stop offset="30%" style="stop-color:#C0531A"/>
+      <stop offset="50%" style="stop-color:#D4652A"/>
+      <stop offset="70%" style="stop-color:#C0531A"/>
+      <stop offset="100%" style="stop-color:#A04018"/>
+    </linearGradient>
+    <!-- Upper body gradient -->
+    <linearGradient id="upperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#B84520"/>
+      <stop offset="100%" style="stop-color:#8B3010"/>
+    </linearGradient>
+    <!-- Skin tone -->
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A3020"/>
+      <stop offset="100%" style="stop-color:#3A2010"/>
+    </linearGradient>
+    <!-- Gold accent -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="50%" style="stop-color:#D4AF37"/>
+      <stop offset="100%" style="stop-color:#8B6914"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="150" r="95" fill="#1A1208"/>
+  <circle cx="100" cy="150" r="90" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Shadow -->
+  <ellipse cx="100" cy="270" rx="40" ry="10" fill="rgba(0,0,0,0.3)"/>
+  
+  <!-- Legs -->
+  <ellipse cx="80" cy="235" rx="12" ry="25" fill="#2A1A10"/>
+  <ellipse cx="120" cy="235" rx="12" ry="25" fill="#2A1A10"/>
+  
+  <!-- Feet -->
+  <ellipse cx="80" cy="258" rx="10" ry="6" fill="#4A3020"/>
+  <ellipse cx="120" cy="258" rx="10" ry="6" fill="#4A3020"/>
+  
+  <!-- Ankle bells -->
+  <circle cx="80" cy="252" r="4" fill="url(#goldGrad)" stroke="#8B6914" stroke-width="1"/>
+  <circle cx="120" cy="252" r="4" fill="url(#goldGrad)" stroke="#8B6914" stroke-width="1"/>
+  
+  <!-- Main robe (dhoti) -->
+  <path d="M 60 180 Q 55 210 65 240 L 135 240 Q 145 210 140 180 L 120 150 L 80 150 Z" fill="url(#robeGrad)"/>
+  
+  <!-- Robe fold lines -->
+  <path d="M 85 180 Q 100 200 115 180" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+  
+  <!-- Sacred thread (janeu) -->
+  <rect x="70" y="145" width="60" height="3" fill="url(#goldGrad)"/>
+  
+  <!-- Upper body (angavastram) -->
+  <path d="M 65 145 L 60 110 L 140 110 L 135 145 Z" fill="url(#upperGrad)"/>
+  
+  <!-- Arms -->
+  <rect x="50" y="130" width="12" height="35" rx="6" fill="#C0531A" transform="rotate(-15 56 147)"/>
+  <rect x="138" y="130" width="12" height="35" rx="6" fill="#C0531A" transform="rotate(15 144 147)"/>
+  
+  <!-- Hands -->
+  <circle cx="48" cy="165" r="6" fill="url(#skinGrad)"/>
+  <circle cx="152" cy="165" r="6" fill="url(#skinGrad)"/>
+  
+  <!-- Neck -->
+  <rect x="88" y="95" width="24" height="18" fill="url(#skinGrad)"/>
+  
+  <!-- Head -->
+  <circle cx="100" cy="75" r="35" fill="url(#skinGrad)"/>
+  
+  <!-- Hair (top knot - shikha) -->
+  <ellipse cx="100" cy="38" rx="6" ry="12" fill="#1A0A00"/>
+  
+  <!-- Tilak (sacred mark) -->
+  <path d="M 100 52 L 94 58 L 100 48 L 106 58 Z" fill="#C0531A"/>
+  
+  <!-- Third eye -->
+  <ellipse cx="100" cy="58" rx="2" ry="1.5" fill="#8B0000"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="88" cy="72" rx="3" ry="2" fill="#2A1510"/>
+  <ellipse cx="112" cy="72" rx="3" ry="2" fill="#2A1510"/>
+  
+  <!-- Eyebrows -->
+  <path d="M 82 66 Q 88 63 94 66" fill="none" stroke="#1A0A00" stroke-width="1.5"/>
+  <path d="M 106 66 Q 112 63 118 66" fill="none" stroke="#1A0A00" stroke-width="1.5"/>
+  
+  <!-- Trishul outline (subtle) -->
+  <path d="M 55 120 L 55 90 M 145 120 L 145 90 M 100 115 L 100 85" fill="none" stroke="rgba(212,175,55,0.3)" stroke-width="1.5"/>
+  
+  <!-- Aura glow -->
+  <circle cx="100" cy="150" r="85" fill="none" stroke="rgba(255,180,80,0.2)" stroke-width="20"/>
+</svg>

@@ -1007,6 +1007,7 @@ let last = performance.now();
 let nextRitualScore = 600;
 
 function startGame() {
+  // Reset all game state
   score = 0; speed = 0.012; speedTarget = 0.012; distance = 0; runFrame = 0;
   streakCount = 0; multiplier = 1; blessingsCollected = 0;
   hitCount = 0; gameWon = false;
@@ -1015,18 +1016,28 @@ function startGame() {
   player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
   objects.length = 0; particles.length = 0;
   lastSpawnZ = 1; nextRitualScore = 600;
+  spawnTimer = 0;
+  
   // Cleanup any in-flight ritual
   ritualRunning = false; ritualSolved = false;
   if (ritualLoopId) { cancelAnimationFrame(ritualLoopId); ritualLoopId = null; }
+  if (ritualTimeout) { clearTimeout(ritualTimeout); ritualTimeout = null; }
   $('ritual').classList.remove('show');
+  
   // Reset score display
   $('score').textContent = '0';
+  $('hits').textContent = '0/3';
   $('multiplier').classList.remove('active');
+  $('multiplier').textContent = '×2 Streak';
+  
+  // Set state to playing BEFORE starting loop
   state = 'playing';
+  
   // Reset timing
   last = performance.now();
   touchStart = null;
-  // Always cancel any stale frame and start fresh
+  
+  // Cancel any stale frame and start fresh
   if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
   gameLoopId = requestAnimationFrame(loop);
 }
@@ -1956,6 +1967,10 @@ function ritualTap() {
   if (!ritualRunning || ritualSolved) return;
   ritualSolved = true;
   ritualRunning = false;
+  
+  // Clear any auto-resolve timeout
+  if (ritualTimeout) { clearTimeout(ritualTimeout); ritualTimeout = null; }
+  
   $('ritual-bell').classList.add('tapped');
   const distToTarget = Math.abs(ritualCursor - ritualTargetX);
   let outcome;
@@ -1976,18 +1991,18 @@ function ritualTap() {
     score += 30;
     playTone(220, 0.4, 'sawtooth', 0.08);
   }
-  setTimeout(() => {
-    // Cancel ritual loop properly
-    if (ritualLoopId) {
-      cancelAnimationFrame(ritualLoopId);
-      ritualLoopId = null;
-    }
-    $('ritual').classList.remove('show');
-    state = 'playing';
-    // Reset timing to prevent large dt jump
-    last = performance.now();
-    // Loop continues running, state check handles the rest
-  }, 1200);
+  
+  // Cancel ritual animation immediately
+  if (ritualLoopId) {
+    cancelAnimationFrame(ritualLoopId);
+    ritualLoopId = null;
+  }
+  
+  // Hide ritual and resume game immediately (no delay)
+  $('ritual').classList.remove('show');
+  state = 'playing';
+  // Reset timing to prevent large dt jump
+  last = performance.now();
 }
 
 // =========================================================================
@@ -2039,6 +2054,9 @@ function gameWin() {
 }
 
 $('play-again-btn').addEventListener('click', () => {
+  // Hide game over modal immediately
+  $('gameover').classList.remove('show');
+  
   // Reset game over modal to default (loss) state
   $('gameover__namo').textContent = '🙏 Har Har Mahadev 🙏';
   $('gameover__sub').textContent = 'Your Run Has Ended';
@@ -2046,12 +2064,11 @@ $('play-again-btn').addEventListener('click', () => {
   $('gameover__pitch').innerHTML = 'Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em>';
   $('gameover__scarcity').textContent = '★ Limited direct booking offers available today';
   $('play-again-btn').textContent = '↻ Play Again';
-  $('gameover').classList.remove('show');
+  
   $('multiplier').classList.remove('active');
   $('best-score').textContent = bestScore.toLocaleString('en-IN');
-  // Reset hits display
-  $('hits').textContent = '0/3';
-  // Start fresh game
+  
+  // Start fresh game - this will reset everything including state
   startGame();
 });
 
