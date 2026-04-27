@@ -1015,13 +1015,20 @@ function startGame() {
   player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
   objects.length = 0; particles.length = 0;
   lastSpawnZ = 1; nextRitualScore = 600;
+  // Cleanup any in-flight ritual
+  ritualRunning = false; ritualSolved = false;
+  if (ritualLoopId) { cancelAnimationFrame(ritualLoopId); ritualLoopId = null; }
+  $('ritual').classList.remove('show');
+  // Reset score display
+  $('score').textContent = '0';
+  $('multiplier').classList.remove('active');
   state = 'playing';
   // Reset timing
   last = performance.now();
-  // Start the loop if not already running
-  if (!gameLoopId) {
-    gameLoopId = requestAnimationFrame(loop);
-  }
+  touchStart = null;
+  // Always cancel any stale frame and start fresh
+  if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
+  gameLoopId = requestAnimationFrame(loop);
 }
 
 function loop(now) {
@@ -1506,20 +1513,40 @@ function drawObstacle(o) {
 
 function drawPlayer() {
   const p = project(0, player.laneX, player.jumpY);
-  const size = 30;
-  const runPhase = runFrame * 0.15;
+  const size = 36;
+  const runPhase = runFrame * 0.22;
+
+  // Color palette — muscular pandit, fair complexion
+  const SKIN = '#F5C99F';      // fair skin
+  const SKIN_SHADOW = '#D49A6A'; // muscle shadow
+  const SKIN_HIGHLIGHT = '#FCDDB8';
+  const DHOTI = '#FAF6EE';     // cream dhoti
+  const DHOTI_SHADOW = '#D8CFB6';
+  const DHOTI_BORDER = '#C9A24F'; // gold dhoti border
+  const HAIR = '#1A0E08';
+  const TILAK_RED = '#B5121B';
+  const TILAK_YELLOW = '#E8B23A';
+  const JANEU = '#FFFFFF';
+  const RUDRAKSHA = '#5C2A0E';
+
   ctx.save();
   ctx.translate(p.x, p.y - size);
+
+  // Shadow on ground
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, player.jumpY * 0.3 + 6, size * 0.55, size * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
 
   // Shield aura
   if (player.shieldTimer > 0) {
     ctx.save();
     ctx.fillStyle = 'rgba(168, 181, 232, ' + (0.3 + Math.sin(runFrame * 0.3) * 0.1) + ')';
     ctx.beginPath();
-    ctx.arc(0, 0, size * 1.4, 0, Math.PI * 2);
+    ctx.arc(0, -size * 0.5, size * 1.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = 'rgba(168, 181, 232, 0.6)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, size * 1.4, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -size * 0.5, size * 1.5, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
 
@@ -1527,204 +1554,303 @@ function drawPlayer() {
   if (player.magnetTimer > 0) {
     ctx.fillStyle = 'rgba(232, 205, 142, 0.2)';
     ctx.beginPath();
-    ctx.arc(0, 0, size * 1.8 + Math.sin(runFrame * 0.4) * 4, 0, Math.PI * 2);
+    ctx.arc(0, -size * 0.5, size * 1.9 + Math.sin(runFrame * 0.4) * 4, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Body silhouette (saffron-clad pilgrim)
+  // Animation phases
+  const legBob = Math.sin(runPhase) * 5;
+  const armSwing = Math.sin(runPhase) * 0.5;
+  const bodyBob = Math.abs(Math.sin(runPhase * 2)) * 1.5;
+
   if (player.sliding) {
-    // Sliding pose — shorter and wider
-    ctx.fillStyle = '#1F2A44';
+    // ===== SLIDING POSE — pandit crouched low =====
+    // Dhoti (cream) — flat
+    ctx.fillStyle = DHOTI;
     ctx.beginPath();
-    ctx.ellipse(0, 0, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -2, size * 0.7, size * 0.32, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#C0531A'; // saffron robe
+    ctx.fillStyle = DHOTI_BORDER;
+    ctx.fillRect(-size * 0.7, -size * 0.05, size * 1.4, 2);
+    // Bare torso (skin)
+    ctx.fillStyle = SKIN;
     ctx.beginPath();
-    ctx.ellipse(0, -2, size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
+    ctx.ellipse(-size * 0.05, -size * 0.22, size * 0.5, size * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
+    // Head
+    ctx.fillStyle = SKIN;
+    ctx.beginPath();
+    ctx.arc(-size * 0.45, -size * 0.32, size * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    // Tilak
+    ctx.fillStyle = TILAK_RED;
+    ctx.fillRect(-size * 0.46, -size * 0.42, 2, 5);
   } else {
-    // Standing/ Running pose - improved character
-    
-    // Running animation
-    const legBob = Math.sin(runPhase) * 4;
-    const armSwing = Math.sin(runPhase) * 6;
-    const bodyBob = Math.abs(Math.sin(runPhase)) * 2;
-    
-    // Shadow on ground
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    // ===== RUNNING POSE — muscular pandit, fair complexion =====
+
+    ctx.translate(0, -bodyBob);
+
+    // ----- LEGS (under dhoti) -----
+    const backLegLift = Math.max(0, legBob);
+    const frontLegLift = Math.max(0, -legBob);
+
+    // Back leg (skin showing under dhoti)
+    ctx.fillStyle = SKIN_SHADOW;
     ctx.beginPath();
-    ctx.ellipse(0, size * 0.15, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Legs (darker shade)
-    ctx.fillStyle = '#2A1A10';
-    // Back leg
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.15 + legBob * 0.3, size * 0.05, size * 0.12, size * 0.25, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(-size * 0.13, size * 0.08 - backLegLift * 0.3, size * 0.09, size * 0.25, 0.1, 0, Math.PI * 2);
     ctx.fill();
     // Front leg
+    ctx.fillStyle = SKIN;
     ctx.beginPath();
-    ctx.ellipse(size * 0.1 - legBob * 0.3, size * 0.05, size * 0.12, size * 0.25, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(size * 0.13, size * 0.08 - frontLegLift * 0.3, size * 0.09, size * 0.25, -0.1, 0, Math.PI * 2);
     ctx.fill();
-    
-    // Feet (bare)
-    ctx.fillStyle = '#4A3020';
+
+    // Feet (bare, traditional)
+    ctx.fillStyle = SKIN_SHADOW;
     ctx.beginPath();
-    ctx.ellipse(-size * 0.15 + legBob * 0.5, size * 0.25, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+    ctx.ellipse(-size * 0.13, size * 0.32 - backLegLift * 0.5, size * 0.1, size * 0.06, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = SKIN;
     ctx.beginPath();
-    ctx.ellipse(size * 0.1 - legBob * 0.5, size * 0.25, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+    ctx.ellipse(size * 0.13, size * 0.32 - frontLegLift * 0.5, size * 0.1, size * 0.06, 0, 0, Math.PI * 2);
     ctx.fill();
-    
-    // Ankle bells (ghunghroo)
-    const bellRing1 = Math.sin(runPhase * 2) * 0.3;
-    const bellRing2 = Math.sin(runPhase * 2 + 1) * 0.3;
-    ctx.fillStyle = '#D4AF37';
-    ctx.strokeStyle = '#8B6914';
-    ctx.lineWidth = 1;
-    // Left ankle bell
+
+    // ----- DHOTI (cream wrap from waist) -----
+    // Main wrap
+    const dhotiGrad = ctx.createLinearGradient(0, -size * 0.4, 0, size * 0.1);
+    dhotiGrad.addColorStop(0, DHOTI_SHADOW);
+    dhotiGrad.addColorStop(0.4, DHOTI);
+    dhotiGrad.addColorStop(1, DHOTI);
+    ctx.fillStyle = dhotiGrad;
     ctx.beginPath();
-    ctx.arc(-size * 0.15 + legBob * 0.5, size * 0.22, 3 + bellRing1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    // Right ankle bell
-    ctx.beginPath();
-    ctx.arc(size * 0.1 - legBob * 0.5, size * 0.22, 3 + bellRing2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    
-    // Main robe (dhoti) - saffron color
-    const robeGrad = ctx.createLinearGradient(-size * 0.5, 0, size * 0.5, 0);
-    robeGrad.addColorStop(0, '#A04018');
-    robeGrad.addColorStop(0.3, '#C0531A');
-    robeGrad.addColorStop(0.5, '#D4652A');
-    robeGrad.addColorStop(0.7, '#C0531A');
-    robeGrad.addColorStop(1, '#A04018');
-    ctx.fillStyle = robeGrad;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.45, 0);
-    ctx.quadraticCurveTo(-size * 0.5, -size * 0.3, -size * 0.35, -size * 0.5);
-    ctx.lineTo(-size * 0.2, -size * 0.75);
-    ctx.lineTo(size * 0.2, -size * 0.75);
-    ctx.lineTo(size * 0.35, -size * 0.5);
-    ctx.quadraticCurveTo(size * 0.5, -size * 0.3, size * 0.45, 0);
+    ctx.moveTo(-size * 0.42, -size * 0.4);
+    ctx.quadraticCurveTo(-size * 0.48, -size * 0.1, -size * 0.4, size * 0.05);
+    ctx.lineTo(size * 0.4, size * 0.05);
+    ctx.quadraticCurveTo(size * 0.48, -size * 0.1, size * 0.42, -size * 0.4);
     ctx.closePath();
     ctx.fill();
-    
-    // Robe fold lines
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    // Dhoti gold border (kinari)
+    ctx.fillStyle = DHOTI_BORDER;
+    ctx.fillRect(-size * 0.4, size * 0.03, size * 0.8, 2);
+    // Dhoti center fold
+    ctx.strokeStyle = DHOTI_SHADOW;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(-size * 0.15, -size * 0.5);
-    ctx.quadraticCurveTo(0, -size * 0.2, size * 0.15, -size * 0.5);
+    ctx.moveTo(0, -size * 0.4);
+    ctx.lineTo(0, size * 0.05);
     ctx.stroke();
-    
-    // Sacred thread (janeu) - horizontal line
-    ctx.fillStyle = '#D4AF37';
-    ctx.fillRect(-size * 0.35, -size * 0.55, size * 0.7, 2);
-    
-    // Upper body (angavastram)
-    const upperGrad = ctx.createLinearGradient(-size * 0.4, -size * 0.5, size * 0.4, -size * 0.5);
-    upperGrad.addColorStop(0, '#8B3010');
-    upperGrad.addColorStop(0.5, '#B84520');
-    upperGrad.addColorStop(1, '#8B3010');
-    ctx.fillStyle = upperGrad;
+    // Side folds
     ctx.beginPath();
-    ctx.moveTo(-size * 0.4, -size * 0.5);
-    ctx.lineTo(-size * 0.45, -size * 0.7);
-    ctx.lineTo(size * 0.45, -size * 0.7);
-    ctx.lineTo(size * 0.4, -size * 0.5);
+    ctx.moveTo(-size * 0.2, -size * 0.4);
+    ctx.lineTo(-size * 0.22, size * 0.05);
+    ctx.moveTo(size * 0.2, -size * 0.4);
+    ctx.lineTo(size * 0.22, size * 0.05);
+    ctx.stroke();
+
+    // ----- TORSO (bare, muscular) -----
+    // Lower abs section (narrower)
+    const torsoGrad = ctx.createLinearGradient(-size * 0.3, -size * 0.95, size * 0.3, -size * 0.95);
+    torsoGrad.addColorStop(0, SKIN_SHADOW);
+    torsoGrad.addColorStop(0.3, SKIN);
+    torsoGrad.addColorStop(0.5, SKIN_HIGHLIGHT);
+    torsoGrad.addColorStop(0.7, SKIN);
+    torsoGrad.addColorStop(1, SKIN_SHADOW);
+    ctx.fillStyle = torsoGrad;
+
+    // Abs section (V-shaped to chest)
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.3, -size * 0.4);
+    ctx.lineTo(-size * 0.36, -size * 0.75);
+    ctx.lineTo(size * 0.36, -size * 0.75);
+    ctx.lineTo(size * 0.3, -size * 0.4);
     ctx.closePath();
     ctx.fill();
-    
-    // Arms (running motion)
-    ctx.fillStyle = '#C0531A';
-    // Left arm
-    ctx.save();
-    ctx.translate(-size * 0.35, -size * 0.55);
-    ctx.rotate((-armSwing) * Math.PI / 180);
-    ctx.fillRect(-4, 0, 8, size * 0.25);
-    // Hand
-    ctx.fillStyle = '#4A3020';
+
+    // Chest (broader)
     ctx.beginPath();
-    ctx.arc(0, size * 0.25, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    
-    // Right arm
-    ctx.fillStyle = '#C0531A';
-    ctx.save();
-    ctx.translate(size * 0.35, -size * 0.55);
-    ctx.rotate((armSwing) * Math.PI / 180);
-    ctx.fillRect(-4, 0, 8, size * 0.25);
-    // Hand
-    ctx.fillStyle = '#4A3020';
-    ctx.beginPath();
-    ctx.arc(0, size * 0.25, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    
-    // Neck
-    ctx.fillStyle = '#5C3A1A';
-    ctx.beginPath();
-    ctx.rect(-size * 0.08, -size * 0.82, size * 0.16, size * 0.1);
-    ctx.fill();
-    
-    // Head
-    ctx.fillStyle = '#3A2010';
-    ctx.beginPath();
-    ctx.arc(0, -size * 0.95, size * 0.22, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Hair (top knot - shikha)
-    ctx.fillStyle = '#1A0A00';
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 1.1, 4, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Tilak (sacred mark)
-    ctx.fillStyle = '#C0531A';
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.88);
-    ctx.lineTo(-3, -size * 0.92);
-    ctx.lineTo(0, -size * 0.85);
-    ctx.lineTo(3, -size * 0.92);
+    ctx.moveTo(-size * 0.36, -size * 0.75);
+    ctx.lineTo(-size * 0.46, -size * 1.0);
+    ctx.lineTo(size * 0.46, -size * 1.0);
+    ctx.lineTo(size * 0.36, -size * 0.75);
     ctx.closePath();
     ctx.fill();
-    
-    // Third eye (optional subtle mark)
-    ctx.fillStyle = 'rgba(139, 0, 0, 0.6)';
+
+    // Pec definition lines
+    ctx.strokeStyle = SKIN_SHADOW;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.ellipse(0, -size * 0.98, 1.5, 1, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Face features
-    ctx.fillStyle = '#2A1510';
-    // Eyes
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.08, -size * 0.96, 2, 1.5, 0, 0, Math.PI * 2);
-    ctx.ellipse(size * 0.08, -size * 0.96, 2, 1.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Trishul (trident) outline on back
-    ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.5, -size * 0.6);
-    ctx.lineTo(-size * 0.55, -size * 0.9);
-    ctx.moveTo(size * 0.5, -size * 0.6);
-    ctx.lineTo(size * 0.55, -size * 0.9);
-    ctx.moveTo(0, -size * 0.55);
-    ctx.lineTo(0, -size * 0.95);
+    ctx.moveTo(0, -size * 0.95);
+    ctx.lineTo(0, -size * 0.78);
     ctx.stroke();
+    // Pec curves
+    ctx.beginPath();
+    ctx.arc(-size * 0.18, -size * 0.88, size * 0.18, -0.2, 1.0, false);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(size * 0.18, -size * 0.88, size * 0.18, Math.PI - 1.0, Math.PI + 0.2, false);
+    ctx.stroke();
+    // Abs (4-pack hint)
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.13, -size * 0.7);
+    ctx.lineTo(size * 0.13, -size * 0.7);
+    ctx.moveTo(-size * 0.12, -size * 0.6);
+    ctx.lineTo(size * 0.12, -size * 0.6);
+    ctx.moveTo(-size * 0.1, -size * 0.5);
+    ctx.lineTo(size * 0.1, -size * 0.5);
+    ctx.stroke();
+
+    // ----- JANEU (sacred thread, diagonal) -----
+    ctx.strokeStyle = JANEU;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.34, -size * 0.95);
+    ctx.quadraticCurveTo(0, -size * 0.7, size * 0.28, -size * 0.45);
+    ctx.stroke();
+
+    // Rudraksha mala (necklace)
+    ctx.fillStyle = RUDRAKSHA;
+    for (let i = -3; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.arc(i * size * 0.07, -size * 1.0 - Math.abs(i) * size * 0.01, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ----- ARMS (muscular, swinging) -----
+    // Back arm
+    ctx.save();
+    ctx.translate(-size * 0.42, -size * 0.92);
+    ctx.rotate(-armSwing);
+    // Bicep
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.18, size * 0.1, size * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Forearm
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.5, size * 0.08, size * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Hand
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.beginPath();
+    ctx.arc(0, size * 0.65, size * 0.07, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Front arm (more visible)
+    ctx.save();
+    ctx.translate(size * 0.42, -size * 0.92);
+    ctx.rotate(armSwing);
+    // Bicep (highlighted)
+    ctx.fillStyle = SKIN;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.18, size * 0.11, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Bicep highlight
+    ctx.fillStyle = SKIN_HIGHLIGHT;
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.02, size * 0.13, size * 0.05, size * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Forearm
+    ctx.fillStyle = SKIN;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.5, size * 0.09, size * 0.17, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Hand
+    ctx.fillStyle = SKIN;
+    ctx.beginPath();
+    ctx.arc(0, size * 0.66, size * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // ----- NECK -----
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.fillRect(-size * 0.06, -size * 1.05, size * 0.12, size * 0.06);
+    ctx.fillStyle = SKIN;
+    ctx.fillRect(-size * 0.06, -size * 1.08, size * 0.12, size * 0.06);
+
+    // ----- HEAD -----
+    // Head shape (slightly oval)
+    ctx.fillStyle = SKIN;
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 1.22, size * 0.18, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Face highlight (left side)
+    ctx.fillStyle = SKIN_HIGHLIGHT;
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.04, -size * 1.22, size * 0.07, size * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Cheek shadow (right side)
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.beginPath();
+    ctx.ellipse(size * 0.12, -size * 1.18, size * 0.05, size * 0.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Jaw / chin definition
+    ctx.fillStyle = SKIN_SHADOW;
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 1.07, size * 0.1, size * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair / shaven head with shikha (top knot)
+    ctx.fillStyle = HAIR;
+    // Slight hair line on sides + back
+    ctx.beginPath();
+    ctx.arc(0, -size * 1.32, size * 0.15, Math.PI * 1.1, Math.PI * 1.9, false);
+    ctx.lineWidth = size * 0.05;
+    ctx.strokeStyle = HAIR;
+    ctx.stroke();
+    // Shikha (top knot)
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 1.45, size * 0.04, size * 0.07, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tilak (Shaivite — three horizontal lines + red dot)
+    ctx.strokeStyle = TILAK_YELLOW;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.07, -size * 1.34);
+    ctx.lineTo(size * 0.07, -size * 1.34);
+    ctx.moveTo(-size * 0.07, -size * 1.31);
+    ctx.lineTo(size * 0.07, -size * 1.31);
+    ctx.moveTo(-size * 0.07, -size * 1.28);
+    ctx.lineTo(size * 0.07, -size * 1.28);
+    ctx.stroke();
+    // Red dot tilak
+    ctx.fillStyle = TILAK_RED;
+    ctx.beginPath();
+    ctx.arc(0, -size * 1.31, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes (subtle)
+    ctx.fillStyle = '#1A1208';
+    ctx.beginPath();
+    ctx.ellipse(-size * 0.06, -size * 1.22, 1.5, 1.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(size * 0.06, -size * 1.22, 1.5, 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle moustache
+    ctx.strokeStyle = HAIR;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.05, -size * 1.13);
+    ctx.lineTo(size * 0.05, -size * 1.13);
+    ctx.stroke();
+
+    // ----- KAMANDAL / TRISHUL HINT (golden glow on back) -----
+    ctx.fillStyle = 'rgba(232, 205, 142, 0.35)';
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.85, size * 0.55, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // Glow on jump
   if (player.jumping) {
     ctx.save();
-    ctx.fillStyle = 'rgba(232, 205, 142, 0.25)';
+    ctx.fillStyle = 'rgba(232, 205, 142, 0.3)';
     ctx.beginPath();
-    ctx.ellipse(0, 4, size * 0.8, size * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 4, size * 0.7, size * 0.15, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -1928,6 +2054,28 @@ $('play-again-btn').addEventListener('click', () => {
   // Start fresh game
   startGame();
 });
+
+// Click handlers for ritual (desktop + as fallback for mobile)
+$('ritual-bell').addEventListener('click', (e) => {
+  e.stopPropagation();
+  ensureAudio();
+  ritualTap();
+});
+$('ritual').addEventListener('click', (e) => {
+  // Tap anywhere on the ritual modal also resolves it
+  ensureAudio();
+  ritualTap();
+});
+// Auto-resolve ritual if user doesn't tap within 6 seconds (so game never freezes)
+let ritualTimeout = null;
+const _origStartRitual = startRitual;
+startRitual = function() {
+  _origStartRitual();
+  if (ritualTimeout) clearTimeout(ritualTimeout);
+  ritualTimeout = setTimeout(() => {
+    if (state === 'ritual' && !ritualSolved) ritualTap();
+  }, 6000);
+};
 
 // Initial display of best
 $('best-score').textContent = bestScore.toLocaleString('en-IN');

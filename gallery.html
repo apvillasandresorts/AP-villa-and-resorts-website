@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Temples of Ujjain — Gallery — AP Villas, Mahakal Collection</title>
-<meta name="description" content="A photo journey through the sacred temples of Ujjain — Mahakaleshwar Jyotirlinga, Mahakal Lok, Kaal Bhairav, Bade Ganesh, Mangalnath, Sandipani Ashram, Ram Ghat, Harsiddhi Mata and Omkareshwar. Plan your darshan with AP Villas, Mahakal Collection.">
-<meta name="keywords" content="mahakaleshwar temple photos, ujjain temples, mahakal lok corridor, omkareshwar jyotirlinga, kaal bhairav, bade ganesh ujjain, mangalnath, sandipani ashram, ram ghat, harsiddhi mata, ujjain temple gallery, ap villas">
+<title>Temples of Ujjain — Gallery & Pilgrim Guide — AP Villas, Mahakal Collection</title>
+<meta name="description" content="A curated guide to the sacred temples of Ujjain — Mahakaleshwar Jyotirlinga, Mahakal Lok, Kaal Bhairav, Bade Ganesh, Mangalnath, Sandipani Ashram, Ram Ghat, Harsiddhi Mata, Omkareshwar. History, significance, darshan timings, and how AP Villas helps your family.">
+<meta name="keywords" content="mahakaleshwar temple history, ujjain temples list, mahakal lok corridor, omkareshwar jyotirlinga, kaal bhairav temple ujjain, bade ganesh ujjain, mangalnath sunset, sandipani ashram krishna, ram ghat shipra aarti, harsiddhi mata shakti peeth, ujjain pilgrim guide">
 <meta name="author" content="AP Villas, Mahakal Collection">
 <meta name="robots" content="index, follow">
-<meta property="og:title" content="Temples of Ujjain — Gallery — AP Villas">
-<meta property="og:description" content="A photo journey through Ujjain's sacred temples.">
+<meta property="og:title" content="Temples of Ujjain — Gallery & Pilgrim Guide — AP Villas">
+<meta property="og:description" content="History, significance, and visiting tips for every sacred temple in Ujjain.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://apvillas.in/gallery.html">
 <meta property="og:image" content="villas/om_shanti/693419485.jpg">
@@ -22,6 +22,201 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<style>
+/* Custom temple gallery styles */
+.cat-card {
+  position: relative; aspect-ratio: 4/5;
+  border-radius: var(--r-lg); overflow: hidden;
+  cursor: pointer; transition: all 0.7s var(--ease);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+.cat-card__art {
+  position: absolute; inset: 0;
+  background: var(--art-bg);
+  transition: transform 1.2s var(--ease);
+}
+.cat-card__art::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(31,42,68,0.05) 0%, rgba(31,42,68,0.6) 65%, rgba(31,42,68,0.92) 100%);
+}
+.cat-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-xl); }
+.cat-card:hover .cat-card__art { transform: scale(1.07); }
+.cat-card__icon {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 40%;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+.cat-card__icon svg {
+  width: 50%; max-width: 180px; height: auto;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.4));
+  opacity: 0.96;
+}
+.cat-card__inner {
+  position: absolute; inset: auto 0 0 0; padding: 32px 28px;
+  color: white; z-index: 2;
+}
+.cat-card__inner h3 {
+  color: white; font-size: 28px; margin-bottom: 6px; line-height: 1.15;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.5);
+}
+.cat-card__inner span {
+  font-size: 12.5px; letter-spacing: 1.5px; opacity: 0.9;
+  font-weight: 400;
+}
+.cat-card__cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px;
+  padding: 7px 14px; border-radius: 999px;
+  background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  font-weight: 600; color: white;
+}
+.cat-card__distance {
+  position: absolute; top: 22px; right: 22px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(12px);
+  padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.28); color: white;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+/* Temple modal — rich content */
+.temple-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(19, 26, 44, 0.96); backdrop-filter: blur(12px);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px; animation: fadeIn 0.4s ease;
+}
+.temple-modal.open { display: flex; }
+.temple-modal__inner {
+  background: var(--paper); border-radius: var(--r-lg);
+  max-width: 1080px; width: 100%; max-height: 92vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+  animation: modalIn 0.5s var(--ease);
+  box-shadow: var(--shadow-xl);
+}
+.temple-modal__hero {
+  position: relative;
+  aspect-ratio: 21/9; overflow: hidden;
+  background: var(--art-bg, linear-gradient(135deg, var(--saffron), var(--gold)));
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.temple-modal__hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(31,42,68,0.85) 100%);
+}
+.temple-modal__hero-icon {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -65%);
+  width: 140px; height: 140px;
+  z-index: 1;
+}
+.temple-modal__hero-icon svg {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+}
+.temple-modal__hero-title {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 32px 40px; z-index: 2; color: white;
+}
+.temple-modal__hero-title h2 {
+  color: white; font-size: clamp(32px, 4vw, 48px);
+  margin-bottom: 6px; text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+.temple-modal__hero-title p {
+  font-size: 15px; opacity: 0.92; max-width: 720px;
+}
+.temple-modal__close {
+  position: absolute; top: 20px; right: 20px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(12px);
+  color: white; font-size: 24px; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5; transition: all 0.3s ease;
+}
+.temple-modal__close:hover { background: rgba(255,255,255,0.3); transform: rotate(90deg); }
+
+.temple-modal__body { padding: 40px; }
+.temple-modal__sections { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-bottom: 36px; }
+.temple-section {
+  padding: 28px;
+  background: var(--paper-warm);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+}
+.temple-section h3 {
+  font-size: 18px;
+  color: var(--saffron);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+.temple-section p { font-size: 15px; line-height: 1.75; color: var(--ink); margin-bottom: 12px; }
+.temple-section p:last-child { margin-bottom: 0; }
+.temple-section--highlight {
+  background: linear-gradient(135deg, var(--saffron), #A04416);
+  color: white; border: none;
+}
+.temple-section--highlight h3 { color: var(--gold-soft); }
+.temple-section--highlight p { color: rgba(255,255,255,0.92); }
+
+.temple-modal__cta {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding: 24px; background: var(--paper-warm);
+  border-radius: var(--r-md);
+  margin-bottom: 36px;
+  align-items: center;
+  justify-content: space-between;
+}
+.temple-modal__cta-text { flex: 1; min-width: 240px; }
+.temple-modal__cta-text strong {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.temple-modal__cta-text span { font-size: 14px; color: var(--muted); }
+.temple-modal__cta-btns { display: flex; gap: 10px; }
+
+.temple-modal__photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.temple-modal__photos img {
+  width: 100%; aspect-ratio: 4/3; object-fit: cover;
+  border-radius: var(--r-sm);
+  cursor: pointer; transition: transform 0.5s var(--ease);
+}
+.temple-modal__photos img:hover { transform: scale(1.04); }
+.temple-modal__photos-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 24px;
+  background: var(--paper-warm);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+}
+.temple-modal__photos-heading {
+  font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--saffron); font-weight: 600;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 800px) {
+  .temple-modal__sections { grid-template-columns: 1fr; gap: 20px; }
+  .temple-modal__body { padding: 24px; }
+  .temple-modal__hero-title { padding: 24px; }
+  .temple-modal__photos { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
 </head>
 <body>
 <div class="frame"></div>
@@ -48,7 +243,7 @@
   <div class="container">
     <span class="eyebrow">Sacred Spaces</span>
     <h1>The temples of <em style="font-style:italic;color:var(--saffron);">Ujjain.</em></h1>
-    <p style="font-size: 18px; color: var(--muted); max-width: 720px; margin: 24px auto 0;">A photographic introduction to the temples our guests visit, in the order most pilgrims walk them. Click any temple card to view the full gallery.</p>
+    <p style="font-size: 18px; color: var(--muted); max-width: 720px; margin: 24px auto 0;">A pilgrim's guide to the temples our guests visit — history, significance, darshan timings, and how we help your family experience each one with reverence.</p>
   </div>
 </section>
 
@@ -63,7 +258,7 @@
     <div class="section-head reveal">
       <span class="eyebrow">Stay With Us</span>
       <h2>Plan your <em>darshan stay.</em></h2>
-      <p>We host pilgrim families two kilometres from Mahakaleshwar Jyotirlinga. WhatsApp us anytime — usually replied within 5 minutes.</p>
+      <p>We host pilgrim families two kilometres from Mahakaleshwar Jyotirlinga. WhatsApp us for an itinerary — usually replied within 5 minutes.</p>
     </div>
     <div style="text-align:center;" class="reveal">
       <a class="btn btn--primary" href="villas.html">Explore Our Villas →</a>
@@ -104,311 +299,373 @@
   </div>
 </div>
 
-<!-- Gallery lightbox modal -->
-<div class="gallery-modal" id="gallery-modal">
-  <div class="gallery-modal__inner">
-    <div class="gallery-modal__head">
-      <h3 id="gallery-modal-title">Gallery</h3>
-      <button class="gallery-modal__close" id="gallery-modal-close">×</button>
+<!-- Temple detail modal -->
+<div class="temple-modal" id="temple-modal">
+  <div class="temple-modal__inner">
+    <div class="temple-modal__hero" id="temple-hero">
+      <div class="temple-modal__hero-icon" id="temple-hero-icon"></div>
+      <button class="temple-modal__close" id="temple-modal-close">×</button>
+      <div class="temple-modal__hero-title">
+        <h2 id="temple-name">—</h2>
+        <p id="temple-tagline">—</p>
+      </div>
     </div>
-    <div class="gallery-modal__grid" id="gallery-modal-grid"></div>
+    <div class="temple-modal__body">
+      <div class="temple-modal__sections">
+        <div class="temple-section">
+          <h3>Historical Significance</h3>
+          <div id="temple-history"></div>
+        </div>
+        <div class="temple-section">
+          <h3>What You'll Experience</h3>
+          <div id="temple-experience"></div>
+        </div>
+      </div>
+      <div class="temple-section temple-section--highlight" style="margin-bottom: 36px;">
+        <h3>How AP Villas Helps Your Darshan</h3>
+        <div id="temple-howwehelp"></div>
+      </div>
+      <div class="temple-modal__cta">
+        <div class="temple-modal__cta-text">
+          <strong>Plan this temple visit with us</strong>
+          <span>WhatsApp Apoorv for shuttle, timings, and personalised guidance.</span>
+        </div>
+        <div class="temple-modal__cta-btns">
+          <a class="btn btn--primary" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20visit%20" target="_blank" rel="noopener" id="temple-whatsapp">WhatsApp Us</a>
+          <a class="btn btn--ghost" href="villas.html">View Villas</a>
+        </div>
+      </div>
+      <div id="temple-photos-section">
+        <div class="temple-modal__photos-heading" id="temple-photos-heading">Photographs from the temple</div>
+        <div class="temple-modal__photos" id="temple-photos"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<script>
-window.GALLERIES_DATA = {};
-</script>
 <script src="assets/js/main.js"></script>
-
 <script>
 // =========================================================================
-// GALLERY DATA — 9 sacred temples + spaces, with curated photo URLs
+// TEMPLE DATA — Each with art icon, history, experience, how-we-help
 // =========================================================================
-const wp = (filename, w = 1400) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=${w}`;
-const us = (id, w = 1400) =>
-  `https://images.unsplash.com/photo-${id}?ixlib=rb-4.0.3&auto=format&fit=crop&q=85&w=${w}`;
 
+// SVG icons drawn for each temple — premium silhouettes
+const ICONS = {
+  shivling: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <ellipse cx="100" cy="170" rx="70" ry="14" fill="url(#g1)"/>
+    <ellipse cx="100" cy="160" rx="60" ry="10" fill="#8C6512"/>
+    <path d="M 50 160 Q 50 100 100 70 Q 150 100 150 160 Z" fill="url(#g1)"/>
+    <ellipse cx="100" cy="80" rx="22" ry="14" fill="#8C6512"/>
+    <ellipse cx="100" cy="74" rx="22" ry="14" fill="url(#g1)"/>
+    <path d="M 78 90 Q 100 85 122 90" stroke="#8C6512" stroke-width="2" fill="none"/>
+    <text x="100" y="135" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="40" fill="#8C6512" font-weight="600">ॐ</text>
+  </svg>`,
+  corridor: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <rect x="20" y="160" width="160" height="20" fill="url(#g2)"/>
+    <rect x="35" y="60" width="20" height="100" fill="url(#g2)"/>
+    <rect x="65" y="60" width="20" height="100" fill="url(#g2)"/>
+    <rect x="115" y="60" width="20" height="100" fill="url(#g2)"/>
+    <rect x="145" y="60" width="20" height="100" fill="url(#g2)"/>
+    <rect x="20" y="50" width="160" height="14" fill="#8C6512"/>
+    <path d="M 100 30 L 110 50 L 90 50 Z" fill="#8C6512"/>
+    <circle cx="100" cy="20" r="6" fill="url(#g2)"/>
+  </svg>`,
+  om: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <text x="100" y="155" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="170" fill="url(#g3)" font-weight="600">ॐ</text>
+  </svg>`,
+  bhairav: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <path d="M 100 30 L 130 70 L 160 80 L 130 110 L 140 160 L 100 140 L 60 160 L 70 110 L 40 80 L 70 70 Z" fill="url(#g4)" opacity="0.9"/>
+    <circle cx="100" cy="100" r="35" fill="#8C6512"/>
+    <circle cx="100" cy="100" r="25" fill="url(#g4)"/>
+    <text x="100" y="112" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="32" fill="#8C6512" font-weight="600">त्रि</text>
+  </svg>`,
+  ganesh: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <ellipse cx="100" cy="120" rx="55" ry="50" fill="url(#g5)"/>
+    <ellipse cx="100" cy="155" rx="40" ry="20" fill="#8C6512"/>
+    <ellipse cx="60" cy="100" rx="20" ry="30" fill="url(#g5)"/>
+    <ellipse cx="140" cy="100" rx="20" ry="30" fill="url(#g5)"/>
+    <path d="M 100 145 Q 95 175 80 175 Q 75 165 90 155" fill="url(#g5)"/>
+    <text x="100" y="125" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="38" fill="#8C6512" font-weight="600">ग</text>
+    <ellipse cx="80" cy="115" rx="3" ry="4" fill="#8C6512"/>
+    <ellipse cx="120" cy="115" rx="3" ry="4" fill="#8C6512"/>
+  </svg>`,
+  river: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <path d="M 30 170 L 30 90 L 50 90 L 50 60 L 70 60 L 70 90 L 90 90 L 90 50 L 110 50 L 110 90 L 130 90 L 130 70 L 150 70 L 150 90 L 170 90 L 170 170 Z" fill="url(#g6)"/>
+    <path d="M 20 175 Q 50 165 100 175 Q 150 165 180 175" stroke="url(#g6)" stroke-width="3" fill="none" opacity="0.7"/>
+    <path d="M 20 185 Q 50 178 100 185 Q 150 178 180 185" stroke="url(#g6)" stroke-width="2" fill="none" opacity="0.5"/>
+    <ellipse cx="100" cy="40" rx="8" ry="4" fill="url(#g6)"/>
+    <path d="M 100 40 L 100 25 L 95 30 M 100 25 L 105 30" stroke="url(#g6)" stroke-width="2" fill="none"/>
+  </svg>`,
+  sun: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g7" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="40" fill="url(#g7)"/>
+    <g stroke="url(#g7)" stroke-width="3">
+      <line x1="100" y1="30" x2="100" y2="50"/>
+      <line x1="100" y1="150" x2="100" y2="170"/>
+      <line x1="30" y1="100" x2="50" y2="100"/>
+      <line x1="150" y1="100" x2="170" y2="100"/>
+      <line x1="50" y1="50" x2="65" y2="65"/>
+      <line x1="135" y1="135" x2="150" y2="150"/>
+      <line x1="50" y1="150" x2="65" y2="135"/>
+      <line x1="135" y1="65" x2="150" y2="50"/>
+    </g>
+    <path d="M 60 165 Q 100 155 140 165 L 130 180 L 70 180 Z" fill="#8C6512"/>
+  </svg>`,
+  ashram: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g8" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <path d="M 30 100 L 100 40 L 170 100 L 170 170 L 30 170 Z" fill="url(#g8)"/>
+    <rect x="85" y="115" width="30" height="55" fill="#8C6512"/>
+    <circle cx="100" cy="135" r="3" fill="url(#g8)"/>
+    <path d="M 50 100 L 50 75 L 150 75 L 150 100" stroke="#8C6512" stroke-width="3" fill="none"/>
+    <text x="100" y="105" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="22" fill="#8C6512" font-weight="600">ॐ</text>
+  </svg>`,
+  shakti: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g9" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#C9A24F"/></linearGradient></defs>
+    <path d="M 100 30 L 130 70 L 170 80 L 140 110 L 150 160 L 100 140 L 50 160 L 60 110 L 30 80 L 70 70 Z" fill="url(#g9)"/>
+    <circle cx="100" cy="105" r="22" fill="#8C6512"/>
+    <text x="100" y="115" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="22" fill="url(#g9)" font-weight="600">श</text>
+  </svg>`
+};
+
+// Premium gradient backgrounds for each card
 const TEMPLES = [
   {
     slug: "mahakaleshwar",
     name: "Mahakaleshwar Jyotirlinga",
-    sub: "The eternal one. The only south-facing of the twelve Jyotirlingas.",
-    images: [
-      wp("Mahakal Temple Ujjain.JPG"),
-      wp("Mahakaleshwar Jyotirlinga.jpg"),
-      wp("Mahakaleshwar Temple Ujjain.jpg"),
-      wp("Shri Mahakaleshwar Jyotirlinga Mandir.jpg"),
-      wp("Mahakaleshwar Mandir.jpg"),
-      wp("Mahakaal Mandir Ujjain.jpg"),
-      wp("Mahakaleshwar Temple Madhya Pradesh.jpg"),
-      wp("Ujjain Mahakaleshwar Mandir.jpg"),
-      wp("Mahakaleshwar Jyotirlinga Mandir.jpg"),
-      wp("Mahakal Mandir.jpg"),
-      us("1564507592333-c60657eea523"),
-      us("1599661046289-e31897846e41"),
-      us("1561361513-2d000a50f0dc"),
-      us("1605552055839-dc8f4aa9b0e1"),
-      us("1545569310-cb7bdf0c0c2a"),
-    ]
+    tagline: "The eternal one. The only south-facing of the twelve Jyotirlingas.",
+    distance: "2 km",
+    icon: 'shivling',
+    artBg: 'linear-gradient(135deg, #2A1810 0%, #4A2818 40%, #C0531A 100%)',
+    history: `<p>Mahakaleshwar is one of the twelve sacred <strong>Jyotirlingas</strong> of Lord Shiva and the only one that faces south — the direction of Yama, the lord of death. The temple's antiquity is mentioned in the Skanda Purana, the Mahabharata, and several ancient sources. The current structure was rebuilt by Marathas in the 18th century after earlier structures were damaged, but the lingam itself, devotees and historians agree, has rested in this same sanctum for time beyond memory.</p>
+              <p>The deity here is <strong>Swayambhu</strong> — self-manifested — drawing power from within, while in other temples the linga is established through rituals. The temple has five levels — three above ground and two below — with the Mahakal lingam in the lowest sanctum.</p>`,
+    experience: `<p>The most sacred ritual is the <strong>Bhasma Aarti at 4:00 AM</strong>, when the lingam is bathed with ash. It is considered the most powerful aarti in the temple's daily cycle. Booking the night before is essential.</p>
+                  <p>For families with elderly members, the <strong>5 PM Sandhya Aarti</strong> is gentler and equally sacred. Other daily aartis: Dadhi Pooja (7 AM), Bhog Aarti (10:30 AM), Shri Mahakaleshwar Aarti (7 PM), Shayan Aarti (10:30 PM).</p>`,
+    howwehelp: `<p>Our caretaker briefs your family the evening before — Bhasma Aarti booking process, dress code, and what to carry. Our complimentary shuttle drops you at the temple gate by <strong>3:30 AM</strong>, well before the aarti. We coordinate the cloakroom for phones and footwear, and our driver waits to bring you back when you're ready.</p>`,
+    photoQueries: ["Mahakaleshwar Jyotirlinga.jpg", "Mahakal Temple Ujjain.JPG", "Mahakaleshwar Temple Ujjain.jpg", "Mahakaleshwar Mandir.jpg", "Mahakaal Mandir Ujjain.jpg", "Shri Mahakaleshwar Jyotirlinga.jpg"]
   },
   {
     slug: "mahakal-lok",
     name: "Mahakal Lok Corridor",
-    sub: "900 metres of light, statues, and devotion. A modern wonder.",
-    images: [
-      wp("Shri Mahakal Lok.jpg"),
-      wp("Mahakal Lok Corridor.jpg"),
-      wp("Mahakal Lok Ujjain.jpg"),
-      wp("Shri Mahakal Mahalok.jpg"),
-      wp("Mahakal Lok night.jpg"),
-      wp("Mahakal Lok Pillars.jpg"),
-      wp("Mahakal Lok statues.jpg"),
-      wp("Mahakaal Mahalok.jpg"),
-      wp("Mahakal Lok inauguration.jpg"),
-      wp("Mahakal Lok corridor pillars.jpg"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1604608672516-46c3ff518fed"),
-      us("1582510003544-4d00b7f74220"),
-      us("1599661046289-e31897846e41"),
-      us("1605973029521-8154da591bd7"),
-    ]
+    tagline: "900 metres of light, statues, and devotion. A modern wonder.",
+    distance: "2.2 km",
+    icon: 'corridor',
+    artBg: 'linear-gradient(135deg, #1F2A44 0%, #2A3960 50%, #C9A24F 100%)',
+    history: `<p>Inaugurated by the Prime Minister of India in <strong>October 2022</strong>, the Mahakal Lok corridor is a 900-metre stunning passage that connects the public road to Mahakaleshwar's gates. The project was part of the broader Shri Mahakal Mahalok development, transforming the pilgrim experience around the ancient temple.</p>
+              <p>The corridor features <strong>108 ornamental columns</strong>, life-size statues depicting Lord Shiva's mythology drawn from the Shiva Purana, meditation alcoves, and beautifully landscaped gardens.</p>`,
+    experience: `<p>Best visited at <strong>sunset</strong> or after dark, when the lighting transforms the corridor into something otherworldly. Walking the full 900 metres unhurried takes 45-60 minutes — children love the murti depictions of Shiva legends.</p>
+                  <p>The corridor remains open until 10 PM, making it a beautiful <strong>evening experience</strong> the day before your morning Bhasma Aarti darshan.</p>`,
+    howwehelp: `<p>We recommend visiting Mahakal Lok the evening you arrive — it eases your family into Ujjain's atmosphere before the early-morning darshan. Our driver drops you at the entrance and picks you up at the time you choose. Photography is allowed throughout the corridor; we have a list of the best spots for family photos.</p>`,
+    photoQueries: ["Shri Mahakal Lok.jpg", "Mahakal Lok Corridor.jpg", "Mahakal Lok Ujjain.jpg", "Shri Mahakal Mahalok.jpg"]
   },
   {
     slug: "omkareshwar",
     name: "Omkareshwar Jyotirlinga",
-    sub: "The OM-shaped sacred island on the Narmada river.",
-    images: [
-      wp("Omkareshwar Temple.jpg"),
-      wp("Omkareshwar Jyotirlinga.jpg"),
-      wp("Shri Omkareshwar Jyotirlinga.jpg"),
-      wp("Omkareshwar.jpg"),
-      wp("Omkareshwar Mandhata island.jpg"),
-      wp("Omkareshwar Madhya Pradesh.jpg"),
-      wp("Omkareshwar Mandir.jpg"),
-      wp("Omkareshwar Narmada river.jpg"),
-      wp("Mandhata Island Omkareshwar.jpg"),
-      wp("Omkareshwar Aerial view.jpg"),
-      us("1602216056096-3b40cc0c9944"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1564507592333-c60657eea523"),
-      us("1599661046289-e31897846e41"),
-      us("1605973029521-8154da591bd7"),
-    ]
+    tagline: "The OM-shaped sacred island on the Narmada river.",
+    distance: "78 km · day trip",
+    icon: 'om',
+    artBg: 'linear-gradient(135deg, #1F4A68 0%, #2C7BA0 50%, #6FB8D6 100%)',
+    history: `<p>Omkareshwar is the <strong>second of Madhya Pradesh's two Jyotirlingas</strong> (the other being Mahakaleshwar). It sits on a small island in the sacred <strong>Narmada river</strong> in Khandwa district. The island, viewed from above, is shaped exactly like the Sanskrit syllable <strong>ॐ (OM)</strong> — a geographic coincidence that ancient pilgrims took as divine confirmation.</p>
+              <p>Two Jyotirlinga shrines reside here — Omkareshwar Mandir on the island itself and Mamleshwar (Amareshwar) Mandir on the south bank. Tradition holds that visiting both completes the pilgrimage.</p>`,
+    experience: `<p>The drive from Ujjain takes <strong>2 hours each way</strong>. Best to leave by 6:30 AM to arrive ahead of crowds. The complete parikrama (circumambulation) of the island is a 7 km walk; partial is also acceptable for elderly travellers.</p>
+                  <p>A <strong>bath in the Narmada</strong> is a once-in-a-lifetime spiritual moment — the river is considered older than the Ganga in Hindu tradition.</p>`,
+    howwehelp: `<p>We arrange a comfortable round-trip with a vetted driver for <strong>₹5,500</strong> — sedan or SUV based on family size, inclusive of waiting time at the temple. We pack a fresh breakfast for the drive, suggest a clean Narmada-side restaurant for lunch, and brief you on the parikrama options based on your family's mobility.</p>`,
+    photoQueries: ["Omkareshwar Temple.jpg", "Omkareshwar Jyotirlinga.jpg", "Shri Omkareshwar Jyotirlinga.jpg", "Omkareshwar Mandhata island.jpg"]
   },
   {
     slug: "kaal-bhairav",
     name: "Kaal Bhairav Temple",
-    sub: "The fierce protector of Ujjain. Liquor offered as prasad.",
-    images: [
-      wp("Kal Bhairav Temple Ujjain.jpg"),
-      wp("Kaal Bhairav Mandir.jpg"),
-      wp("Kal Bhairav Mandir Ujjain.jpg"),
-      wp("Kaal Bhairav Ujjain.jpg"),
-      wp("Bhairav Temple Ujjain.jpg"),
-      wp("Kal Bhairav.jpg"),
-      wp("Kal Bhairav Murti.jpg"),
-      wp("Kaal Bhairav Mandir Ujjain temple.jpg"),
-      us("1582510003544-4d00b7f74220"),
-      us("1605552055839-dc8f4aa9b0e1"),
-      us("1545569310-cb7bdf0c0c2a"),
-      us("1561361513-2d000a50f0dc"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1599661046289-e31897846e41"),
-      us("1604608672516-46c3ff518fed"),
-    ]
+    tagline: "The fierce protector of Ujjain.",
+    distance: "5 km",
+    icon: 'bhairav',
+    artBg: 'linear-gradient(135deg, #4A0E1A 0%, #8E1A2A 50%, #C0531A 100%)',
+    history: `<p>Lord <strong>Kaal Bhairav</strong> is the guardian deity of Ujjain — the city's spiritual protector. The temple is mentioned in the Skanda Purana and is considered one of the <strong>Ashta Bhairav</strong> (eight Bhairav) shrines associated with Lord Shiva's most fierce form. The current temple was built by Maratha king Bhadeshwar Singh in the 18th century, but the deity here has been worshipped for centuries before.</p>
+              <p>The temple is uniquely famous because the deity is offered <strong>liquor as prasad</strong> — a custom that draws devotees from across India, who watch as the offering is consumed.</p>`,
+    experience: `<p>Visit in the <strong>early morning</strong> to avoid crowds. The unique liquor offering ceremony is performed throughout the day. Bring a humble heart — this is a temple that asks for surrender, not curiosity.</p>
+                  <p>The deity wears a silver crown and is adorned with garlands. Photography is permitted in the outer courtyard but not inside the inner sanctum.</p>`,
+    howwehelp: `<p>Most pilgrims combine Kaal Bhairav with their Mahakaleshwar visit — the temple is just <strong>5 km away</strong>, a 12-minute drive. Our driver knows the best parking spots (which can be tricky on weekends and amavasya days) and will guide your family on the offering tradition.</p>`,
+    photoQueries: ["Kal Bhairav Temple Ujjain.jpg", "Kaal Bhairav Mandir.jpg", "Bhairav Temple Ujjain.jpg"]
   },
   {
     slug: "bade-ganesh",
     name: "Bade Ganesh Ji Temple",
-    sub: "The remover of obstacles, beside Mahakaleshwar.",
-    images: [
-      wp("Bade Ganesh Mandir Ujjain.jpg"),
-      wp("Bade Ganesh Ji Temple.jpg"),
-      wp("Big Ganesh Temple Ujjain.jpg"),
-      wp("Ganesh Mandir Ujjain.jpg"),
-      wp("Bada Ganesh Mandir.jpg"),
-      wp("Ganpati Mandir Ujjain.jpg"),
-      us("1605973029521-8154da591bd7"),
-      us("1604608672516-46c3ff518fed"),
-      us("1582510003544-4d00b7f74220"),
-      us("1599661046289-e31897846e41"),
-      us("1545569310-cb7bdf0c0c2a"),
-      us("1602216056096-3b40cc0c9944"),
-      us("1561361513-2d000a50f0dc"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1605552055839-dc8f4aa9b0e1"),
-    ]
+    tagline: "The remover of obstacles, beside Mahakaleshwar.",
+    distance: "1.5 km",
+    icon: 'ganesh',
+    artBg: 'linear-gradient(135deg, #6B1A2A 0%, #B5251A 50%, #E8A765 100%)',
+    history: `<p>Just adjacent to Mahakaleshwar Temple stands one of the <strong>largest Ganesh statues in India</strong> — carved from a single stone, decorated with mercury (a rare ritual practice), and believed to be over a thousand years old. The temple complex also houses idols of the Pancha Mukhi Hanuman and Saptadhatu Murti.</p>
+              <p>Tradition recommends darshan at Bade Ganesh Ji <strong>before</strong> proceeding to Mahakaleshwar — Lord Ganesha is the remover of obstacles, and his blessing eases the path to the Jyotirlinga.</p>`,
+    experience: `<p>The temple is open from <strong>5 AM to 10 PM</strong> and is rarely as crowded as Mahakaleshwar itself. The Ganesh idol is unusually large and beautifully decorated. Stop here briefly before or after your darshan.</p>
+                  <p><strong>Modaks</strong> (Ganesha's favourite sweet) are sold at small stalls outside — many families offer one to the deity as part of their darshan.</p>`,
+    howwehelp: `<p>It's a 4-minute walk from Mahakaleshwar's main gate, so we typically include both temples in a single morning. Our caretaker can give you the traditional sequence of offerings, and our shuttle will wait while your family completes both darshans.</p>`,
+    photoQueries: ["Bade Ganesh Mandir Ujjain.jpg", "Bade Ganesh Ji Temple.jpg", "Ganesh Mandir Ujjain.jpg"]
   },
   {
     slug: "ram-ghat",
     name: "Ram Ghat & Shipra Aarti",
-    sub: "Where the river meets the prayers of pilgrims.",
-    images: [
-      wp("Ram Ghat Ujjain.jpg"),
-      wp("Shipra River Ujjain.jpg"),
-      wp("Ram Ghat Shipra.jpg"),
-      wp("Shipra Aarti Ujjain.jpg"),
-      wp("Kshipra River.jpg"),
-      wp("Ujjain Ram Ghat.jpg"),
-      wp("Shipra Ghat Ujjain.jpg"),
-      wp("Ram Ghat aarti.jpg"),
-      wp("Shipra River Aarti.jpg"),
-      us("1564507592333-c60657eea523"),
-      us("1605973029521-8154da591bd7"),
-      us("1602216056096-3b40cc0c9944"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1604608672516-46c3ff518fed"),
-      us("1582510003544-4d00b7f74220"),
-    ]
+    tagline: "Where the river meets the prayers of pilgrims.",
+    distance: "4 km",
+    icon: 'river',
+    artBg: 'linear-gradient(135deg, #1A3A4A 0%, #2C5F7A 50%, #6B9BB0 100%)',
+    history: `<p>Ram Ghat is the principal ghat on the holy <strong>Shipra river</strong> (also spelled Kshipra), one of the seven sacred rivers of India. It is here, every twelve years, that the <strong>Simhastha Kumbh Mela</strong> bathing rituals take place — drawing tens of millions of pilgrims. The next Kumbh is in 2028.</p>
+              <p>The ghat is named after Lord Rama, who is believed to have performed his father's last rites here. The river has been continuously revered since the time of Emperor Vikramaditya, more than 2,000 years ago.</p>`,
+    experience: `<p>The <strong>evening Shipra Aarti</strong> — performed daily around <strong>7 PM</strong> — is one of Ujjain's most photogenic and emotionally moving experiences. Bring your family in the soft golden hour, find a step to sit on, and let the river do its work.</p>
+                  <p>Pilgrims also bathe here at sunrise. During Simhastha Kumbh Mela, the ghats become an unforgettable spiritual ocean.</p>`,
+    howwehelp: `<p>We drop your family at Ram Ghat by 6:30 PM so you can find a comfortable spot before the aarti begins. Our driver waits and brings you back to the villa for dinner. For families with elderly members, we recommend the western section of the ghat which has gentler steps.</p>`,
+    photoQueries: ["Ram Ghat Ujjain.jpg", "Shipra River Ujjain.jpg", "Shipra Aarti.jpg", "Kshipra River.jpg"]
   },
   {
     slug: "mangalnath",
     name: "Mangalnath Mandir",
-    sub: "The birthplace of Mars. Sunset views over the Shipra.",
-    images: [
-      wp("Mangalnath Temple Ujjain.jpg"),
-      wp("Mangalnath Mandir.jpg"),
-      wp("Mangalnath Ujjain.jpg"),
-      wp("Mangal Nath Temple.jpg"),
-      wp("Mangalnath Temple sunset.jpg"),
-      wp("Mangalnath Madhya Pradesh.jpg"),
-      us("1582510003544-4d00b7f74220"),
-      us("1599661046289-e31897846e41"),
-      us("1604608672516-46c3ff518fed"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1602216056096-3b40cc0c9944"),
-      us("1545569310-cb7bdf0c0c2a"),
-      us("1561361513-2d000a50f0dc"),
-      us("1605552055839-dc8f4aa9b0e1"),
-      us("1605973029521-8154da591bd7"),
-    ]
+    tagline: "The birthplace of Mars. Sunset views over the Shipra.",
+    distance: "6 km",
+    icon: 'sun',
+    artBg: 'linear-gradient(135deg, #5C1A1A 0%, #B5251A 50%, #FFD27D 100%)',
+    history: `<p>According to <strong>Matsya Purana</strong>, the planet Mars (Mangal) was born in Ujjain, and Mangalnath Mandir marks that birthplace. In Hindu astrology, the temple is sought out by devotees seeking remedies for <strong>Mangal Dosha</strong> — an astrological condition that affects marriage and family life.</p>
+              <p>The temple sits on a small elevation overlooking the Shipra river. It has been a place of astronomical and astrological reverence for over a millennium, fitting Ujjain's role as India's ancient prime meridian.</p>`,
+    experience: `<p>The <strong>sunset views</strong> over the Shipra from the temple grounds are unforgettable. <strong>Tuesdays</strong> draw larger crowds (Mangal's day); aim for any other day if you prefer quiet.</p>
+                  <p>Special <strong>Mangal Bhaat Pooja</strong> is performed for those addressing Mangal Dosha — it must be booked in advance with the temple priest.</p>`,
+    howwehelp: `<p>If anyone in your family is doing the Mangal Bhaat Pooja, our caretaker can help coordinate with the temple priest — it requires booking 1-2 days in advance and arriving with specific offerings. Even if you're just visiting for the views, we time your trip to catch sunset over the Shipra.</p>`,
+    photoQueries: ["Mangalnath Temple Ujjain.jpg", "Mangalnath Mandir.jpg", "Mangal Nath Temple.jpg"]
   },
   {
     slug: "sandipani",
     name: "Sandipani Ashram",
-    sub: "The gurukul of Lord Krishna, Balaram and Sudama.",
-    images: [
-      wp("Sandipani Ashram Ujjain.jpg"),
-      wp("Sandipani Muni Ashram.jpg"),
-      wp("Sandipani Ashram.jpg"),
-      wp("Maharishi Sandipani Ashram.jpg"),
-      wp("Sandipani Gurukul Ujjain.jpg"),
-      wp("Krishna Gurukul Ujjain.jpg"),
-      us("1605973029521-8154da591bd7"),
-      us("1602216056096-3b40cc0c9944"),
-      us("1604608672516-46c3ff518fed"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1599661046289-e31897846e41"),
-      us("1561361513-2d000a50f0dc"),
-      us("1582510003544-4d00b7f74220"),
-      us("1545569310-cb7bdf0c0c2a"),
-      us("1605552055839-dc8f4aa9b0e1"),
-    ]
+    tagline: "The gurukul of Lord Krishna.",
+    distance: "5 km",
+    icon: 'ashram',
+    artBg: 'linear-gradient(135deg, #1A3A2A 0%, #3D7A4D 50%, #8FB87F 100%)',
+    history: `<p>This is the legendary <strong>gurukul of Lord Krishna</strong>, where He, His brother Balaram, and His friend Sudama studied under Sage Sandipani. The ashram is one of the few places in India directly associated with Krishna's education and human life. The ashram still stands with a small temple, the original well, and the slate where Krishna is said to have written.</p>
+              <p>The site is mentioned in the <strong>Bhagavata Purana</strong> and the <strong>Vishnu Purana</strong>. Pilgrims visit to receive blessings for their children's education and learning.</p>`,
+    experience: `<p>For families with children, this is a place of <strong>imagination</strong> — the stories of Krishna's gurukul days come alive here. Show your children the well, the slate, and the small temple. The grounds are peaceful and unhurried.</p>
+                  <p>The Sarvabhauma Sansthan houses a small museum with manuscripts and traditional learning materials.</p>`,
+    howwehelp: `<p>We recommend Sandipani Ashram for families with school-age children — we share the relevant Krishna stories before the visit so the children arrive curious. The ashram is on the way back from Mangalnath, making it easy to combine. Photography is allowed throughout the grounds.</p>`,
+    photoQueries: ["Sandipani Ashram Ujjain.jpg", "Sandipani Muni Ashram.jpg"]
   },
   {
     slug: "harsiddhi",
     name: "Harsiddhi Mata Temple",
-    sub: "One of 51 Shakti Peethas. The two enormous lamp pillars.",
-    images: [
-      wp("Harsiddhi Mata Temple Ujjain.jpg"),
-      wp("Harsiddhi Mandir.jpg"),
-      wp("Harsiddhi Devi Temple.jpg"),
-      wp("Harsiddhi Mata Mandir.jpg"),
-      wp("Harsiddhi Temple Ujjain.jpg"),
-      wp("Harsiddhi Maa Temple.jpg"),
-      wp("Harsiddhi Devi Mandir Ujjain.jpg"),
-      wp("Harsiddhi Mata Mandir lamp pillars.jpg"),
-      wp("Harsiddhi Shakti Peeth.jpg"),
-      us("1605552055839-dc8f4aa9b0e1"),
-      us("1582510003544-4d00b7f74220"),
-      us("1599661046289-e31897846e41"),
-      us("1626621341517-bbf3d9990a23"),
-      us("1604608672516-46c3ff518fed"),
-      us("1605973029521-8154da591bd7"),
-    ]
+    tagline: "One of 51 Shakti Peethas. The two enormous lamp pillars.",
+    distance: "3 km",
+    icon: 'shakti',
+    artBg: 'linear-gradient(135deg, #4A0E2A 0%, #8E1A57 50%, #C9A24F 100%)',
+    history: `<p>Harsiddhi Mata Temple is one of <strong>India's 51 Shakti Peethas</strong> — sacred sites where parts of Goddess Sati's body are believed to have fallen. It is dedicated to Goddess Harsiddhi, the personal deity of legendary <strong>Emperor Vikramaditya</strong>, who ruled Ujjain in the 1st century BCE and gave the world the Vikram Samvat calendar still used in India.</p>
+              <p>The temple is famous for its <strong>two enormous deepstambhas</strong> (lamp pillars), each holding hundreds of oil lamps that are lit during festivals. The sight of all the lamps lit at sunset is one of the most photogenic moments in any Indian temple.</p>`,
+    experience: `<p>Visit at <strong>sunset</strong>, especially during Navratri or any festival, when the deepstambhas are lit with hundreds of oil lamps. The sight is unforgettable.</p>
+                  <p>The temple is rarely as crowded as Mahakaleshwar, making it a peaceful complement to the rest of your darshan day.</p>`,
+    howwehelp: `<p>We time your visit for the lamp-lighting hour. If you're visiting during Navratri (Sept-Oct), the temple is at its most spectacular — we book your darshan window in advance and arrange transport that avoids the festival traffic.</p>`,
+    photoQueries: ["Harsiddhi Mata Temple Ujjain.jpg", "Harsiddhi Mandir.jpg", "Harsiddhi Devi Temple.jpg"]
   }
 ];
 
 // =========================================================================
-// RENDER GALLERY — preload, only show working images, dynamic cover
+// RENDER GALLERY CARDS
 // =========================================================================
-const WA = "https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas.";
 const grid = document.getElementById('gallery-cats');
 const validImages = {};
+const WA = "https://wa.me/918999061598?text=";
 
-function testImage(url) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    let resolved = false;
-    const cleanup = (ok) => { if (!resolved) { resolved = true; resolve(ok); } };
-    img.onload = () => cleanup(true);
-    img.onerror = () => cleanup(false);
-    setTimeout(() => cleanup(false), 8000);
-    img.src = url;
-  });
-}
-
-function renderCard(temple) {
+TEMPLES.forEach(temple => {
   const card = document.createElement('a');
-  card.href = '#';
   card.className = 'cat-card reveal-scale';
+  card.href = '#';
+  card.style.setProperty('--art-bg', temple.artBg);
   card.dataset.slug = temple.slug;
   card.innerHTML = `
-    <div class="cat-card__count" id="count-${temple.slug}">Loading…</div>
+    <div class="cat-card__art"></div>
+    <div class="cat-card__distance">${temple.distance}</div>
+    <div class="cat-card__icon">${ICONS[temple.icon] || ''}</div>
     <div class="cat-card__inner">
       <h3>${temple.name}</h3>
-      <span>${temple.sub}</span>
+      <span>${temple.tagline}</span>
+      <div class="cat-card__cta">View History &amp; Photos →</div>
     </div>
   `;
   card.addEventListener('click', (e) => {
     e.preventDefault();
-    openTempleGallery(temple.slug);
+    openTempleModal(temple);
   });
   grid.appendChild(card);
-  return card;
-}
+});
 
-function openTempleGallery(slug) {
-  const temple = TEMPLES.find(t => t.slug === slug);
-  const imgs = validImages[slug] || [];
-  if (imgs.length === 0) {
-    window.open(WA, '_blank');
-    return;
-  }
-  document.getElementById('gallery-modal-title').textContent = `${temple.name} — ${imgs.length} Photo${imgs.length === 1 ? '' : 's'}`;
-  const grid = document.getElementById('gallery-modal-grid');
-  grid.innerHTML = imgs.map(src =>
-    `<img src="${src}" alt="${temple.name} photo" loading="lazy">`
-  ).join('');
-  document.getElementById('gallery-modal').classList.add('open');
+// Trigger reveals
+setTimeout(() => {
+  document.querySelectorAll('.cat-card').forEach((c, i) => {
+    setTimeout(() => c.classList.add('in'), i * 70);
+  });
+}, 100);
+
+// =========================================================================
+// MODAL — temple detail with history + photos
+// =========================================================================
+const modal = document.getElementById('temple-modal');
+
+function openTempleModal(temple) {
+  document.getElementById('temple-name').textContent = temple.name;
+  document.getElementById('temple-tagline').textContent = temple.tagline;
+  document.getElementById('temple-history').innerHTML = temple.history;
+  document.getElementById('temple-experience').innerHTML = temple.experience;
+  document.getElementById('temple-howwehelp').innerHTML = temple.howwehelp;
+  document.getElementById('temple-hero').style.background = temple.artBg;
+  document.getElementById('temple-hero-icon').innerHTML = ICONS[temple.icon] || '';
+  document.getElementById('temple-whatsapp').href = WA + encodeURIComponent(`Hi Apoorv, I'd like to visit ${temple.name} during my Ujjain stay. Could you help plan the trip?`);
+
+  // Load and display photos (Wikipedia Commons via Special:FilePath)
+  const photosEl = document.getElementById('temple-photos');
+  const headingEl = document.getElementById('temple-photos-heading');
+  photosEl.innerHTML = '<div class="temple-modal__photos-empty">Loading photographs...</div>';
+
+  loadTemplePhotos(temple).then(loaded => {
+    if (loaded.length === 0) {
+      photosEl.innerHTML = `<div class="temple-modal__photos-empty">
+        Photographs coming soon. We are slowly building each gallery with photographs submitted by our guests.
+        If you have a meaningful photograph from this temple, we'd love to feature it —
+        <a href="${WA}${encodeURIComponent(`Hi Apoorv, I have photos of ${temple.name} I'd like to share with AP Villas.`)}" target="_blank" style="color:var(--saffron);">share via WhatsApp</a>.
+      </div>`;
+      headingEl.textContent = 'Photographs from the temple';
+    } else {
+      headingEl.textContent = `Photographs from the temple (${loaded.length})`;
+      photosEl.innerHTML = loaded.map(src =>
+        `<img src="${src}" alt="${temple.name}" loading="lazy">`
+      ).join('');
+    }
+  });
+
+  modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
-TEMPLES.forEach(renderCard);
-
-async function loadTemple(temple) {
-  const card = document.querySelector(`.cat-card[data-slug="${temple.slug}"]`);
-  const countEl = document.getElementById(`count-${temple.slug}`);
-  const results = await Promise.all(temple.images.map(testImage));
-  const valid = temple.images.filter((_, i) => results[i]);
-  validImages[temple.slug] = valid;
-  if (valid.length > 0) {
-    card.style.setProperty('--bg', `url('${valid[0]}')`);
-    countEl.textContent = `${valid.length} Photo${valid.length === 1 ? '' : 's'}`;
-  } else {
-    countEl.innerHTML = 'Tap to enquire';
-    card.style.background = 'linear-gradient(135deg, var(--saffron), var(--gold))';
-  }
+function loadTemplePhotos(temple) {
+  // Try Wikipedia Commons URLs only — no random Unsplash fallbacks
+  const urls = (temple.photoQueries || []).map(fname =>
+    `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fname)}?width=1200`
+  );
+  return Promise.all(urls.map(url => new Promise(resolve => {
+    const img = new Image();
+    let done = false;
+    const finish = (ok) => { if (done) return; done = true; resolve(ok ? url : null); };
+    img.onload = () => finish(true);
+    img.onerror = () => finish(false);
+    setTimeout(() => finish(false), 7000);
+    img.src = url;
+  }))).then(results => results.filter(x => x));
 }
 
-TEMPLES.forEach(loadTemple);
-
-setTimeout(() => {
-  document.querySelectorAll('.cat-card').forEach((c, i) => {
-    setTimeout(() => c.classList.add('in'), i * 80);
-  });
-}, 100);
+document.getElementById('temple-modal-close').addEventListener('click', () => {
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+});
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
 </script>
 
 </body>

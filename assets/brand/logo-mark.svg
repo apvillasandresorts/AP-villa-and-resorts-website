@@ -1,38 +1,92 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="700" height="700" font-family="'Cormorant Garamond', 'Playfair Display', 'Georgia', 'Times New Roman', serif">
-  
+  <defs>
+    <linearGradient id="goldRing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#8C6512"/>
+      <stop offset="25%" stop-color="#C9A24F"/>
+      <stop offset="50%" stop-color="#FFE9A8"/>
+      <stop offset="75%" stop-color="#C9A24F"/>
+      <stop offset="100%" stop-color="#8C6512"/>
+    </linearGradient>
+    <linearGradient id="goldShine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="apGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1F2A44"/>
+      <stop offset="50%" stop-color="#2A3960"/>
+      <stop offset="100%" stop-color="#131A2C"/>
+    </linearGradient>
+    <radialGradient id="medSheen" cx="0.35" cy="0.3" r="0.7">
+      <stop offset="0%" stop-color="#FFFCF1"/>
+      <stop offset="60%" stop-color="#F8EFD5"/>
+      <stop offset="100%" stop-color="#E8DAB3"/>
+    </radialGradient>
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="medClip">
+      <circle cx="350" cy="350" r="198"/>
+    </clipPath>
+  </defs>
+
   <g transform="translate(350, 350)">
     <!-- Top finial -->
     <g transform="translate(0, -255)">
-      <path d="M -18,12 Q -20,-3 -11,-17 Q 0,-30 11,-17 Q 20,-3 18,12 Z" fill="#B88A2C"/>
-      <circle cx="-34" cy="8" r="4" fill="#B88A2C" opacity="0.85"/>
-      <circle cx="34" cy="8" r="4" fill="#B88A2C" opacity="0.85"/>
-      <line x1="-48" y1="20" x2="48" y2="20" stroke="#B88A2C" stroke-width="1.6" opacity="0.5"/>
+      <path d="M -18,12 Q -20,-3 -11,-17 Q 0,-30 11,-17 Q 20,-3 18,12 Z" fill="url(#goldRing)"/>
+      <circle cx="-34" cy="8" r="4" fill="#C9A24F" opacity="0.85"/>
+      <circle cx="34" cy="8" r="4" fill="#C9A24F" opacity="0.85"/>
+      <line x1="-48" y1="20" x2="48" y2="20" stroke="#C9A24F" stroke-width="1.6" opacity="0.5"/>
     </g>
-    <!-- Outer ring -->
-    <circle cx="0" cy="0" r="220" fill="none" stroke="#B88A2C" stroke-width="4"/>
-    <!-- Inner ring -->
-    <circle cx="0" cy="0" r="200" fill="none" stroke="#B88A2C" stroke-width="1" opacity="0.55"/>
-    <!-- Inner cream -->
-    <circle cx="0" cy="0" r="198" fill="#FAF6EE"/>
+
+    <!-- Outer gold ring with metallic gradient -->
+    <circle cx="0" cy="0" r="220" fill="none" stroke="url(#goldRing)" stroke-width="6"/>
+    <!-- Inner thin ring -->
+    <circle cx="0" cy="0" r="200" fill="none" stroke="#C9A24F" stroke-width="1" opacity="0.55"/>
+    <!-- Inner cream face -->
+    <circle cx="0" cy="0" r="198" fill="url(#medSheen)"/>
+
     <!-- 8 cardinal dots -->
-    <g fill="#B88A2C" opacity="0.85">
-      <circle cx="0" cy="-211" r="4.5"/><circle cx="0" cy="211" r="4.5"/>
-      <circle cx="-211" cy="0" r="4.5"/><circle cx="211" cy="0" r="4.5"/>
-      <circle cx="-149" cy="-149" r="3.2"/><circle cx="149" cy="-149" r="3.2"/>
-      <circle cx="-149" cy="149" r="3.2"/><circle cx="149" cy="149" r="3.2"/>
+    <g fill="#C9A24F">
+      <circle cx="0" cy="-211" r="5"/><circle cx="0" cy="211" r="5"/>
+      <circle cx="-211" cy="0" r="5"/><circle cx="211" cy="0" r="5"/>
+      <circle cx="-149" cy="-149" r="3.5"/><circle cx="149" cy="-149" r="3.5"/>
+      <circle cx="-149" cy="149" r="3.5"/><circle cx="149" cy="149" r="3.5"/>
     </g>
-    <!-- AP monogram - clean, properly spaced, NOT italic -->
+
+    <!-- AP monogram -->
     <text x="0" y="50" text-anchor="middle" font-size="240" font-weight="600"
-          fill="#1F2A44" letter-spacing="-2">AP</text>
+          fill="url(#apGold)" letter-spacing="-2">AP</text>
+
     <!-- Bottom flourish -->
-    <line x1="-72" y1="100" x2="72" y2="100" stroke="#B88A2C" stroke-width="1.4" opacity="0.7"/>
-    <circle cx="0" cy="100" r="3.5" fill="#B88A2C"/>
+    <line x1="-72" y1="100" x2="72" y2="100" stroke="#C9A24F" stroke-width="1.4" opacity="0.7"/>
+    <circle cx="0" cy="100" r="3.5" fill="#C9A24F"/>
+
     <!-- Bottom finial -->
     <g transform="translate(0, 258)">
-      <line x1="-28" y1="-12" x2="28" y2="-12" stroke="#B88A2C" stroke-width="1.6" opacity="0.5"/>
-      <circle cx="-34" cy="-8" r="3.5" fill="#B88A2C" opacity="0.85"/>
-      <circle cx="34" cy="-8" r="3.5" fill="#B88A2C" opacity="0.85"/>
-      <path d="M -11,-3 Q 0,14 11,-3 L 0,18 Z" fill="#B88A2C"/>
+      <line x1="-28" y1="-12" x2="28" y2="-12" stroke="#C9A24F" stroke-width="1.6" opacity="0.5"/>
+      <circle cx="-34" cy="-8" r="3.5" fill="#C9A24F" opacity="0.85"/>
+      <circle cx="34" cy="-8" r="3.5" fill="#C9A24F" opacity="0.85"/>
+      <path d="M -11,-3 Q 0,14 11,-3 L 0,18 Z" fill="url(#goldRing)"/>
     </g>
+
+    <!-- Pulsing outer glow ring (medal shine) -->
+    <circle cx="0" cy="0" r="220" fill="none" stroke="#FFE9A8" stroke-width="2" opacity="0.4">
+      <animate attributeName="r" values="218;232;218" dur="2.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0.7;0" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Animated diagonal shine sweeping across the medallion (clipped to circle) -->
+  <g clip-path="url(#medClip)">
+    <rect x="-260" y="50" width="160" height="600" fill="url(#goldShine)" filter="url(#goldGlow)" transform="rotate(-25 350 350)">
+      <animate attributeName="x" from="-260" to="700" dur="3.2s" repeatCount="indefinite"/>
+    </rect>
   </g>
 </svg>
