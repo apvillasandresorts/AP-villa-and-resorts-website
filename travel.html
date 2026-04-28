@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travel & Transport Services — AP Villas, Mahakal Collection · Ujjain</title>
+<meta name="description" content="Pre-arranged airport pickups, sightseeing, Omkareshwar day trips, Bhasma Aarti darshan, and pandit services. Book any travel service via WhatsApp. Vetted drivers, transparent rates.">
+<meta name="keywords" content="ujjain taxi service, indore airport ujjain pickup, omkareshwar day trip ujjain, mahakal sightseeing tour, bhasma aarti booking, ujjain pandit ji booking, ujjain travel agency">
+<meta name="author" content="AP Villas, Mahakal Collection">
+<meta property="og:title" content="Travel Services — AP Villas, Ujjain">
+<meta property="og:description" content="Airport pickups, sightseeing, Omkareshwar trips. Book on WhatsApp.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://apvillas.in/travel.html">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/brand/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/brand/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/brand/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.travel-section { background: var(--paper-warm); padding: 60px 0; }
+.travel-cat-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px; font-weight: 600; color: var(--saffron);
+  margin-top: 40px; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.travel-cat-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--saffron); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.travel-cat-sub {
+  font-style: italic; color: var(--muted); margin-bottom: 26px;
+}
+
+.service-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+.service-card {
+  background: white; padding: 24px 28px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  transition: all 0.4s var(--ease);
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.service-card:hover {
+  transform: translateY(-3px); box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+.service-card__head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; margin-bottom: 6px;
+}
+.service-card__name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 600; color: var(--navy);
+  line-height: 1.2;
+}
+.service-card__price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 600; color: var(--saffron);
+  white-space: nowrap;
+}
+.service-card__price-unit {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1px; font-weight: 500; display: block;
+}
+.service-card__capacity {
+  font-size: 12px; color: var(--gold); font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.service-card__desc {
+  font-size: 14px; color: var(--ink);
+  line-height: 1.6; margin-bottom: 14px;
+  flex: 1;
+}
+.service-card__includes {
+  font-size: 13px; color: var(--muted);
+  margin-bottom: 16px;
+}
+.service-card__includes strong { color: var(--navy); }
+.service-card__book {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 11px 20px; border-radius: 999px;
+  background: #25D366; color: white;
+  font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s var(--ease);
+  align-self: flex-start;
+}
+.service-card__book:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37,211,102,0.4);
+}
+
+.travel-features {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  margin-bottom: 48px;
+}
+.travel-feature {
+  background: white; padding: 24px 18px;
+  border-radius: var(--r-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.travel-feature__icon { font-size: 32px; margin-bottom: 10px; }
+.travel-feature__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-weight: 600; color: var(--navy);
+  margin-bottom: 4px;
+}
+.travel-feature__desc { font-size: 12px; color: var(--muted); }
+
+.travel-cta {
+  background: linear-gradient(135deg, var(--navy), #131A2C);
+  color: white; padding: 50px 30px;
+  border-radius: var(--r-lg);
+  text-align: center;
+  margin-top: 40px;
+}
+.travel-cta h3 { color: white; font-size: 28px; margin-bottom: 12px; }
+.travel-cta p { color: rgba(255,255,255,0.85); margin: 0 auto 24px; max-width: 580px; }
+
+@media (max-width: 768px) {
+  .service-grid { grid-template-columns: 1fr; }
+  .travel-features { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="frame"></div>
+<div class="frame__side-left"></div>
+<div class="frame__side-right"></div>
+<div class="frame__glow"></div>
+<div class="spotlight"></div>
+
+<nav class="nav" id="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__brand">
+      <div class="nav__logo"><img src="assets/brand/logo-mark.svg" alt="AP Villas"></div>
+      <div class="nav__name">
+        <strong>AP Villas</strong>
+        <span>Mahakal Collection</span>
+      </div>
+    </a>
+    <div class="nav__menu">
+      <a href="index.html">Home</a>
+      <a href="villas.html">Villas</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="menu.html">Dining</a>
+      <a href="travel.html" class="active">Travel</a>
+      <a href="blog.html">Journal</a>
+      <a href="about.html">About</a>
+    </div>
+    <a class="btn btn--primary" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20book%20a%20travel%20service." target="_blank" rel="noopener">Book on WhatsApp</a>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Travel & Transport</span>
+    <h1>Travel without <em style="font-style:italic;color:var(--saffron);">the friction.</em></h1>
+    <p style="font-size: 18px; color: var(--muted); max-width: 760px; margin: 24px auto 0;">Vetted drivers, clean cars, fixed prices. From airport pickups to multi-day temple tours, we handle every transport detail so your family can focus on the journey, not the logistics.</p>
+  </div>
+</section>
+
+<section class="travel-section">
+  <div class="container">
+
+    <div class="travel-features reveal">
+      <div class="travel-feature">
+        <div class="travel-feature__icon">🚗</div>
+        <div class="travel-feature__title">Vetted Drivers</div>
+        <div class="travel-feature__desc">All drivers police-verified, English & Hindi speaking</div>
+      </div>
+      <div class="travel-feature">
+        <div class="travel-feature__icon">💯</div>
+        <div class="travel-feature__title">Fixed Prices</div>
+        <div class="travel-feature__desc">No haggling, no hidden charges, transparent rates</div>
+      </div>
+      <div class="travel-feature">
+        <div class="travel-feature__icon">🕐</div>
+        <div class="travel-feature__title">On-Time Always</div>
+        <div class="travel-feature__desc">Driver at gate 15 minutes before pickup</div>
+      </div>
+      <div class="travel-feature">
+        <div class="travel-feature__icon">📞</div>
+        <div class="travel-feature__title">24/7 Support</div>
+        <div class="travel-feature__desc">WhatsApp Apoorv anytime — issues resolved fast</div>
+      </div>
+    </div>
+
+    <!-- AIRPORT TRANSFERS -->
+    <h2 class="travel-cat-title"><span class="travel-cat-icon">✈️</span> Airport &amp; Station Transfers</h2>
+    <p class="travel-cat-sub">From Indore Airport (IDR), Ujjain Junction, and nearby stations. Vehicle waits 30 minutes free.</p>
+    <div class="service-grid" id="services-airport"></div>
+
+    <!-- LOCAL SIGHTSEEING -->
+    <h2 class="travel-cat-title"><span class="travel-cat-icon">🏛️</span> Ujjain Local Sightseeing</h2>
+    <p class="travel-cat-sub">Half-day and full-day temple circuits with knowledgeable drivers who'll park, wait, and bring you back.</p>
+    <div class="service-grid" id="services-sightseeing"></div>
+
+    <!-- DAY TRIPS -->
+    <h2 class="travel-cat-title"><span class="travel-cat-icon">🚐</span> Day Trips &amp; Outstation</h2>
+    <p class="travel-cat-sub">Round-trip excursions with a vehicle that waits while you explore.</p>
+    <div class="service-grid" id="services-daytrip"></div>
+
+    <!-- DARSHAN & SPIRITUAL SERVICES -->
+    <h2 class="travel-cat-title"><span class="travel-cat-icon">🪔</span> Darshan &amp; Spiritual Services</h2>
+    <p class="travel-cat-sub">Booking, pandit ji arrangement, and pooja support — handled by people who know the rituals.</p>
+    <div class="service-grid" id="services-darshan"></div>
+
+    <!-- VEHICLE RENTAL -->
+    <h2 class="travel-cat-title"><span class="travel-cat-icon">🚙</span> Vehicle Rentals (Without Driver)</h2>
+    <p class="travel-cat-sub">For self-drive guests with valid licence and security deposit.</p>
+    <div class="service-grid" id="services-rental"></div>
+
+    <div class="travel-cta reveal">
+      <h3>Need a custom itinerary?</h3>
+      <p>Tell us your dates, destinations, and group size — we'll WhatsApp back a tailored quote in 30 minutes. Most multi-day trips also include free Mahakal shuttle on stay days.</p>
+      <a class="btn btn--white" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20a%20custom%20travel%20itinerary." target="_blank" rel="noopener" style="font-size:14px;padding:14px 32px;">💬 Build My Itinerary</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__brand">AP Villas</div>
+    <div class="footer__tag">⸻ MAHAKAL COLLECTION ⸻</div>
+    <div class="footer__links">
+      <a href="index.html">Home</a><a href="villas.html">Villas</a>
+      <a href="gallery.html">Gallery</a><a href="menu.html">Dining</a>
+      <a href="travel.html">Travel</a><a href="blog.html">Journal</a>
+      <a href="about.html">About</a><a href="contact.html">Contact</a>
+    </div>
+    <div class="footer__copy">© 2026 AP Villas, Mahakal Collection · Ujjain, Madhya Pradesh, India.</div>
+  </div>
+</footer>
+
+<a href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20book%20a%20travel%20service." target="_blank" rel="noopener" class="fab">💬</a>
+
+<script src="assets/js/main.js"></script>
+<script>
+const SERVICES = {
+  airport: [
+    { name: "Indore Airport (IDR) — Sedan", price: "₹2,500", unit: "ONE-WAY",
+      capacity: "4 guests · 2 bags", desc: "Maruti Dzire / Honda Amaze / Toyota Etios. Comfortable for couples and small families.",
+      includes: "Toll & parking · 30-min wait · Bottled water · Driver tip not expected" },
+    { name: "Indore Airport (IDR) — SUV", price: "₹3,500", unit: "ONE-WAY",
+      capacity: "6 guests · 4 bags", desc: "Maruti Ertiga / Mahindra Marazzo. The standard family vehicle with proper boot space.",
+      includes: "Toll & parking · 30-min wait · Bottled water · AC throughout" },
+    { name: "Indore Airport — Innova Crysta", price: "₹4,500", unit: "ONE-WAY",
+      capacity: "7 guests · 5 bags", desc: "Premium Toyota Innova Crysta with leather seats, captain chairs (middle row), and ample boot.",
+      includes: "Toll & parking · 30-min wait · Bottled water · Phone charger · AC" },
+    { name: "Indore Airport — Tempo Traveller", price: "₹6,500", unit: "ONE-WAY",
+      capacity: "12 guests · 12 bags", desc: "For extended families or wedding/group bookings. 12-seater AC with luggage carrier.",
+      includes: "Toll & parking · 30-min wait · Bottled water · Music system · Pushback seats" },
+    { name: "Ujjain Junction Pickup", price: "₹400-700", unit: "ONE-WAY",
+      capacity: "Auto / Sedan / SUV", desc: "Short pickup from Ujjain Junction Railway Station to your villa (3 km). Auto ₹400, Sedan ₹600, SUV ₹700.",
+      includes: "Direct to villa gate · 15-min wait · Help with luggage" },
+    { name: "Bhopal Airport (BHO)", price: "₹6,500", unit: "ONE-WAY",
+      capacity: "Sedan / SUV", desc: "190 km · 3.5-4 hours. Used by guests flying via Bhopal. Departs at convenient times.",
+      includes: "Toll · 30-min wait · Bottled water · Comfort breaks" },
+  ],
+  sightseeing: [
+    { name: "Half-Day Temple Tour", price: "₹2,500", unit: "4 HRS · 40 KM",
+      capacity: "Sedan or SUV · 4-6 guests", desc: "Mahakaleshwar · Bade Ganesh · Kal Bhairav · Harsiddhi Mata. Perfect for half-day timing pilgrims.",
+      includes: "Driver waits at every temple · Parking · Local guidance on parking & temple entry" },
+    { name: "Full-Day Local Sightseeing", price: "₹3,500", unit: "8 HRS · 80 KM",
+      capacity: "Sedan or SUV · 4-6 guests", desc: "Mahakaleshwar · Mahakal Lok · Bade Ganesh · Kal Bhairav · Mangalnath · Sandipani Ashram · Ram Ghat (sunset).",
+      includes: "All-day vehicle · Parking · Local guidance · Lunch stop suggestion" },
+    { name: "Premium Sightseeing (Innova)", price: "₹4,500", unit: "8 HRS · 80 KM",
+      capacity: "Innova Crysta · 7 guests", desc: "Same itinerary in premium Innova Crysta with captain chairs. Recommended for elderly travellers.",
+      includes: "Parking · Cool towels · Bottled water (4) · Phone chargers" },
+    { name: "Sunrise Aarti + Tour Combo", price: "₹4,000", unit: "10 HRS · 90 KM",
+      capacity: "Sedan or SUV · 4-6 guests", desc: "3:30 AM Bhasma Aarti drop · Pickup post-aarti · Breakfast stop · Full day temple circuit.",
+      includes: "Aarti morning drop · Full day after · Breakfast stop · Parking" },
+    { name: "Wedding/Pooja Vehicle", price: "₹5,500", unit: "12 HRS",
+      capacity: "Decorated SUV", desc: "Decorated vehicle for in-villa weddings, satya narayan pooja, or first temple darshan after wedding.",
+      includes: "Light flower decoration · Driver in formal · 12-hour shift" },
+    { name: "Photography Vehicle", price: "₹3,200", unit: "8 HRS",
+      capacity: "Sedan", desc: "For pre-wedding shoots or content creators visiting Ujjain temple sites.",
+      includes: "Driver assists with parking at scenic spots · Knows best photo locations" },
+  ],
+  daytrip: [
+    { name: "Omkareshwar Day Trip — SUV", price: "₹5,500", unit: "ROUND-TRIP",
+      capacity: "6 guests", desc: "Visit the second Madhya Pradesh Jyotirlinga (78 km · 2 hrs each way). Vehicle waits at temple while you do parikrama and darshan.",
+      includes: "Toll · Driver waits 4-5 hrs · Restaurant suggestion · Bottled water (4)" },
+    { name: "Omkareshwar Day Trip — Innova", price: "₹6,500", unit: "ROUND-TRIP",
+      capacity: "7 guests · Premium", desc: "Same trip in Innova Crysta. Recommended for elderly + 6-hour comfortable round-trip.",
+      includes: "Toll · 5-hour wait · Captain chairs · Phone chargers · 4 bottled waters" },
+    { name: "Mandu Heritage Day Trip", price: "₹6,500", unit: "ROUND-TRIP",
+      capacity: "Sedan/SUV", desc: "165 km · 3.5 hrs each way. Mandu's medieval ruins, Jahaz Mahal, Hindola Mahal — perfect for history lovers.",
+      includes: "Vehicle for full day · Restaurant suggestion · Parking" },
+    { name: "Maheshwar + Omkareshwar Combo", price: "₹8,500", unit: "10 HRS",
+      capacity: "Sedan/SUV", desc: "Full day combining Omkareshwar Jyotirlinga + Maheshwar (Ahilya Bai's heritage town). 220 km total.",
+      includes: "Toll · Both temple waits · Lunch stop · Bottled water" },
+    { name: "Indore City Tour (Day Trip)", price: "₹5,500", unit: "ROUND-TRIP",
+      capacity: "Sedan/SUV", desc: "Indore Sarafa Bazaar food tour, Lalbagh Palace, Khajrana Ganesh Temple. Perfect for a city break day.",
+      includes: "Driver guidance · Parking · 6-hour stay in Indore" },
+    { name: "Bhopal Day Trip", price: "₹7,500", unit: "ROUND-TRIP",
+      capacity: "Sedan/SUV", desc: "Capital city trip — Bhojpur Shiva Temple, Sanchi Stupa, Upper Lake. 380 km total.",
+      includes: "Toll · Multiple stops · Lunch suggestion · Driver guidance" },
+  ],
+  darshan: [
+    { name: "Bhasma Aarti Booking Help", price: "₹0", unit: "COMPLIMENTARY",
+      capacity: "All in-villa guests", desc: "Our caretaker assists with the temple's ticket-counter booking the previous evening. Zero charge — just our service.",
+      includes: "Counter visit guidance · Dress code briefing · 3:30 AM shuttle" },
+    { name: "Mahakal Bhasma Aarti VIP", price: "₹2,500", unit: "PER PERSON",
+      capacity: "4 person max booking", desc: "Premium darshan via temple-authorized agent. Front access to lingam during aarti. Subject to availability.",
+      includes: "Pre-booked permit · VIP entry · Photo opportunity · Coordination" },
+    { name: "Pandit Ji for In-Villa Pooja", price: "₹2,000-5,000", unit: "DEPENDS ON POOJA",
+      capacity: "Brahmin pandit", desc: "Vetted pandit for Satya Narayan, Griha Pravesh, Havan, Mangal Pooja, Rudra Abhishek. Includes basic samagri.",
+      includes: "Pandit Ji's dakshina · Standard samagri · 1-2 hour ritual · Receipt" },
+    { name: "Mangal Bhaat Pooja (Mangalnath)", price: "₹3,500", unit: "ALL-IN",
+      capacity: "1-4 person family", desc: "For Mangal Dosha remedy at Mangalnath Temple. Pre-booked pandit + samagri + transport. Tuesdays only.",
+      includes: "Pandit · Samagri · Round-trip transport · Aarti coordination" },
+    { name: "Rudra Abhishek (Mahakaleshwar)", price: "₹5,500", unit: "ALL-IN",
+      capacity: "1-6 person family", desc: "Pre-arranged Rudra Abhishek at Mahakaleshwar temple. Sankalp + offerings + ritual coordination.",
+      includes: "Temple booking · Pandit Ji · Samagri · Coordination" },
+    { name: "Multi-Day Pilgrim Itinerary Plan", price: "₹0", unit: "FREE WITH STAY",
+      capacity: "Any length", desc: "Complimentary trip planning. We share a custom itinerary covering temples, food, transport, sequencing.",
+      includes: "Custom planning · WhatsApp consultation · Sharing tested itineraries" },
+  ],
+  rental: [
+    { name: "Sedan Rental (Self-Drive)", price: "₹1,800", unit: "PER DAY · 100 KM",
+      capacity: "4 guests", desc: "Maruti Dzire or equivalent. Per-day rate includes 100 km. Extra ₹15/km. Full tank policy.",
+      includes: "Vehicle insurance · 100 km/day · Fuel: full-to-full" },
+    { name: "SUV Rental (Self-Drive)", price: "₹2,800", unit: "PER DAY · 100 KM",
+      capacity: "6 guests", desc: "Maruti Ertiga or Mahindra Marazzo. Extra ₹20/km. Refundable security deposit ₹5,000.",
+      includes: "Vehicle insurance · 100 km/day · Fuel: full-to-full · Roadside assistance" },
+    { name: "Innova Crysta (Self-Drive)", price: "₹3,800", unit: "PER DAY · 100 KM",
+      capacity: "7 guests", desc: "Premium Innova Crysta. Extra ₹25/km. Refundable deposit ₹10,000.",
+      includes: "Vehicle insurance · Premium AC · Music · Roadside assistance" },
+    { name: "Two-Wheeler Rental", price: "₹400", unit: "PER DAY",
+      capacity: "1-2 guests", desc: "Honda Activa or similar. For local sightseeing within Ujjain. Helmet provided.",
+      includes: "2 helmets · Insurance · 50 km/day · Refundable deposit ₹1,500" },
+  ],
+};
+
+const WA = "https://wa.me/918999061598?text=";
+
+function renderServices(category) {
+  const items = SERVICES[category] || [];
+  const container = document.getElementById('services-' + category);
+  container.innerHTML = items.map(item => {
+    const bookText = encodeURIComponent(`Hi Apoorv, I'd like to book: ${item.name} (${item.price}). Please confirm availability and date.`);
+    return `
+      <div class="service-card reveal">
+        <div class="service-card__head">
+          <div class="service-card__name">${item.name}</div>
+          <div>
+            <div class="service-card__price">${item.price}</div>
+            <span class="service-card__price-unit">${item.unit}</span>
+          </div>
+        </div>
+        <div class="service-card__capacity">${item.capacity}</div>
+        <div class="service-card__desc">${item.desc}</div>
+        <div class="service-card__includes"><strong>Includes:</strong> ${item.includes}</div>
+        <a class="service-card__book" href="${WA}${bookText}" target="_blank" rel="noopener">💬 Book on WhatsApp</a>
+      </div>
+    `;
+  }).join('');
+}
+
+['airport','sightseeing','daytrip','darshan','rental'].forEach(renderServices);
+
+setTimeout(() => {
+  document.querySelectorAll('.service-card').forEach((el, i) => {
+    setTimeout(() => el.classList.add('in'), i * 30);
+  });
+}, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In-Villa Dining Menu — AP Villas, Mahakal Collection · Ujjain</title>
+<meta name="description" content="Order delicious sattvic and traditional Indian meals to your villa. Breakfast, lunch, dinner, snacks. Order on WhatsApp. Pure veg + non-veg options. Mahakal pilgrim-friendly menu.">
+<meta name="keywords" content="ujjain villa food, in-villa dining mahakal, breakfast lunch dinner ujjain villa, sattvic thali ujjain, mahakal bhog thali, food delivery villa ujjain">
+<meta name="author" content="AP Villas, Mahakal Collection">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="In-Villa Dining — AP Villas, Mahakal Collection">
+<meta property="og:description" content="Fresh meals to your villa. Order on WhatsApp.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://apvillas.in/menu.html">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/brand/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/brand/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/brand/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.menu-section { background: var(--paper-warm); padding: 60px 0; }
+.menu-header { text-align: center; margin-bottom: 50px; }
+.menu-tab-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 50px;
+}
+.menu-tab {
+  padding: 14px 28px; border-radius: 999px;
+  background: white; color: var(--navy);
+  border: 1.5px solid var(--line);
+  font-size: 13px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.4s var(--ease);
+}
+.menu-tab:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.menu-tab.active {
+  background: var(--saffron); color: white; border-color: var(--saffron);
+  box-shadow: 0 8px 24px rgba(192,83,26,0.3);
+}
+.menu-category { margin-bottom: 40px; display: none; }
+.menu-category.active { display: block; }
+.menu-category h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px; color: var(--saffron);
+  margin-bottom: 8px;
+}
+.menu-category__sub {
+  font-style: italic; color: var(--muted); margin-bottom: 28px;
+  letter-spacing: 0.5px;
+}
+.menu-items {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+}
+.menu-item {
+  background: white; padding: 24px 28px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  transition: all 0.4s var(--ease);
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.menu-item:hover {
+  transform: translateY(-3px); box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+.menu-item__head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; margin-bottom: 8px;
+}
+.menu-item__name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 600; color: var(--navy);
+  line-height: 1.2;
+}
+.menu-item__price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 600; color: var(--saffron);
+  white-space: nowrap;
+}
+.menu-item__desc {
+  font-size: 14px; color: var(--muted);
+  line-height: 1.55; margin-bottom: 14px;
+  flex: 1;
+}
+.menu-item__tags {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.menu-tag {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px; font-weight: 600;
+}
+.menu-tag--veg { background: #E2EFDA; color: #3D7A4D; }
+.menu-tag--nonveg { background: #FCE4D6; color: #9C1B30; }
+.menu-tag--sattvic { background: #FEF3C7; color: #8C6512; }
+.menu-tag--popular { background: var(--saffron); color: white; }
+.menu-tag--new { background: var(--gold); color: white; }
+
+.menu-item__order {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px 18px; border-radius: 999px;
+  background: #25D366; color: white;
+  font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s var(--ease);
+  align-self: flex-start;
+}
+.menu-item__order:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37,211,102,0.4);
+}
+
+.timing-strip {
+  background: var(--cream);
+  border-radius: var(--r-md);
+  padding: 18px 28px;
+  margin-bottom: 32px;
+  display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between;
+  align-items: center;
+}
+.timing-strip strong {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; color: var(--navy);
+}
+.timing-strip span { font-size: 13px; color: var(--muted); }
+
+.menu-cta {
+  background: linear-gradient(135deg, var(--saffron), #A04416);
+  color: white; padding: 50px 30px;
+  border-radius: var(--r-lg);
+  text-align: center;
+  margin-top: 40px;
+  position: relative; overflow: hidden;
+}
+.menu-cta h3 {
+  color: white; font-size: 28px;
+  margin-bottom: 12px;
+}
+.menu-cta p {
+  color: rgba(255,255,255,0.92); font-size: 15px;
+  max-width: 540px; margin: 0 auto 24px;
+}
+
+@media (max-width: 768px) {
+  .menu-items { grid-template-columns: 1fr; }
+  .menu-item__head { flex-direction: column; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="frame"></div>
+<div class="frame__side-left"></div>
+<div class="frame__side-right"></div>
+<div class="frame__glow"></div>
+<div class="spotlight"></div>
+
+<nav class="nav" id="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__brand">
+      <div class="nav__logo"><img src="assets/brand/logo-mark.svg" alt="AP Villas"></div>
+      <div class="nav__name">
+        <strong>AP Villas</strong>
+        <span>Mahakal Collection</span>
+      </div>
+    </a>
+    <div class="nav__menu">
+      <a href="index.html">Home</a>
+      <a href="villas.html">Villas</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="menu.html" class="active">Dining</a>
+      <a href="travel.html">Travel</a>
+      <a href="blog.html">Journal</a>
+      <a href="about.html">About</a>
+    </div>
+    <a class="btn btn--primary" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20order%20food." target="_blank" rel="noopener">Order on WhatsApp</a>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">In-Villa Dining</span>
+    <h1>Fresh meals, <em style="font-style:italic;color:var(--saffron);">to your villa.</em></h1>
+    <p style="font-size: 18px; color: var(--muted); max-width: 720px; margin: 24px auto 0;">A pilgrim-friendly menu of traditional and sattvic Indian meals, prepared with care by our caretaker team. Complimentary breakfast included with every stay. Lunch and dinner available on order — WhatsApp to book.</p>
+  </div>
+</section>
+
+<section class="menu-section">
+  <div class="container">
+    <div class="timing-strip reveal">
+      <div><strong>🍳 Breakfast</strong> <span>· 6 AM – 11 AM (complimentary)</span></div>
+      <div><strong>🍱 Lunch</strong> <span>· 12 PM – 3 PM</span></div>
+      <div><strong>🍲 Dinner</strong> <span>· 7 PM – 10 PM</span></div>
+      <div><strong>☕ Snacks</strong> <span>· All day</span></div>
+    </div>
+
+    <div class="menu-tab-bar">
+      <button class="menu-tab active" data-cat="breakfast">Breakfast</button>
+      <button class="menu-tab" data-cat="lunch">Lunch</button>
+      <button class="menu-tab" data-cat="dinner">Dinner</button>
+      <button class="menu-tab" data-cat="snacks">Snacks &amp; Drinks</button>
+      <button class="menu-tab" data-cat="prasad">Prasad &amp; Special</button>
+    </div>
+
+    <!-- BREAKFAST -->
+    <div class="menu-category active" data-cat="breakfast">
+      <h2>Morning Plates</h2>
+      <p class="menu-category__sub">Complimentary for all in-villa guests · 6 AM to 11 AM</p>
+      <div class="menu-items" id="items-breakfast"></div>
+    </div>
+
+    <!-- LUNCH -->
+    <div class="menu-category" data-cat="lunch">
+      <h2>Afternoon Thalis</h2>
+      <p class="menu-category__sub">Lunch served between 12 PM and 3 PM · Order 90 minutes in advance</p>
+      <div class="menu-items" id="items-lunch"></div>
+    </div>
+
+    <!-- DINNER -->
+    <div class="menu-category" data-cat="dinner">
+      <h2>Evening Meals</h2>
+      <p class="menu-category__sub">Dinner served between 7 PM and 10 PM · Order by 5 PM</p>
+      <div class="menu-items" id="items-dinner"></div>
+    </div>
+
+    <!-- SNACKS -->
+    <div class="menu-category" data-cat="snacks">
+      <h2>Snacks &amp; Beverages</h2>
+      <p class="menu-category__sub">Light bites, teas, and cold drinks · Available all day</p>
+      <div class="menu-items" id="items-snacks"></div>
+    </div>
+
+    <!-- PRASAD & SPECIAL -->
+    <div class="menu-category" data-cat="prasad">
+      <h2>Prasad &amp; Special Plates</h2>
+      <p class="menu-category__sub">Sattvic, no onion-garlic, prepared with reverence · Order 3 hours in advance</p>
+      <div class="menu-items" id="items-prasad"></div>
+    </div>
+
+    <div class="menu-cta reveal">
+      <h3>Order anything from this menu directly on WhatsApp.</h3>
+      <p>Type the items you'd like and your delivery time. We'll confirm in 5 minutes with the bill and ETA. All bills can be added to your villa account or paid by UPI.</p>
+      <a class="btn btn--white" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20place%20a%20food%20order%20for%20my%20villa." target="_blank" rel="noopener" style="font-size:14px;padding:14px 32px;">💬 Order on WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__brand">AP Villas</div>
+    <div class="footer__tag">⸻ MAHAKAL COLLECTION ⸻</div>
+    <div class="footer__links">
+      <a href="index.html">Home</a><a href="villas.html">Villas</a>
+      <a href="gallery.html">Gallery</a><a href="menu.html">Dining</a>
+      <a href="travel.html">Travel</a><a href="blog.html">Journal</a>
+      <a href="about.html">About</a><a href="contact.html">Contact</a>
+    </div>
+    <div class="footer__copy">© 2026 AP Villas, Mahakal Collection · Ujjain, Madhya Pradesh, India.</div>
+  </div>
+</footer>
+
+<a href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20order%20food." target="_blank" rel="noopener" class="fab">💬</a>
+
+<script src="assets/js/main.js"></script>
+<script>
+const MENU = {
+  breakfast: [
+    { name: "Pilgrim Thali", price: 250, tags: ["veg","popular"],
+      desc: "Poha · Aloo Paratha · Dahi · Achar · Masala Chai. The classic North Indian morning plate." },
+    { name: "Continental Breakfast", price: 275, tags: ["veg"],
+      desc: "Fresh-baked bread · Butter · Jam · Honey · Fruit · Eggs (any style) · Tea or filter coffee." },
+    { name: "South Indian Plate", price: 275, tags: ["veg"],
+      desc: "2 Idli · 1 Masala Dosa · Sambar · Coconut Chutney · Tomato Chutney · Filter Coffee." },
+    { name: "Healthy Bowl", price: 225, tags: ["veg","sattvic"],
+      desc: "Seasonal fresh fruits · Yogurt · Honey · Walnuts & almonds · Chia · Herbal tea." },
+    { name: "Mahakal Special", price: 325, tags: ["veg","popular"],
+      desc: "Aloo Sabzi · Puri · Halwa · Lassi · Chai. Traditional pilgrim morning offering." },
+    { name: "Paratha Plate (any 2)", price: 220, tags: ["veg"],
+      desc: "Choose any two: Aloo · Gobhi · Paneer · Methi · Pyaaz. Served with curd, butter, and pickle." },
+    { name: "Egg Lover's", price: 225, tags: ["nonveg"],
+      desc: "3 Eggs (omelette / scrambled / boiled / fried) · Toast · Butter · Tea or coffee." },
+    { name: "À La Carte — Tea / Coffee", price: 60, tags: ["veg"],
+      desc: "Masala Chai ₹40 · Filter Coffee ₹60 · Cold Coffee ₹120 · Hot Chocolate ₹100" },
+  ],
+  lunch: [
+    { name: "Pilgrim Veg Thali", price: 350, tags: ["veg","popular"],
+      desc: "2 Sabzi · Roti · Rice · Dal · Salad · Curd · Sweet · Pickle. Unlimited refills on rotis & rice." },
+    { name: "Premium Veg Thali", price: 450, tags: ["veg","popular"],
+      desc: "5 Sabzi (incl. paneer) · Naan or Roti · Rice · Dal Tadka · Salad · Raita · 2 Sweets · Papad." },
+    { name: "Sattvic Bhog Thali", price: 375, tags: ["sattvic","veg"],
+      desc: "Pure sattvic, no onion-garlic. 4 Sabzi · Phulka · Khichdi · Kadhi · Curd · Halwa · Salad." },
+    { name: "Non-Veg Thali (Chicken)", price: 500, tags: ["nonveg"],
+      desc: "Chicken Curry · Tandoori Roti · Jeera Rice · Dal · Salad · Curd · Sweet. Authentic home-style." },
+    { name: "Non-Veg Thali (Mutton)", price: 650, tags: ["nonveg"],
+      desc: "Slow-cooked Mutton Curry · Tandoori Roti · Saffron Rice · Dal · Salad · Curd · Gulab Jamun." },
+    { name: "Bhojan Buffet (Group ≥6)", price: 550, tags: ["veg","popular"],
+      desc: "Per person, full spread for groups of 6+: 4 sabzi · 3 dals · rice · breads · sweets · drinks. Order 4 hours ahead." },
+    { name: "Indo-Chinese Combo", price: 380, tags: ["veg"],
+      desc: "Veg Hakka Noodles or Fried Rice · Manchurian or Chilli Paneer · Soup · Spring Rolls (2)." },
+    { name: "À La Carte — Veg Sabzi", price: 180, tags: ["veg"],
+      desc: "Single sabzi (paneer / aloo / kadhi / mix veg) · Half-portion ₹120 · Roti ₹15 · Rice ₹70" },
+  ],
+  dinner: [
+    { name: "Pilgrim Veg Thali", price: 350, tags: ["veg","popular"],
+      desc: "Same as lunch · 2 Sabzi · Roti · Rice · Dal · Salad · Curd · Sweet · Pickle." },
+    { name: "Premium Veg Thali", price: 450, tags: ["veg"],
+      desc: "5 Sabzi · Naan or Roti · Rice · Dal · Raita · 2 Sweets · Papad. Unlimited refills." },
+    { name: "Mahakal Bhog Thali", price: 450, tags: ["sattvic","veg","popular"],
+      desc: "Sacred sattvic preparation · No onion-garlic · 5 sabzi · Khichdi · Kadhi · Halwa · Lassi. The dinner pilgrims request most." },
+    { name: "Tandoor Special (Veg)", price: 480, tags: ["veg"],
+      desc: "Paneer Tikka · Tandoori Aloo · Stuffed Mushroom · Tandoori Roti · Mint Chutney · Salad." },
+    { name: "Tandoor Special (Non-Veg)", price: 580, tags: ["nonveg"],
+      desc: "Chicken Tikka · Seekh Kebab · Chicken Tandoori (half) · Naan · Pulao · Onion Salad." },
+    { name: "Non-Veg Thali (Chicken)", price: 500, tags: ["nonveg"],
+      desc: "Chicken Curry · Tandoori Roti · Jeera Rice · Dal · Salad · Curd · Sweet." },
+    { name: "Group Buffet (≥8 guests)", price: 600, tags: ["veg","popular"],
+      desc: "Per person · 6 sabzi · 4 dals · 3 rices · 4 breads · 4 sweets · drinks · live counter (₹50 extra)." },
+    { name: "Light Dinner Bowl", price: 280, tags: ["veg","sattvic"],
+      desc: "Khichdi or Daliya · Curd · Salad · Pickle · Lassi. Easy on the system after a long darshan day." },
+  ],
+  snacks: [
+    { name: "Masala Chai", price: 40, tags: ["veg","popular"],
+      desc: "Properly brewed with fresh ginger, cardamom, clove, and milk." },
+    { name: "Filter Coffee", price: 60, tags: ["veg"],
+      desc: "South Indian style with frothed milk and full-bodied filter decoction." },
+    { name: "Cold Coffee", price: 120, tags: ["veg"],
+      desc: "Blended with vanilla ice cream, served chilled with chocolate drizzle." },
+    { name: "Sweet / Salty Lassi", price: 100, tags: ["veg"],
+      desc: "Thick yogurt blended with sugar and rose water (sweet) or salt and cumin (salty)." },
+    { name: "Fresh Lime Soda", price: 80, tags: ["veg"],
+      desc: "Sweet, salty, or mixed. With ice and a fresh sprig of mint." },
+    { name: "Butter Milk (Chaas)", price: 60, tags: ["veg","sattvic"],
+      desc: "Spiced chilled buttermilk with curry leaves, ginger, and roasted cumin." },
+    { name: "Pakora Plate", price: 150, tags: ["veg","popular"],
+      desc: "Mixed onion / spinach / paneer / aloo pakoras with mint and tamarind chutneys." },
+    { name: "Samosa (2 pcs)", price: 80, tags: ["veg"],
+      desc: "Fresh-fried with green chutney and tamarind chutney." },
+    { name: "Sandwich (Veg / Cheese / Chicken)", price: 130, tags: ["veg","nonveg"],
+      desc: "Grilled multigrain sandwich with house-made spread. Veg ₹130 · Cheese ₹150 · Chicken ₹180." },
+    { name: "Maggi (any style)", price: 100, tags: ["veg"],
+      desc: "Plain · Masala · Cheese · Veggie. The pilgrim's late-night classic." },
+    { name: "Fresh Fruit Bowl", price: 150, tags: ["veg","sattvic"],
+      desc: "Seasonal fruits, washed and cut · Drizzled with honey or chaat masala on request." },
+    { name: "Welcome Cookie Plate", price: 80, tags: ["veg"],
+      desc: "Assorted bakery cookies served with chai or coffee." },
+  ],
+  prasad: [
+    { name: "Welcome Prasad Thali", price: 200, tags: ["sattvic","new","popular"],
+      desc: "Mahakal-themed welcome plate: Mahakal prasad · Tulsi water · Sattvic sweets · Coconut · Agarbatti pack. Complimentary on first night for Bhasma Aarti booked guests." },
+    { name: "Bhasma Aarti Pre-Plate", price: 250, tags: ["sattvic"],
+      desc: "Light, easy-to-digest meal prepared for guests heading to 4 AM aarti. Khichdi · Light dal · Curd · Banana." },
+    { name: "Vrat / Fasting Thali", price: 350, tags: ["sattvic","new"],
+      desc: "Sabudana Khichdi · Singhare ka Atta Puri · Aloo · Kuttu Pakoda · Curd · Fruit. Perfect for Shravan or Mahashivratri." },
+    { name: "Birthday / Special Cake", price: 950, tags: ["popular","new"],
+      desc: "Half kg fresh cream cake with custom message · 3 hours notice · Multiple flavours available." },
+    { name: "Bhog for Pooja (Group)", price: 1500, tags: ["sattvic","veg"],
+      desc: "Full sattvic bhog for in-villa pooja or havan: 5 sabzi · Halwa-Puri · Kheer · Phal · Prasadi pack. Serves 8-10. Order 6 hours ahead." },
+    { name: "Pandit Ji Ka Bhojan", price: 400, tags: ["sattvic","veg"],
+      desc: "Specially prepared sattvic meal for visiting pandit / pujari · No onion-garlic · Pure ghee · Bronze utensils on request." },
+  ],
+};
+
+const WA = "https://wa.me/918999061598?text=";
+
+function tagHTML(tag) {
+  const labels = {
+    veg: "🟢 PURE VEG", nonveg: "🔴 NON-VEG", sattvic: "🟡 SATTVIC",
+    popular: "★ POPULAR", new: "★ NEW"
+  };
+  return `<span class="menu-tag menu-tag--${tag}">${labels[tag] || tag}</span>`;
+}
+
+function renderItems(category) {
+  const items = MENU[category] || [];
+  const container = document.getElementById('items-' + category);
+  container.innerHTML = items.map(item => {
+    const tagsHtml = (item.tags || []).map(tagHTML).join('');
+    const orderText = encodeURIComponent(`Hi Apoorv, I'd like to order: ${item.name} (₹${item.price}). Please confirm timing.`);
+    return `
+      <div class="menu-item reveal">
+        <div class="menu-item__head">
+          <div class="menu-item__name">${item.name}</div>
+          <div class="menu-item__price">₹${item.price}</div>
+        </div>
+        <div class="menu-item__tags">${tagsHtml}</div>
+        <div class="menu-item__desc">${item.desc}</div>
+        <a class="menu-item__order" href="${WA}${orderText}" target="_blank" rel="noopener">💬 Order Now</a>
+      </div>
+    `;
+  }).join('');
+}
+
+['breakfast','lunch','dinner','snacks','prasad'].forEach(renderItems);
+
+// Tab switching
+document.querySelectorAll('.menu-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const cat = tab.dataset.cat;
+    document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.menu-category').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.menu-category[data-cat="${cat}"]`).classList.add('active');
+    // Trigger reveals on new items
+    setTimeout(() => {
+      document.querySelectorAll('.menu-category.active .menu-item').forEach((el, i) => {
+        setTimeout(() => el.classList.add('in'), i * 30);
+      });
+    }, 50);
+  });
+});
+
+// Initial reveal
+setTimeout(() => {
+  document.querySelectorAll('.menu-category.active .menu-item').forEach((el, i) => {
+    setTimeout(() => el.classList.add('in'), i * 50);
+  });
+}, 100);
+</script>
+</body>
+</html>
