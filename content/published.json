@@ -36,6 +36,22 @@
       "cluster": "omkareshwar-nearby",
       "keyword": "omkareshwar jyotirlinga",
       "source": "hand-written"
+    },
+    {
+      "slug": "navratri-in-ujjain",
+      "title": "Navratri in Ujjain 2026: Harsiddhi Mata, Dates and Darshan Plan",
+      "url": "blog/navratri-in-ujjain.html",
+      "date": "2026-10-10",
+      "cluster": "festivals",
+      "keyword": "navratri ujjain",
+      "source": "ai-pipeline",
+      "hero": "images/378139407.jpg",
+      "sources": [
+        "https://hindutone.com/festivals/navratri-2026-dates-ghatasthapana-puja-vidhi/",
+        "https://gulfnews.com/lifestyle/when-is-navratri-2026-and-what-colour-to-wear-each-day-1.500693264",
+        "https://mptourism.com/harsiddhi-temple-shakti-peetha-in-Ujjain.html",
+        "https://www.freepressjournal.in/indore/madhya-pradesh-ujjain-all-set-for-navratri"
+      ]
     }
   ]
 }
