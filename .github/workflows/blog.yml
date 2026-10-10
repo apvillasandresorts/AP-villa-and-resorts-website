@@ -1,0 +1,264 @@
+# AP Villas blog pipeline.
+# Writes one SEO post with Claude Code (runs on the owner's Claude subscription via
+# CLAUDE_CODE_OAUTH_TOKEN, never a paid API key), checks it, and opens a PR.
+# Button: GitHub → Actions → "Blog post" → Run workflow (or /new-post in Claude Code).
+# Daily: 06:00 IST. Repo variables: AUTO_PUBLISH (true/false), MAX_POSTS_PER_MONTH (default 30),
+# BLOG_MODEL (default sonnet).
+name: Blog post
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Optional topic or title (leave empty to let Claude pick a timely one)"
+        required: false
+        default: ""
+      auto_publish:
+        description: "Merge and publish automatically if all checks pass"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "30 0 * * *" # 06:00 IST
+
+concurrency:
+  group: blog-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  MAX_POSTS_PER_MONTH: ${{ vars.MAX_POSTS_PER_MONTH || '30' }}
+  BLOG_MODEL: ${{ vars.BLOG_MODEL || 'sonnet' }}
+
+jobs:
+  write:
+    name: Write post
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      skip: ${{ steps.guard.outputs.skip }}
+      slug: ${{ steps.detect.outputs.slug }}
+      branch: ${{ steps.detect.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Guard (monthly cap, pending PRs)
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          month=$(TZ=Asia/Kolkata date +%Y-%m)
+          echo "today=$(TZ=Asia/Kolkata date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          published=$(node -e "const p=require('./content/published.json').posts;console.log(p.filter(x=>x.source==='ai-pipeline'&&String(x.date).startsWith('$month')).length)")
+          pending_slugs=$(gh pr list --state open --search "head:blog/" --json headRefName --jq '[.[].headRefName | sub("^blog/";"")] | join(",")')
+          pending=$(gh pr list --state open --search "head:blog/" --json number --jq 'length')
+          echo "Published by pipeline this month: $published, open blog PRs: $pending, cap: $MAX_POSTS_PER_MONTH"
+          echo "pending_slugs=$pending_slugs" >> "$GITHUB_OUTPUT"
+          skip=false
+          if [ $((published + pending)) -ge "$MAX_POSTS_PER_MONTH" ]; then
+            echo "::notice::Monthly cap of $MAX_POSTS_PER_MONTH posts reached. Skipping."
+            skip=true
+          elif [ "$EVENT" = "schedule" ] && [ "$pending" -ge 1 ]; then
+            echo "::notice::A blog PR is still waiting for approval ($pending_slugs). Daily run skipped so posts don't pile up."
+            skip=true
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+      - name: Write the post with Claude
+        if: steps.guard.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Follow content/blog-writer-instructions.md exactly and write ONE new blog post.
+
+            Today's date (IST): ${{ steps.guard.outputs.today }}
+            Topic override from the owner (empty means pick one yourself): "${{ github.event.inputs.topic }}"
+            Slugs already waiting in open pull requests (do not reuse or duplicate these): "${{ steps.guard.outputs.pending_slugs }}"
+
+            Hard rules: property claims only from content/business-facts.json; only photos from
+            content/photo-library.json; every timing/price/date sourced; no git commands; edit only
+            blog/<slug>.html, blog.html, sitemap.xml, content/published.json, content/topics.json.
+            Before finishing, `node scripts/validate-post.mjs <slug>` must pass.
+          claude_args: >-
+            --model ${{ env.BLOG_MODEL }}
+            --max-turns 80
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*)"
+
+      - name: Detect new post and push branch
+        id: detect
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git status --porcelain
+          new=$(git status --porcelain --untracked-files=all -- blog/ | awk '$1=="??"{print $2}' | grep -E '^blog/[a-z0-9-]+\.html$' || true)
+          count=$(printf "%s" "$new" | grep -c . || true)
+          if [ "$count" != "1" ]; then echo "::error::Expected exactly one new file in blog/, found: '$new'"; exit 1; fi
+          slug=$(basename "$new" .html)
+          # Only the allowed files may change.
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json)$" || true)
+          if [ -n "$bad" ]; then echo "::warning::Reverting unexpected changes: $bad"; for f in $bad; do git checkout -- "$f" 2>/dev/null || rm -f "$f"; done; fi
+          node scripts/build-sitemap.mjs
+          branch="blog/$slug"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "blog/$slug.html" blog.html sitemap.xml content/published.json content/topics.json
+          git commit -m "New post: $slug"
+          git push origin "$branch"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+  check:
+    name: Check post
+    needs: write
+    if: needs.write.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      passed: ${{ steps.verdict.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.write.outputs.branch }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate (no AI)
+        id: validate
+        continue-on-error: true
+        run: node scripts/validate-post.mjs "${{ needs.write.outputs.slug }}" --summary summary.json
+
+      - name: Fact review with Claude
+        id: review
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You are a strict fact checker. Read blog/${{ needs.write.outputs.slug }}.html and content/business-facts.json.
+            Report a problem for:
+            1. Any claim about AP Villas or its villas (distances, amenities, capacity, prices, services, policies,
+               check-in, reviews, awards) that is not supported by content/business-facts.json, or that uses a field marked TODO.
+            2. Any specific timing, price, date, fee, or rule about temples, festivals, transport or government services
+               that has no matching link in the post's "Sources" section or inline.
+            3. Any image alt text or caption that describes a villa photo as a temple, ghat or city view.
+            Ignore style. Be precise; quote the exact sentence for each issue. pass=true only if there are no issues.
+          claude_args: >-
+            --model ${{ env.BLOG_MODEL }}
+            --max-turns 15
+            --allowedTools "Read,Grep,Glob"
+            --json-schema '{"type":"object","properties":{"pass":{"type":"boolean"},"issues":{"type":"array","items":{"type":"string"}}},"required":["pass","issues"]}'
+
+      - name: Verdict
+        id: verdict
+        env:
+          REVIEW: ${{ steps.review.outputs.structured_output }}
+          VALIDATE: ${{ steps.validate.outcome }}
+        run: |
+          echo "$REVIEW" > review.json
+          node -e '
+            const fs=require("fs");
+            let r={pass:false,issues:["Fact review did not return a result"]};
+            try{ const t=fs.readFileSync("review.json","utf8").trim(); if(t) r=JSON.parse(t);}catch{}
+            fs.writeFileSync("review.json",JSON.stringify(r,null,2));
+            console.log(JSON.stringify(r,null,2));
+          '
+          review_pass=$(node -p 'require("./review.json").pass')
+          passed=false
+          if [ "$VALIDATE" = "success" ] && [ "$review_pass" = "true" ]; then passed=true; fi
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
+          echo "Validator: $VALIDATE, fact review pass: $review_pass"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: post-check
+          path: |
+            summary.json
+            review.json
+          if-no-files-found: ignore
+
+      - name: Fail if checks failed
+        if: steps.verdict.outputs.passed != 'true'
+        run: |
+          echo "::error::Post checks failed. See the Validate and Verdict steps. The PR is still opened, labelled needs-fixes."
+          exit 1
+
+  pr:
+    name: Open PR
+    needs: [write, check]
+    if: always() && needs.write.result == 'success' && needs.write.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.write.outputs.branch }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: post-check
+        continue-on-error: true
+
+      - name: Create pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLUG: ${{ needs.write.outputs.slug }}
+          BRANCH: ${{ needs.write.outputs.branch }}
+          PASSED: ${{ needs.check.outputs.passed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node - <<'EOF' > body.md
+          const fs = require('fs');
+          const slug = process.env.SLUG;
+          const read = p => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } };
+          const s = read('summary.json') || {};
+          const r = read('review.json') || { pass: false, issues: ['No review output'] };
+          const post = (read('content/published.json')?.posts || []).find(p => p.slug === slug) || {};
+          const passed = process.env.PASSED === 'true';
+          const lines = [
+            `**${s.title || post.title || slug}**`,
+            '',
+            `- Keyword: \`${s.keyword || post.keyword || ''}\``,
+            `- Words: ${s.words ?? '?'}`,
+            `- Live URL after merge: https://www.apvillasandresorts.in/blog/${slug}.html`,
+            `- Checks: ${passed ? '✅ all passed' : '❌ failed (see below)'} · [run log](${process.env.RUN_URL})`,
+            '',
+            '### Sources',
+            ...((s.sources || post.sources || []).map(u => `- ${u}`)),
+            '',
+          ];
+          if (s.errors?.length) lines.push('### Validator errors', ...s.errors.map(e => `- ${e}`), '');
+          if (s.warnings?.length) lines.push('### Warnings', ...s.warnings.map(e => `- ${e}`), '');
+          if (r.issues?.length) lines.push('### Fact review', ...r.issues.map(e => `- ${e}`), '');
+          lines.push('Vercel posts the preview link on this PR. Approve by merging (squash). To reject, close the PR and delete the branch.');
+          console.log(lines.join('\n'));
+          EOF
+          title=$(node -p "(require('./content/published.json').posts.find(p=>p.slug===process.env.SLUG)||{}).title||process.env.SLUG")
+          gh label create blog-post --color C9A24F --description "AI blog pipeline" 2>/dev/null || true
+          gh label create needs-fixes --color B5121B --description "Post failed checks" 2>/dev/null || true
+          labels="blog-post"; [ "$PASSED" = "true" ] || labels="blog-post,needs-fixes"
+          url=$(gh pr create --base main --head "$BRANCH" --title "New post: $title" --body-file body.md --label "$labels")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### $url" >> "$GITHUB_STEP_SUMMARY"
+          cat body.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Auto-publish
+        if: needs.check.outputs.passed == 'true' && (github.event.inputs.auto_publish == 'true' || vars.AUTO_PUBLISH == 'true')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr merge "${{ steps.pr.outputs.url }}" --squash --delete-branch

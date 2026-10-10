@@ -1,0 +1,162 @@
+{
+  "_readme": "The ONLY allowed source for claims about AP Villas properties in blog posts. Anything marked TODO must not be stated in a post. Pre-filled from villas.html, contact.html and about.html on 2026-10-10. Edit this file to change what the blog is allowed to say.",
+  "business": {
+    "name": "AP Villas, Mahakal Collection",
+    "founder": "Apoorv",
+    "founded_year": 2023,
+    "city": "Ujjain, Madhya Pradesh, India",
+    "postal_code": "456006",
+    "address_line": "Near Mahakaleshwar Temple, Ujjain, Madhya Pradesh 456006",
+    "street_address": "TODO",
+    "website": "https://www.apvillasandresorts.in",
+    "whatsapp_number": "+91 89990 61598",
+    "whatsapp_link": "https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas.",
+    "email": "apvillasandresorts@gmail.com",
+    "whatsapp_reply_time": "Usually within 5 minutes during waking hours",
+    "villa_count": 5,
+    "booking_platforms": [
+      "Direct via WhatsApp",
+      "Booking.com",
+      "Airbnb"
+    ],
+    "payments": "International cards accepted via Razorpay, or platform payments via Booking.com / Airbnb",
+    "languages_spoken_by_caretakers": [
+      "Hindi",
+      "English"
+    ]
+  },
+  "shared_facts": {
+    "distance_to_mahakaleshwar": "All five villas are within 2 km of Mahakaleshwar Jyotirlinga, about 6 minutes by car or 12 minutes on foot",
+    "distance_to_ujjain_station": "About 3 km from Ujjain Junction railway station",
+    "mahakal_shuttle": "Complimentary villa-to-Mahakaleshwar shuttle for in-house guests (up to 5 guests per trip)",
+    "bhasma_aarti_help": "Caretaker explains the Bhasma Aarti booking process (online or counter) on arrival evening; shuttle drops guests at the temple gate by 3:30 AM for the 4 AM aarti. The help is complimentary; the temple's own permit is booked by the guest.",
+    "included_in_every_villa": [
+      "Complimentary breakfast",
+      "Premium mattresses and linens",
+      "Full modular kitchen with microwave and cookware",
+      "Mini fridge and kettle",
+      "40-inch HD smart TV",
+      "High-speed Wi-Fi",
+      "24-hour private caretaker",
+      "24x7 security cameras",
+      "Private parking",
+      "Welcome tea and prasad",
+      "Mahakal shuttle service"
+    ],
+    "food": "Every villa has a full kitchen so families can cook; a local cook can be arranged for simple home-style thalis on request",
+    "cancellation_policy": "Standard dates: free cancellation up to 7 days before arrival. Festival dates (Mahashivratri, Shravan Mondays, Kumbh/Simhastha): full advance, non-refundable. Exact policy confirmed on WhatsApp.",
+    "check_in_time": "TODO",
+    "check_out_time": "TODO",
+    "pets_policy": "TODO",
+    "wheelchair_access": "TODO",
+    "lift_elevator": "TODO",
+    "power_backup": "TODO",
+    "hot_water_geyser": "TODO",
+    "ac_in_all_rooms": "TODO",
+    "guest_reviews": "4.9 star average; 200+ verified 5-star reviews across Airbnb, Booking.com, MakeMyTrip and Google (as stated on the site)"
+  },
+  "villas": [
+    {
+      "id": "divinestay",
+      "name": "Divinestay",
+      "page": "villas.html",
+      "tagline": "Our flagship villa: a sanctuary of light, space, and modern devotion.",
+      "bedrooms": 3,
+      "sleeps": 8,
+      "from_price_inr_per_night": 5500,
+      "highlights": [
+        "Private rooftop",
+        "Full modular kitchen",
+        "Premium HD smart TV",
+        "24-hour caretaker"
+      ],
+      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
+      "photo_folder": "villas/divinestay"
+    },
+    {
+      "id": "ap_suite",
+      "name": "AP Suite",
+      "page": "villas.html",
+      "tagline": "Quiet luxury for the family that values privacy above all.",
+      "bedrooms": 2,
+      "sleeps": 4,
+      "from_price_inr_per_night": 4200,
+      "highlights": [
+        "Premium mattresses",
+        "Mini fridge and kettle",
+        "Private parking",
+        "Security cameras"
+      ],
+      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
+      "photo_folder": "villas/ap_suite"
+    },
+    {
+      "id": "om_shanti",
+      "name": "Om Shanti Stay",
+      "page": "villas.html",
+      "tagline": "Where peace meets the pulse of pilgrimage.",
+      "bedrooms": 2,
+      "sleeps": 6,
+      "from_price_inr_per_night": 4500,
+      "highlights": [
+        "Inflatable pool",
+        "Microwave and full kitchen equipment",
+        "Free shuttle service",
+        "High-quality linens"
+      ],
+      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
+      "photo_folder": "villas/om_shanti"
+    },
+    {
+      "id": "villa_aranya",
+      "name": "Villa Aranya",
+      "page": "villas.html",
+      "tagline": "Forest-inspired calm, minutes from the Jyotirlinga.",
+      "bedrooms": 3,
+      "sleeps": 8,
+      "from_price_inr_per_night": 5800,
+      "highlights": [
+        "Architect-designed interiors",
+        "Premium HD TV",
+        "Full kitchen equipment",
+        "Shuttle to Mahakal"
+      ],
+      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
+      "photo_folder": "villas/villa_aranya"
+    },
+    {
+      "id": "rudrangan",
+      "name": "Rudrangan Suites",
+      "page": "villas.html",
+      "tagline": "A new chapter: refined suites for the discerning pilgrim.",
+      "bedrooms": 3,
+      "sleeps": 6,
+      "from_price_inr_per_night": 5200,
+      "highlights": [
+        "Newly opened in 2026",
+        "Designer finishes",
+        "Garden seating",
+        "Premium linens"
+      ],
+      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
+      "photo_folder": "villas/rudrangan"
+    }
+  ],
+  "transport_indicative_prices_2026": {
+    "_note": "Indicative only; always say 'WhatsApp us for a confirmed quote'.",
+    "indore_airport_sedan_one_way": 2500,
+    "indore_airport_suv_one_way": 3500,
+    "indore_airport_innova_crysta_one_way": 4500,
+    "tempo_traveller_12_seater_one_way": 6500,
+    "full_day_local_sightseeing_8h_80km": 3500,
+    "half_day_temple_tour_4h_40km": 2500,
+    "omkareshwar_day_trip_suv_round_trip": 5500,
+    "maheshwar_plus_omkareshwar_combo": 8500,
+    "mandu_day_trip": 6500
+  },
+  "group_capacity": {
+    "largest_single_villa_sleeps": 8,
+    "all_five_villas_combined_sleeps": 32,
+    "_note": "Combined figure is the sum of the five 'sleeps' values on villas.html. Large-group bookings across villas: say 'WhatsApp us to check availability'."
+  }
+}

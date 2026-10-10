@@ -1,0 +1,41 @@
+{
+  "_readme": "Log of every published post (newest last). Never reuse a slug.",
+  "posts": [
+    {
+      "slug": "mahakaleshwar",
+      "title": "Mahakaleshwar Jyotirlinga: A Complete Guide to Visiting the Eternal Lord",
+      "url": "blog/mahakaleshwar.html",
+      "date": "2026-04-26",
+      "cluster": "mahakal-darshan",
+      "keyword": "mahakaleshwar jyotirlinga guide",
+      "source": "hand-written"
+    },
+    {
+      "slug": "ujjain-attractions",
+      "title": "Ten Sacred Places to Visit in Ujjain Beyond Mahakaleshwar",
+      "url": "blog/ujjain-attractions.html",
+      "date": "2026-04-26",
+      "cluster": "omkareshwar-nearby",
+      "keyword": "places to visit in ujjain",
+      "source": "hand-written"
+    },
+    {
+      "slug": "ujjain-history",
+      "title": "The Historical Significance of Ujjain: From Vikramaditya to Today",
+      "url": "blog/ujjain-history.html",
+      "date": "2026-04-26",
+      "cluster": "itineraries",
+      "keyword": "ujjain history",
+      "source": "hand-written"
+    },
+    {
+      "slug": "omkareshwar",
+      "title": "Omkareshwar: The Other Jyotirlinga, Just 78 Kilometres Away",
+      "url": "blog/omkareshwar.html",
+      "date": "2026-04-26",
+      "cluster": "omkareshwar-nearby",
+      "keyword": "omkareshwar jyotirlinga",
+      "source": "hand-written"
+    }
+  ]
+}

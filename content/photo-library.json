@@ -1,0 +1,821 @@
+{
+  "_readme": "Every real photo the blog may use. All photos show AP Villas properties; NONE show a temple, so never use alt text or captions that imply a temple. Paths are relative to the site root. Mirrors exist in assets/, img/, business/ (duplicates); always use these paths. 'unassigned' photos: villa unknown, ask the owner before naming a villa.",
+  "photos": [
+    {
+      "path": "images/378137526.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Glass-walled shower and bathroom at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/378139407.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "rooftop",
+        "terrace",
+        "night",
+        "outdoor"
+      ],
+      "alt": "Rooftop lawn seating area lit at night at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/378148443.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "rooftop",
+        "terrace",
+        "day",
+        "outdoor"
+      ],
+      "alt": "Rooftop lawn with outdoor seating in daylight at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/380049919.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with a large double bed and ceiling light at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/380049922.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "living-room",
+        "dining"
+      ],
+      "alt": "Living and dining area with a jaali screen at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/382322899.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "exterior",
+        "building",
+        "day"
+      ],
+      "alt": "Exterior of a multi-storey villa building in daylight at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/382322957.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "entrance",
+        "staircase"
+      ],
+      "alt": "Entrance hallway and staircase at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/500118011.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with colourful cushions and framed prints at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "images/504602955.jpg",
+      "villa": "unassigned",
+      "villa_name": "TODO: which villa?",
+      "tags": [
+        "bedroom",
+        "workspace"
+      ],
+      "alt": "Bedroom with a writing desk at an AP Villas property in Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/5c1ed7fd-d42c-4e69-9d91-8a7e3e4f9d62.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "living-room",
+        "bedroom"
+      ],
+      "alt": "Suite living area with a sofa and bed at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/73fedc75-c2f7-442e-87ea-3cb4dfe1c897.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "kitchenette",
+        "workspace"
+      ],
+      "alt": "Kitchenette counter with wall decor at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/7ca466ae-58e4-4be9-96ed-af1b6299385b.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "entrance",
+        "hallway"
+      ],
+      "alt": "Hallway with green turf mat and leaf wall art at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/9c2e3c38-38e2-4d50-9971-3192b97cc8ea.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed and wardrobe at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/b4ee7298-3aff-4b14-a1f3-b40123ecf94e.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "kitchen"
+      ],
+      "alt": "Kitchen counter with hanging vine decor at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/bbce2999-44b4-4252-92b0-32ccb5a56164.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/ap_suite/df27ab9d-0eac-4478-bda9-b98c504ac41c.JPG",
+      "villa": "ap_suite",
+      "villa_name": "AP Suite",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Spacious bedroom with seating at AP Suite, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/0fb206f7-1758-4702-b988-66e07875b6d5.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "entrance",
+        "night",
+        "balcony"
+      ],
+      "alt": "Villa entrance door and balcony at night at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/165bcf78-cf5c-4c50-a4a3-75e336b4a745.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "decor",
+        "wall-art"
+      ],
+      "alt": "Buddha wall art in a hallway at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/184895ef-e119-4cfb-980c-fe476a8c7549.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "hallway",
+        "tv"
+      ],
+      "alt": "Hallway with TV wall and plants at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/1b3eace1-c2b7-4c43-9074-7683a3ba88d2.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "living-room",
+        "tv"
+      ],
+      "alt": "Lounge TV wall with plants at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/2a8e7c7d-4797-4999-954a-5652bdc2b3a8.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "living-room",
+        "tv"
+      ],
+      "alt": "TV wall in the lounge at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/3de92cc0-9080-4fe4-ba9d-36b4a12bc28e.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "living-room",
+        "tv"
+      ],
+      "alt": "Lounge with TV wall at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/40d0dad4-9a9a-4e35-92bd-4d32514f061b.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed and ceiling lights at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/45857c91-94b0-4478-abde-bf1aeed89ecf.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed and wall shelf at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/4b1b457f-b98b-40fa-b6fc-244770cf7417.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "decor",
+        "wall-art"
+      ],
+      "alt": "Leaf-pattern metal wall art at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/73f343b0-30fb-4f7a-8bda-331cca84f62e.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "decor"
+      ],
+      "alt": "Decorative wall shelf with ring light at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/7617309e-2c30-4f48-b236-e873540a0f77.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "kitchen"
+      ],
+      "alt": "Kitchen counter at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/7d697834-89ef-4227-bf37-fe632f3d1c54.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/7e4f6af1-6d76-4556-99f5-882ae0f3362c.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "hallway",
+        "decor"
+      ],
+      "alt": "Hallway with framed art and plants at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/83ceec39-2338-4aff-9aec-8623951b0b1e.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/874fc6dd-2cff-4281-9223-07ca6d7b13c1.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "living-room",
+        "tv"
+      ],
+      "alt": "Lounge with TV wall at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/9911c293-44b3-4bc8-91c8-3e6b1608bbf8.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom",
+        "wall-art"
+      ],
+      "alt": "Bedroom with framed wall art at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/9fc7ccdb-5816-4648-9e1c-1b1975ae2c0e.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "decor",
+        "light"
+      ],
+      "alt": "Decorative ceiling light at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/IMG_3147.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom",
+        "twin-beds"
+      ],
+      "alt": "Bedroom with two beds at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/IMG_3150.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with two beds and curtains at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/IMG_3151.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/a72615ea-4dc6-45c8-8868-c4d87cc3dd75.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "exterior",
+        "night",
+        "balcony"
+      ],
+      "alt": "Villa balcony and facade lit at night at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/ae19057b-0a65-42ec-94c7-4de76257a833.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "hallway"
+      ],
+      "alt": "Hallway with room doors at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/b1d6fe63-922d-4048-bec6-2a21ba2b818b.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "decor",
+        "wall-art"
+      ],
+      "alt": "Ganesha wall art at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/b48c748b-6279-402e-b16f-6abaa34c421d.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Room with wardrobe and curtains at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/b69d08b1-f2d0-45f6-b429-0e3d335ceec3.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom",
+        "wall-art"
+      ],
+      "alt": "Bedroom with TV and wall art at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/b99f288d-b1dd-4626-ad47-fbf5ab1a565a.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "entrance",
+        "night",
+        "balcony"
+      ],
+      "alt": "Entrance and balcony at night at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/d377ea3b-bece-4195-9ea7-e9f366764908.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed and wall art at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/d95bb5c2-b413-446d-9430-35f0ea1e8132.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "exterior",
+        "night"
+      ],
+      "alt": "Villa facade lit at night at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/divinestay/e85625b4-e210-456f-82cc-3cb39cca9fd6.jpg",
+      "villa": "divinestay",
+      "villa_name": "Divinestay",
+      "tags": [
+        "hallway",
+        "decor"
+      ],
+      "alt": "Corridor with art and plants at Divinestay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/690586341.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "living-room"
+      ],
+      "alt": "Lounge with dark interiors and wall art at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/690586362.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with dark interiors at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/691466727.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom with glass shower at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/691466733.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with grey bedding at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/693418453.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "living-room",
+        "bedroom"
+      ],
+      "alt": "Living area with sofa and bed at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/693419482.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "pool",
+        "lounge",
+        "outdoor"
+      ],
+      "alt": "Pool deck with lounge seating at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/693419483.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "living-room",
+        "lounge"
+      ],
+      "alt": "Lounge with sofas and cactus wall art at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/om_shanti/693419485.jpg",
+      "villa": "om_shanti",
+      "villa_name": "Om Shanti Stay",
+      "tags": [
+        "living-room",
+        "lounge"
+      ],
+      "alt": "Lounge seating area at Om Shanti Stay, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_3997.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "sitting-area"
+      ],
+      "alt": "Sitting area with chairs and coffee table at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4004.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Washbasin at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4005.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom with marble walls at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4011.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with two beds at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4013.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom",
+        "tv"
+      ],
+      "alt": "Suite with wall-mounted TV at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4015.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom",
+        "sitting-area"
+      ],
+      "alt": "Room with bed and armchair at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4016.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with two beds at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4021.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom",
+        "amenities"
+      ],
+      "alt": "Bedroom with kettle and tray at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4022.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with sofa and bed at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4024.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "dresser"
+      ],
+      "alt": "Dresser with mirror and plant at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/rudrangan/IMG_4027.jpg",
+      "villa": "rudrangan",
+      "villa_name": "Rudrangan Suites",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Rudrangan Suites, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297588.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "living-room",
+        "tv"
+      ],
+      "alt": "Living room with TV and coffee table at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297590.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed and round mirror at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297595.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "wardrobe"
+      ],
+      "alt": "Built-in wardrobe at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297598.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "living-room",
+        "dining"
+      ],
+      "alt": "Living area with armchairs and dining table at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297603.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "hallway",
+        "decor"
+      ],
+      "alt": "Console table with round mirror at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297605.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with white linens at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297609.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom washbasin with stone wall at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297612.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom with stone-tile walls at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297620.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "kitchen"
+      ],
+      "alt": "Modular kitchen at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297623.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297629.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom with shower and towel rack at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297639.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bedroom"
+      ],
+      "alt": "Bedroom with double bed at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    },
+    {
+      "path": "villas/villa_aranya/668297641.jpg",
+      "villa": "villa_aranya",
+      "villa_name": "Villa Aranya",
+      "tags": [
+        "bathroom"
+      ],
+      "alt": "Bathroom washbasin at Villa Aranya, AP Villas Ujjain",
+      "shows_temple": false
+    }
+  ]
+}

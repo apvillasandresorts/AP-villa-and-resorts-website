@@ -1,0 +1,325 @@
+{
+  "_readme": "Queue of blog topics. status: queued | published | skip. The writer picks a timely topic or the first queued one, then sets status to published.",
+  "topics": [
+    {
+      "slug": "where-to-stay-near-mahakaleshwar-temple",
+      "title": "Where to Stay Near Mahakaleshwar Temple: A Family Guide",
+      "keyword": "where to stay near mahakaleshwar temple",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "villa-vs-hotel-vs-dharamshala-ujjain",
+      "title": "Villa, Hotel or Dharamshala in Ujjain? An Honest Comparison for Families",
+      "keyword": "villa vs hotel in ujjain",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-stay-for-large-families-and-groups",
+      "title": "Staying in Ujjain with a Large Family or Group: What to Plan",
+      "keyword": "group accommodation in ujjain",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-stay-with-kitchen",
+      "title": "Ujjain Stays with a Kitchen: Why Pilgrim Families Prefer Cooking Their Own Satvik Food",
+      "keyword": "ujjain stay with kitchen",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-stay-with-elderly-parents",
+      "title": "Visiting Ujjain with Elderly Parents: Stay, Darshan and Comfort Tips",
+      "keyword": "ujjain trip with elderly parents",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "best-area-to-stay-in-ujjain",
+      "title": "Best Area to Stay in Ujjain for Mahakal Darshan",
+      "keyword": "best area to stay in ujjain",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-homestay-for-couples",
+      "title": "A Quiet Stay in Ujjain for Couples: First Darshan After Marriage",
+      "keyword": "ujjain stay for couples",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "queued"
+    },
+    {
+      "slug": "bhasma-aarti-booking-guide",
+      "title": "How to Book Mahakal Bhasma Aarti: Online and Counter, Step by Step",
+      "keyword": "mahakal bhasma aarti booking",
+      "intent": "transactional",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "mahakaleshwar-darshan-timings",
+      "title": "Mahakaleshwar Darshan and Aarti Timings: A Practical Daily Schedule",
+      "keyword": "mahakaleshwar darshan timings",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "mahakal-darshan-with-kids-and-elders",
+      "title": "Mahakal Darshan with Children and Elders: A Calm Plan",
+      "keyword": "mahakal darshan with elderly",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "mahakaleshwar-dress-code",
+      "title": "Mahakaleshwar Dress Code for Bhasma Aarti and Garbhagriha Darshan",
+      "keyword": "mahakaleshwar dress code",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "mahakal-lok-visit-guide",
+      "title": "Mahakal Lok Corridor: When to Visit and What to See",
+      "keyword": "mahakal lok timings",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "mahakal-quick-darshan-options",
+      "title": "Quick Darshan at Mahakaleshwar: Options, Queues and Honest Expectations",
+      "keyword": "mahakal quick darshan",
+      "intent": "transactional",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "what-to-carry-for-mahakal-darshan",
+      "title": "What to Carry (and Leave Behind) for Mahakal Darshan",
+      "keyword": "mahakal darshan rules",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-2-day-itinerary",
+      "title": "Ujjain in 2 Days: A Pilgrim Family Itinerary",
+      "keyword": "ujjain 2 day itinerary",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-1-day-itinerary",
+      "title": "One Day in Ujjain: What Is Realistic, Hour by Hour",
+      "keyword": "ujjain one day trip",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-omkareshwar-3-day-itinerary",
+      "title": "Ujjain and Omkareshwar in 3 Days: Two Jyotirlingas, One Calm Trip",
+      "keyword": "ujjain omkareshwar itinerary",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "indore-to-ujjain-travel-guide",
+      "title": "Indore Airport to Ujjain: Travel Options, Time and Cost",
+      "keyword": "indore to ujjain",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-weekend-trip-from-bhopal",
+      "title": "A Weekend in Ujjain from Bhopal: Route and Plan",
+      "keyword": "bhopal to ujjain weekend trip",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "how-to-reach-ujjain",
+      "title": "How to Reach Ujjain by Train, Air and Road",
+      "keyword": "how to reach ujjain",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-temple-circuit-route",
+      "title": "The Ujjain Temple Circuit: A Route That Saves Time",
+      "keyword": "ujjain temples route",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-to-omkareshwar-day-trip",
+      "title": "Ujjain to Omkareshwar Day Trip: Timings, Route and Tips",
+      "keyword": "ujjain to omkareshwar",
+      "intent": "informational",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "maheshwar-and-omkareshwar-combo",
+      "title": "Maheshwar and Omkareshwar in One Day from Ujjain",
+      "keyword": "maheshwar omkareshwar trip",
+      "intent": "informational",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "mandu-day-trip-from-ujjain",
+      "title": "Mandu Day Trip from Ujjain: Is It Worth It?",
+      "keyword": "mandu from ujjain",
+      "intent": "informational",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "kal-bhairav-temple-guide",
+      "title": "Kal Bhairav Temple, Ujjain: What Pilgrims Should Know",
+      "keyword": "kal bhairav temple ujjain",
+      "intent": "informational",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "harsiddhi-mata-temple-guide",
+      "title": "Harsiddhi Mata Temple: Shaktipeeth and the Evening Deepmala",
+      "keyword": "harsiddhi temple ujjain",
+      "intent": "informational",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "mangalnath-temple-bhat-pooja",
+      "title": "Mangalnath Temple and Bhat Pooja: A Calm Guide",
+      "keyword": "mangalnath bhat pooja",
+      "intent": "transactional",
+      "cluster": "omkareshwar-nearby",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-in-november-kartik",
+      "title": "Ujjain in November: Kartik Month, Diwali and Hari-Har Milan",
+      "keyword": "ujjain in november",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "mahashivratri-in-ujjain",
+      "title": "Mahashivratri in Ujjain: Crowds, Darshan and Where to Stay",
+      "keyword": "mahashivratri ujjain",
+      "intent": "commercial",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "shravan-somvar-mahakal-sawari",
+      "title": "Shravan Mondays and the Mahakal Sawari: A Family Guide",
+      "keyword": "mahakal sawari shravan",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-in-winter",
+      "title": "Visiting Ujjain in Winter: December to February Guide",
+      "keyword": "ujjain in winter",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "ujjain-in-summer",
+      "title": "Visiting Ujjain in Summer: Heat, Timings and Comfort",
+      "keyword": "ujjain in summer",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "new-year-darshan-mahakal",
+      "title": "New Year Darshan at Mahakaleshwar: Crowds and Planning",
+      "keyword": "new year mahakal darshan",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "navratri-in-ujjain",
+      "title": "Navratri in Ujjain: Harsiddhi, Garba and Darshan",
+      "keyword": "navratri ujjain",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-2028-ujjain-guide",
+      "title": "Simhastha 2028 Ujjain: A First Planning Guide for Families",
+      "keyword": "simhastha 2028 ujjain",
+      "intent": "informational",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-2028-where-to-stay",
+      "title": "Where to Stay for Simhastha 2028 in Ujjain",
+      "keyword": "simhastha 2028 accommodation",
+      "intent": "commercial",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-2028-shahi-snan-dates",
+      "title": "Simhastha 2028 Shahi Snan Dates: What Is Known So Far",
+      "keyword": "simhastha 2028 shahi snan dates",
+      "intent": "informational",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-with-elderly-family",
+      "title": "Simhastha with Elderly Parents: Safety and Pacing",
+      "keyword": "kumbh with elderly parents",
+      "intent": "informational",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-2028-group-booking",
+      "title": "Booking for a Group at Simhastha 2028: A Checklist",
+      "keyword": "simhastha group booking",
+      "intent": "commercial",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    },
+    {
+      "slug": "simhastha-vs-kumbh-difference",
+      "title": "Simhastha vs Kumbh: What Makes Ujjain's Mela Different",
+      "keyword": "simhastha kumbh ujjain",
+      "intent": "informational",
+      "cluster": "simhastha-2028",
+      "status": "queued"
+    }
+  ]
+}

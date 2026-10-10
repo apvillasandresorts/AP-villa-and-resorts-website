@@ -1,0 +1,91 @@
+# Blog writer instructions (followed by the AI on every run)
+
+You are writing ONE new post for the AP Villas Journal (https://www.apvillasandresorts.in/blog.html).
+Read these files first, in full:
+
+1. `content/brand-brief.md`: voice, audiences, banned phrases, CTA, internal links
+2. `content/business-facts.json`: the ONLY allowed source for claims about our villas
+3. `content/photo-library.json`: the ONLY images you may use
+4. `content/topics.json` and `content/published.json`: the queue and what already exists
+5. `scripts/post-template.html`: the exact page shell to fill
+6. `blog/mahakaleshwar.html`: a finished example of our voice and markup
+
+Today's date and any topic override are given in the run prompt.
+
+## Step 1: Pick the topic
+- If the run prompt gives a topic, use it (create a slug for it).
+- Otherwise, use web search to find what is happening in Ujjain in the next 60 days: festivals, temple schedule changes, Mahakal Sawari dates, Simhastha 2028 announcements, new rules for darshan or Bhasma Aarti, transport changes. Prefer these sources: shrimahakaleshwar.com (and mahakaleshwar.nic.in), mptourism.com, ujjain.nic.in, and major Indian news (The Hindu, Indian Express, Times of India, Hindustan Times, Dainik Bhaskar, Free Press Journal, NDTV).
+- If a timely event fits a queued topic in `content/topics.json`, use that topic. If an event is timely and no topic fits, write a new topic with the same fields. Otherwise take the first topic with `"status": "queued"`.
+- Never write a slug or title that already exists in `content/published.json` or as a file in `blog/`. Never write a near-duplicate of a published post's main keyword.
+
+## Step 2: Research
+- Fetch 3–6 reliable pages. Note every timing, price, date, distance (other than ours), and rule you will state, with its source URL.
+- If sources disagree, or you cannot find a source, either leave the detail out or say plainly that it changes and readers should check the official site.
+- Do not invent statistics, quotes, crowd numbers or dates.
+
+## Step 3: Write `blog/<slug>.html`
+Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
+
+| Placeholder | Value |
+| --- | --- |
+| `{{TITLE}}` | Post title (≤ 65 characters ideally, keyword near the front). Escape `&` as `&amp;`. |
+| `{{META_DESCRIPTION}}` | 120–160 characters, includes the keyword, ends with a reason to click. |
+| `{{KEYWORDS}}` | 6–10 comma-separated phrases, starting with the main keyword. |
+| `{{SLUG}}` | lowercase-hyphenated slug, same as the filename. |
+| `{{HERO_IMAGE_PATH}}` | A `path` from photo-library.json (no leading `../`). Prefer exteriors, rooftops, lounges and bedrooms; avoid bathrooms. Do not reuse a hero already used by the last 3 posts. |
+| `{{HERO_ALT}}` | The photo's `alt` from photo-library.json, unchanged. |
+| `{{EYEBROW}}` | Short category: Pilgrim Guide, Festival Guide, Itinerary, Day Trip, Where to Stay, Simhastha 2028, City Guide. |
+| `{{DATE_ISO}}` / `{{DATE_HUMAN}}` | Today, e.g. `2026-10-10` / `October 2026`. |
+| `{{READ_MINUTES}}` | words ÷ 200, rounded. |
+| `{{JSON_LD}}` | See below. |
+| `{{BODY_HTML}}` | The article body. See below. |
+
+### Body rules
+- **Length:** 1,400–2,200 words in the article body.
+- **Short answer first:** the first paragraph answers the search question directly in 2–3 sentences (good for Google snippets). Then a warm second paragraph in our voice.
+- **Headings:** `<h2>` for sections (at least 5), `<h3>` for sub-points. No `<h1>` in the body (the template has it).
+- **Required sections, as `<h2>`:**
+  1. Several topic sections (the substance).
+  2. `Where to stay` (e.g. "Where to stay near Mahakaleshwar for this trip"): uses ONLY `content/business-facts.json`. Mention 1–3 villas that fit the reader (bedrooms, sleeps, from-price, highlights), the shared facts (within 2 km, complimentary Mahakal shuttle, caretaker help with Bhasma Aarti). Never state anything marked TODO. Link `../villas.html`. Then the first CTA.
+  3. `Frequently asked questions`: exactly 5 questions as `<h3>` with a `<p>` answer each (40–80 words). The same 5 Q&As go into FAQPage JSON-LD, word for word.
+  4. `Sources`: a `<ul>` of every external page you used, as links with `target="_blank" rel="noopener"`, followed by: `<p><em>Timings, prices and dates change, especially on festival days. Please verify before you travel with the official temple or government site.</em></p>`
+- **Inline sourcing:** next to any timing, price, date or rule, either link the source inline or make sure it is in Sources.
+- **CTAs:** exactly two WhatsApp CTAs in the body, using the exact link from brand-brief.md:
+  `<p style="text-align:center;"><a class="btn btn--primary" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas." target="_blank" rel="noopener">Message us on WhatsApp</a></p>`
+  One after "Where to stay", one just before the sign-off.
+- **Internal links (in body text):** `../villas.html`, `../contact.html`, `../travel.html`, and 2 related posts from published.json (same folder, so `href="mahakaleshwar.html"`). Use descriptive anchor text, not "click here".
+- **Sign-off:** end with `<p style="font-style: italic; color: var(--muted);">— Apoorv, Founder, AP Villas, Mahakal Collection</p>` like the example post.
+- **Images:** only the hero by default. If you add an in-body image, it must be from photo-library.json, with its library alt text. Never describe a villa photo as a temple, ghat or city view. Never use AI-generated images, stock photos, or hotlinked images.
+- **Style:** follow brand-brief.md. None of the banned phrases. Indian English. No emoji in headings.
+
+### JSON-LD
+Put one object with an `@graph` array:
+- `Article`: headline, description (= meta description), image `[absolute hero URL]`, datePublished, dateModified (today), author `{ "@type": "Person", "name": "Apoorv", "url": "https://www.apvillasandresorts.in/about.html" }`, publisher `{ "@type": "Organization", "name": "AP Villas, Mahakal Collection", "logo": { "@type": "ImageObject", "url": "https://www.apvillasandresorts.in/assets/brand/favicon-512.png" } }`, mainEntityOfPage (canonical URL), inLanguage `en-IN`.
+- `BreadcrumbList`: Home (`https://www.apvillasandresorts.in/`) → Journal (`…/blog.html`) → this post.
+- `FAQPage`: the 5 Q&As (`Question` with `name`, `acceptedAnswer` `Answer` with `text`), plain text.
+It must be valid JSON (double quotes, no trailing commas).
+
+## Step 4: Update the site files
+1. **`blog.html`**: insert a new card as the FIRST item right after `<!-- POSTS:START -->`, same markup as the existing cards:
+   ```html
+   <article class="blog-card reveal">
+     <a href="blog/SLUG.html" style="display:contents;">
+       <div class="blog-card__media">
+         <img src="HERO_IMAGE_PATH" alt="HERO_ALT" loading="lazy">
+         <span class="blog-card__tag">EYEBROW</span>
+       </div>
+       <div class="blog-card__body">
+         <h3>TITLE</h3>
+         <p>One or two sentences, ≤ 200 characters.</p>
+         <span class="blog-card__link">Read article →</span>
+       </div>
+     </a>
+   </article>
+   ```
+2. **`content/published.json`**: append `{ "slug", "title", "url": "blog/SLUG.html", "date", "cluster", "keyword", "source": "ai-pipeline", "hero": "HERO_IMAGE_PATH", "sources": [urls] }`.
+3. **`content/topics.json`**: set the chosen topic's `status` to `"published"` (add it first if it was new).
+4. **`sitemap.xml`**: run `node scripts/build-sitemap.mjs`.
+5. Run `node scripts/validate-post.mjs SLUG` and fix every ✗ until it passes.
+
+## Step 5: Finish
+Do not run git. Do not edit any other file. Reply with one line: `SLUG=<slug>`.
