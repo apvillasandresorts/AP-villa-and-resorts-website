@@ -64,7 +64,7 @@ for (const h of hrefs) {
   const p = normalize(join(dirname(file), h.split('#')[0].split('?')[0]));
   if (p && !existsSync(p)) fail(`Broken local link: ${h}`);
 }
-const externalSources = bodyHrefs.filter(h => /^https?:/.test(h) && !h.includes('wa.me') && !h.includes('apvillasandresorts.in'));
+const externalSources = [...new Set(bodyHrefs)].filter(h => /^https?:/.test(h) && !h.includes('wa.me') && !h.includes('apvillasandresorts.in'));
 if (externalSources.length < 2) fail(`Need ≥2 external source links, found ${externalSources.length}`);
 
 // --- images: must exist and come from the photo library

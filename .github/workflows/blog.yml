@@ -138,7 +138,8 @@ jobs:
       - name: Validate (no AI)
         id: validate
         continue-on-error: true
-        run: node scripts/validate-post.mjs "${{ needs.write.outputs.slug }}" --summary summary.json
+        run: node scripts/validate-post.mjs "${{ needs.write.outputs.slug }}" --summary summary.json | tee validate.txt; exit ${PIPESTATUS[0]}
+        shell: bash
 
       - name: Fact review with Claude
         id: review
@@ -162,11 +163,76 @@ jobs:
             --allowedTools "Read,Grep,Glob"
             --json-schema '{"type":"object","properties":{"pass":{"type":"boolean"},"issues":{"type":"array","items":{"type":"string"}}},"required":["pass","issues"]}'
 
+      - name: Auto-fix with Claude (one attempt)
+        id: fix
+        if: steps.validate.outcome != 'success' || !fromJSON(steps.review.outputs.structured_output || '{"pass":false}').pass
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            The new post blog/${{ needs.write.outputs.slug }}.html failed review. Fix every problem below with the
+            smallest possible edits, following content/blog-writer-instructions.md and content/brand-brief.md.
+            For an unsourced timing/price/date/rule: find a reliable source (official temple, MP Tourism, ujjain.nic.in,
+            major Indian news) and link it inline and in the Sources list, or soften/remove the detail.
+            For a villa claim not in content/business-facts.json: remove it or reword it to what the file supports.
+            Keep the FAQ JSON-LD identical to the visible FAQ. Keep the post 1,400-2,200 words.
+            Only edit blog/${{ needs.write.outputs.slug }}.html (and content/published.json "sources" if you add sources).
+            Do not run git. Finish only when `node scripts/validate-post.mjs ${{ needs.write.outputs.slug }}` passes.
+
+            Fact review result: ${{ steps.review.outputs.structured_output }}
+            Validator output: see validate.txt in the repo root.
+          claude_args: >-
+            --model ${{ env.BLOG_MODEL }}
+            --max-turns 40
+            --allowedTools "Read,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*)"
+
+      - name: Push fixes
+        id: pushfix
+        if: steps.fix.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "blog/${{ needs.write.outputs.slug }}.html" content/published.json
+          git diff --cached --quiet && { echo "No changes from auto-fix"; exit 0; }
+          git commit -m "Auto-fix review issues: ${{ needs.write.outputs.slug }}"
+          git push origin HEAD:${{ needs.write.outputs.branch }}
+
+      - name: Validate again
+        id: validate2
+        if: steps.fix.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/validate-post.mjs "${{ needs.write.outputs.slug }}" --summary summary.json
+
+      - name: Fact review again
+        id: review2
+        if: steps.fix.outcome == 'success'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You are a strict fact checker. Read blog/${{ needs.write.outputs.slug }}.html and content/business-facts.json.
+            Report a problem for:
+            1. Any claim about AP Villas or its villas (distances, amenities, capacity, prices, services, policies,
+               check-in, reviews, awards) that is not supported by content/business-facts.json, or that uses a field marked TODO.
+            2. Any specific timing, price, date, fee, or rule about temples, festivals, transport or government services
+               that has no matching link in the post's "Sources" section or inline.
+            3. Any image alt text or caption that describes a villa photo as a temple, ghat or city view.
+            Ignore style. Be precise; quote the exact sentence for each issue. pass=true only if there are no issues.
+          claude_args: >-
+            --model ${{ env.BLOG_MODEL }}
+            --max-turns 15
+            --allowedTools "Read,Grep,Glob"
+            --json-schema '{"type":"object","properties":{"pass":{"type":"boolean"},"issues":{"type":"array","items":{"type":"string"}}},"required":["pass","issues"]}'
+
       - name: Verdict
         id: verdict
         env:
-          REVIEW: ${{ steps.review.outputs.structured_output }}
-          VALIDATE: ${{ steps.validate.outcome }}
+          REVIEW: ${{ steps.review2.outputs.structured_output || steps.review.outputs.structured_output }}
+          VALIDATE: ${{ steps.validate2.outcome || steps.validate.outcome }}
         run: |
           echo "$REVIEW" > review.json
           node -e '
