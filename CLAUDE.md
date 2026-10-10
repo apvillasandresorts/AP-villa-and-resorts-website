@@ -16,6 +16,7 @@ This repo is the whole public website. Claude Code in this folder is the permane
 | `index.html`, `villas.html`, `gallery.html`, `menu.html`, `travel.html`, `blog.html`, `about.html`, `contact.html`, `mahakal-game.html` | Site pages |
 | `blog/*.html` | Journal posts. `blog.html` lists them between `<!-- POSTS:START -->` / `<!-- POSTS:END -->` (newest first) |
 | `assets/css/style.css`, `assets/js/main.js`, `assets/brand/` | Shared styles, script (nav, reveal, gallery modal, rule-based chatbot), logos/favicons |
+| `assets/js/journal.js` | Journal interactivity: blog.html filters/search/featured card + booking banner; posts get progress bar, TOC, share, related posts, mobile booking bar; homepage `#home-journal` shows the 3 latest posts (all read from blog.html cards) |
 | `villas/<villa>/` | Real villa photos (use these paths). `images/`, `img/`, `business/`, `assets/*.jpg` are duplicate copies |
 | `content/` | Blog pipeline inputs: brand brief, business facts, photo library, topics, published log, writer instructions, README for the owner |
 | `scripts/post-template.html` | Page shell for new posts |
