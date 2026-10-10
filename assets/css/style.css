@@ -913,7 +913,7 @@ section { padding: 130px 0; position: relative; }
 .footer__copy { font-size: 12px; opacity: 0.6; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
 
 /* ============================================================
-   FLOATING ACTIONS (WhatsApp + Chatbot)
+   FLOATING ACTIONS (WhatsApp + Email + Chatbot)
    ============================================================ */
 .fab {
   position: fixed; bottom: 28px; right: 28px; z-index: 90;
@@ -921,31 +921,60 @@ section { padding: 130px 0; position: relative; }
   background: #25D366; color: white;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 28px rgba(37,211,102,0.45);
-  font-size: 30px; cursor: none;
+  font-size: 0; cursor: none; text-decoration: none;
   transition: all 0.5s var(--ease);
   animation: fabPulse 2.4s ease-in-out infinite;
 }
+.fab svg { width: 32px; height: 32px; flex-shrink: 0; }
 .fab:hover { transform: scale(1.12) rotate(8deg); }
 @keyframes fabPulse {
   0%, 100% { box-shadow: 0 10px 28px rgba(37,211,102,0.45), 0 0 0 0 rgba(37,211,102,0.4); }
   50% { box-shadow: 0 10px 28px rgba(37,211,102,0.45), 0 0 0 22px rgba(37,211,102,0); }
 }
+.fab--email {
+  bottom: 108px;
+  background: linear-gradient(135deg, #C0531A, #E07830);
+  box-shadow: 0 10px 28px rgba(192,83,26,0.5);
+  animation: fabEmailPulse 2.8s ease-in-out 0.4s infinite;
+}
+.fab--email:hover { transform: scale(1.12) rotate(-8deg); }
+@keyframes fabEmailPulse {
+  0%, 100% { box-shadow: 0 10px 28px rgba(192,83,26,0.5), 0 0 0 0 rgba(192,83,26,0.4); }
+  50% { box-shadow: 0 10px 28px rgba(192,83,26,0.5), 0 0 0 22px rgba(192,83,26,0); }
+}
 
 .chatbot-toggle {
-  position: fixed; bottom: 108px; right: 28px; z-index: 90;
+  position: fixed; bottom: 188px; right: 28px; z-index: 90;
   width: 64px; height: 64px; border-radius: 50%;
   background: linear-gradient(135deg, var(--navy), var(--navy-deep));
-  color: white;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-md);
-  font-size: 28px; cursor: none;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+  font-size: 0; cursor: none; overflow: hidden;
   transition: all 0.5s var(--ease);
   border: 2px solid var(--gold);
+  animation: chatbotGlow 3s ease-in-out infinite;
 }
-.chatbot-toggle:hover { transform: scale(1.12); background: var(--saffron); }
+.chatbot-toggle svg { width: 38px; height: 42px; flex-shrink: 0; }
+.chatbot-toggle:hover { transform: scale(1.12); border-color: var(--gold-light); box-shadow: 0 14px 36px rgba(0,0,0,0.4), 0 0 24px rgba(201,162,79,0.35); }
+@keyframes chatbotGlow {
+  0%, 100% { box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 0 rgba(201,162,79,0.4); }
+  50% { box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 14px rgba(201,162,79,0); }
+}
+
+/* Game button character + shine */
+.btn--game { position: relative; overflow: hidden; display: inline-flex !important; align-items: center; gap: 10px; }
+.btn--game::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.45) 50%, transparent 75%);
+  transform: translateX(-150%);
+  animation: gameShine 2.8s ease-in-out infinite;
+}
+@keyframes gameShine { 0%, 55%, 100% { transform: translateX(-150%); } 28% { transform: translateX(150%); } }
+.game-char-icon { display: inline-flex; align-items: center; flex-shrink: 0; filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+.game-char-icon svg { width: 26px; height: 28px; }
 
 .chatbot {
-  position: fixed; bottom: 108px; right: 28px; z-index: 95;
+  position: fixed; bottom: 188px; right: 28px; z-index: 95;
   width: 400px; max-width: calc(100vw - 32px); height: 580px; max-height: 75vh;
   background: white; border-radius: var(--r-lg);
   box-shadow: var(--shadow-xl); overflow: hidden;
@@ -1047,4 +1076,7 @@ section { padding: 130px 0; position: relative; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .founder__avatar { max-width: 240px; margin: 0 auto; font-size: 100px; }
   .chatbot { width: calc(100vw - 32px); right: 16px; }
+  .fab { bottom: 20px; right: 20px; width: 56px; height: 56px; }
+  .fab--email { bottom: 88px; }
+  .chatbot-toggle { bottom: 156px; right: 20px; width: 56px; height: 56px; }
 }

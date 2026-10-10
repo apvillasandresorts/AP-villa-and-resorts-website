@@ -5,3 +5,10 @@
 *.heif
 *.HEIF
 node_modules/
+.vercel
+.env*
+.claude/worktrees/
+.claude/settings.local.json
+summary.json
+review.json
+assets/css/.Rhistory
