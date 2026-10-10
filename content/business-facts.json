@@ -7,7 +7,7 @@
     "city": "Ujjain, Madhya Pradesh, India",
     "postal_code": "456006",
     "address_line": "Near Mahakaleshwar Temple, Ujjain, Madhya Pradesh 456006",
-    "street_address": "TODO",
+    "street_address": "TODO per villa (only Rudrangan Suites' address is confirmed, below)",
     "website": "https://www.apvillasandresorts.in",
     "whatsapp_number": "+91 89990 61598",
     "whatsapp_link": "https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas.",
@@ -26,7 +26,7 @@
     ]
   },
   "shared_facts": {
-    "distance_to_mahakaleshwar": "All five villas are within 2 km of Mahakaleshwar Jyotirlinga, about 6 minutes by car or 12 minutes on foot",
+    "distance_to_mahakaleshwar": "All five villas are within 2 km of Mahakaleshwar Jyotirlinga, about 6 minutes by car or 12 minutes on foot (owner confirmed 2026-10-10)",
     "distance_to_ujjain_station": "About 3 km from Ujjain Junction railway station",
     "mahakal_shuttle": "Complimentary villa-to-Mahakaleshwar shuttle for in-house guests (up to 5 guests per trip)",
     "bhasma_aarti_help": "Caretaker explains the Bhasma Aarti booking process (online or counter) on arrival evening; shuttle drops guests at the temple gate by 3:30 AM for the 4 AM aarti. The help is complimentary; the temple's own permit is booked by the guest.",
@@ -45,15 +45,17 @@
     ],
     "food": "Every villa has a full kitchen so families can cook; a local cook can be arranged for simple home-style thalis on request",
     "cancellation_policy": "Standard dates: free cancellation up to 7 days before arrival. Festival dates (Mahashivratri, Shravan Mondays, Kumbh/Simhastha): full advance, non-refundable. Exact policy confirmed on WhatsApp.",
-    "check_in_time": "TODO",
-    "check_out_time": "TODO",
-    "pets_policy": "TODO",
-    "wheelchair_access": "TODO",
-    "lift_elevator": "TODO",
-    "power_backup": "TODO",
-    "hot_water_geyser": "TODO",
-    "ac_in_all_rooms": "TODO",
-    "guest_reviews": "4.9 star average; 200+ verified 5-star reviews across Airbnb, Booking.com, MakeMyTrip and Google (as stated on the site)"
+    "check_in_time": "10:30 AM",
+    "check_out_time": "9:30 AM (one hour is kept for cleaning before the next check-in; a later check-out can be arranged on request, subject to availability)",
+    "pets_policy": "Pets are allowed",
+    "wheelchair_access": "Wheelchair friendly",
+    "lift_elevator": "Lift available",
+    "power_backup": "Power backup available",
+    "hot_water_geyser": "Geysers (hot water) provided",
+    "ac_in_all_rooms": "Air-conditioned",
+    "guest_reviews": "4.9 star average; 200+ verified 5-star reviews across Airbnb, Booking.com, MakeMyTrip and Google (as stated on the site)",
+    "kitchen_detail": "Separate kitchen or kitchenette with all cooking equipment, induction cooktop, microwave and mini fridge, so Indian families can cook their own meals during a darshan trip",
+    "_amenities_note": "Pets, wheelchair access, lift, power backup, AC, geysers and kitchen details were confirmed by the owner on 2026-10-10 as applying to the collection."
   },
   "villas": [
     {
@@ -138,8 +140,11 @@
         "Garden seating",
         "Premium linens"
       ],
-      "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
-      "photo_folder": "villas/rudrangan"
+      "exact_distance_to_mahakal": "Within 2 km (owner confirmed; the Google Maps pin currently shows the wrong spot and needs correcting)",
+      "photo_folder": "villas/rudrangan",
+      "address": "Kesar Parisar, 53, Indore Rd, near Anjushree, Pawapuri Colony, Ujjain, Madhya Pradesh 456010",
+      "google_maps": "https://www.google.com/maps/place/?q=place_id:ChIJoURgpAh1YzkR-EA--R8-S4o",
+      "address_note": "Address taken from the Google Maps listing on 2026-10-10"
     }
   ],
   "transport_indicative_prices_2026": {
