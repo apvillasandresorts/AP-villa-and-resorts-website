@@ -82,6 +82,27 @@ for (const [tag, src] of imgs) {
   if (entry && !entry.shows_temple && /\b(temple|mandir|jyotirlinga|mahakal lok|ghat)\b/i.test(alt))
     fail(`Alt text "${alt}" describes a temple/ghat, but ${p} is a villa photo`);
 }
+// Commons photos need a visible credit inside a <figure>/<figcaption>
+for (const m of html.matchAll(/<figure[^>]*>([\s\S]*?)<\/figure>/g)) {
+  const src = m[1].match(/<img[^>]*src="([^"]+)"/)?.[1];
+  if (!src) continue;
+  const entry = library.find(x => x.path === normalize(join(dirname(file), src)));
+  if (entry?.source === 'wikimedia-commons') {
+    const cap = m[1].match(/<figcaption>([\s\S]*?)<\/figcaption>/)?.[1] ?? '';
+    if (!/wikimedia commons/i.test(cap) || !cap.includes(entry.license)) fail(`Missing credit caption (author / Wikimedia Commons / ${entry.license}) for ${src}`);
+  }
+}
+for (const [tag, src] of imgs) {
+  const entry = library.find(x => x.path === normalize(join(dirname(file), src)));
+  if (entry?.source === 'wikimedia-commons' && !html.slice(0, html.indexOf(tag)).match(/<figure[^>]*>[^]*$/) ) fail(`Commons photo ${src} must be inside <figure> with a credit <figcaption>`);
+}
+const heroSrc = html.match(/<img[^>]*class="article__hero"[^>]*>/)?.[0].match(/src="([^"]+)"/)?.[1] ?? '';
+if (heroSrc.includes('villas/') || /^\.\.\/images\/[^/]+\.(jpe?g|png)$/i.test(heroSrc)) warnings.push('Hero is a villa photo; a topic-relevant photo (owner or Wikimedia Commons) is preferred');
+// Rudrangan Suites spotlight in "Where to stay"
+const stay = body.match(/<h2[^>]*>[^<]*where to stay[\s\S]*?(?=<h2)/i)?.[0] ?? '';
+if (!/Rudrangan Suites/.test(stay)) fail('"Where to stay" must feature Rudrangan Suites');
+if (!/<img[^>]*src="\.\.\/villas\/rudrangan\//.test(stay)) fail('"Where to stay" needs a real Rudrangan Suites photo (villas/rudrangan/…) in a <figure>');
+
 const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? '';
 if (!ogImage.startsWith(`${SITE}/`)) fail('og:image must be an absolute URL on the site');
 else if (!existsSync(ogImage.slice(SITE.length + 1))) fail(`og:image file missing: ${ogImage}`);

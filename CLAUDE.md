@@ -21,12 +21,14 @@ This repo is the whole public website. Claude Code in this folder is the permane
 | `content/` | Blog pipeline inputs: brand brief, business facts, photo library, topics, published log, writer instructions, README for the owner |
 | `scripts/post-template.html` | Page shell for new posts |
 | `scripts/build-sitemap.mjs` | Regenerates `sitemap.xml` (run after adding/removing pages) |
+| `scripts/commons-photo.mjs` | Search/download free, commercially-licensed real photos from Wikimedia Commons (adds credit + licence to photo-library.json) |
 | `scripts/validate-post.mjs <slug>` | Checks a new post (word count, links, images, JSON-LD, logs) |
 | `.github/workflows/blog.yml` | Daily/one-click AI blog pipeline (Claude subscription token) |
 | `robots.txt`, `sitemap.xml` | SEO |
 
 ## Content rules (always)
 - Property claims only from `content/business-facts.json`. Never state anything marked TODO.
+- Topic photos (temples, festivals) from Wikimedia Commons via `scripts/commons-photo.mjs` with a visible credit caption, or the owner's own photos. Every post features Rudrangan Suites with a real photo in "Where to stay".
 - Only real photos; never AI images of the temple, Ujjain or the villas. Alt text must describe what the photo really shows (villa photos are not temple photos).
 - Every page keeps: `<link rel="canonical">` with the www URL, absolute `og:image`, the shared nav/footer, the floating WhatsApp/email/concierge buttons, `assets/js/main.js`.
 - New pages: add them to nav/footer if they should be visible, then `node scripts/build-sitemap.mjs`.

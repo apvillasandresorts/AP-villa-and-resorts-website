@@ -43,4 +43,4 @@ Button style: `<a class="btn btn--primary" href="…" target="_blank" rel="noope
 ## Truthfulness
 - Property claims come only from `content/business-facts.json`. If it says TODO, do not mention it.
 - Temple timings, prices, dates, booking rules: cite a source and add "Please verify before you travel; timings change on festival days."
-- Photos: only real photos from `content/photo-library.json`. Our photos show our villas, not temples. Alt text must describe what the photo really shows.
+- Photos: real photos only. Topic photos (temples, festivals, ghats) come from Wikimedia Commons with a visible credit, or from the owner; villa photos show our villas. Alt text and captions must say what the photo really shows. Every post features **Rudrangan Suites** (with a real photo) in its "Where to stay" section; light, helpful marketing, never a hard sell.

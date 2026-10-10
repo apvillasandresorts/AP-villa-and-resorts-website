@@ -105,14 +105,15 @@ jobs:
           if [ "$count" != "1" ]; then echo "::error::Expected exactly one new file in blog/, found: '$new'"; exit 1; fi
           slug=$(basename "$new" .html)
           # Only the allowed files may change.
-          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json)$" || true)
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json|content/photo-library\.json|images/blog/$slug/[^/]+\.(jpg|jpeg|png|webp))$" || true)
           if [ -n "$bad" ]; then echo "::warning::Reverting unexpected changes: $bad"; for f in $bad; do git checkout -- "$f" 2>/dev/null || rm -f "$f"; done; fi
           node scripts/build-sitemap.mjs
           branch="blog/$slug"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add "blog/$slug.html" blog.html sitemap.xml content/published.json content/topics.json
+          git add "blog/$slug.html" blog.html sitemap.xml content/published.json content/topics.json content/photo-library.json
+          [ -d "images/blog/$slug" ] && git add "images/blog/$slug"
           git commit -m "New post: $slug"
           git push origin "$branch"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
@@ -155,7 +156,9 @@ jobs:
                check-in, reviews, awards) that is not supported by content/business-facts.json, or that uses a field marked TODO.
             2. Any specific timing, price, date, fee, or rule about temples, festivals, transport or government services
                that has no matching link in the post's "Sources" section or inline.
-            3. Any image alt text or caption that describes a villa photo as a temple, ghat or city view.
+            3. Any image whose alt text or caption does not match what content/photo-library.json says the photo is
+               (e.g. a villa photo called a temple, a Harsiddhi photo called Mahakaleshwar, an old photo called "this year").
+            4. A Wikimedia Commons photo without its credit (author, Wikimedia Commons, licence) in the caption.
             Ignore style. Be precise; quote the exact sentence for each issue. pass=true only if there are no issues.
           claude_args: >-
             --model ${{ env.BLOG_MODEL }}
@@ -178,7 +181,8 @@ jobs:
             major Indian news) and link it inline and in the Sources list, or soften/remove the detail.
             For a villa claim not in content/business-facts.json: remove it or reword it to what the file supports.
             Keep the FAQ JSON-LD identical to the visible FAQ. Keep the post 1,400-2,200 words.
-            Only edit blog/${{ needs.write.outputs.slug }}.html (and content/published.json "sources" if you add sources).
+            Only edit blog/${{ needs.write.outputs.slug }}.html (and content/published.json "sources" if you add sources;
+            new photos only via node scripts/commons-photo.mjs).
             Do not run git. Finish only when `node scripts/validate-post.mjs ${{ needs.write.outputs.slug }}` passes.
 
             Fact review result: ${{ steps.review.outputs.structured_output }}
@@ -194,7 +198,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "blog/${{ needs.write.outputs.slug }}.html" content/published.json
+          git add "blog/${{ needs.write.outputs.slug }}.html" content/published.json content/photo-library.json
+          [ -d "images/blog/${{ needs.write.outputs.slug }}" ] && git add "images/blog/${{ needs.write.outputs.slug }}"
           git diff --cached --quiet && { echo "No changes from auto-fix"; exit 0; }
           git commit -m "Auto-fix review issues: ${{ needs.write.outputs.slug }}"
           git push origin HEAD:${{ needs.write.outputs.branch }}
@@ -220,7 +225,9 @@ jobs:
                check-in, reviews, awards) that is not supported by content/business-facts.json, or that uses a field marked TODO.
             2. Any specific timing, price, date, fee, or rule about temples, festivals, transport or government services
                that has no matching link in the post's "Sources" section or inline.
-            3. Any image alt text or caption that describes a villa photo as a temple, ghat or city view.
+            3. Any image whose alt text or caption does not match what content/photo-library.json says the photo is
+               (e.g. a villa photo called a temple, a Harsiddhi photo called Mahakaleshwar, an old photo called "this year").
+            4. A Wikimedia Commons photo without its credit (author, Wikimedia Commons, licence) in the caption.
             Ignore style. Be precise; quote the exact sentence for each issue. pass=true only if there are no issues.
           claude_args: >-
             --model ${{ env.BLOG_MODEL }}

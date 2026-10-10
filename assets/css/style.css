@@ -1207,3 +1207,11 @@ section { padding: 130px 0; position: relative; }
   .post-related .blog-grid, .home-journal .blog-grid { grid-template-columns: 1fr; }
   .book-bar { display: flex; }
 }
+
+/* Post figures with photo credit */
+.post-figure { margin: 36px 0; }
+.post-figure img { width: 100%; border-radius: var(--r-md); box-shadow: var(--shadow-md); aspect-ratio: 3/2; object-fit: cover; display: block; }
+.post-figure figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+.article .post-figure--hero { margin: 0 0 50px; }
+.article .post-figure--hero .article__hero { margin-bottom: 0; }
+.article .post-figure figcaption a { color: var(--muted); }

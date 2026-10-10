@@ -32,8 +32,9 @@ Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
 | `{{META_DESCRIPTION}}` | 120–160 characters, includes the keyword, ends with a reason to click. |
 | `{{KEYWORDS}}` | 6–10 comma-separated phrases, starting with the main keyword. |
 | `{{SLUG}}` | lowercase-hyphenated slug, same as the filename. |
-| `{{HERO_IMAGE_PATH}}` | A `path` from photo-library.json (no leading `../`). Prefer exteriors, rooftops, lounges and bedrooms; avoid bathrooms. Do not reuse a hero already used by the last 3 posts. |
+| `{{HERO_IMAGE_PATH}}` | A topic-relevant real photo (see **Photos** below), as its `path` in photo-library.json (no leading `../`). |
 | `{{HERO_ALT}}` | The photo's `alt` from photo-library.json, unchanged. |
+| `{{HERO_CAPTION}}` | One short line saying what/where the photo is, then the credit for Commons photos, with "Wikimedia Commons" linked to `source_page`: e.g. `Harsiddhi Mata Shaktipeeth lit at night, Ujjain. Photo: Rajveer Bairagi / <a href="…" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY 4.0`. For our own villa photos just describe the photo. |
 | `{{EYEBROW}}` | Short category: Pilgrim Guide, Festival Guide, Itinerary, Day Trip, Where to Stay, Simhastha 2028, City Guide. |
 | `{{DATE_ISO}}` / `{{DATE_HUMAN}}` | Today, e.g. `2026-10-10` / `October 2026`. |
 | `{{READ_MINUTES}}` | words ÷ 200, rounded. |
@@ -46,7 +47,12 @@ Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
 - **Headings:** `<h2>` for sections (at least 5), `<h3>` for sub-points. No `<h1>` in the body (the template has it).
 - **Required sections, as `<h2>`:**
   1. Several topic sections (the substance).
-  2. `Where to stay` (e.g. "Where to stay near Mahakaleshwar for this trip"): uses ONLY `content/business-facts.json`. Mention 1–3 villas that fit the reader (bedrooms, sleeps, from-price, highlights), the shared facts (within 2 km, complimentary Mahakal shuttle, caretaker help with Bhasma Aarti). Never state anything marked TODO. Link `../villas.html`. Then the first CTA.
+  2. `Where to stay` (e.g. "Where to stay near Mahakaleshwar for this trip"): uses ONLY `content/business-facts.json`. 180–320 words of gentle, helpful marketing, not a hard sell:
+     - one sentence with the shared facts (all five villas within 2 km, complimentary Mahakal shuttle);
+     - a **Rudrangan Suites spotlight**: an `<h3>` naming it, a `<figure class="post-figure">` with a real photo from `villas/rudrangan/` (library alt text; caption "A bedroom at Rudrangan Suites…" or similar), and a paragraph tying its facts to this post's reader (newest villa opened 2026, designer finishes, garden seating, 3 bedrooms/sleeps 6, from-price, lift, wheelchair friendly, pets welcome, kitchen with induction, check-in/out times when useful);
+     - a short list of 1–3 other villas for larger or different groups;
+     - caretaker help with Bhasma Aarti, link `../villas.html`.
+     Never state anything marked TODO. Then the first CTA.
   3. `Frequently asked questions`: exactly 5 questions as `<h3>` with a `<p>` answer each (40–80 words). The same 5 Q&As go into FAQPage JSON-LD, word for word.
   4. `Sources`: a `<ul>` of every external page you used, as links with `target="_blank" rel="noopener"`, followed by: `<p><em>Timings, prices and dates change, especially on festival days. Please verify before you travel with the official temple or government site.</em></p>`
 - **Inline sourcing:** next to any timing, price, date or rule, either link the source inline or make sure it is in Sources.
@@ -55,8 +61,19 @@ Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
   One after "Where to stay", one just before the sign-off.
 - **Internal links (in body text):** `../villas.html`, `../contact.html`, `../travel.html`, and 2 related posts from published.json (same folder, so `href="mahakaleshwar.html"`). Use descriptive anchor text, not "click here".
 - **Sign-off:** end with `<p style="font-style: italic; color: var(--muted);">— Apoorv, Founder, AP Villas, Mahakal Collection</p>` like the example post.
-- **Images:** only the hero by default. If you add an in-body image, it must be from photo-library.json, with its library alt text. Never describe a villa photo as a temple, ghat or city view. Never use AI-generated images, stock photos, or hotlinked images.
+- **Images:** see **Photos** below. Never use AI-generated images, stock photos, or hotlinked images.
 - **Style:** follow brand-brief.md. None of the banned phrases. Indian English. No emoji in headings.
+
+## Photos (hero and in-body)
+Readers should see the real place or event the post is about, e.g. a Navratri post shows the Harsiddhi lamp towers lit, a Simhastha post shows the Kumbh ghats. Priority:
+1. **Owner photos** already in `content/photo-library.json` that match the topic (`source` "owner", or tags that fit).
+2. **Wikimedia Commons** (free, real photos, licences that allow commercial use; the script rejects others):
+   - `node scripts/commons-photo.mjs search "harsiddhi navratri ujjain"`: try 2–4 searches (event + temple + Ujjain; then broader, e.g. "Ujjain ghat", "Mahakaleshwar temple").
+   - Pick the photo that most truly shows the topic, prefers festival/people/lamps over empty buildings, is sharp and ≥1000px. Read its description: it must really be in Ujjain (or the place the post covers).
+   - `node scripts/commons-photo.mjs get "File:<exact title>" <slug> "<honest alt: what the photo shows and where>" "<tags>"`. This downloads to `images/blog/<slug>/` and adds the library entry with author/licence. Use the printed credit in the caption.
+   - Never claim a photo shows something it doesn't (e.g. a Harsiddhi photo is not "Mahakaleshwar"; a 2010 photo is not "this year").
+3. Only if nothing relevant exists: a villa photo, captioned honestly as our villa.
+Use 1–2 Commons photos per post (hero + optionally one in the body), plus the Rudrangan Suites photo in "Where to stay". Every Commons photo must be inside `<figure class="post-figure">` with a `<figcaption>` that contains the credit.
 
 ### JSON-LD
 Put one object with an `@graph` array:
@@ -67,6 +84,7 @@ It must be valid JSON (double quotes, no trailing commas).
 
 ## Step 4: Update the site files
 1. **`blog.html`**: insert a new card as the FIRST item right after `<!-- POSTS:START -->`, same markup as the existing cards:
+   (HERO_IMAGE_PATH is the post's hero; for the card use the same photo.)
    ```html
    <article class="blog-card reveal">
      <a href="blog/SLUG.html" style="display:contents;">
@@ -88,4 +106,4 @@ It must be valid JSON (double quotes, no trailing commas).
 5. Run `node scripts/validate-post.mjs SLUG` and fix every ✗ until it passes.
 
 ## Step 5: Finish
-Do not run git. Do not edit any other file. Reply with one line: `SLUG=<slug>`.
+Do not run git. Do not edit any other file (new photos under `images/blog/<slug>/` and their `content/photo-library.json` entries are allowed). Reply with one line: `SLUG=<slug>`.
