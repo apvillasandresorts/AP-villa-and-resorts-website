@@ -564,6 +564,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div class="intro__content">
       <div class="intro__sanskrit">हर हर महादेव</div>
       <div class="intro__small">— HAR HAR MAHADEV —</div>
+      <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Mahakal Game: Path to Darshan by AP Villas &amp; Resorts</h1>
       <div class="intro__title">Path to <em>Darshan</em></div>
       <div class="intro__sub">Run the sacred path. Collect the blessings of Mahakal. A small offering of play, brought to you by AP Villas & Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
@@ -575,7 +576,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="hud" id="hud">
     <div class="hud__group">
       <a href="index.html" class="hud__brand">
-        <img src="assets/brand/logo-emblem-512.webp" alt="">
+        <img src="assets/brand/logo-emblem-512.webp" alt="AP Villas &amp; Resorts emblem">
         <strong>AP Villas &amp; Resorts</strong>
       </a>
       <div class="hud__best">Best: <span id="best-score">0</span></div>
@@ -640,14 +641,14 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="gameover__sub">Your Run Has Ended</div>
 
       <div class="gameover__score-label">Score</div>
-      <div class="gameover__score" id="final-score" id="gameover__score">0</div>
+      <div class="gameover__score" id="final-score">0</div>
       <div class="gameover__best" id="best-line">Best: <span id="final-best">0</span></div>
 
       <div class="gameover__divider"><span>◆</span></div>
 
       <div class="gameover__pitch">Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em></div>
       <div class="gameover__brand"><strong>AP Villas & Resorts</strong> · 2 km from Mahakaleshwar Jyotirlinga</div>
-      <div class="gameover__scarcity">★ Limited direct booking offers available today</div>
+      <div class="gameover__scarcity">★ WhatsApp us your darshan dates for a quick quote</div>
 
       <div class="gameover__btns">
         <button class="go-btn go-btn--play" id="play-again-btn">↻ Play Again</button>
@@ -2035,9 +2036,9 @@ function gameWin() {
   state = 'gameover';
   playBell();
   setTimeout(() => {
-    $('gameover__namo').textContent = '🙏 ॐ नमः शिवाय ॐ 🙏';
-    $('gameover__sub').textContent = 'You Have Won!';
-    $('gameover__score-label').textContent = 'Final Score';
+    document.querySelector('.gameover__namo').textContent = '🙏 ॐ नमः शिवाय ॐ 🙏';
+    document.querySelector('.gameover__sub').textContent = 'You Have Won!';
+    document.querySelector('.gameover__score-label').textContent = 'Final Score';
     $('gameover__score').textContent = Math.floor(score).toLocaleString('en-IN');
     if (score > bestScore) {
       bestScore = Math.floor(score);
@@ -2048,8 +2049,8 @@ function gameWin() {
       $('best-line').classList.remove('new');
       $('best-line').innerHTML = 'Best: <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
     }
-    $('gameover__pitch').innerHTML = 'Mahakal has accepted your devotion.<br>You have completed the sacred path!';
-    $('gameover__scarcity').textContent = '★ Visit AP Villas & Resorts for Mahakal Darshan ★';
+    document.querySelector('.gameover__pitch').innerHTML = 'Mahakal has accepted your devotion.<br>You have completed the sacred path!';
+    document.querySelector('.gameover__scarcity').textContent = '★ Visit AP Villas & Resorts for Mahakal Darshan ★';
     $('play-again-btn').textContent = '↻ Play Again';
     $('gameover').classList.add('show');
   }, 600);
@@ -2060,11 +2061,11 @@ $('play-again-btn').addEventListener('click', () => {
   $('gameover').classList.remove('show');
   
   // Reset game over modal to default (loss) state
-  $('gameover__namo').textContent = '🙏 Har Har Mahadev 🙏';
-  $('gameover__sub').textContent = 'Your Run Has Ended';
-  $('gameover__score-label').textContent = 'Score';
-  $('gameover__pitch').innerHTML = 'Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em>';
-  $('gameover__scarcity').textContent = '★ Limited direct booking offers available today';
+  document.querySelector('.gameover__namo').textContent = '🙏 Har Har Mahadev 🙏';
+  document.querySelector('.gameover__sub').textContent = 'Your Run Has Ended';
+  document.querySelector('.gameover__score-label').textContent = 'Score';
+  document.querySelector('.gameover__pitch').innerHTML = 'Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em>';
+  document.querySelector('.gameover__scarcity').textContent = '★ WhatsApp us your darshan dates for a quick quote';
   $('play-again-btn').textContent = '↻ Play Again';
   
   $('multiplier').classList.remove('active');

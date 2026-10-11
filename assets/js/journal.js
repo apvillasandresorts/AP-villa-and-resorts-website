@@ -148,11 +148,7 @@
     end.before(sec);
   }).catch(() => {});
 
-  // Sticky booking bar (mobile CSS shows it)
-  const bb = document.createElement('div');
-  bb.className = 'book-bar';
-  bb.innerHTML = `<span>Visiting Ujjain?<br><b>Villas 2 km from Mahakal</b></span><a href="${WA}" target="_blank" rel="noopener">Check dates</a>`;
-  document.body.appendChild(bb);
+  // (Mobile booking bar now comes from main.js for every page: WhatsApp · Call · Quick answers)
 
   let ticking = false;
   addEventListener('scroll', () => {
@@ -162,7 +158,6 @@
       const r = article.getBoundingClientRect();
       const p = Math.min(1, Math.max(0, -r.top / (r.height - innerHeight)));
       bar.style.transform = `scaleX(${p})`;
-      bb.classList.toggle('is-visible', p > 0.15 && p < 0.92);
       ticking = false;
     });
   }, { passive: true });

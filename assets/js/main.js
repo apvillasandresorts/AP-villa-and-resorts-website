@@ -136,7 +136,7 @@ const chatBody = document.getElementById('chatbot-body');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
 
-const WHATSAPP_LINK = 'https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas.';
+const WHATSAPP_LINK = 'https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas.'; // rewritten to the structured message by waLink() below
 
 function addBotMsg(text, quickReplies) {
   if (!chatBody) return;
@@ -166,6 +166,18 @@ function addUserMsg(text) {
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 const KB = [
+  { keys: ['check dates','availability','available'],
+    answer: 'Opening WhatsApp with a short message — just fill in your dates and number of guests and we will reply with availability and the exact price.',
+    quick: ['Show villas'] },
+  { keys: ['check-in','check in','checkin','check-out','check out','checkout','arrival time','departure'],
+    answer: '<b>Check-in is 10:30 AM</b> and <b>check-out is 9:30 AM</b>. We keep one hour in between to clean the villa properly for the next family. Need a later check-out? Ask us — we extend it whenever the villa is free.',
+    quick: ['Check dates','Show villas'] },
+  { keys: ['pet','pets','dog','puppy'],
+    answer: 'Yes, <b>pets are welcome</b> at AP Villas. Please mention your pet when you enquire so we can prepare the villa.',
+    quick: ['Check dates','Show villas'] },
+  { keys: ['elder','senior','wheelchair','lift','elevator','parents','grandparent','old age','stairs'],
+    answer: 'Our villas are <b>wheelchair friendly</b> with a <b>lift</b>, power backup, AC and geysers, so elders can rest comfortably between darshans. Tell us who is travelling and we will suggest the best villa.',
+    quick: ['Check dates','Show villas'] },
   { keys: ['hello','hi','hey','namaste','start'],
     answer: 'Namaste! 🙏 Welcome to AP Villas & Resorts. I can help with availability, prices, shuttle service, amenities, and Mahakal darshan tips. What would you like to know?',
     quick: ['Show villas','Price per night','Mahakal distance','Shuttle service','Book now'] },
@@ -238,8 +250,8 @@ function handleQuery(q) {
       ['Open WhatsApp', 'Show villas', 'Mahakal distance']
     ), 500);
   }
-  if (text.includes('whatsapp') || text.includes('open whatsapp') || text.includes('book on whatsapp') || text.includes('book now') || text.includes('book rudrangan')) {
-    setTimeout(() => window.open(WHATSAPP_LINK, '_blank'), 800);
+  if (text.includes('whatsapp') || text.includes('open whatsapp') || text.includes('book on whatsapp') || text.includes('book now') || text.includes('book rudrangan') || text.includes('check dates')) {
+    setTimeout(() => window.open(waLink({ villa: text.includes('rudrangan') ? 'Rudrangan Suites' : '', place: 'chat' }), '_blank'), 800);
   }
   if (text.includes('open gallery') || text.includes('open journal') || text.includes('read about')) {
     const map = { 'open gallery': 'gallery.html', 'open journal': 'blog.html', 'read about': 'about.html' };
@@ -253,8 +265,8 @@ if (chatbotToggle) {
   chatbotToggle.addEventListener('click', () => {
     chatbot.classList.toggle('open');
     if (chatbot.classList.contains('open') && chatBody.children.length === 0) {
-      addBotMsg('Namaste! 🙏 I\'m the AP Villas concierge. How can I help with your Ujjain stay?',
-        ['Show villas', 'Price per night', 'Mahakal distance', 'Shuttle service']);
+      addBotMsg('Namaste! 🙏 Quick answers about your Ujjain stay. For your exact dates and price, WhatsApp us.',
+        ['Show villas', 'Price per night', 'Check-in time', 'Travelling with elders', 'Check dates']);
     }
   });
 }
@@ -276,3 +288,123 @@ document.querySelectorAll('.nav__logo-full, .footer__logo-full').forEach(img => 
   img.parentNode.insertBefore(wrap, img);
   wrap.appendChild(img);
 });
+
+// ====== Smart WhatsApp enquiries ======
+// Every generic "enquire" link becomes a short structured message (villa, dates, guests)
+// plus a reference code, so chats start with the facts and we can see which page produced them.
+const WA_NUMBER = '918999061598';
+const VILLA_CODES = { 'Divinestay': 'DIV', 'AP Suite': 'APS', 'Om Shanti Stay': 'OMS', 'Villa Aranya': 'ARA', 'Rudrangan Suites': 'RUD' };
+function pageCode() {
+  const p = location.pathname.replace(/\/$/, '/index.html');
+  if (p.includes('/blog/')) return 'BLOG-' + p.split('/').pop().replace('.html', '').slice(0, 24).toUpperCase();
+  const name = (p.split('/').pop() || 'index.html').replace('.html', '');
+  return ({ index: 'HOME', villas: 'VILLAS', contact: 'CONTACT', about: 'ABOUT', blog: 'JOURNAL', gallery: 'GALLERY', menu: 'DINING', travel: 'TRAVEL', 'mahakal-game': 'GAME' })[name] || name.toUpperCase();
+}
+function waLink({ villa = '', checkin = '', nights = '', adults = '', children = '', elders = false, place = '' } = {}) {
+  const ref = 'WEB-' + pageCode() + (villa && VILLA_CODES[villa] ? '-' + VILLA_CODES[villa] : '') + (place ? '-' + place.toUpperCase() : '');
+  const lines = [
+    "Namaste! I'd like to check availability.",
+    'Villa: ' + (villa || 'Please suggest one for us'),
+    'Check-in date: ' + (checkin || ''),
+    'Nights: ' + (nights || ''),
+    'Guests: ' + (adults ? adults + ' adults' : '') + (children ? ', ' + children + ' children' : '') + (adults ? '' : '(adults / children)'),
+  ];
+  if (elders) lines.push('Travelling with elders: yes (lift / easy access please)');
+  lines.push('Ref: ' + ref);
+  return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(lines.join('\n'));
+}
+window.waLink = waLink;
+
+function ctaPlace(a) {
+  if (a.closest('.hero')) return 'hero';
+  if (a.closest('.nav')) return 'nav';
+  if (a.closest('.villa-card')) return 'card';
+  if (a.closest('.m-bar')) return 'bar';
+  if (a.closest('.fab, .book-bar')) return 'float';
+  if (a.closest('.article')) return 'post';
+  if (a.closest('.footer, .contact-card, .contact-bg')) return 'contact';
+  return '';
+}
+document.querySelectorAll('a[href*="wa.me/918999061598"]').forEach(a => {
+  let msg = '';
+  try { msg = decodeURIComponent((a.href.split('text=')[1] || '').replace(/\+/g, ' ')); } catch (e) {}
+  const m = msg.match(/^Hi Apoorv, I'd like to enquire about (.+?)\.?$/);
+  if (!m) return; // keep special messages (food orders, travel services, game)
+  const villa = VILLA_CODES[m[1]] ? m[1] : '';
+  a.href = waLink({ villa, place: ctaPlace(a) });
+  a.dataset.villa = villa;
+});
+
+// ====== Analytics events (sent only when Google Analytics is installed) ======
+function track(name, params) { if (typeof window.gtag === 'function') window.gtag('event', name, params || {}); }
+window.track = track;
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href*="wa.me/"], a[href^="tel:"]');
+  if (!a) return;
+  const params = { page_path: location.pathname, cta_location: ctaPlace(a) || 'other', villa: a.dataset.villa || '' };
+  track(a.href.startsWith('tel:') ? 'phone_click' : 'whatsapp_click', params);
+}, true);
+
+// ====== "Check dates" mini form → opens WhatsApp with the details filled in ======
+document.querySelectorAll('[data-enquiry]').forEach((host, i) => {
+  const id = 'enq' + i;
+  const preset = host.dataset.villa || '';
+  const today = new Date().toISOString().slice(0, 10);
+  host.innerHTML = `
+  <form class="enquiry" id="${id}" novalidate>
+    <div class="enquiry__head">
+      <h3>Check dates &amp; price</h3>
+      <p>Tell us your plan. WhatsApp opens with everything filled in — we reply with availability and the exact price.</p>
+    </div>
+    <div class="enquiry__grid">
+      <label for="${id}-villa">Villa
+        <select id="${id}-villa" name="villa">
+          <option value="">Help me choose</option>
+          ${Object.keys(VILLA_CODES).map(v => `<option${v === preset ? ' selected' : ''}>${v}</option>`).join('')}
+        </select></label>
+      <label for="${id}-in">Check-in date
+        <input id="${id}-in" name="checkin" type="date" min="${today}"></label>
+      <label for="${id}-nights">Nights
+        <select id="${id}-nights" name="nights">${[1,2,3,4,5,6,7].map(n => `<option>${n}</option>`).join('')}<option value="8+">8 or more</option></select></label>
+      <label for="${id}-adults">Adults
+        <select id="${id}-adults" name="adults">${[1,2,3,4,5,6,7,8,9,10].map(n => `<option${n === 4 ? ' selected' : ''}>${n}</option>`).join('')}<option value="10+">More than 10</option></select></label>
+      <label for="${id}-kids">Children
+        <select id="${id}-kids" name="children">${[0,1,2,3,4,5,6].map(n => `<option>${n}</option>`).join('')}</select></label>
+      <label class="enquiry__check" for="${id}-elders"><input id="${id}-elders" name="elders" type="checkbox"> Travelling with elders (need lift / easy access)</label>
+    </div>
+    <button type="submit" class="btn btn--primary enquiry__submit">Check dates on WhatsApp</button>
+    <p class="enquiry__note">No payment now. Check-in 10:30 AM · check-out 9:30 AM.</p>
+  </form>`;
+  host.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const d = f.checkin.value ? new Date(f.checkin.value + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const villa = f.villa.value;
+    track('enquiry_form_submit', { page_path: location.pathname, villa, nights: f.nights.value, adults: f.adults.value });
+    window.open(waLink({ villa, checkin: d, nights: f.nights.value, adults: f.adults.value, children: f.children.value !== '0' ? f.children.value : '', elders: f.elders.checked, place: 'form' }), '_blank', 'noopener');
+  });
+});
+
+// ====== Phones: one bottom bar (WhatsApp · Call · Quick answers) instead of floating circles ======
+(function () {
+  const bar = document.createElement('nav');
+  bar.className = 'm-bar';
+  bar.setAttribute('aria-label', 'Contact AP Villas');
+  const villaOnPage = document.querySelector('[data-enquiry]')?.dataset.villa || '';
+  bar.innerHTML = `
+    <a class="m-bar__wa" href="${waLink({ villa: villaOnPage, place: 'bar' })}" target="_blank" rel="noopener" data-villa="${villaOnPage}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.05 2a9.9 9.9 0 0 0-8.5 14.96L2 22l5.2-1.53A9.9 9.9 0 1 0 12.05 2Zm5.8 13.9c-.25.7-1.43 1.33-2 1.4-.51.07-1.16.1-1.87-.12-.43-.14-.98-.32-1.69-.62-2.98-1.29-4.92-4.29-5.07-4.49-.15-.2-1.21-1.61-1.21-3.07s.77-2.18 1.04-2.48c.27-.3.6-.37.79-.37h.57c.18 0 .43-.07.67.51.25.6.84 2.06.92 2.21.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.45.52-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.13 1.01 2.09 1.32 2.39 1.47.3.15.47.12.64-.07.17-.2.74-.87.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.35.07.12.07.71-.18 1.41Z"/></svg>
+      <span>Check dates</span></a>
+    <a class="m-bar__call" href="tel:+918999061598">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>
+      <span>Call</span></a>
+    <button type="button" class="m-bar__ask" aria-controls="chatbot">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.5 9.5a2.5 2.5 0 0 1 4.8.9c0 1.6-2.3 2.1-2.3 3.1M12 16.5h.01"/></svg>
+      <span>Quick answers</span></button>`;
+  document.body.appendChild(bar);
+  document.body.classList.add('has-m-bar');
+  bar.querySelector('.m-bar__ask').addEventListener('click', () => {
+    const t = document.getElementById('chatbot-toggle');
+    if (t) t.click();
+  });
+})();

@@ -1271,3 +1271,70 @@ body:has(.hero) .nav:not(.scrolled) .nav__brand {
 @media (prefers-reduced-motion: reduce) {
   .nav__logo-full, .footer__logo-full, .logo-shine::after { animation: none; }
 }
+
+/* ============================================================
+   PHASE 1 — enquiry form, phone bottom bar, card buttons, hero game link
+   ============================================================ */
+.villa-card__actions .btn { white-space: normal; text-align: center; line-height: 1.25; }
+
+/* Hero: game as a quieter third link */
+.hero__game-link {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+  color: rgba(255,255,255,.88); font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 4px;
+}
+.hero__game-link .game-char-icon svg { width: 20px; height: 22px; }
+.hero__game-link:hover { color: #fff; }
+
+/* "Check dates" mini form */
+.enquiry {
+  background: white; border: 1px solid var(--line); border-radius: var(--r-md);
+  box-shadow: var(--shadow-md); padding: 28px; max-width: 920px; margin: 40px auto 0; text-align: left;
+}
+.enquiry__head h3 { font-size: 28px; margin: 0 0 6px; }
+.enquiry__head p { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
+.enquiry__grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
+.enquiry label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--navy); }
+.enquiry select, .enquiry input[type="date"] {
+  font: 15px 'Inter', sans-serif; padding: 11px 12px; border: 1px solid #D8D2C4; border-radius: 10px;
+  background: #FFFDF8; color: var(--ink); min-height: 46px; width: 100%;
+}
+.enquiry select:focus, .enquiry input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.enquiry .enquiry__check { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 10px; font-weight: 500; }
+.enquiry__check input { width: 20px; height: 20px; accent-color: var(--saffron); }
+.enquiry__submit { margin-top: 18px; width: 100%; justify-content: center; font-size: 16px; padding: 15px 26px; }
+.enquiry__note { margin: 10px 0 0; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* Phone bottom bar */
+.m-bar { display: none; }
+@media (max-width: 900px) {
+  .enquiry { padding: 22px 18px; }
+  .enquiry__grid { grid-template-columns: 1fr 1fr; }
+  .enquiry__grid label:first-child { grid-column: 1 / -1; }
+  .fab, .fab--email, .chatbot-toggle { display: none !important; }
+  .m-bar {
+    display: grid; grid-template-columns: 1.5fr 1fr 1.2fr; gap: 8px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 96;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255,253,248,.97); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(31,42,68,.10);
+  }
+  .m-bar a, .m-bar button {
+    display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px;
+    border-radius: 12px; font: 600 14px 'Inter', sans-serif; text-decoration: none; cursor: pointer;
+  }
+  .m-bar svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .m-bar__wa { background: #1F8A4C; color: #fff; }
+  .m-bar__call { background: var(--navy); color: #fff; }
+  .m-bar__ask { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  body.has-m-bar { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  .chatbot { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); right: 12px; left: 12px; width: auto; max-height: 70vh; }
+}
+@media (max-width: 360px) { .m-bar a span, .m-bar button span { font-size: 12.5px; } }
+
+/* Accessibility (Phase 1) */
+.contact-card h3.contact-card__title { color: white; font-size: 24px; margin-bottom: 10px; font-weight: 500; }
+.footer__copy { opacity: 1; color: rgba(255,255,255,0.72); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px;
+}
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
