@@ -46,8 +46,8 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 5.6 Travel & packages strip; founder note; homepage FAQ + mini form.
 
 ## Phase 6 — Brand system "Emerald Haveli"
-- [?] 6.1 Owner approves direction (emerald + antique gold to match the logo, replacing navy/saffron).
-- [ ] 6.2 Colour tokens, button/card styles, contrast AA.
+- [x] 6.1 Owner approved (11 Oct 2026). Direction (emerald + antique gold to match the logo, replacing navy/saffron).
+- [x] 6.2 Emerald #1F4D3A / deep #12301F replace navy site-wide; terracotta #B5532A accent; emerald primary buttons, gold buttons on dark panels; contact band + footer emerald.
 - [ ] 6.3 Line icons replace emoji amenity icons.
 - [ ] 6.4 Typography: no small italic Cormorant; type scale.
 
