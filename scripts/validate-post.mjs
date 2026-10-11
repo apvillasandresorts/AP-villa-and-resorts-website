@@ -71,9 +71,16 @@ if (externalSources.length < 2) fail(`Need ≥2 external source links, found ${e
 const library = readJSON('content/photo-library.json').photos;
 const libPaths = new Set(library.map(p => p.path));
 const imgs = [...html.matchAll(/<img[^>]*src="([^"]+)"[^>]*>/g)];
-for (const [tag, src] of imgs) {
-  if (src.includes('assets/brand/')) continue;
-  const p = normalize(join(dirname(file), src));
+// WebP copies (name-480/960/1600.webp from scripts/responsive-images.mjs) count as their original photo
+const baseOf = p => {
+  if (!/-(480|960|1600)\.webp$/.test(p)) return p;
+  const stem = p.replace(/-(480|960|1600)\.webp$/, '');
+  return ['.jpg', '.JPG', '.jpeg', '.png'].map(e => stem + e).find(c => libPaths.has(c) || existsSync(c)) || p;
+};
+for (const [tag, rawSrc] of imgs) {
+  if (rawSrc.includes('assets/brand/')) continue;
+  const src = rawSrc;
+  const p = baseOf(normalize(join(dirname(file), src)));
   if (!existsSync(p)) fail(`Image missing on disk: ${src}`);
   if (!libPaths.has(p)) fail(`Image not in content/photo-library.json: ${p}`);
   const alt = tag.match(/alt="([^"]*)"/)?.[1] ?? '';
@@ -86,14 +93,14 @@ for (const [tag, src] of imgs) {
 for (const m of html.matchAll(/<figure[^>]*>([\s\S]*?)<\/figure>/g)) {
   const src = m[1].match(/<img[^>]*src="([^"]+)"/)?.[1];
   if (!src) continue;
-  const entry = library.find(x => x.path === normalize(join(dirname(file), src)));
+  const entry = library.find(x => x.path === baseOf(normalize(join(dirname(file), src))));
   if (entry?.source === 'wikimedia-commons') {
     const cap = m[1].match(/<figcaption>([\s\S]*?)<\/figcaption>/)?.[1] ?? '';
     if (!/wikimedia commons/i.test(cap) || !cap.includes(entry.license)) fail(`Missing credit caption (author / Wikimedia Commons / ${entry.license}) for ${src}`);
   }
 }
 for (const [tag, src] of imgs) {
-  const entry = library.find(x => x.path === normalize(join(dirname(file), src)));
+  const entry = library.find(x => x.path === baseOf(normalize(join(dirname(file), src))));
   if (entry?.source === 'wikimedia-commons' && !html.slice(0, html.indexOf(tag)).match(/<figure[^>]*>[^]*$/) ) fail(`Commons photo ${src} must be inside <figure> with a credit <figcaption>`);
 }
 const heroSrc = html.match(/<img[^>]*class="article__hero"[^>]*>/)?.[0].match(/src="([^"]+)"/)?.[1] ?? '';

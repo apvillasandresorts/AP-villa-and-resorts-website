@@ -106,7 +106,8 @@ function openGallery(key) {
   if (!modal) return;
   document.getElementById('gallery-modal-title').textContent = g.name + ' — ' + g.images.length + ' Photos';
   const grid = document.getElementById('gallery-modal-grid');
-  grid.innerHTML = g.images.map(src => `<img src="${src}" alt="${g.name} interior" loading="lazy">`).join('');
+  // WebP copies made by scripts/responsive-images.mjs (fall back to the original if a copy is missing)
+  grid.innerHTML = g.images.map(src => `<img src="${src.replace(/\.(jpe?g|png)$/i, '-960.webp')}" onerror="this.onerror=null;this.src='${src}'" alt="${g.name} interior" loading="lazy" decoding="async">`).join('');
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }

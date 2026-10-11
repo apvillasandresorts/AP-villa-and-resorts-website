@@ -1,0 +1,9 @@
+{
+  "name": "ap-villas-site-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Build helpers for the static site (not deployed).",
+  "dependencies": {
+    "sharp": "0.33.5"
+  }
+}

@@ -105,8 +105,11 @@ jobs:
           if [ "$count" != "1" ]; then echo "::error::Expected exactly one new file in blog/, found: '$new'"; exit 1; fi
           slug=$(basename "$new" .html)
           # Only the allowed files may change.
-          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json|content/photo-library\.json|images/blog/$slug/[^/]+\.(jpg|jpeg|png|webp))$" || true)
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json|content/photo-library\.json|images/blog/$slug/[^/]+\.(jpg|jpeg|png|webp)|scripts/node_modules/.*)$" || true)
           if [ -n "$bad" ]; then echo "::warning::Reverting unexpected changes: $bad"; for f in $bad; do git checkout -- "$f" 2>/dev/null || rm -f "$f"; done; fi
+          # Responsive WebP copies + srcset for the new post's photos (free, open-source sharp)
+          npm --prefix scripts ci --silent || npm --prefix scripts install --silent
+          node scripts/responsive-images.mjs
           node scripts/build-sitemap.mjs
           branch="blog/$slug"
           git config user.name "github-actions[bot]"

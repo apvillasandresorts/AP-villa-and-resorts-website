@@ -17,11 +17,11 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 1.9 Stop publishing internal files (content/, scripts/, docs/, CLAUDE.md) via `.vercelignore`.
 
 ## Phase 2 — Speed (mobile LCP 4.2–7.7 s → target < 2.5 s lab)
-- [ ] 2.1 Self-host the two Google Fonts (WOFF2, `font-display: swap`, preload) — removes ~2.2 s render-blocking.
-- [ ] 2.2 Image pipeline (incl. img/Founder.jpg, currently 3.8 MB): 480/960/1600 px WebP for villa and blog photos, `srcset` + `sizes`, width/height; the pipeline does the same for new blog photos.
-- [ ] 2.3 Preload the hero/LCP image on each page; never lazy-load it.
-- [ ] 2.4 Cache headers in `vercel.json` for images, CSS, JS, fonts.
-- [ ] 2.5 Branded 404 page; one-hop redirect for `http://apvillasandresorts.in`.
+- [x] 2.1 Self-host the two Google Fonts (WOFF2, `font-display: swap`, preload) — removes ~2.2 s render-blocking.
+- [x] 2.2 Image pipeline (incl. img/Founder.jpg, currently 3.8 MB): 480/960/1600 px WebP for villa and blog photos, `srcset` + `sizes`, width/height; the pipeline does the same for new blog photos.
+- [x] 2.3 Preload the hero/LCP image on each page; never lazy-load it.
+- [x] 2.4 Cache headers in `vercel.json` for images, CSS, JS, fonts.
+- [x] 2.5 Branded 404 page (noindex). The http→https→www double hop is Vercel's built-in HTTPS redirect and can't be shortened on the free plan; harmless.
 
 ## Phase 3 — Measurement
 - [x] 3.1 Google Search Console verified (URL prefix https://www.apvillasandresorts.in/, via GA4, account apvillasandresorts@gmail.com); sitemap.xml submitted 11 Oct 2026 (first fetch pending).
