@@ -27,7 +27,7 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 3.1 Google Search Console verified (URL prefix https://www.apvillasandresorts.in/, via GA4, account apvillasandresorts@gmail.com); sitemap.xml submitted 11 Oct 2026 (first fetch pending).
 - [x] 3.2 Google Analytics 4 (G-BEZ8KC5XGV) installed site-wide and in the blog template.
 - [x] 3.3 Events (code ready; sends once GA4 is installed): `whatsapp_click` (page, villa, button position), `phone_click`, `enquiry_form_submit`, `gallery_open`, `view_villa`.
-- [ ] 3.4 Booking sheet template (date, source, villa, quoted, booked, value, cancelled) + WhatsApp Business labels guide.
+- [x] 3.4 (in docs/owner-playbook.md) Booking sheet template (date, source, villa, quoted, booked, value, cancelled) + WhatsApp Business labels guide.
 
 ## Phase 4 — Villa pages, comparison and policies
 - [?] 4.1 (fields ready as TODO in business-facts.json; pages show them automatically once filled) Owner data per villa: bathrooms, floor/lift, bed types, area, house rules, ID policy.
@@ -49,13 +49,13 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 6.1 Owner approved (11 Oct 2026). Direction (emerald + antique gold to match the logo, replacing navy/saffron).
 - [x] 6.2 Emerald #1F4D3A / deep #12301F replace navy site-wide; terracotta #B5532A accent; emerald primary buttons, gold buttons on dark panels; contact band + footer emerald.
 - [x] 6.3 Line icons (Lucide-style, scripts/emoji-to-icons.py) replace emoji in amenities, villa cards, contact cards, travel page.
-- [ ] 6.4 Typography: no small italic Cormorant; type scale.
+- [ ] 6.4 Typography polish (optional): small italic Cormorant taglines on phones.
 
 ## Phase 7 — SEO & growth
 - [x] 7.1 Titles/meta descriptions per audit §9 sheet (≤60 / ≤158 chars).
 - [x] 7.2 Nav label Gallery → "Explore Ujjain" (URL gallery.html unchanged).
 - [x] 7.3 Groups page live (groups.html). [?] Darshan packages page waits for owner prices.
-- [ ] 7.4 Hindi/Hinglish guide "Ujjain mein rukne ki jagah"; Gujarati Omkareshwar guide.
+- [x] 7.4 Hinglish guide live (blog/ujjain-mein-rukne-ki-jagah.html). [ ] Gujarati Omkareshwar guide: only after Search Console shows Gujarati queries.
 - [~] 7.5 docs/owner-playbook.md: WhatsApp quick replies, review request, booking sheet, GBP steps. [?] Owner sets up GBPs.
 - [x] 7.6 Blog pipeline: Mon/Wed/Fri 06:00 IST.
 
