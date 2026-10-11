@@ -1146,6 +1146,42 @@
       "license": "Public domain",
       "license_url": "",
       "credit": "Photo: Unknown / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/bhasma-aarti-booking-guide/mahakal-temple-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakaleshwar",
+        "temple",
+        "ujjain"
+      ],
+      "alt": "Mahakaleshwar Temple shikhara and complex at Ujjain, Madhya Pradesh",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mahakal_Temple_Ujjain.JPG",
+      "author": "LRBurdak",
+      "license": "CC BY-SA 3.0",
+      "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "credit": "Photo: LRBurdak / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/bhasma-aarti-booking-guide/harsiddhi-marg-ujjain-02.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "street",
+        "mahakaleshwar"
+      ],
+      "alt": "Harsiddhi Marg, a street near Mahakaleshwar Temple in Ujjain, with shops and passers-by",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Harsiddhi_Marg,_Ujjain_02.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }

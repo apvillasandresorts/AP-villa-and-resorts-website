@@ -63,7 +63,7 @@
       "keyword": "mahakal bhasma aarti booking",
       "intent": "transactional",
       "cluster": "mahakal-darshan",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "mahakaleshwar-darshan-timings",
