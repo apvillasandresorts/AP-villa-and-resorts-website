@@ -73,8 +73,8 @@ const libPaths = new Set(library.map(p => p.path));
 const imgs = [...html.matchAll(/<img[^>]*src="([^"]+)"[^>]*>/g)];
 // WebP copies (name-480/960/1600.webp from scripts/responsive-images.mjs) count as their original photo
 const baseOf = p => {
-  if (!/-(480|960|1600)\.webp$/.test(p)) return p;
-  const stem = p.replace(/-(480|960|1600)\.webp$/, '');
+  if (!/-(480|960|1200|1600)\.webp$/.test(p)) return p;
+  const stem = p.replace(/-(480|960|1200|1600)\.webp$/, '');
   return ['.jpg', '.JPG', '.jpeg', '.png'].map(e => stem + e).find(c => libPaths.has(c) || existsSync(c)) || p;
 };
 for (const [tag, rawSrc] of imgs) {

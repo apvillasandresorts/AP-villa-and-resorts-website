@@ -13,9 +13,9 @@ import sharp from 'sharp';
 
 const ROOT = normalize(join(dirname(fileURLToPath(import.meta.url)), '..'));
 process.chdir(ROOT);
-const WIDTHS = [480, 960, 1600];
+const WIDTHS = [480, 960, 1200, 1600];
 const RASTER = /\.(jpe?g|png)$/i;
-const VARIANT = /-(480|960|1600)\.webp$/;
+const VARIANT = /-(480|960|1200|1600)\.webp$/;
 
 const walk = d => existsSync(d) ? readdirSync(d, { withFileTypes: true }).flatMap(e => {
   const p = join(d, e.name);
@@ -35,7 +35,7 @@ async function ensureVariants(base) {
     const h = Math.round((height * w) / width);
     const out = `${stem}-${target}.webp`;
     if (!existsSync(out) || statSync(out).mtimeMs < statSync(base).mtimeMs) {
-      await sharp(base).rotate().resize({ width: w, withoutEnlargement: true }).webp({ quality: 78, effort: 5 }).toFile(out);
+      await sharp(base).rotate().resize({ width: w, withoutEnlargement: true }).webp({ quality: target >= 1600 ? 72 : 78, effort: 5 }).toFile(out);
     }
     variants.push({ w, h, path: out });
   }
@@ -78,7 +78,7 @@ for (const file of pages) {
     const info = await ensureVariants(base);
     if (!info) continue;
     const uniq = info.variants.filter((v, i, a) => a.findIndex(x => x.w === v.w) === i);
-    const mid = info.variants[1];
+    const mid = info.variants.find(v => v.path.endsWith('-960.webp'));
     const srcset = uniq.map(v => `${fromRoot(v.path)} ${v.w}w`).join(', ');
     let t = tag.replace(/\bsrc="[^"]+"/, `src="${fromRoot(mid.path)}"`);
     t = /\bsrcset="/.test(t) ? t.replace(/\bsrcset="[^"]*"/, `srcset="${srcset}"`) : t.replace(/<img\b/, `<img srcset="${srcset}"`);
@@ -88,8 +88,12 @@ for (const file of pages) {
     if (t !== tag) { html = html.replace(tag, t); rewritten++; }
 
     // Preload the blog hero (LCP image)
-    if (/article__hero/.test(t) && !html.includes('rel="preload" as="image"')) {
-      html = html.replace('</head>', `<link rel="preload" as="image" href="${fromRoot(mid.path)}" imagesrcset="${srcset}" imagesizes="(max-width: 900px) 100vw, 820px" fetchpriority="high">\n</head>`);
+    if (/article__hero/.test(t)) {
+      const pre = `<link rel="preload" as="image" href="${fromRoot(mid.path)}" imagesrcset="${srcset}" imagesizes="(max-width: 900px) 100vw, 820px" fetchpriority="high">`;
+      // keep the preload identical to the <img> srcset so the browser never downloads twice
+      html = /<link rel="preload" as="image" href="[^"]*" imagesrcset="[^"]*"[^>]*>/.test(html)
+        ? html.replace(/<link rel="preload" as="image" href="[^"]*" imagesrcset="[^"]*"[^>]*>/, pre)
+        : html.replace('</head>', `${pre}\n</head>`);
     }
   }
 
@@ -100,7 +104,7 @@ for (const file of pages) {
       const base = toRoot(m[1]);
       const info = await ensureVariants(base);
       if (!info) continue;
-      const big = info.variants[2];
+      const big = info.variants[info.variants.length - 1];
       out = out.replace(m[0], `url('${fromRoot(big.path)}')`);
       // preload only the first background image on the page (the hero)
       if (!/rel="preload" as="image" href="[^"]+-1600\.webp"/.test(out)) {

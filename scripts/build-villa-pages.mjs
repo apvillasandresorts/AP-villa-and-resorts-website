@@ -30,7 +30,7 @@ const ORDER = ['exterior', 'rooftop', 'pool', 'lounge', 'living-room', 'sitting-
 const rank = p => { const i = ORDER.findIndex(t => p.tags.includes(t)); return i === -1 ? ORDER.length : i; };
 const webp = (path, w) => path.replace(/\.(jpe?g|png)$/i, `-${w}.webp`);
 const img = (p, cls = '', sizes = '(max-width: 900px) 100vw, 50vw', lazy = true) =>
-  `<img class="${cls}" src="../${webp(p.path, 960)}" srcset="../${webp(p.path, 480)} 480w, ../${webp(p.path, 960)} 960w, ../${webp(p.path, 1600)} 1600w" sizes="${sizes}" alt="${esc(p.alt)}"${lazy ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async">`;
+  `<img class="${cls}" src="../${webp(p.path, 960)}" srcset="../${webp(p.path, 480)} 480w, ../${webp(p.path, 960)} 960w, ../${webp(p.path, 1200)} 1200w, ../${webp(p.path, 1600)} 1600w" sizes="${sizes}" alt="${esc(p.alt)}"${lazy ? ' loading="lazy"' : ' fetchpriority="high"'} decoding="async">`;
 
 const GUIDES = [
   ['../blog/mahakaleshwar.html', 'Mahakaleshwar Jyotirlinga: a complete guide'],
@@ -99,7 +99,7 @@ for (const v of facts.villas) {
     .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${url}">`)
     .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`)
     .replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${SITE}/${webp(hero.path, 1600)}">`)
-    .replace('</head>', `<link rel="preload" as="image" href="../${webp(hero.path, 960)}" imagesrcset="../${webp(hero.path, 480)} 480w, ../${webp(hero.path, 960)} 960w, ../${webp(hero.path, 1600)} 1600w" imagesizes="100vw" fetchpriority="high">\n<script type="application/ld+json">\n${JSON.stringify(ld, null, 1)}\n</script>\n</head>`);
+    .replace('</head>', `<link rel="preload" as="image" href="../${webp(hero.path, 960)}" imagesrcset="../${webp(hero.path, 480)} 480w, ../${webp(hero.path, 960)} 960w, ../${webp(hero.path, 1200)} 1200w, ../${webp(hero.path, 1600)} 1600w" imagesizes="(max-width: 900px) 100vw, 58vw" fetchpriority="high">\n<script type="application/ld+json">\n${JSON.stringify(ld, null, 1)}\n</script>\n</head>`);
 
   const body = `
 
