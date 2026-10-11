@@ -1345,7 +1345,7 @@ body:has(.hero) .nav:not(.scrolled) .nav__brand {
     border-radius: 12px; font: 600 14px 'Inter', sans-serif; text-decoration: none; cursor: pointer;
   }
   .m-bar svg { width: 20px; height: 20px; flex-shrink: 0; }
-  .m-bar__wa { background: #1F8A4C; color: #fff; }
+  .m-bar__wa { background: #177A40; color: #fff; } /* 5.3:1 with white text (AA) */
   .m-bar__call { background: var(--navy); color: #fff; }
   .m-bar__ask { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
   body.has-m-bar { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
