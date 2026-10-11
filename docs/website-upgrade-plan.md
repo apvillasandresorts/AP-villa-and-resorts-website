@@ -25,7 +25,7 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 
 ## Phase 3 — Measurement
 - [?] 3.1 (moved into Phase 1 at owner's request) Google Search Console: verify the domain (DNS TXT at GoDaddy), submit sitemap. *Needs owner login.*
-- [?] 3.2 (moved into Phase 1) Google Analytics 4: one tag site-wide. *Needs owner to create the property.*
+- [x] 3.2 Google Analytics 4 (G-BEZ8KC5XGV) installed site-wide and in the blog template.
 - [x] 3.3 Events (code ready; sends once GA4 is installed): `whatsapp_click` (page, villa, button position), `phone_click`, `enquiry_form_submit`, `gallery_open`, `view_villa`.
 - [ ] 3.4 Booking sheet template (date, source, villa, quoted, booked, value, cancelled) + WhatsApp Business labels guide.
 
