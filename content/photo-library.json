@@ -836,6 +836,25 @@
       "license": "CC BY 4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0",
       "credit": "Photo: Rajveer Bairagi / Wikimedia Commons, CC BY 4.0"
+    },
+    {
+      "path": "images/blog/ujjain-in-november-kartik/ram-ghat-ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ghat",
+        "shipra",
+        "ujjain",
+        "river"
+      ],
+      "alt": "Ram Ghat on the Shipra River in Ujjain, with steps leading down to the water",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ram_Ghat,_Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }
