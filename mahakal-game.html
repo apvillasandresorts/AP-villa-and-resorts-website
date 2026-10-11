@@ -723,7 +723,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="tutorial" id="tutorial">
     <div class="tutorial__icon">⟵ ⟶</div>
     <div class="tutorial__text">Tap left or right to move</div>
-    <div class="tutorial__sub">Your weapon fires by itself · Arrow keys work too</div>
+    <div class="tutorial__sub">Your weapon fires by itself down your path · Arrow keys work too</div>
   </div>
 
   <!-- Ashirvaad: deity blessing after each wave -->
@@ -841,9 +841,9 @@ const WEAPONS = {
   bow:     { name: 'Dhanush-baan', desc: 'bow and arrows', dmg: 1, rate: 0.30, speed: 1.7, spread: [0], pierce: 0, range: 0.55, kind: 'arrow', color: '#F4D58D' },
   parashu: { name: 'Parashu', desc: "Ganesh ji's divine axe", dmg: 2, rate: 0.27, speed: 1.6, spread: [0], pierce: 0, range: 0.6, kind: 'axe', color: '#FFB347' },
   gada:    { name: 'Gada', desc: "Hanuman ji's mighty mace", dmg: 4, rate: 0.34, speed: 1.5, spread: [0], pierce: 1, range: 0.6, kind: 'gada', color: '#F1C75B' },
-  khadga:  { name: 'Khadga', desc: "Maa Durga's sword, strikes all 3 paths", dmg: 3, rate: 0.30, speed: 1.8, spread: [-1, 0, 1], pierce: 0, range: 0.65, kind: 'blade', color: '#FF8A65' },
-  chakra:  { name: 'Sudarshan Chakra', desc: 'cuts through every danav', dmg: 5, rate: 0.28, speed: 1.7, spread: [-1, 0, 1], pierce: 99, range: 0.72, kind: 'chakra', color: '#9AD0FF' },
-  trishul: { name: 'Trishul', desc: "Mahakal's trident, the only weapon that harms Andhakasura", dmg: 6, rate: 0.24, speed: 2.0, spread: [-1, 0, 1], pierce: 99, range: 0.8, kind: 'trishul', color: '#FFFFFF' },
+  khadga:  { name: 'Khadga', desc: "Maa Durga's sword, lightning-fast strikes", dmg: 4, rate: 0.17, speed: 2.0, spread: [0], pierce: 0, range: 0.64, kind: 'blade', color: '#FF8A65' },
+  chakra:  { name: 'Sudarshan Chakra', desc: 'slices through every danav in its path', dmg: 7, rate: 0.24, speed: 1.8, spread: [0], pierce: 99, range: 0.74, kind: 'chakra', color: '#9AD0FF' },
+  trishul: { name: 'Trishul', desc: "Mahakal's trident, the only weapon that harms Andhakasura", dmg: 10, rate: 0.22, speed: 2.1, spread: [0], pierce: 99, range: 0.85, kind: 'trishul', color: '#FFFFFF' },
 };
 const DANAV = {
   rakshas: { name: 'Rakshas', hp: 2,  speed: 0.105, size: 1.0,  skin: '#B5432A', dark: '#6E1E12', horn: '#EADBB4', eye: '#FFE14D', pts: 10 },
@@ -861,7 +861,7 @@ const WAVES = [
 const BLESSINGS = [
   { name: 'Shri Ganesh', title: 'Vighnaharta clears your path', weapon: 'parashu', gift: 'Double damage. Your body grows stronger!', img: 'ganesha-lord-of-obstacles-lacma-ac1999-127-34', credit: 'Kota painting, early 19th century (public domain)' },
   { name: 'Hanuman ji', title: 'The strength of Bajrangbali is yours', weapon: 'gada', gift: 'Huge blows that smash through two danav at once. +1 prana.', img: 'hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th', credit: 'Ravi Varma Press, 1910s (public domain)' },
-  { name: 'Maa Durga', title: 'The Mother rides into battle with you', weapon: 'khadga', gift: 'Every strike now flies down all three paths. +1 prana.', img: 'mahishasura-mardini', credit: 'Ravi Varma Press, c.1910 (public domain)' },
+  { name: 'Maa Durga', title: 'The Mother rides into battle with you', weapon: 'khadga', gift: 'Lightning-fast strikes, almost twice as fast as before. +1 prana.', img: 'mahishasura-mardini', credit: 'Ravi Varma Press, c.1910 (public domain)' },
   { name: 'Shri Vishnu & Maa Lakshmi', title: 'The protector of the worlds blesses you', weapon: 'chakra', gift: 'The Chakra slices through every danav in its path. All prana restored.', img: 'vishnu-laxmi-and-serpent-anant', credit: 'Ravi Varma Press (public domain)' },
   { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'trishul', gift: 'Andhakasura, king of darkness, is coming. Only the Trishul can defeat him. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: true },
 ];
@@ -884,7 +884,7 @@ let state = 'intro';            // intro, playing, blessing, gameover, victory
 let paused = false;
 let score = 0, best = parseInt(store.get('mahakal_best', '0'), 10) || 0;
 let wave = 0, kills = 0, spawnT = 0, lives = MAX_LIVES, weapon = 'bow', bulk = 0, time = 0;
-let boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false, userPaused = false, combo = 0, comboT = 0;
+let bossTries = 0, boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false, userPaused = false, combo = 0, comboT = 0;
 const player = { lane: 1, x: 0, fireT: 0, hurt: 0, flash: 0, recoil: 0 };
 const danavs = [], shots = [], fires = [], parts = [], texts = [], drops = [];
 let checkpoint = null;
@@ -901,9 +901,9 @@ function hud() {
   $('hud-weapon').innerHTML = `Weapon: <b>${w.name}</b>`;
   if (boss) {
     $('hud-wave').textContent = 'Final battle';
-    $('hud-bar').style.width = (100 * boss.hp / BOSS_HP) + '%';
+    $('hud-bar').style.width = (100 * boss.hp / boss.max) + '%';
     $('hud-next').textContent = 'Defeat Andhakasura!';
-    $('boss-hp').style.width = Math.max(0, 100 * boss.hp / BOSS_HP) + '%';
+    $('boss-hp').style.width = Math.max(0, 100 * boss.hp / boss.max) + '%';
   } else {
     const wv = WAVES[wave];
     $('hud-wave').textContent = `Wave ${wave + 1} of ${WAVES.length} · ${Math.min(kills, wv.kills)}/${wv.kills} danav`;
@@ -923,6 +923,7 @@ function burst(x, y, color, n = 14, speed = 4) {
 
 // ---------------- Flow ----------------
 function startRun() {
+  bossTries = 0;
   score = 0; wave = 0; weapon = 'bow'; bulk = 0;
   startWave(true);
 }
@@ -977,11 +978,13 @@ function startBoss() {
   resetField();
   wave = WAVES.length;
   saveCheckpoint();
-  boss = { hp: BOSS_HP, lane: 1, x: 0, z: 0.66, rise: 0, moveT: 2.5, atkT: 2.2, hitFlash: 0, summoned: 0, enter: 0 };
+  const grace = Math.max(0.5, 1 - 0.15 * bossTries);   // Mahakal's grace: each retry makes him weaker
+  boss = { hp: Math.round(BOSS_HP * grace), max: Math.round(BOSS_HP * grace), slow: (1 - grace) * 1.6, lane: 1, x: 0, z: 0.66, rise: 0, moveT: 2.5, atkT: 2.2, hitFlash: 0, summoned: 0, enter: 0 };
   lives = MAX_LIVES; player.lane = 1; player.x = 0;
   state = 'playing';
   $('bossbar').classList.add('show');
-  banner('Andhakasura!', 'Dodge his fireballs and strike with the Trishul', 2800);
+  banner('Andhakasura!', bossTries ? "Mahakal's grace: he is weaker this time. Stand in his path to strike!" : 'Stand in his path to strike with the Trishul, and dodge his fireballs', 3000);
+  bossTries++;
   sfx.roar(); shake = 0.6;
   hud();
 }
@@ -1095,7 +1098,8 @@ function spawnDanav(type, lane) {
     lane = free[Math.floor(Math.random() * free.length)];
   }
   const t = DANAV[type];
-  danavs.push({ type, lane, x: lane - 1, z: 1.02, hp: t.hp, max: t.hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2 });
+  const hp = Math.round(t.hp * (boss ? 1.6 : 1 + 0.4 * wave));
+  danavs.push({ type, lane, x: lane - 1, z: 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2 });
 }
 function fire() {
   const w = WEAPONS[weapon];
@@ -1164,7 +1168,7 @@ function update(dt) {
       if (s.hit.size > s.pierce) gone = true;
     }
     if (boss && !boss.dead && !gone && s.kind === 'trishul' && s.lane === boss.lane && s.z >= boss.z - 0.02) {
-      boss.hp -= 2; boss.hitFlash = 1; gone = true; sfx.hit();
+      boss.hp -= 3; boss.hitFlash = 1; gone = true; sfx.hit();
       const p = project(boss.z, boss.x); burst(p.x, p.y - 120 * p.scale * unit(), '#FFFFFF', 6, 3);
       if (boss.hp <= 0) bossDefeated();
       hud();
@@ -1200,18 +1204,18 @@ function update(dt) {
     boss.enter = Math.min(1, boss.enter + dt * 0.45);
     boss.hitFlash = Math.max(0, boss.hitFlash - dt * 5);
     boss.moveT -= dt;
-    const rage = boss.hp < BOSS_HP / 2;
+    const rage = boss.hp < boss.max / 2;
     if (boss.moveT <= 0) { boss.moveT = (rage ? 1.8 : 2.6) + Math.random() * 1.5; let l; do { l = Math.floor(Math.random() * 3); } while (l === boss.lane); boss.lane = l; }
     boss.x += (boss.lane - 1 - boss.x) * Math.min(1, dt * 2.5);
     boss.atkT -= dt;
     if (boss.atkT <= 0 && boss.enter >= 1) {
-      boss.atkT = rage ? 1.55 : 2.1;
-      const lane = Math.random() < 0.65 ? player.lane : Math.floor(Math.random() * 3);
+      boss.atkT = (rage ? 1.55 : 2.1) + boss.slow;
+      const lane = Math.random() < 0.5 ? player.lane : Math.floor(Math.random() * 3);
       fires.push({ lane, z: boss.z - 0.02, warn: 1.1 });
       if (rage && Math.random() < 0.3) { const l2 = (lane + 1 + Math.floor(Math.random() * 2)) % 3; fires.push({ lane: l2, z: boss.z - 0.02, warn: 1.1 }); }
     }
     const thresholds = [0.66, 0.33];
-    if (boss.summoned < 2 && boss.hp < BOSS_HP * thresholds[boss.summoned]) { boss.summoned++; [0, 2].forEach(l => spawnDanav('rakshas', l)); banner('He summons his danav!', '', 1400); }
+    if (boss.summoned < 2 && boss.hp < boss.max * thresholds[boss.summoned]) { boss.summoned++; [0, 2].forEach(l => spawnDanav('rakshas', l)); banner('He summons his danav!', '', 1400); }
   }
   for (let i = fires.length - 1; i >= 0; i--) {
     const f = fires[i];
@@ -1433,80 +1437,249 @@ function drawLaddoo(d) {
   ctx.fillStyle = '#FFD98A'; ctx.beginPath(); ctx.arc(d.x - 3, d.y - 3, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
 }
 
-// The yoddha, seen from behind. "bulk" (0–5) grows with every Ashirvaad: broader, taller, gold armour, brighter aura.
+// ---------------- The yoddha (seen from behind, running toward the temple) ----------------
+// Skeleton-based drawing: joints are computed every frame, limbs are tapered, shaded capsules.
+// bulkVis eases toward "bulk" (0–5) so each Ashirvaad visibly grows him: broader, taller, armour, aura.
+let WZ = 1;   // test-only zoom
+const WR = { bulkVis: 0, lean: 0, prevX: 0, dustT: 0, scarf: [] };
+function limb(x1, y1, x2, y2, w1, w2, fill) {
+  const a = Math.atan2(y2 - y1, x2 - x1), px = Math.sin(a), py = -Math.cos(a);
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(x1 + px * w1, y1 + py * w1); ctx.lineTo(x2 + px * w2, y2 + py * w2);
+  ctx.arc(x2, y2, w2, a - Math.PI / 2, a + Math.PI / 2);
+  ctx.lineTo(x1 - px * w1, y1 - py * w1);
+  ctx.arc(x1, y1, w1, a + Math.PI / 2, a + Math.PI * 1.5);
+  ctx.closePath(); ctx.fill();
+}
+function skinGrad(x1, x2, base, dark, light) {
+  const g = ctx.createLinearGradient(x1, 0, x2, 0);
+  g.addColorStop(0, dark); g.addColorStop(0.45, light); g.addColorStop(0.7, base); g.addColorStop(1, dark);
+  return g;
+}
 function drawWarrior() {
-  const p = project(0, player.x), u = unit(), B = bulk;
-  const s = 40 * u * (1 + 0.07 * B);
-  const wide = 1 + 0.13 * B;
-  const SKIN = '#E9B486', SHADOW = '#B97F52', DHOTI = '#F6EEDB', GOLD = '#D4A53A';
-  const blink = player.hurt > 0 && Math.floor(player.hurt * 12) % 2 === 0;
-  ctx.save(); ctx.translate(p.x, p.y);
-  if (blink) ctx.globalAlpha = 0.45;
-  // aura (stronger with each blessing)
-  if (B > 0 || player.flash > 0) {
-    const col = B >= 5 ? '150,200,255' : '255,210,120';
-    const r = s * (1.2 + 0.1 * B) + Math.sin(time * 4) * 3;
-    const ag = ctx.createRadialGradient(0, -s * 1.1, s * 0.2, 0, -s * 1.1, r * 1.4);
-    ag.addColorStop(0, `rgba(${col},${0.18 + 0.05 * B + Math.max(0, player.flash) * 0.4})`); ag.addColorStop(1, `rgba(${col},0)`);
-    ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 1.1, r * 1.4, 0, Math.PI * 2); ctx.fill();
+  const u = unit();
+  WR.bulkVis += (bulk - WR.bulkVis) * 0.04;
+  const B = WR.bulkVis;
+  const p = project(0, player.x);
+  const s = 48 * u * (1 + 0.065 * B) * WZ;           // overall height unit
+  const W = 1 + 0.12 * B;                         // breadth
+  const moving = state === 'playing' && betweenWaves <= 0;
+  const ph = time * (moving ? 11 : 3);
+  // lean into lane changes, ease back
+  const vx = player.x - WR.prevX; WR.prevX = player.x;
+  WR.lean += (Math.max(-0.35, Math.min(0.35, vx * 9)) - WR.lean) * 0.25;
+  // dust puffs from the feet
+  WR.dustT -= 1 / 60;
+  if (moving && WR.dustT <= 0) { WR.dustT = Math.abs(vx) > 0.01 ? 0.03 : 0.16; parts.push({ x: p.x + (Math.random() - 0.5) * s * 0.5, y: p.y - 2, vx: (Math.random() - 0.5) * 1.2 - vx * 40, vy: -0.6 - Math.random() * 0.6, r: 2 + Math.random() * 3 * u, life: 0.6, color: 'rgba(150,120,80,0.55)' }); }
+
+  const SKIN = '#E7B184', SK_D = '#A86F45', SK_L = '#F6CFA4', DHOTI = '#F7EFDC', DH_D = '#D9CBAA', GOLD = '#D9AE45', GOLD_D = '#9C7420', SAFF = B >= 3 ? '#B5121B' : '#D2601F';
+  const hurt = player.hurt > 0;
+  const bob = moving ? Math.abs(Math.sin(ph)) * s * 0.05 : Math.sin(time * 2) * s * 0.012;
+  const knock = hurt ? Math.max(0, player.hurt - 0.6) * s * 0.35 : 0;
+
+  ctx.save();
+  ctx.translate(p.x, p.y + knock);
+  if (hurt && Math.floor(player.hurt * 14) % 2 === 0) ctx.globalAlpha = 0.55;
+
+  // ground shadow + aura
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.5 * W, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  if (B > 0.05 || player.flash > 0) {
+    const col = bulk >= 5 ? '150,200,255' : '255,205,110';
+    const r = s * (1.25 + 0.1 * B) + Math.sin(time * 4) * 3;
+    const ag = ctx.createRadialGradient(0, -s * 1.15, s * 0.2, 0, -s * 1.15, r * 1.3);
+    ag.addColorStop(0, `rgba(${col},${0.16 + 0.05 * B + Math.max(0, player.flash) * 0.45})`); ag.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 1.15, r * 1.3, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.6 * wide, s * 0.14, 0, 0, Math.PI * 2); ctx.fill();
-  const stride = Math.sin(time * 9) * 0.12;
-  // legs
-  ctx.fillStyle = SHADOW;
-  ctx.save(); ctx.translate(-s * 0.16 * wide, -s * 0.5); ctx.rotate(stride); ctx.fillRect(-s * 0.1 * wide, 0, s * 0.2 * wide, s * 0.5); ctx.restore();
-  ctx.save(); ctx.translate(s * 0.16 * wide, -s * 0.5); ctx.rotate(-stride); ctx.fillRect(-s * 0.1 * wide, 0, s * 0.2 * wide, s * 0.5); ctx.restore();
-  // dhoti
-  ctx.fillStyle = DHOTI; ctx.beginPath(); ctx.moveTo(-s * 0.4 * wide, -s * 0.92); ctx.lineTo(s * 0.4 * wide, -s * 0.92); ctx.lineTo(s * 0.36 * wide, -s * 0.42); ctx.lineTo(-s * 0.36 * wide, -s * 0.42); ctx.fill();
-  ctx.fillStyle = GOLD; ctx.fillRect(-s * 0.36 * wide, -s * 0.46, s * 0.72 * wide, s * 0.04);
-  ctx.fillStyle = B >= 3 ? '#B5121B' : '#C0531A'; ctx.fillRect(-s * 0.41 * wide, -s * 0.95, s * 0.82 * wide, s * 0.07);   // waist sash
-  // back (V-shape, broadens with bulk)
-  const bg = ctx.createLinearGradient(-s * 0.55 * wide, 0, s * 0.55 * wide, 0);
-  bg.addColorStop(0, SHADOW); bg.addColorStop(0.5, SKIN); bg.addColorStop(1, SHADOW);
-  ctx.fillStyle = bg;
-  ctx.beginPath(); ctx.moveTo(-s * 0.36 * wide, -s * 0.93); ctx.lineTo(-s * 0.56 * wide, -s * 1.5); ctx.quadraticCurveTo(0, -s * 1.62, s * 0.56 * wide, -s * 1.5); ctx.lineTo(s * 0.36 * wide, -s * 0.93); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = SHADOW; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -s * 1.52); ctx.lineTo(0, -s * 0.98); ctx.stroke();   // spine
-  if (B >= 1) { ctx.beginPath(); ctx.arc(-s * 0.22 * wide, -s * 1.3, s * 0.18 * wide, 0.2, 2.2); ctx.arc(s * 0.22 * wide, -s * 1.3, s * 0.18 * wide, 0.9, 2.9); ctx.stroke(); }   // muscles
-  if (B >= 3) { // gold armour straps
-    ctx.strokeStyle = GOLD; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.moveTo(-s * 0.5 * wide, -s * 1.48); ctx.lineTo(s * 0.34 * wide, -s * 0.98); ctx.moveTo(s * 0.5 * wide, -s * 1.48); ctx.lineTo(-s * 0.34 * wide, -s * 0.98); ctx.stroke();
-  } else { ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-s * 0.46 * wide, -s * 1.5); ctx.quadraticCurveTo(0, -s * 1.15, s * 0.32 * wide, -s * 0.96); ctx.stroke(); }   // janeu
-  // arms: left relaxed, right raised with the weapon
-  const armW = s * 0.13 * (1 + 0.12 * B);
-  ctx.save(); ctx.translate(-s * 0.55 * wide, -s * 1.45); ctx.rotate(0.25);
-  ctx.fillStyle = SKIN; ctx.fillRect(-armW / 2, 0, armW, s * 0.62);
-  if (B >= 1) { ctx.fillStyle = GOLD; ctx.fillRect(-armW / 2 - 1, s * 0.15, armW + 2, s * 0.06); }
+  if (player.flash > 0) { // transformation ring
+    ctx.strokeStyle = `rgba(255,236,170,${Math.min(1, player.flash)})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.05, s * (1.6 - player.flash * 0.8), s * 0.3 * (1.6 - player.flash * 0.8), 0, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // ---- legs (alternating; the lifted foot shows its sole) ----
+  const hipY = -s * 0.98 - bob;
+  for (const side of [-1, 1]) {
+    const lift = moving ? Math.max(0, Math.sin(ph + (side > 0 ? Math.PI : 0))) : 0;
+    const hx = side * s * 0.14 * W, kx = side * s * (0.15 + 0.02 * lift) * W, fx = side * s * 0.13 * W;
+    const ky = -s * 0.5 - lift * s * 0.12 - bob * 0.5, fy = -lift * s * 0.3;
+    const legCol = side < 0 ? SK_D : SKIN;
+    limb(hx, hipY, kx, ky, s * 0.12 * W, s * 0.085 * W, legCol);
+    limb(kx, ky, fx, fy - s * 0.04, s * 0.085 * W, s * 0.055 * W, legCol);
+    ctx.fillStyle = 'rgba(255,215,170,0.35)'; ctx.beginPath(); ctx.ellipse(kx - side * s * 0.02, (ky + fy) / 2, s * 0.022, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();   // calf highlight
+    ctx.fillStyle = lift > 0.3 ? '#8E5A34' : SK_D;   // heel / sole
+    ctx.beginPath(); ctx.ellipse(fx, fy - s * 0.02, s * 0.065 * W, s * (lift > 0.3 ? 0.06 : 0.035), 0, 0, Math.PI * 2); ctx.fill();
+    if (B >= 2) { ctx.fillStyle = GOLD; ctx.fillRect(fx - s * 0.05 * W, fy - s * 0.1, s * 0.1 * W, s * 0.025); }   // anklet
+  }
+
+  // ---- dhoti (pleated, hem flutters with the stride) ----
+  const sway = moving ? Math.sin(ph) : 0;
+  const dg = ctx.createLinearGradient(-s * 0.4 * W, 0, s * 0.4 * W, 0);
+  dg.addColorStop(0, DH_D); dg.addColorStop(0.4, DHOTI); dg.addColorStop(1, DH_D);
+  ctx.fillStyle = dg;
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.36 * W, -s * 1.02 - bob);
+  ctx.lineTo(s * 0.36 * W, -s * 1.02 - bob);
+  ctx.quadraticCurveTo(s * 0.44 * W, -s * 0.75, s * (0.34 + 0.04 * sway) * W, -s * 0.52 - bob + sway * s * 0.05);
+  ctx.quadraticCurveTo(s * 0.12 * W, -s * 0.47, 0, -s * 0.6 - bob);
+  ctx.quadraticCurveTo(-s * 0.12 * W, -s * 0.47, -s * (0.34 - 0.04 * sway) * W, -s * 0.52 - bob - sway * s * 0.05);
+  ctx.quadraticCurveTo(-s * 0.44 * W, -s * 0.75, -s * 0.36 * W, -s * 1.02 - bob);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(160,140,100,0.55)'; ctx.lineWidth = 1;
+  for (const k of [-0.2, -0.07, 0.07, 0.2]) { ctx.beginPath(); ctx.moveTo(k * s * W, -s * 0.98 - bob); ctx.quadraticCurveTo((k + sway * 0.03) * s * W, -s * 0.75, (k * 1.2 + sway * 0.04) * s * W, -s * 0.56 - bob); ctx.stroke(); }
+  ctx.fillStyle = GOLD; // kinari border at the hem
+  ctx.fillRect(-s * 0.36 * W, -s * 1.04 - bob, s * 0.72 * W, s * 0.035);
+
+  // ---- upper body (leans into turns) ----
+  ctx.save();
+  ctx.translate(0, hipY); ctx.rotate(WR.lean); ctx.translate(0, -hipY);
+  const shY = -s * 1.58 - bob, waistY = -s * 1.02 - bob, shW = s * (0.4 + 0.035 * B) * W;
+  // flowing angavastram end behind the left shoulder: a waving cloth ribbon
+  {
+    const wind = moving ? 1 : 0.35, N = 8, top = [], bot = [];
+    for (let i = 0; i <= N; i++) {
+      const q = i / N;
+      const cx = -shW * 0.8 - q * s * 0.6 * wind - WR.lean * q * s;
+      const cy = shY + s * 0.1 + q * s * (0.6 - 0.35 * wind) + Math.sin(time * 9 - q * 5) * s * 0.07 * q;
+      const hw = s * 0.06 * (1 - q * 0.35) * (0.8 + 0.2 * Math.sin(time * 7 - q * 4));
+      top.push([cx, cy - hw]); bot.push([cx, cy + hw]);
+    }
+    const cg = ctx.createLinearGradient(-shW, 0, -shW - s * 0.6, 0);
+    cg.addColorStop(0, SAFF); cg.addColorStop(1, B >= 3 ? '#7E0C13' : '#9E4513');
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1]);
+    top.forEach(p => ctx.lineTo(p[0], p[1])); bot.reverse().forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 1.2; ctx.beginPath(); bot.reverse().forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();   // gold border
+  }
+  // back: V-taper with lats, shaded
+  ctx.fillStyle = skinGrad(-shW, shW, SKIN, SK_D, SK_L);
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.3 * W, waistY);
+  ctx.bezierCurveTo(-s * 0.34 * W, waistY - s * 0.25, -shW * 1.08, shY + s * 0.18, -shW, shY + s * 0.02);
+  ctx.quadraticCurveTo(0, shY - s * 0.12, shW, shY + s * 0.02);
+  ctx.bezierCurveTo(shW * 1.08, shY + s * 0.18, s * 0.34 * W, waistY - s * 0.25, s * 0.3 * W, waistY);
+  ctx.closePath(); ctx.fill();
+  // rim light from the glowing temple ahead
+  ctx.strokeStyle = 'rgba(255,200,120,0.55)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-shW, shY + s * 0.04); ctx.quadraticCurveTo(0, shY - s * 0.1, shW, shY + s * 0.04); ctx.stroke();
+  // spine, shoulder blades, lats
+  ctx.strokeStyle = 'rgba(120,70,40,0.45)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(0, shY + s * 0.05); ctx.quadraticCurveTo(sway * s * 0.01, (shY + waistY) / 2, 0, waistY - s * 0.02); ctx.stroke();
+  const blade = moving ? Math.sin(ph) * s * 0.02 : 0;
+  ctx.beginPath(); ctx.ellipse(-shW * 0.45, shY + s * 0.2 + blade, shW * 0.3, s * 0.11, 0.3, 0.2, Math.PI - 0.2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(shW * 0.45, shY + s * 0.2 - blade, shW * 0.3, s * 0.11, -0.3, 0.2, Math.PI - 0.2); ctx.stroke();
+  if (B >= 1) { ctx.beginPath(); ctx.moveTo(-shW * 0.85, shY + s * 0.3); ctx.quadraticCurveTo(-s * 0.2 * W, waistY - s * 0.2, -s * 0.12, waistY - s * 0.05); ctx.moveTo(shW * 0.85, shY + s * 0.3); ctx.quadraticCurveTo(s * 0.2 * W, waistY - s * 0.2, s * 0.12, waistY - s * 0.05); ctx.stroke(); }
+  // janeu (sacred thread) or gold armour straps
+  if (B >= 3) {
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 3.2 * u;
+    ctx.beginPath(); ctx.moveTo(-shW * 0.9, shY + s * 0.06); ctx.lineTo(s * 0.28 * W, waistY - s * 0.02); ctx.moveTo(shW * 0.9, shY + s * 0.06); ctx.lineTo(-s * 0.28 * W, waistY - s * 0.02); ctx.stroke();
+    ctx.fillStyle = GOLD; ctx.beginPath(); ctx.arc(0, (shY + waistY) / 2 + s * 0.02, s * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = GOLD_D; ctx.beginPath(); ctx.arc(0, (shY + waistY) / 2 + s * 0.02, s * 0.03, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.strokeStyle = '#FFFDF5'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-shW * 0.8, shY + s * 0.04); ctx.quadraticCurveTo(-s * 0.05, (shY + waistY) / 2, s * 0.28 * W, waistY - s * 0.02); ctx.stroke();
+  }
+  // angavastram band across the back
+  ctx.strokeStyle = SAFF; ctx.lineWidth = s * 0.07; ctx.globalAlpha *= 0.9;
+  ctx.beginPath(); ctx.moveTo(-shW * 0.75, shY + s * 0.02); ctx.quadraticCurveTo(-s * 0.05, shY + s * 0.32, shW * 0.95, shY + s * 0.42); ctx.stroke();
+  ctx.globalAlpha = hurt && Math.floor(player.hurt * 14) % 2 === 0 ? 0.55 : 1;
+  // waist sash knot
+  ctx.fillStyle = SAFF; ctx.fillRect(-s * 0.34 * W, waistY - s * 0.05, s * 0.68 * W, s * 0.07);
+  ctx.beginPath(); ctx.moveTo(s * 0.2 * W, waistY); ctx.lineTo(s * (0.26 + 0.03 * sway) * W, waistY + s * 0.22); ctx.lineTo(s * 0.14 * W, waistY + s * 0.2); ctx.fill();
+
+  // ---- arms ----
+  const w = WEAPONS[weapon];
+  const cyc = Math.max(0, Math.min(1, 1 - player.fireT / w.rate));   // 0 right after a shot → 1 just before the next
+  const armW = s * 0.085 * (1 + 0.12 * B);
+  const lsx = -shW * 0.92, rsx = shW * 0.92, sy = shY + s * 0.06;
+  // left arm: swings when running; holds the bow forward when the bow is equipped
+  let lex, ley, lhx, lhy;
+  if (weapon === 'bow') { lex = lsx - s * 0.05; ley = sy - s * 0.32; lhx = lsx + s * 0.12; lhy = sy - s * 0.62; }
+  else { const sw = moving ? Math.sin(ph) : 0; lex = lsx - s * 0.1; ley = sy + s * 0.3 - sw * s * 0.06; lhx = lsx - s * 0.06 + sw * s * 0.04; lhy = sy + s * 0.58 - sw * s * 0.14; }
+  limb(lsx, sy, lex, ley, armW * 1.15, armW * 0.95, SK_D);
+  limb(lex, ley, lhx, lhy, armW * 0.9, armW * 0.75, SK_D);
+  ctx.fillStyle = SK_D; ctx.beginPath(); ctx.arc(lhx, lhy, armW * 0.85, 0, Math.PI * 2); ctx.fill();
+  if (B >= 1) { ctx.fillStyle = GOLD; ctx.save(); ctx.translate((lsx + lex) / 2, (sy + ley) / 2); ctx.rotate(Math.atan2(ley - sy, lex - lsx)); ctx.fillRect(-armW * 0.3, -armW * 1.15, armW * 0.6, armW * 2.3); ctx.restore(); }
+
+  // right arm: per-weapon attack animation driven by the fire cycle
+  let ang, reach;   // angle of the whole arm from the shoulder (0 = pointing up)
+  if (weapon === 'bow') { ang = -0.9 - 0.5 * cyc; reach = 0.75 - 0.3 * cyc; }             // draws the string back, snaps forward on release
+  else if (weapon === 'parashu' || weapon === 'gada') { ang = 0.25 + 1.0 * cyc - 1.4 * player.recoil; reach = 1; } // wind up over the shoulder, chop forward
+  else if (weapon === 'khadga') { ang = 0.9 - 1.8 * (1 - cyc) * (1 - cyc); reach = 1; }     // quick diagonal slash
+  else if (weapon === 'chakra') { ang = 0.05 + Math.sin(time * 3) * 0.05; reach = 1 - 0.15 * player.recoil; } // hand raised, chakra spins on the finger
+  else { ang = 0.12; reach = 0.85 + 0.25 * player.recoil; }                               // trishul: thrust forward
+  const upper = s * 0.36 * reach, fore = s * 0.34 * reach;
+  const rex = rsx + Math.sin(ang + 0.35) * upper, rey = sy - Math.cos(ang + 0.35) * upper;
+  const rhx = rex + Math.sin(ang) * fore, rhy = rey - Math.cos(ang) * fore;
+  limb(rsx, sy, rex, rey, armW * 1.2, armW, SKIN);
+  limb(rex, rey, rhx, rhy, armW * 0.95, armW * 0.8, SKIN);
+  ctx.fillStyle = 'rgba(255,225,190,0.45)'; ctx.beginPath(); ctx.ellipse((rsx + rex) / 2, (sy + rey) / 2, armW * 0.35, armW * 0.8, ang + 0.35, 0, Math.PI * 2); ctx.fill();   // bicep highlight
+  if (B >= 1) { ctx.fillStyle = GOLD; ctx.save(); ctx.translate((rsx + rex) / 2, (sy + rey) / 2); ctx.rotate(ang + 0.35); ctx.fillRect(-armW * 1.15, -armW * 0.3, armW * 2.3, armW * 0.6); ctx.restore(); }
+  ctx.fillStyle = SKIN; ctx.beginPath(); ctx.arc(rhx, rhy, armW * 0.9, 0, Math.PI * 2); ctx.fill();
+  // slash trail for the sword
+  if (weapon === 'khadga' && player.recoil > 0.05) {
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = `rgba(${i ? '255,220,190' : '255,255,255'},${player.recoil * (0.8 - i * 0.25)})`; ctx.lineWidth = s * (0.03 - i * 0.008);
+      ctx.beginPath(); ctx.arc(rsx, sy, s * (1.05 + i * 0.07), -Math.PI / 2 - 0.9 + i * 0.12, -Math.PI / 2 + 0.7); ctx.stroke();
+    }
+  }
+  drawHeldWeapon(s, rhx, rhy, ang, lhx, lhy, cyc);
+
+  // ---- neck, head, shikha ----
+  limb(0, shY + s * 0.04, 0, shY - s * 0.14, s * 0.1 * W, s * 0.075, SK_D);
+  const hx = Math.sin(ph) * s * 0.01, hy = shY - s * 0.27;
+  ctx.fillStyle = SKIN; ctx.beginPath(); ctx.ellipse(hx - s * 0.17, hy + s * 0.02, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.ellipse(hx + s * 0.17, hy + s * 0.02, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
+  const hg = ctx.createRadialGradient(hx - s * 0.05, hy - s * 0.08, s * 0.02, hx, hy, s * 0.2);
+  hg.addColorStop(0, '#3A2416'); hg.addColorStop(1, '#120A05');
+  ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hx, hy, s * 0.155, s * 0.175, 0, 0, Math.PI * 2); ctx.fill();
+  // shikha: tied tuft that bounces
+  const tuft = moving ? Math.sin(ph * 2) * 0.35 : Math.sin(time * 2) * 0.1;
+  ctx.save(); ctx.translate(hx, hy - s * 0.16); ctx.rotate(tuft);
+  ctx.fillStyle = '#120A05'; ctx.beginPath(); ctx.ellipse(0, -s * 0.06, s * 0.035, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#B5121B'; ctx.fillRect(-s * 0.03, -s * 0.01, s * 0.06, s * 0.02);
   ctx.restore();
-  ctx.save(); ctx.translate(s * 0.55 * wide, -s * 1.45); ctx.rotate(-2.6 + player.recoil * 0.25);
-  ctx.fillStyle = SKIN; ctx.fillRect(-armW / 2, 0, armW, s * 0.62);
-  if (B >= 1) { ctx.fillStyle = GOLD; ctx.fillRect(-armW / 2 - 1, s * 0.15, armW + 2, s * 0.06); }
-  ctx.translate(0, s * 0.66); ctx.rotate(2.6);
-  drawHeldWeapon(s);
-  ctx.restore();
-  // neck + head (from behind) + shikha
-  ctx.fillStyle = SHADOW; ctx.fillRect(-s * 0.08, -s * 1.66, s * 0.16, s * 0.14);
-  ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.ellipse(0, -s * 1.8, s * 0.19, s * 0.21, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = SKIN; ctx.beginPath(); ctx.ellipse(-s * 0.19, -s * 1.78, s * 0.04, s * 0.06, 0, 0, Math.PI * 2); ctx.ellipse(s * 0.19, -s * 1.78, s * 0.04, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.ellipse(0, -s * 2.02, s * 0.05, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
-  if (B >= 2) { ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(-s * 0.2, -s * 1.86); for (let k = 0; k <= 4; k++) ctx.lineTo(-s * 0.2 + k * s * 0.1, -s * (k % 2 ? 1.93 : 2.05)); ctx.lineTo(s * 0.2, -s * 1.86); ctx.closePath(); ctx.fill(); }   // mukut
-  if (B >= 5) { ctx.strokeStyle = '#DDE8FF'; ctx.lineWidth = 2.5 * u; ctx.beginPath(); ctx.arc(0, -s * 2.12, s * 0.12, 0.3, Math.PI - 0.3); ctx.stroke(); }   // crescent
+  // rudraksha string at the nape
+  ctx.fillStyle = '#5C2A0E'; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(i * s * 0.035, shY - s * 0.04 + Math.abs(i) * s * 0.008, s * 0.016, 0, Math.PI * 2); ctx.fill(); }
+  if (B >= 2) { // mukut (crown) band from behind
+    ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(hx - s * 0.18, hy - s * 0.04);
+    for (let k = 0; k <= 6; k++) ctx.lineTo(hx - s * 0.18 + k * s * 0.06, hy - s * (k % 2 ? 0.13 : 0.22));
+    ctx.lineTo(hx + s * 0.18, hy - s * 0.04); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#B5121B'; ctx.beginPath(); ctx.arc(hx, hy - s * 0.1, s * 0.025, 0, Math.PI * 2); ctx.fill();
+  }
+  if (bulk >= 5) { ctx.strokeStyle = '#E6EEFF'; ctx.lineWidth = 2.5 * u; ctx.shadowColor = '#BFD6FF'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(hx, hy - s * 0.3, s * 0.11, 0.35, Math.PI - 0.35); ctx.stroke(); ctx.shadowBlur = 0; }
+  ctx.restore();   // lean
+  if (hurt && player.hurt > 0.8) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(255,40,20,0.35)'; ctx.fillRect(-s, -s * 2.3, s * 2, s * 2.4); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
 }
-function drawHeldWeapon(s) {
+
+// Weapon in the hand. (hx,hy) = right hand, ang = arm angle; (lx,ly) = left hand (bow grip).
+function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
   const w = WEAPONS[weapon], k = s * 0.55;
-  ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 12;
+  ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 10; ctx.lineCap = 'round';
   if (weapon === 'bow') {
-    const pull = 1 - player.recoil;   // string springs back after each shot
-    ctx.strokeStyle = '#7A4A1E'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-k * 0.75, -k * 0.9); ctx.quadraticCurveTo(0, -k * 1.55, k * 0.75, -k * 0.9); ctx.stroke();
-    ctx.fillStyle = '#D4A53A'; ctx.fillRect(-3, -k * 1.27, 6, 6);
-    ctx.strokeStyle = '#F2EAD3'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-k * 0.75, -k * 0.9); ctx.lineTo(0, -k * (0.9 - 0.25 * pull)); ctx.lineTo(k * 0.75, -k * 0.9); ctx.stroke();
-    if (pull > 0.5) { ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -k * (0.9 - 0.25 * pull)); ctx.lineTo(0, -k * 1.75); ctx.stroke(); ctx.fillStyle = '#F4D58D'; ctx.beginPath(); ctx.moveTo(0, -k * 1.95); ctx.lineTo(-4, -k * 1.72); ctx.lineTo(4, -k * 1.72); ctx.fill(); }
+    // bow held in the left hand, string pulled to the right hand
+    ctx.strokeStyle = '#6E4019'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(lx - k * 0.55, ly + k * 0.45); ctx.quadraticCurveTo(lx - k * 0.1, ly - k * 0.25, lx + k * 0.55, ly - k * 0.8); ctx.stroke();
+    ctx.fillStyle = '#D9AE45'; ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#F2EAD3'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(lx - k * 0.55, ly + k * 0.45); ctx.lineTo(hx, hy); ctx.lineTo(lx + k * 0.55, ly - k * 0.8); ctx.stroke();
+    if (cyc > 0.35) { // nocked arrow
+      const ax = lx + (lx - hx) * 0.35, ay = ly + (ly - hy) * 0.35;
+      ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.fillStyle = w.color; const a = Math.atan2(ay - hy, ax - hx); ctx.save(); ctx.translate(ax, ay); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-2, -3.5); ctx.lineTo(-2, 3.5); ctx.fill(); ctx.restore();
+    }
+  } else {
+    ctx.translate(hx, hy); ctx.rotate(ang);
+    if (weapon === 'parashu') { ctx.fillStyle = '#7A4A1E'; ctx.fillRect(-2.5, -k * 1.15, 5, k * 1.35); ctx.fillStyle = w.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.15); ctx.quadraticCurveTo(k * 0.85, -k * 1.05, k * 0.6, -k * 0.55); ctx.lineTo(0, -k * 0.72); ctx.fill(); ctx.strokeStyle = '#FFE0A8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(k * 0.15, -k * 1.1); ctx.quadraticCurveTo(k * 0.75, -k * 1.0, k * 0.58, -k * 0.6); ctx.stroke(); }
+    else if (weapon === 'gada') { ctx.fillStyle = '#8C6512'; ctx.fillRect(-3.5, -k * 1.0, 7, k * 1.2); const g = ctx.createRadialGradient(-k * 0.12, -k * 1.25, 2, 0, -k * 1.15, k * 0.42); g.addColorStop(0, '#FFF0B8'); g.addColorStop(1, '#B8860B'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -k * 1.15, k * 0.4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#8C6512'; ctx.lineWidth = 2; for (const r of [0.22, 0.34]) { ctx.beginPath(); ctx.arc(0, -k * 1.15, k * r, 0, Math.PI * 2); ctx.stroke(); } }
+    else if (weapon === 'khadga') { const g = ctx.createLinearGradient(-4, 0, 4, 0); g.addColorStop(0, '#9AA3B5'); g.addColorStop(0.5, '#FFFFFF'); g.addColorStop(1, '#9AA3B5'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-3.5, -k * 0.1); ctx.lineTo(3.5, -k * 0.1); ctx.quadraticCurveTo(7, -k * 1.0, 0, -k * 1.65); ctx.quadraticCurveTo(-4, -k * 1.0, -3.5, -k * 0.1); ctx.fill(); ctx.fillStyle = '#D9AE45'; ctx.fillRect(-k * 0.2, -k * 0.12, k * 0.4, 5); ctx.fillRect(-2.5, 0, 5, k * 0.18); }
+    else if (weapon === 'chakra') { ctx.translate(0, -k * 0.55); ctx.scale(1 - 0.6 * player.recoil, 1 - 0.6 * player.recoil); ctx.rotate(time * 14); ctx.strokeStyle = w.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, k * 0.42, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#E8F4FF'; for (let i = 0; i < 10; i++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(k * 0.42, -3); ctx.lineTo(k * 0.62, 0); ctx.lineTo(k * 0.42, 3); ctx.fill(); } ctx.fillStyle = w.color; ctx.beginPath(); ctx.arc(0, 0, k * 0.12, 0, Math.PI * 2); ctx.fill(); }
+    else { // trishul with damru
+      ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(0, k * 0.5); ctx.lineTo(0, -k * 1.65); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-k * 0.42, -k * 1.6); ctx.quadraticCurveTo(-k * 0.4, -k * 1.1, 0, -k * 1.1); ctx.quadraticCurveTo(k * 0.4, -k * 1.1, k * 0.42, -k * 1.6); ctx.stroke();
+      ctx.fillStyle = '#FFF6D8'; for (const x of [-0.42, 0, 0.42]) { ctx.beginPath(); ctx.moveTo(x * k - 4, -k * (x ? 1.6 : 1.65)); ctx.lineTo(x * k, -k * (x ? 1.78 : 1.85)); ctx.lineTo(x * k + 4, -k * (x ? 1.6 : 1.65)); ctx.fill(); }
+      ctx.fillStyle = '#B5121B'; ctx.beginPath(); ctx.ellipse(-k * 0.12, -k * 0.8, k * 0.1, k * 0.07, 0, 0, Math.PI * 2); ctx.ellipse(k * 0.12, -k * 0.8, k * 0.1, k * 0.07, 0, 0, Math.PI * 2); ctx.fill();   // damru
+      ctx.fillStyle = '#D9AE45'; ctx.fillRect(-k * 0.05, -k * 0.86, k * 0.1, k * 0.12);
+    }
   }
-  else if (weapon === 'parashu') { ctx.fillStyle = '#7A4A1E'; ctx.fillRect(-2, -k * 1.2, 4, k * 1.3); ctx.fillStyle = w.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.2); ctx.quadraticCurveTo(k * 0.8, -k * 1.1, k * 0.55, -k * 0.6); ctx.lineTo(0, -k * 0.75); ctx.fill(); }
-  else if (weapon === 'gada') { ctx.fillStyle = '#8C6512'; ctx.fillRect(-3, -k, 6, k * 1.1); ctx.fillStyle = w.color; ctx.beginPath(); ctx.arc(0, -k * 1.15, k * 0.38, 0, Math.PI * 2); ctx.fill(); }
-  else if (weapon === 'khadga') { ctx.fillStyle = '#E6E9F0'; ctx.beginPath(); ctx.moveTo(-3, 0); ctx.lineTo(3, 0); ctx.lineTo(5, -k * 1.4); ctx.lineTo(0, -k * 1.6); ctx.lineTo(-2, -k * 1.4); ctx.fill(); ctx.fillStyle = '#D4A53A'; ctx.fillRect(-k * 0.2, -3, k * 0.4, 5); }
-  else if (weapon === 'chakra') { ctx.translate(0, -k * 0.5); ctx.rotate(time * 10); ctx.strokeStyle = w.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, k * 0.45, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#E8F4FF'; for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(k * 0.45, -3); ctx.lineTo(k * 0.65, 0); ctx.lineTo(k * 0.45, 3); ctx.fill(); } }
-  else { ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, k * 0.2); ctx.lineTo(0, -k * 1.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-k * 0.45, -k * 1.55); ctx.quadraticCurveTo(-k * 0.42, -k * 1.05, 0, -k * 1.05); ctx.quadraticCurveTo(k * 0.42, -k * 1.05, k * 0.45, -k * 1.55); ctx.stroke(); ctx.fillStyle = '#C9A24F'; ctx.beginPath(); ctx.arc(0, -k * 0.75, k * 0.12, 0, Math.PI * 2); ctx.fill(); }
   ctx.restore();
 }
 
@@ -1521,7 +1694,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only switched on with ?test=1
-if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, move, accept: acceptAshirvaad, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
+if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
 </script>
 </body>
 </html>
