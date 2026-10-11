@@ -25,7 +25,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=c361611e">
 <style>
 /* Custom temple gallery styles */
 .cat-card {
@@ -44,6 +44,12 @@
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(31,77,58,0.05) 0%, rgba(31,77,58,0.6) 65%, rgba(31,77,58,0.92) 100%);
 }
+.cat-card.has-photo .cat-card__art { background: var(--cover) center / cover no-repeat, var(--art-bg); }
+.cat-card.has-photo .cat-card__art::after { background: linear-gradient(180deg, rgba(18,48,31,0) 30%, rgba(18,48,31,0.55) 62%, rgba(18,48,31,0.94) 100%); }
+.temple-photo { margin: 0; grid-column: 1 / -1; }
+.temple-photo img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 14px; background: #f3efe6; }
+.temple-photo figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.temple-photo figcaption a { color: var(--saffron); }
 .cat-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-xl); }
 .cat-card:hover .cat-card__art { transform: scale(1.07); }
 .cat-card__icon {
@@ -345,7 +351,7 @@
   </div>
 </div>
 
-<script src="assets/js/main.js"></script>
+<script src="assets/js/main.js?v=cf91a290"></script>
 <script>
 // =========================================================================
 // TEMPLE DATA — Each with art icon, history, experience, how-we-help
@@ -436,6 +442,58 @@ const ICONS = {
 };
 
 // Premium gradient backgrounds for each card
+// Real, freely licensed cover photos (Wikimedia Commons, credited); places without a free photo keep their illustration
+const COVERS = {
+ "mahakaleshwar": {
+  "img": "images/blog/explore-ujjain/mahakal-temple-ujjain-960.webp",
+  "big": "images/blog/explore-ujjain/mahakal-temple-ujjain-1600.webp",
+  "alt": "Shikhara of Mahakaleshwar Temple, Ujjain",
+  "credit": "LRBurdak / Wikimedia Commons, CC BY-SA 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Mahakal_Temple_Ujjain.JPG"
+ },
+ "mahakal-lok": {
+  "img": "images/blog/explore-ujjain/mahakal-lok-ujjain-960.webp",
+  "big": "images/blog/explore-ujjain/mahakal-lok-ujjain-1600.webp",
+  "alt": "Statues and pillars along the Mahakal Lok corridor, Ujjain",
+  "credit": "Krishnakant / Wikimedia Commons, CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Mahakal_Lok_ujjain.jpg"
+ },
+ "omkareshwar": {
+  "img": "images/blog/explore-ujjain/omkareshwar-960.webp",
+  "big": "images/blog/explore-ujjain/omkareshwar-1600.webp",
+  "alt": "Omkareshwar temple and island on the Narmada river",
+  "credit": "Ssriram mt at English Wikipedia / Wikimedia Commons, Public domain",
+  "page": "https://commons.wikimedia.org/wiki/File:Omkareshwar.JPG"
+ },
+ "kaal-bhairav": {
+  "img": "images/blog/explore-ujjain/kal-bhairav-temple-ujjain-960.webp",
+  "big": "images/blog/explore-ujjain/kal-bhairav-temple-ujjain-1600.webp",
+  "alt": "Kal Bhairav Temple, Ujjain",
+  "credit": "Utcursch / Wikimedia Commons, CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Kal_Bhairav_temple_Ujjain.jpg"
+ },
+ "ram-ghat": {
+  "img": "images/blog/explore-ujjain/shri-ram-ghat-01-960.webp",
+  "big": "images/blog/explore-ujjain/shri-ram-ghat-01-1600.webp",
+  "alt": "Shri Ram Ghat on the Shipra River, Ujjain",
+  "credit": "Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Shri_Ram_Ghat_01.jpg"
+ },
+ "sandipani": {
+  "img": "images/blog/explore-ujjain/sandipani-ashram-of-ujjain-960.webp",
+  "big": "images/blog/explore-ujjain/sandipani-ashram-of-ujjain-1600.webp",
+  "alt": "Painted ceiling at Maharshi Sandipani Ashram, Ujjain",
+  "credit": "Snay015 / Wikimedia Commons, CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Sandipani_ashram_of_ujjain.jpg"
+ },
+ "harsiddhi": {
+  "img": "images/blog/navratri-in-ujjain/ujjain-shree-harsiddhi-mata-shaktipeeth-at-night-sep-2025-960.webp",
+  "big": "images/blog/navratri-in-ujjain/ujjain-shree-harsiddhi-mata-shaktipeeth-at-night-sep-2025-1600.webp",
+  "alt": "Deep stambh lamp tower lit with oil lamps beside Shree Harsiddhi Mata Shaktipeeth, Ujjain, at night",
+  "credit": "Rajveer Bairagi / Wikimedia Commons, CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ujjain_Shree_Harsiddhi_Mata_Shaktipeeth_at_Night_%E2%80%93_Sep_2025.jpg"
+ }
+};
 const TEMPLES = [
   {
     slug: "mahakaleshwar",
@@ -578,10 +636,12 @@ TEMPLES.forEach(temple => {
   card.href = '#';
   card.style.setProperty('--art-bg', temple.artBg);
   card.dataset.slug = temple.slug;
+  const cover = COVERS[temple.slug];
+  if (cover) { card.classList.add('has-photo'); card.style.setProperty('--cover', `url('${cover.img}')`); }
   card.innerHTML = `
     <div class="cat-card__art"></div>
     <div class="cat-card__distance">${temple.distance}</div>
-    <div class="cat-card__icon">${ICONS[temple.icon] || ''}</div>
+    ${cover ? '' : `<div class="cat-card__icon">${ICONS[temple.icon] || ''}</div>`}
     <div class="cat-card__inner">
       <h3>${temple.name}</h3>
       <span>${temple.tagline}</span>
@@ -631,9 +691,9 @@ function openTempleModal(temple) {
       </div>`;
       headingEl.textContent = 'Photographs from the temple';
     } else {
-      headingEl.textContent = `Photographs from the temple (${loaded.length})`;
-      photosEl.innerHTML = loaded.map(src =>
-        `<img src="${src}" alt="${temple.name}" loading="lazy">`
+      headingEl.textContent = 'Photograph';
+      photosEl.innerHTML = loaded.map(c =>
+        `<figure class="temple-photo"><img src="${c.big}" alt="${c.alt}" loading="lazy"><figcaption>${c.alt}. Photo: ${c.credit.replace('Wikimedia Commons', `<a href="${c.page}" target="_blank" rel="noopener">Wikimedia Commons</a>`)}</figcaption></figure>`
       ).join('');
     }
   });
@@ -643,19 +703,9 @@ function openTempleModal(temple) {
 }
 
 function loadTemplePhotos(temple) {
-  // Try Wikipedia Commons URLs only — no random Unsplash fallbacks
-  const urls = (temple.photoQueries || []).map(fname =>
-    `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fname)}?width=1200`
-  );
-  return Promise.all(urls.map(url => new Promise(resolve => {
-    const img = new Image();
-    let done = false;
-    const finish = (ok) => { if (done) return; done = true; resolve(ok ? url : null); };
-    img.onload = () => finish(true);
-    img.onerror = () => finish(false);
-    setTimeout(() => finish(false), 7000);
-    img.src = url;
-  }))).then(results => results.filter(x => x));
+  // Our own downloaded, credited photo (no hotlinking of uncredited images)
+  const c = COVERS[temple.slug];
+  return Promise.resolve(c ? [c] : []);
 }
 
 document.getElementById('temple-modal-close').addEventListener('click', () => {

@@ -42,7 +42,7 @@ This repo is the whole public website. Claude Code in this folder is the permane
 ## Deploy flow (use for every change; `/ship` does this)
 1. Edit files.
 2. Preview locally: `npx serve . -l 3000` and open http://localhost:3000 (check desktop + mobile width).
-3. `node scripts/build-sitemap.mjs` if pages were added/removed.
+3. `node scripts/build-sitemap.mjs` if pages were added/removed. Always run `node scripts/asset-version.mjs` last (adds ?v=hash to CSS/JS links so browsers never use a stale stylesheet).
 4. `git status` / `git diff` → `git add <files>` → `git commit -m "<clear message>"` (no `.DS_Store`).
 5. `git pull --rebase origin main` then `git push origin main`.
 6. Wait for the production deployment: `vercel ls ap-villa-and-resorts-website --prod` (or `gh api repos/apvillasandresorts/AP-villa-and-resorts-website/commits/main/status`) until Ready.

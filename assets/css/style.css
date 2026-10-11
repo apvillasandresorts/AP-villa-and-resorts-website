@@ -1549,3 +1549,8 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   .vp-tagline { font-size: 21px; line-height: 1.35; }
   .blog-card__body p, .why-card p, .steps span, .faq-list p { font-size: 16px; }
 }
+
+/* Fix: menu text readable over the dark homepage hero (before scrolling) */
+body:has(.hero) .nav:not(.scrolled) .nav__menu a { color: #FFFFFF; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+body:has(.hero) .nav:not(.scrolled) .nav__menu a.active { color: #E8C77A; }
+body:has(.hero) .nav:not(.scrolled) .nav__menu a::after { background: #E8C77A; }

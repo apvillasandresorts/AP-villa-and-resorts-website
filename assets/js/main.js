@@ -252,7 +252,7 @@ function handleQuery(q) {
     ), 500);
   }
   if (text.includes('whatsapp') || text.includes('open whatsapp') || text.includes('book on whatsapp') || text.includes('book now') || text.includes('book rudrangan') || text.includes('check dates')) {
-    setTimeout(() => window.open(waLink({ villa: text.includes('rudrangan') ? 'Rudrangan Suites' : '', place: 'chat' }), '_blank'), 800);
+    setTimeout(() => openWhatsApp(waLink({ villa: text.includes('rudrangan') ? 'Rudrangan Suites' : '', place: 'chat' })), 800);
   }
   if (text.includes('open gallery') || text.includes('open journal') || text.includes('read about')) {
     const map = { 'open gallery': 'gallery.html', 'open journal': 'blog.html', 'read about': 'about.html' };
@@ -304,17 +304,40 @@ function pageCode() {
 }
 function waLink({ villa = '', checkin = '', nights = '', adults = '', children = '', elders = false, place = '' } = {}) {
   const ref = 'WEB-' + pageCode() + (villa && VILLA_CODES[villa] ? '-' + VILLA_CODES[villa] : '') + (place ? '-' + place.toUpperCase() : '');
-  const lines = [
-    "Namaste! I'd like to check availability.",
-    'Villa: ' + (villa || 'Please suggest one for us'),
-    'Check-in date: ' + (checkin || ''),
-    'Nights: ' + (nights || ''),
-    'Guests: ' + (adults ? adults + ' adults' : '') + (children ? ', ' + children + ' children' : '') + (adults ? '' : '(adults / children)'),
-  ];
-  if (elders) lines.push('Travelling with elders: yes (lift / easy access please)');
-  lines.push('Ref: ' + ref);
+  let lines;
+  if (checkin || adults) {
+    // From the "Check dates" form: a tidy summary of what the guest entered
+    lines = [
+      'Namaste Apoorv ji 🙏',
+      "I'd like to check availability at AP Villas & Resorts, Ujjain.",
+      '',
+      '🏡 Villa: ' + (villa || 'please suggest the best one for us'),
+      '📅 Check-in: ' + (checkin || 'dates flexible, please suggest'),
+      '🌙 Nights: ' + (nights || '1'),
+      '👨‍👩‍👧 Guests: ' + adults + ' adult' + (adults === '1' ? '' : 's') + (children ? ', ' + children + ' child' + (children === '1' ? '' : 'ren') : ''),
+    ];
+    if (elders) lines.push('🙏 Travelling with elders, so a lift / easy access please');
+    lines.push('', 'Please share availability and the total price. Thank you!', '(Ref: ' + ref + ')');
+  } else {
+    // From a button: a short, natural opener; the guest types dates at the end
+    lines = [
+      'Namaste Apoorv ji 🙏',
+      "I'm planning a stay at AP Villas & Resorts, Ujjain" + (villa ? ' and I am interested in ' + villa : '') + '.',
+      'Could you please share availability and the price?',
+      '(Ref: ' + ref + ')',
+      '',
+      'Our dates and number of guests: ',
+    ];
+  }
   return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(lines.join('\n'));
 }
+// Opens WhatsApp reliably on phones and desktop (a real link click is never blocked as a pop-up)
+function openWhatsApp(url) {
+  const a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+window.openWhatsApp = openWhatsApp;
 window.waLink = waLink;
 
 function ctaPlace(a) {
@@ -380,10 +403,12 @@ document.querySelectorAll('[data-enquiry]').forEach((host, i) => {
   host.querySelector('form').addEventListener('submit', e => {
     e.preventDefault();
     const f = e.target;
-    const d = f.checkin.value ? new Date(f.checkin.value + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-    const villa = f.villa.value;
-    track('enquiry_form_submit', { page_path: location.pathname, villa, nights: f.nights.value, adults: f.adults.value });
-    window.open(waLink({ villa, checkin: d, nights: f.nights.value, adults: f.adults.value, children: f.children.value !== '0' ? f.children.value : '', elders: f.elders.checked, place: 'form' }), '_blank', 'noopener');
+    const ci = f.querySelector('[name="checkin"]').value;
+    const d = ci ? new Date(ci + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const villa = f.querySelector('[name="villa"]').value;
+    track('enquiry_form_submit', { page_path: location.pathname, villa, nights: f.querySelector('[name="nights"]').value, adults: f.querySelector('[name="adults"]').value });
+    const kids = f.querySelector('[name="children"]').value;
+    openWhatsApp(waLink({ villa, checkin: d, nights: f.querySelector('[name="nights"]').value, adults: f.querySelector('[name="adults"]').value, children: kids !== '0' ? kids : '', elders: f.querySelector('[name="elders"]').checked, place: 'form' }));
   });
 });
 

@@ -36,7 +36,7 @@ P = {
 }
 E = {'🍽️':'utensils','🛏️':'bed','🛏':'bed','🚿':'shower','🍳':'pot','🍲':'pot','🧊':'fridge','🔥':'flame','📺':'tv','📷':'camera','🧘':'user','🚐':'bus','🏊':'waves','🅿️':'parking','📶':'wifi','🏛️':'temple','🚉':'train','🌅':'ruler','☕':'coffee','🐾':'paw','♿':'wheelchair','🛗':'lift','🔋':'battery','❄️':'snow','🕥':'clock','🕐':'clock','👥':'users','💬':'chat','📧':'mail','📍':'pin','✈️':'plane','🚙':'car','🚗':'car','🪔':'flame','📞':'phone','💯':'badge'}
 def svg(name):
-    return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ''.join(f'<path d="{d}"/>' for d in P[name]) + '</svg>'
+    return '<svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + ''.join(f'<path d="{d}"/>' for d in P[name]) + '</svg>'
 keys = sorted(E, key=len, reverse=True)
 alt = '|'.join(re.escape(k) for k in keys)
 n = 0
