@@ -8,7 +8,9 @@
 const SHEET_ID = '15Q47OsFicp6svW2OtIzLDV15mKYiEO2ppuZUkiCmfwg';   // the "AP Villas E-Check-in" Google Sheet
 const SHEET_NAME = 'E-Check-in';
 const FOLDER_NAME = 'AP Villas E-Check-in IDs';
-const NOTIFY_EMAIL = '';   // leave empty to email the Google account that owns this script
+const NOTIFY_EMAIL = '';
+// stored as text so leading zeros survive (ID 0482, PIN, booking IDs, phone numbers)
+const TEXT_KEYS = ['id_last4', 'phone', 'pincode', 'booking_id', 'payment_ref', 'vehicle_number', 'passport_no', 'visa_no'];   // leave empty to email the Google account that owns this script
 
 // [key sent by the website, column title in the sheet]
 const COLUMNS = [
@@ -48,7 +50,7 @@ function doPost(e) {
     const lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
       const sheet = sheet_();
-      const row = COLUMNS.map(([k]) => k === 'submitted_at' ? new Date() : k === 'ref' ? ref : k === 'id_files' ? (links.length ? sub.getUrl() : '') : clean_(f[k]));
+      const row = COLUMNS.map(([k]) => k === 'submitted_at' ? new Date() : k === 'ref' ? ref : k === 'id_files' ? (links.length ? sub.getUrl() : '') : TEXT_KEYS.includes(k) && f[k] ? "'" + String(f[k]).slice(0, 100) : clean_(f[k]));
       sheet.appendRow(row);
     } finally { lock.releaseLock(); }
 
