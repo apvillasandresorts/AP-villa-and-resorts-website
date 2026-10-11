@@ -52,12 +52,12 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [ ] 6.4 Typography: no small italic Cormorant; type scale.
 
 ## Phase 7 — SEO & growth
-- [ ] 7.1 Titles/meta descriptions per audit §9 sheet (≤60 / ≤158 chars).
-- [ ] 7.2 Gallery → "Explore Ujjain" (keep URL working).
-- [ ] 7.3 Groups page (2–5 villas, up to 32 guests) and darshan packages page (*owner sets prices*).
+- [x] 7.1 Titles/meta descriptions per audit §9 sheet (≤60 / ≤158 chars).
+- [x] 7.2 Nav label Gallery → "Explore Ujjain" (URL gallery.html unchanged).
+- [x] 7.3 Groups page live (groups.html). [?] Darshan packages page waits for owner prices.
 - [ ] 7.4 Hindi/Hinglish guide "Ujjain mein rukne ki jagah"; Gujarati Omkareshwar guide.
-- [?] 7.5 Google Business Profile per villa; review-request message after checkout (owner actions, Claude drafts).
-- [ ] 7.6 Blog pipeline cadence: 3–4 posts/week.
+- [~] 7.5 docs/owner-playbook.md: WhatsApp quick replies, review request, booking sheet, GBP steps. [?] Owner sets up GBPs.
+- [x] 7.6 Blog pipeline: Mon/Wed/Fri 06:00 IST.
 
 ## Deferred / not doing
 - Booking engine, paid SEO tools, discount banners, fake urgency, competitor-brand bidding.
