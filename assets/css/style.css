@@ -895,8 +895,9 @@ section { padding: 130px 0; position: relative; }
   background: linear-gradient(135deg, #1F4D3A, #12301F);
   color: white; position: relative; overflow: hidden;
 }
+.contact-bg > .container { position: relative; z-index: 1; }
 .contact-bg::before {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 40%),
               radial-gradient(circle at 80% 70%, rgba(184,138,44,0.25), transparent 40%);
 }
@@ -1307,22 +1308,47 @@ body:has(.hero) .nav:not(.scrolled) .nav__brand {
 .hero__game-link .game-char-icon svg { width: 20px; height: 22px; }
 .hero__game-link:hover { color: #fff; }
 
-/* "Check dates" mini form */
+/* "Check dates & price" engine */
 .enquiry {
-  background: white; border: 1px solid var(--line); border-radius: var(--r-md);
-  box-shadow: var(--shadow-md); padding: 28px; max-width: 920px; margin: 40px auto 0; text-align: left;
+  background: white; border: 1px solid var(--line); border-radius: var(--r-md); color: var(--ink);
+  box-shadow: var(--shadow-md); padding: 28px; max-width: 920px; margin: 40px auto 0; text-align: left; position: relative; z-index: 1;
 }
-.enquiry__head h3 { font-size: 28px; margin: 0 0 6px; }
+.enquiry__head h3 { font-size: 28px; margin: 0 0 6px; color: var(--navy); }
 .enquiry__head p { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
-.enquiry__grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
-.enquiry label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--navy); }
-.enquiry select, .enquiry input[type="date"] {
-  font: 15px 'Inter', sans-serif; padding: 11px 12px; border: 1px solid #D8D2C4; border-radius: 10px;
-  background: #FFFDF8; color: var(--ink); min-height: 46px; width: 100%;
+.enquiry__grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px 16px; }
+.enquiry label, .enq-step { min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--navy); }
+.enq-label small { font-weight: 400; color: var(--muted); }
+.enq-wide { grid-column: span 2; }
+.enq-full { grid-column: 1 / -1; }
+.enquiry select, .enquiry input[type="date"], .enquiry input[type="text"], .enquiry textarea {
+  font: 15px 'Inter', sans-serif; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 10px;
+  padding: 0 12px; min-height: 48px; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;
 }
-.enquiry select:focus, .enquiry input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
-.enquiry .enquiry__check { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 10px; font-weight: 500; }
+.enquiry select, .enquiry input[type="text"], .enquiry textarea { -webkit-appearance: none; appearance: none; }
+.enquiry input[type="date"] { display: flex; align-items: center; line-height: 46px; }
+[data-enquiry] { scroll-margin-top: 90px; }
+.enquiry select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231F4D3A' stroke-width='2' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.enquiry textarea { padding: 12px; min-height: 84px; resize: vertical; line-height: 1.45; }
+.enquiry select:focus, .enquiry input:focus, .enquiry textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.enq-step__ctl { display: flex; align-items: center; justify-content: space-between; border: 1.5px solid var(--line); border-radius: 10px; min-height: 48px; padding: 0 4px; }
+.enq-step__btn { width: 40px; height: 40px; border-radius: 8px; border: 0; background: #F3EEE3; color: var(--navy); font-size: 22px; line-height: 1; cursor: pointer; touch-action: manipulation; }
+.enq-step__btn:hover { background: #E9E0CC; }
+.enq-step__val { font: 600 17px 'Inter', sans-serif; color: var(--ink); min-width: 28px; text-align: center; }
+.enquiry .enquiry__check { flex-direction: row; align-items: center; gap: 10px; font-weight: 500; }
 .enquiry__check input { width: 20px; height: 20px; accent-color: var(--saffron); }
+.enq-extras { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.enq-extras legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--navy); }
+.enquiry .enq-chip { flex-direction: row; font-weight: 500; cursor: pointer; }
+.enq-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.enq-chip span { display: inline-block; padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--line); font-size: 13.5px; color: var(--ink); background: #fff; transition: all .2s; }
+.enq-chip input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.enq-chip input:checked + span::before { content: '✓ '; }
+.enq-chip input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+.enq-msg { margin: 16px 0 0; font-size: 14px; font-weight: 600; color: var(--navy); }
+.enq-msg.is-warn { color: #9A3F12; }
+.enq-preview { margin-top: 12px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; background: #FBF8F1; }
+.enq-preview summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--navy); }
+.enq-preview pre { white-space: pre-wrap; font: 13.5px/1.55 'Inter', sans-serif; color: var(--ink); margin: 10px 0 0; }
 .enquiry__submit { margin-top: 18px; width: 100%; justify-content: center; font-size: 16px; padding: 15px 26px; }
 .enquiry__note { margin: 10px 0 0; font-size: 13px; color: var(--muted); text-align: center; }
 
@@ -1330,8 +1356,8 @@ body:has(.hero) .nav:not(.scrolled) .nav__brand {
 .m-bar { display: none; }
 @media (max-width: 900px) {
   .enquiry { padding: 22px 18px; }
-  .enquiry__grid { grid-template-columns: 1fr 1fr; }
-  .enquiry__grid label:first-child { grid-column: 1 / -1; }
+  .enquiry__grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+  .enq-wide { grid-column: 1 / -1; }
   .fab, .fab--email, .chatbot-toggle { display: none !important; }
   .m-bar {
     display: grid; grid-template-columns: 1.5fr 1fr 1.2fr; gap: 8px;
@@ -1388,8 +1414,8 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .vp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 44px; margin-top: 50px; align-items: start; }
 .vp-side { position: sticky; top: 100px; }
 .vp-side .enquiry { margin: 0; }
-.vp-side .enquiry__grid { grid-template-columns: 1fr 1fr; }
-.vp-side .enquiry__grid label:first-child { grid-column: 1 / -1; }
+.vp-side .enquiry__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.vp-side .enq-wide { grid-column: 1 / -1; }
 .vp-block { padding: 30px 0; border-bottom: 1px solid var(--line); }
 .vp-block:first-child { padding-top: 0; }
 .vp-block h2 { font-size: 32px; margin: 0 0 16px; }
@@ -1554,3 +1580,17 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 body:has(.hero) .nav:not(.scrolled) .nav__menu a { color: #FFFFFF; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
 body:has(.hero) .nav:not(.scrolled) .nav__menu a.active { color: #E8C77A; }
 body:has(.hero) .nav:not(.scrolled) .nav__menu a::after { background: #E8C77A; }
+
+/* Check-dates sheet (opened by any "Check dates" button) */
+.enq-sheet { border: 0; padding: 0; background: transparent; max-width: 760px; width: calc(100% - 24px); max-height: calc(100dvh - 24px); overflow: visible; }
+.enq-sheet::backdrop { background: rgba(10,24,17,.62); backdrop-filter: blur(3px); }
+.enq-sheet[open] { animation: enqIn .28s ease; }
+@keyframes enqIn { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.enq-sheet__body .enquiry { margin: 0; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; }
+.enq-sheet__close { position: absolute; top: 10px; right: 10px; z-index: 3; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #F3EEE3; color: var(--navy); font-size: 26px; line-height: 1; cursor: pointer; }
+.enq-sheet .enquiry__head { padding-right: 40px; }
+html.enq-open { overflow: hidden; }
+@media (max-width: 900px) {
+  .enq-sheet { width: 100%; max-width: none; margin: auto 0 0; max-height: 92dvh; }
+  .enq-sheet__body .enquiry { border-radius: 20px 20px 0 0; max-height: 92dvh; padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+}

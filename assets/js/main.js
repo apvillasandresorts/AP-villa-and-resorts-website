@@ -302,21 +302,30 @@ function pageCode() {
   const name = (p.split('/').pop() || 'index.html').replace('.html', '');
   return ({ index: 'HOME', villas: 'VILLAS', contact: 'CONTACT', policies: 'POLICIES', '404': 'NOTFOUND', about: 'ABOUT', blog: 'JOURNAL', gallery: 'GALLERY', menu: 'DINING', travel: 'TRAVEL', 'mahakal-game': 'GAME' })[name] || name.toUpperCase();
 }
-function waLink({ villa = '', checkin = '', nights = '', adults = '', children = '', elders = false, place = '' } = {}) {
+function waLink({ villa = '', checkin = '', checkout = '', nights = '', adults = '', children = '', elders = false, name = '', extras = [], request = '', place = '' } = {}) {
   const ref = 'WEB-' + pageCode() + (villa && VILLA_CODES[villa] ? '-' + VILLA_CODES[villa] : '') + (place ? '-' + place.toUpperCase() : '');
   let lines;
   if (checkin || adults) {
     // From the "Check dates" form: a tidy summary of what the guest entered
+    const a = +adults || 0, c = +children || 0;
     lines = [
       'Namaste Apoorv ji 🙏',
       "I'd like to check availability at AP Villas & Resorts, Ujjain.",
       '',
-      '🏡 Villa: ' + (villa || 'please suggest the best one for us'),
-      '📅 Check-in: ' + (checkin || 'dates flexible, please suggest'),
-      '🌙 Nights: ' + (nights || '1'),
-      '👨‍👩‍👧 Guests: ' + adults + ' adult' + (adults === '1' ? '' : 's') + (children ? ', ' + children + ' child' + (children === '1' ? '' : 'ren') : ''),
     ];
+    if (name) lines.push('👤 Name: ' + name);
+    lines.push('🏡 Villa: ' + (villa || 'please suggest the best one for us'));
+    if (checkin) {
+      lines.push('📅 Check-in: ' + checkin);
+      if (checkout) lines.push('📅 Check-out: ' + checkout + (nights ? ' (' + nights + ' night' + (nights == 1 ? '' : 's') + ')' : ''));
+      else if (nights) lines.push('🌙 Nights: ' + nights);
+    } else {
+      lines.push('📅 Dates: flexible, please suggest');
+    }
+    lines.push('👨‍👩‍👧 Guests: ' + a + ' adult' + (a === 1 ? '' : 's') + (c ? ', ' + c + ' child' + (c === 1 ? '' : 'ren') : '') + (c ? ' (total ' + (a + c) + ')' : ''));
     if (elders) lines.push('🙏 Travelling with elders, so a lift / easy access please');
+    if (extras.length) lines.push('✨ Also need: ' + extras.join(', '));
+    if (request) lines.push('📝 Special request: ' + request);
     lines.push('', 'Please share availability and the total price. Thank you!', '(Ref: ' + ref + ')');
   } else {
     // From a button: a short, natural opener; the guest types dates at the end
@@ -370,46 +379,137 @@ document.addEventListener('click', e => {
   track(a.href.startsWith('tel:') ? 'phone_click' : 'whatsapp_click', params);
 }, true);
 
-// ====== "Check dates" mini form → opens WhatsApp with the details filled in ======
-document.querySelectorAll('[data-enquiry]').forEach((host, i) => {
-  const id = 'enq' + i;
+// ====== "Check dates & price" engine → opens WhatsApp with every detail filled in ======
+const VILLA_SLEEPS = { 'Divinestay': 8, 'AP Suite': 4, 'Om Shanti Stay': 6, 'Villa Aranya': 8, 'Rudrangan Suites': 6 };
+const ENQ_EXTRAS = ['Airport / railway pickup', 'Bhasma Aarti guidance', 'Meals in the villa', 'Early check-in', 'Omkareshwar trip'];
+function isoDate(d) { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
+function niceDate(v) { return v ? new Date(v + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+let enqCount = 0;
+function mountEnquiry(host) {
+  const id = 'enq' + (enqCount++);
   const preset = host.dataset.villa || '';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = isoDate(new Date());
+  const stepper = (key, label, val, min, max) => `
+      <div class="enq-step" data-key="${key}" data-min="${min}" data-max="${max}">
+        <span class="enq-label" id="${id}-${key}-l">${label}</span>
+        <div class="enq-step__ctl" role="group" aria-labelledby="${id}-${key}-l">
+          <button type="button" class="enq-step__btn" data-d="-1" aria-label="Fewer ${label.toLowerCase()}">−</button>
+          <output class="enq-step__val" name="${key}" aria-live="polite">${val}</output>
+          <button type="button" class="enq-step__btn" data-d="1" aria-label="More ${label.toLowerCase()}">+</button>
+        </div>
+      </div>`;
   host.innerHTML = `
   <form class="enquiry" id="${id}" novalidate>
     <div class="enquiry__head">
       <h3>Check dates &amp; price</h3>
-      <p>Tell us your plan. WhatsApp opens with everything filled in — we reply with availability and the exact price.</p>
+      <p>Fill in your plan. WhatsApp opens with the message below ready to send to us, and we reply with availability and the exact price.</p>
     </div>
     <div class="enquiry__grid">
-      <label for="${id}-villa">Villa
+      <label class="enq-wide" for="${id}-villa"><span class="enq-label">Villa</span>
         <select id="${id}-villa" name="villa">
           <option value="">Help me choose</option>
-          ${Object.keys(VILLA_CODES).map(v => `<option${v === preset ? ' selected' : ''}>${v}</option>`).join('')}
+          ${Object.keys(VILLA_CODES).map(v => `<option value="${v}"${v === preset ? ' selected' : ''}>${v} (sleeps ${VILLA_SLEEPS[v]})</option>`).join('')}
         </select></label>
-      <label for="${id}-in">Check-in date
+      <label for="${id}-in"><span class="enq-label">Check-in</span>
         <input id="${id}-in" name="checkin" type="date" min="${today}"></label>
-      <label for="${id}-nights">Nights
-        <select id="${id}-nights" name="nights">${[1,2,3,4,5,6,7].map(n => `<option>${n}</option>`).join('')}<option value="8+">8 or more</option></select></label>
-      <label for="${id}-adults">Adults
-        <select id="${id}-adults" name="adults">${[1,2,3,4,5,6,7,8,9,10].map(n => `<option${n === 4 ? ' selected' : ''}>${n}</option>`).join('')}<option value="10+">More than 10</option></select></label>
-      <label for="${id}-kids">Children
-        <select id="${id}-kids" name="children">${[0,1,2,3,4,5,6].map(n => `<option>${n}</option>`).join('')}</select></label>
-      <label class="enquiry__check" for="${id}-elders"><input id="${id}-elders" name="elders" type="checkbox"> Travelling with elders (need lift / easy access)</label>
+      <label for="${id}-out"><span class="enq-label">Check-out</span>
+        <input id="${id}-out" name="checkout" type="date" min="${today}"></label>
+      ${stepper('adults', 'Adults', 2, 1, 40)}
+      ${stepper('children', 'Children', 0, 0, 20)}
+      <label class="enq-wide" for="${id}-name"><span class="enq-label">Your name <small>(optional)</small></span>
+        <input id="${id}-name" name="name" type="text" autocomplete="name" maxlength="60" placeholder="e.g. Sharma family"></label>
+      <label class="enquiry__check enq-full" for="${id}-elders"><input id="${id}-elders" name="elders" type="checkbox"> Travelling with elders (need lift / easy access)</label>
+      <fieldset class="enq-full enq-extras"><legend class="enq-label">Also need (optional)</legend>
+        ${ENQ_EXTRAS.map((x, j) => `<label class="enq-chip"><input type="checkbox" name="extra" value="${x}"><span>${x}</span></label>`).join('')}
+      </fieldset>
+      <label class="enq-full" for="${id}-req"><span class="enq-label">Special request <small>(optional)</small></span>
+        <textarea id="${id}-req" name="request" rows="3" maxlength="400" placeholder="Anniversary decoration, ground-floor room, Bhasma Aarti on a date, dietary needs…"></textarea></label>
     </div>
-    <button type="submit" class="btn btn--primary enquiry__submit">Check dates on WhatsApp</button>
-    <p class="enquiry__note">No payment now. Check-in 10:30 AM · check-out 9:30 AM.</p>
+    <p class="enq-msg" aria-live="polite"></p>
+    <details class="enq-preview"><summary>Preview your WhatsApp message</summary><pre></pre></details>
+    <button type="submit" class="btn btn--primary enquiry__submit">Send on WhatsApp</button>
+    <p class="enquiry__note">No payment now. Check-in 10:30 AM · check-out 9:30 AM. We reply within a few hours.</p>
   </form>`;
-  host.querySelector('form').addEventListener('submit', e => {
-    e.preventDefault();
-    const f = e.target;
-    const ci = f.querySelector('[name="checkin"]').value;
-    const d = ci ? new Date(ci + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-    const villa = f.querySelector('[name="villa"]').value;
-    track('enquiry_form_submit', { page_path: location.pathname, villa, nights: f.querySelector('[name="nights"]').value, adults: f.querySelector('[name="adults"]').value });
-    const kids = f.querySelector('[name="children"]').value;
-    openWhatsApp(waLink({ villa, checkin: d, nights: f.querySelector('[name="nights"]').value, adults: f.querySelector('[name="adults"]').value, children: kids !== '0' ? kids : '', elders: f.querySelector('[name="elders"]').checked, place: 'form' }));
+  const f = host.querySelector('form');
+  const q = n => f.querySelector('[name="' + n + '"]');
+  const cin = q('checkin'), cout = q('checkout');
+  function data() {
+    const ci = cin.value, co = cout.value;
+    const nights = ci && co ? Math.round((new Date(co + 'T00:00') - new Date(ci + 'T00:00')) / 864e5) : '';
+    return {
+      villa: q('villa').value, checkin: niceDate(ci), checkout: co && nights > 0 ? niceDate(co) : '', nights: nights > 0 ? nights : '',
+      adults: q('adults').value, children: q('children').value !== '0' ? q('children').value : '',
+      elders: q('elders').checked, name: q('name').value.trim(),
+      extras: [...f.querySelectorAll('[name="extra"]:checked')].map(x => x.value),
+      request: q('request').value.trim().replace(/\s+/g, ' '), place: 'form',
+    };
+  }
+  function refresh() {
+    // check-out must be after check-in; default to one night
+    if (cin.value) {
+      const next = new Date(cin.value + 'T00:00'); next.setDate(next.getDate() + 1);
+      cout.min = isoDate(next);
+      if (!cout.value || cout.value <= cin.value) cout.value = isoDate(next);
+    }
+    const d = data(), msg = [];
+    if (d.nights) msg.push(d.nights + ' night' + (d.nights === 1 ? '' : 's'));
+    const total = (+d.adults) + (+d.children || 0);
+    msg.push(total + ' guest' + (total === 1 ? '' : 's'));
+    let warn = '';
+    if (d.villa && total > VILLA_SLEEPS[d.villa]) warn = ` · ${d.villa} sleeps up to ${VILLA_SLEEPS[d.villa]}; we'll suggest a bigger villa or two villas together.`;
+    else if (!d.villa && total > 8) warn = ' · For bigger groups we combine villas.';
+    f.querySelector('.enq-msg').textContent = msg.join(' · ') + warn;
+    f.querySelector('.enq-msg').classList.toggle('is-warn', !!warn);
+    f.querySelector('.enq-preview pre').textContent = decodeURIComponent(waLink(d).split('text=')[1]);
+  }
+  f.addEventListener('click', e => {
+    const b = e.target.closest('.enq-step__btn'); if (!b) return;
+    const st = b.closest('.enq-step'), out = st.querySelector('output');
+    out.value = out.textContent = Math.min(+st.dataset.max, Math.max(+st.dataset.min, +out.textContent + +b.dataset.d));
+    refresh();
   });
+  f.addEventListener('input', refresh);
+  f.addEventListener('change', refresh);
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    refresh();
+    const d = data();
+    track('enquiry_form_submit', { page_path: location.pathname, villa: d.villa, nights: d.nights, adults: d.adults, extras: d.extras.length, has_request: !!d.request });
+    openWhatsApp(waLink(d));
+  });
+  refresh();
+  return f;
+}
+document.querySelectorAll('[data-enquiry]').forEach(h => mountEnquiry(h));
+
+// Every "Check dates" button (villa cards, hero, phone bar) opens the form in a sheet, villa pre-selected
+let enqSheet = null;
+function openEnquirySheet(villa) {
+  if (!window.HTMLDialogElement) return false;
+  if (!enqSheet) {
+    enqSheet = document.createElement('dialog');
+    enqSheet.className = 'enq-sheet';
+    enqSheet.setAttribute('aria-label', 'Check dates and price');
+    enqSheet.innerHTML = '<button type="button" class="enq-sheet__close" aria-label="Close">×</button><div class="enq-sheet__body"></div>';
+    document.body.appendChild(enqSheet);
+    enqSheet.querySelector('.enq-sheet__close').addEventListener('click', () => enqSheet.close());
+    enqSheet.addEventListener('click', e => { if (e.target === enqSheet) enqSheet.close(); });
+    enqSheet.addEventListener('close', () => document.documentElement.classList.remove('enq-open'));
+  }
+  const body = enqSheet.querySelector('.enq-sheet__body');
+  body.dataset.villa = villa || '';
+  mountEnquiry(body);
+  enqSheet.showModal();
+  document.documentElement.classList.add('enq-open');
+  body.querySelector('form').scrollTop = 0;
+  track('enquiry_sheet_open', { page_path: location.pathname, villa: villa || '' });
+  return true;
+}
+window.openEnquirySheet = openEnquirySheet;
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href*="wa.me/918999061598"]');
+  if (!a || !/^\s*check dates/i.test(a.textContent)) return;
+  if (openEnquirySheet(a.dataset.villa || a.closest('[data-villa]')?.dataset.villa || '')) e.preventDefault();
 });
 
 // ====== Phones: one bottom bar (WhatsApp · Call · Quick answers) instead of floating circles ======

@@ -1129,6 +1129,23 @@
       "license": "Public domain",
       "license_url": "",
       "credit": "Photo: ravi varma press / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/mahakal-game/vishnu-laxmi-and-serpent-anant.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "game",
+        "deity"
+      ],
+      "alt": "Ravi Varma Press print of Vishnu and Lakshmi on the serpent Ananta",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Vishnu_Laxmi_and_Serpent_Anant.jpg",
+      "author": "Unknown",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: Unknown / Wikimedia Commons, Public domain"
     }
   ]
 }

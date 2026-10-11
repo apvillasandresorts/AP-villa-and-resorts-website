@@ -7,11 +7,11 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');</script>
 <title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
-<meta name="description" content="Play Path to Darshan — an immersive endless runner game inspired by Mahakaleshwar Temple. Run, collect rudraksha, ring temple bells, and earn Mahakal's blessings. Premium villas in Ujjain near Mahakaleshwar Jyotirlinga.">
+<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, defeat Andhakasura with Mahakal's Trishul and win a 21% stay coupon. By AP Villas &amp; Resorts, Ujjain.">
 <meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="Path to Darshan — A Mahakal Mini Game by AP Villas, Ujjain">
-<meta property="og:description" content="Run the sacred path. Earn Mahakal's blessings. A premium mini game by AP Villas & Resorts, Ujjain.">
+<meta property="og:description" content="Stop the danav, earn divine weapons from the gods and defeat Andhakasura with Mahakal's Trishul. A mini game by AP Villas & Resorts, Ujjain.">
 <meta property="og:type" content="game">
 <link rel="canonical" href="https://www.apvillasandresorts.in/mahakal-game.html">
 <meta property="og:url" content="https://www.apvillasandresorts.in/mahakal-game.html">
@@ -105,7 +105,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
 .intro__content {
   position: relative; z-index: 10;
-  text-align: center;
+  text-align: center; padding: 0 22px; max-width: 100%;
   opacity: 0; transform: translateY(20px) scale(0.95);
   transition: all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -598,6 +598,54 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   .hud__value { font-size: 28px; }
   .hud__score-card { min-width: 110px; padding: 8px 14px; }
 }
+
+/* ========== YODDHA (shooter) additions ========== */
+.hud__panel { background: rgba(15,18,30,.62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(201,162,79,.2); border-radius: 14px; padding: 8px 12px; margin-top: 6px; min-width: 190px; max-width: 240px; }
+.hud__wave { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--gold-light); font-weight: 600; line-height: 1.1; }
+.hud__bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.12); margin: 6px 0 5px; overflow: hidden; }
+.hud__bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #E8C77A, #C0531A); border-radius: 6px; transition: width .25s ease; }
+.hud__weapon { font-size: 11.5px; color: #FFF6E0; line-height: 1.35; }
+.hud__weapon b { color: #F4D58D; font-weight: 600; }
+.hud__lives { display: flex; gap: 4px; justify-content: flex-end; margin-top: 4px; }
+.hud__lives i { width: 14px; height: 18px; display: block; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 50% 35%, #FFF3C4 0 18%, #FFB347 40%, #C0531A 75%); box-shadow: 0 0 10px rgba(255,170,60,.8); transition: all .3s; }
+.hud__lives i.off { background: rgba(255,255,255,.12); box-shadow: none; }
+.bossbar { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 31; width: min(52vw, 420px); display: none; text-align: center; pointer-events: none; }
+.bossbar.show { display: block; }
+.bossbar span { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: #FF9C7A; text-shadow: 0 0 12px rgba(255,60,30,.7); letter-spacing: 1px; }
+.bossbar div { height: 10px; border-radius: 10px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,120,90,.5); overflow: hidden; margin-top: 4px; }
+.bossbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #8E1A2A, #FF5A36); transition: width .2s; }
+.banner { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%) scale(.8); z-index: 26; text-align: center; pointer-events: none; opacity: 0; transition: all .45s cubic-bezier(.34,1.56,.64,1); width: 92vw; }
+.banner.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.banner b { display: block; font-family: 'Cormorant Garamond', serif; font-size: clamp(34px, 8vw, 64px); color: var(--gold-light); text-shadow: 0 0 30px var(--saffron); line-height: 1.05; }
+.banner span { display: block; margin-top: 8px; font-size: clamp(13px, 3.4vw, 16px); color: #FFF6E0; letter-spacing: .5px; text-shadow: 0 2px 8px #000; }
+.ashirvaad__weapon { display: inline-block; margin: 2px 0 10px; padding: 6px 14px; border-radius: 999px; background: rgba(232,199,122,.16); border: 1px solid rgba(232,199,122,.5); color: #F4D58D; font-weight: 600; font-size: 14px; }
+.victory { position: absolute; inset: 0; z-index: 65; display: none; align-items: center; justify-content: center; padding: 16px; overflow-y: auto;
+  background: radial-gradient(ellipse at center, rgba(70,40,8,.92) 0%, rgba(0,0,0,.98) 80%); }
+.victory.show { display: flex; animation: gameOverIn .6s ease; }
+.victory__inner { max-width: 460px; width: 100%; text-align: center; background: linear-gradient(180deg, rgba(31,36,51,.96), rgba(15,18,30,.96)); border: 1px solid rgba(232,199,122,.45); border-radius: 26px; padding: 28px 22px; box-shadow: 0 0 80px rgba(255,190,90,.25); margin: auto; }
+.victory__namo { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--gold-light); }
+.victory__title { font-size: 15px; color: #FFF6E0; margin: 6px 0 14px; line-height: 1.5; }
+.coupon { position: relative; border: 2px dashed #E8C77A; border-radius: 18px; padding: 16px 14px; background: linear-gradient(135deg, rgba(232,199,122,.16), rgba(192,83,26,.12)); }
+.coupon__off { font-family: 'Cormorant Garamond', serif; font-size: 54px; line-height: 1; color: #F4D58D; font-weight: 700; text-shadow: 0 0 24px rgba(255,190,90,.6); }
+.coupon__off small { font-size: 22px; }
+.coupon__where { font-size: 14px; color: #FFF6E0; margin: 6px 0 10px; line-height: 1.45; }
+.coupon__code { display: inline-block; font: 700 22px/1 'Inter', monospace; letter-spacing: 3px; color: #1A0E08; background: linear-gradient(135deg, #F4D58D, #C9A24F); border-radius: 10px; padding: 12px 16px; user-select: all; -webkit-user-select: all; }
+.coupon__terms { font-size: 11px; color: rgba(244,236,219,.65); margin-top: 10px; line-height: 1.45; }
+.victory__btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.victory__btns .go-btn { display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+.victory__btns .go-btn--whatsapp { grid-column: span 2; font-size: 13px; padding: 16px; }
+.gameover__btns .go-btn { display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+.go-btn[hidden] { display: none !important; }
+.pause-note { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 27; font-size: 12px; color: rgba(244,236,219,.6); pointer-events: none; letter-spacing: .5px; text-align: center; width: 90vw; }
+@media (max-width: 600px) {
+  .hud { padding: 10px 10px; }
+  .hud__panel { min-width: 0; max-width: 190px; padding: 7px 10px; }
+  .hud__brand strong { display: none; }
+  .hud__brand { align-self: flex-start; padding: 6px; }
+  .bossbar { top: 64px; width: 70vw; }
+  .coupon__off { font-size: 46px; }
+  .coupon__code { font-size: 18px; letter-spacing: 2px; }
+}
 </style>
 </head>
 <body>
@@ -618,7 +666,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="intro__small">— HAR HAR MAHADEV —</div>
       <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Mahakal Game: Path to Darshan by AP Villas &amp; Resorts</h1>
       <div class="intro__title">Path to <em>Darshan</em></div>
-      <div class="intro__sub">Run the sacred path. Collect the blessings of Mahakal. A small offering of play, brought to you by AP Villas & Resorts, Ujjain.</div>
+      <div class="intro__sub">Danav block the path to the temple. Stop them, earn the Ashirvaad and divine weapons of the gods, and defeat Andhakasura with Mahakal's Trishul. Win a 21% stay coupon from AP Villas &amp; Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
     </div>
     <div class="intro__diya"></div>
@@ -627,1650 +675,818 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <!-- HUD -->
   <div class="hud" id="hud">
     <div class="hud__group">
-      <a href="index.html" class="hud__brand">
+      <a href="index.html" class="hud__brand" style="pointer-events:auto">
         <img src="assets/brand/logo-emblem-512.webp" alt="AP Villas &amp; Resorts emblem">
         <strong>AP Villas &amp; Resorts</strong>
       </a>
-      <div class="hud__best">Best: <span id="best-score">0</span></div>
-      <div class="hud__next" id="hud-next">Next blessing: Shri Ganesh · 150</div>
+      <div class="hud__panel">
+        <div class="hud__wave" id="hud-wave">Wave 1 of 5</div>
+        <div class="hud__bar"><i id="hud-bar"></i></div>
+        <div class="hud__weapon" id="hud-weapon"></div>
+        <div class="hud__next" id="hud-next"></div>
+      </div>
     </div>
     <div class="hud__group hud__group--right">
       <div class="hud__score-card">
         <div class="hud__label">Score</div>
         <div class="hud__value" id="score">0</div>
-        <div class="hud__multiplier" id="multiplier">×2 Streak</div>
+        <div class="hud__best" style="margin-top:2px">Best: <span id="best-score">0</span></div>
       </div>
-      <div class="hud__score-card" id="hits-card" style="margin-top:8px;">
-        <div class="hud__label">Hits</div>
-        <div class="hud__value" id="hits">0/5</div>
+      <div class="hud__score-card" style="margin-top:8px;">
+        <div class="hud__label">Prana</div>
+        <div class="hud__lives" id="lives"></div>
       </div>
-      <button class="hud__mute" id="mute-btn" style="margin-top:8px;" aria-label="Toggle sound">🔔</button>
+      <button class="hud__mute" id="mute-btn" style="margin-top:8px;pointer-events:auto" aria-label="Toggle sound">🔔</button>
     </div>
   </div>
 
-  <!-- Streak text -->
-  <div class="streak" id="streak"></div>
+  <!-- Boss health -->
+  <div class="bossbar" id="bossbar"><span>Andhakasura</span><div><i id="boss-hp"></i></div></div>
+
+  <!-- Wave / event banner -->
+  <div class="banner" id="banner"><b></b><span></span></div>
 
   <!-- Tutorial -->
   <div class="tutorial" id="tutorial">
-    <div class="tutorial__icon">↔</div>
-    <div class="tutorial__text">Swipe to change lanes</div>
-    <div class="tutorial__sub">Up to jump · Down to slide</div>
+    <div class="tutorial__icon">⟵ ⟶</div>
+    <div class="tutorial__text">Tap left or right to move</div>
+    <div class="tutorial__sub">Your weapon fires by itself · Arrow keys work too</div>
   </div>
 
-  <!-- Ashirvaad: deity blessing at score milestones -->
+  <!-- Ashirvaad: deity blessing after each wave -->
   <div class="ashirvaad" id="ashirvaad" role="dialog" aria-live="polite">
     <div class="ashirvaad__card">
       <div class="ashirvaad__halo"><img class="ashirvaad__img" id="ash-img" src="" alt=""></div>
       <div class="ashirvaad__name" id="ash-name"></div>
       <div class="ashirvaad__title" id="ash-title"></div>
+      <div class="ashirvaad__weapon" id="ash-weapon"></div>
       <div class="ashirvaad__gift" id="ash-gift"></div>
       <button class="ashirvaad__btn" id="ash-btn" type="button">🙏 Accept Ashirvaad</button>
       <div class="ashirvaad__credit" id="ash-credit"></div>
     </div>
   </div>
 
-  <!-- Ritual: Bell tap -->
-  <div class="ritual" id="ritual">
-    <div class="ritual__title">Ring the Sacred Bell</div>
-    <div class="ritual__sub">Tap when the cursor meets the gold mark</div>
-    <div class="ritual__result" id="ritual-result" aria-live="polite"></div>
-    <div class="ritual__bell" id="ritual-bell">
-      <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bellGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#E8CD8E"/>
-            <stop offset="50%" stop-color="#C9A24F"/>
-            <stop offset="100%" stop-color="#8C6512"/>
-          </linearGradient>
-        </defs>
-        <ellipse cx="100" cy="30" rx="14" ry="12" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
-        <rect x="92" y="38" width="16" height="14" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="1.5"/>
-        <path d="M 60 60 Q 60 50 100 50 Q 140 50 140 60 L 152 170 Q 100 185 48 170 Z" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
-        <ellipse cx="100" cy="170" rx="56" ry="10" fill="url(#bellGrad)" stroke="#5B3F0A" stroke-width="2"/>
-        <circle cx="100" cy="195" r="10" fill="#5B3F0A"/>
-        <line x1="100" y1="160" x2="100" y2="190" stroke="#5B3F0A" stroke-width="2"/>
-      </svg>
-    </div>
-    <div class="ritual__meter">
-      <div class="ritual__meter-fill"></div>
-      <div class="ritual__meter-target" id="meter-target"></div>
-      <div class="ritual__meter-cursor" id="meter-cursor"></div>
-    </div>
-    <div class="ritual__hint">Tap the bell · Perfect = combo bonus</div>
-  </div>
-
-  <!-- Game over -->
+  <!-- Defeat -->
   <div class="gameover" id="gameover">
     <div class="gameover__inner">
       <div class="gameover__namo">🙏 Har Har Mahadev 🙏</div>
-      <div class="gameover__sub">Your Run Has Ended</div>
+      <div class="gameover__sub" id="go-sub">The danav broke through</div>
 
       <div class="gameover__score-label">Score</div>
       <div class="gameover__score" id="final-score">0</div>
       <div class="gameover__best" id="best-line">Best: <span id="final-best">0</span></div>
 
       <div class="gameover__divider"><span>◆</span></div>
-
-      <div class="gameover__pitch">Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em></div>
-      <div class="gameover__brand"><strong>AP Villas & Resorts</strong> · 2 km from Mahakaleshwar Jyotirlinga</div>
-      <div class="gameover__scarcity">★ WhatsApp us your darshan dates for a quick quote</div>
+      <div class="gameover__pitch">Don't give up, <em>yoddha.</em><br>Mahakal is with you.</div>
 
       <div class="gameover__btns">
-        <button class="go-btn go-btn--play" id="play-again-btn">↻ Play Again</button>
-        <a class="go-btn go-btn--primary" href="villas.html">Book Your Stay</a>
-        <a class="go-btn go-btn--whatsapp" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%20played%20your%20Mahakal%20game%20and%20I%27d%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener"><svg class="ic-wa" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false" style="width:16px;height:16px;flex:none"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88a9.88 9.88 0 0 1 9.88 9.89c0 5.45-4.43 9.88-9.89 9.88M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg> WhatsApp Us</a>
+        <button class="go-btn go-btn--play" id="retry-btn">↻ Try this wave again</button>
+        <button class="go-btn go-btn--ghost" id="restart-btn">Start over</button>
         <a class="go-btn go-btn--ghost" href="index.html">Home</a>
+        <a class="go-btn go-btn--primary" href="villas.html">See our villas in Ujjain</a>
       </div>
     </div>
   </div>
 
-  <!-- Blessing floats -->
-  <div class="blessing-float" id="blessing"></div>
+  <!-- Victory + coupon -->
+  <div class="victory" id="victory" role="dialog" aria-labelledby="victory-title">
+    <div class="victory__inner">
+      <div class="victory__namo">🙏 Jai Mahakal 🙏</div>
+      <div class="victory__title" id="victory-title">Andhakasura is defeated and the path to darshan is clear!<br>Mahakal's blessing for your family:</div>
+      <div class="coupon">
+        <div class="coupon__off">21<small>%</small> OFF</div>
+        <div class="coupon__where">your stay at <b>Rudrangan Suites</b> or <b>AP Residency</b>, Ujjain</div>
+        <div class="coupon__code" id="coupon-code">MAHAKAL21</div>
+        <div class="coupon__terms" id="coupon-terms">Send this code on WhatsApp when you book directly with us. Valid on direct bookings only, subject to availability; one coupon per booking.</div>
+      </div>
+      <div class="gameover__best" style="margin-top:12px">Score <span id="win-score">0</span> · Best <span id="win-best">0</span></div>
+      <div class="victory__btns">
+        <a class="go-btn go-btn--whatsapp" id="claim-btn" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;flex:none"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88a9.88 9.88 0 0 1 9.88 9.89c0 5.45-4.43 9.88-9.89 9.88M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg> Claim coupon on WhatsApp</a>
+        <button class="go-btn go-btn--ghost" id="copy-btn" type="button">Copy code</button>
+        <button class="go-btn go-btn--ghost" id="again-btn" type="button">↻ Play again</button>
+        <a class="go-btn go-btn--primary" href="villas/rudrangan-suites.html">See Rudrangan Suites</a>
+      </div>
+    </div>
+  </div>
 
 </div>
 
 <script>
 // =========================================================================
-// PATH TO DARSHAN — A Mahakal-themed endless runner
+// PATH TO DARSHAN — lane shooter: stop the danav, earn divine weapons,
+// defeat Andhakasura with Mahakal's Trishul, win a 21% stay coupon.
 // =========================================================================
-
 const $ = (id) => document.getElementById(id);
-const stage = $('stage');
-const game = $('game');
-const fx = $('fx');
-const ctx = game.getContext('2d');
-const fxCtx = fx.getContext('2d');
-
-let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
-
+const stage = $('stage'), game = $('game'), fx = $('fx');
+const ctx = game.getContext('2d'), fxCtx = fx.getContext('2d');
+let W = 0, H = 0;
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
 function resize() {
-  W = stage.clientWidth;
-  H = stage.clientHeight;
-  for (const c of [game, fx]) {
-    c.width = W * DPR; c.height = H * DPR;
-    c.style.width = W + 'px'; c.style.height = H + 'px';
-  }
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  fxCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  W = stage.clientWidth; H = stage.clientHeight;
+  for (const c of [game, fx]) { c.width = W * DPR; c.height = H * DPR; c.style.width = W + 'px'; c.style.height = H + 'px'; }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); fxCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
-window.addEventListener('resize', resize);
-resize();
+addEventListener('resize', resize); resize();
+const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+const track = (n, p) => { if (typeof gtag === 'function') gtag('event', n, p || {}); };
 
-// =========================================================================
-// AUDIO (Web Audio synthesis — no files)
-// =========================================================================
+// ---------------- Audio (synthesised, no files) ----------------
 let audioCtx = null, muted = false;
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-function playTone(freq, dur, type='sine', vol=0.15, pitchEnd=null) {
+function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) {} }
+function tone(freq, dur, type = 'sine', vol = 0.12, end = null) {
   if (muted || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  if (pitchEnd) osc.frequency.exponentialRampToValueAtTime(pitchEnd, audioCtx.currentTime + dur);
-  g.gain.setValueAtTime(vol, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-  osc.connect(g); g.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + dur);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime;
+  o.type = type; o.frequency.setValueAtTime(freq, t); if (end) o.frequency.exponentialRampToValueAtTime(end, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(t + dur);
 }
-function playBell() {
+function noise(dur, vol = 0.18, freq = 900) {
   if (muted || !audioCtx) return;
-  // Layered bell using multiple sines
-  [880, 1320, 1760, 2640].forEach((f, i) => {
-    setTimeout(() => playTone(f, 1.6 - i*0.3, 'sine', 0.08 - i*0.012), i*8);
-  });
+  const b = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const s = audioCtx.createBufferSource(); s.buffer = b;
+  const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq;
+  const g = audioCtx.createGain(); g.gain.value = vol;
+  s.connect(f); f.connect(g); g.connect(audioCtx.destination); s.start();
 }
-function playCollect() { playTone(880, 0.18, 'triangle', 0.10, 1320); }
-function playJump() { playTone(440, 0.15, 'sine', 0.08, 660); }
-function playSlide() { playTone(220, 0.18, 'sine', 0.06, 110); }
-function playHit() {
-  if (muted || !audioCtx) return;
-  const dur = 0.4;
-  const noise = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
-  const data = noise.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
-  const src = audioCtx.createBufferSource(); src.buffer = noise;
-  const g = audioCtx.createGain(); g.gain.value = 0.2;
-  const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
-  src.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
-  src.start();
-}
-function playPerfect() {
-  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.3, 'triangle', 0.10), i * 70));
-}
-
-$('mute-btn').addEventListener('click', (e) => {
-  e.stopPropagation();
-  muted = !muted;
-  $('mute-btn').textContent = muted ? '🔕' : '🔔';
-});
-
-// =========================================================================
-// GAME STATE
-// =========================================================================
-const LANE_WIDTH_FAR = 0.05;     // lane spacing at horizon (fraction of screen W)
-const LANE_WIDTH_NEAR = 0.28;    // lane spacing at viewer
-const HORIZON_Y = 0.30;          // 30% from top
-const PLAYER_Y = 0.78;           // player's screen Y (78% from top)
-const VANISHING_X = 0.5;         // center
-
-let state = 'intro'; // intro, playing, ritual, gameover
-let score = 0;
-let bestScore = parseInt(localStorage.getItem('mahakal_best') || '0');
-let speed = 0.012;               // base z-speed
-let speedTarget = 0.012;
-let distance = 0;
-let runFrame = 0;
-let streakCount = 0;
-let multiplier = 1;
-let blessingsCollected = 0;
-let hitCount = 0;
-const MAX_HITS = 5;   // forgiving: easy but satisfying
-let gameWon = false;
-
-const player = {
-  lane: 1,            // 0,1,2 (left, center, right)
-  laneX: 0,           // current x offset (smoothed)
-  targetLaneX: 0,
-  jumpY: 0,
-  jumpVy: 0,
-  jumping: false,
-  sliding: false,
-  slideTimer: 0,
-  shieldTimer: 0,
-  magnetTimer: 0,
+const sfx = {
+  bell() { [880, 1320, 1760, 2640].forEach((f, i) => setTimeout(() => tone(f, 1.6 - i * 0.3, 'sine', 0.07 - i * 0.012), i * 8)); },
+  shoot(kind) { if (kind === 'gada') tone(160, 0.12, 'triangle', 0.05, 90); else if (kind === 'chakra' || kind === 'trishul') tone(900, 0.1, 'sine', 0.035, 1400); else tone(620, 0.07, 'triangle', 0.03, 380); },
+  hit() { tone(240, 0.06, 'square', 0.025, 180); },
+  kill() { noise(0.22, 0.12, 1400); tone(520, 0.18, 'triangle', 0.06, 980); },
+  hurt() { noise(0.45, 0.22, 600); tone(140, 0.4, 'sawtooth', 0.05, 70); },
+  move() { tone(330, 0.07, 'sine', 0.03, 440); },
+  heal() { [660, 880, 1100].forEach((f, i) => setTimeout(() => tone(f, 0.2, 'triangle', 0.06), i * 60)); },
+  win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.45, 'triangle', 0.08), i * 110)); },
+  roar() { noise(1.0, 0.25, 300); tone(90, 1.0, 'sawtooth', 0.06, 50); },
 };
+$('mute-btn').addEventListener('click', e => { e.stopPropagation(); muted = !muted; $('mute-btn').textContent = muted ? '🔕' : '🔔'; });
 
-const objects = [];      // {type, lane, z, ...}
-const particles = [];    // visual fx
-const petals = [];       // ambient floating petals
-
-// Generate ambient floating petals on start
-function seedPetals() {
-  petals.length = 0;
-  for (let i = 0; i < 24; i++) {
-    petals.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vy: 0.3 + Math.random() * 0.6,
-      vx: (Math.random() - 0.5) * 0.3,
-      r: 2 + Math.random() * 4,
-      alpha: 0.2 + Math.random() * 0.4,
-      hue: Math.random() < 0.5 ? 30 : 18, // gold or saffron
-      rot: Math.random() * Math.PI * 2,
-      vrot: (Math.random() - 0.5) * 0.04,
-    });
-  }
-}
-seedPetals();
-
-// =========================================================================
-// COORDINATE PROJECTION (3-lane perspective)
-// =========================================================================
-function project(z, laneOrX, jumpY = 0) {
-  // z: 0 (close) → 1 (far). lane: -1, 0, 1 OR continuous laneX
-  const t = Math.min(Math.max(z, 0), 1);
-  // Vanishing into HORIZON_Y; nearest at PLAYER_Y
-  const screenY = HORIZON_Y * H * t + PLAYER_Y * H * (1 - t);
-  // Lane width interpolated
-  const laneSpacing = LANE_WIDTH_FAR * W * t + LANE_WIDTH_NEAR * W * (1 - t);
-  const screenX = VANISHING_X * W + laneOrX * laneSpacing;
-  // Scale (perspective)
-  const scale = 0.15 + 0.85 * (1 - t);
-  return { x: screenX, y: screenY - jumpY * scale, scale };
-}
-
-// =========================================================================
-// OBSTACLES & COLLECTIBLES SPAWNING
-// =========================================================================
-const COLLECTIBLES = [
-  { type: 'rudraksha', points: 10, color: '#8B4513', glow: '#D4691A' },
-  { type: 'belpatra',  points: 15, color: '#3D7A4D', glow: '#7FB87E' },
-  { type: 'diya',      points: 25, color: '#C0531A', glow: '#FFD27D' },
-  { type: 'damru',     points: 40, color: '#8C6512', glow: '#E8CD8E' },
-  { type: 'orb',       points: 50, color: '#3D5099', glow: '#A8B5E8' },
+// ---------------- Content ----------------
+const IMG = 'images/blog/mahakal-game/';
+const WEAPONS = {
+  bow:     { name: 'Dhanush-baan', desc: 'bow and arrows', dmg: 1, rate: 0.30, speed: 1.7, spread: [0], pierce: 0, range: 0.55, kind: 'arrow', color: '#F4D58D' },
+  parashu: { name: 'Parashu', desc: "Ganesh ji's divine axe", dmg: 2, rate: 0.27, speed: 1.6, spread: [0], pierce: 0, range: 0.6, kind: 'axe', color: '#FFB347' },
+  gada:    { name: 'Gada', desc: "Hanuman ji's mighty mace", dmg: 4, rate: 0.34, speed: 1.5, spread: [0], pierce: 1, range: 0.6, kind: 'gada', color: '#F1C75B' },
+  khadga:  { name: 'Khadga', desc: "Maa Durga's sword, strikes all 3 paths", dmg: 3, rate: 0.30, speed: 1.8, spread: [-1, 0, 1], pierce: 0, range: 0.65, kind: 'blade', color: '#FF8A65' },
+  chakra:  { name: 'Sudarshan Chakra', desc: 'cuts through every danav', dmg: 5, rate: 0.28, speed: 1.7, spread: [-1, 0, 1], pierce: 99, range: 0.72, kind: 'chakra', color: '#9AD0FF' },
+  trishul: { name: 'Trishul', desc: "Mahakal's trident, the only weapon that harms Andhakasura", dmg: 6, rate: 0.24, speed: 2.0, spread: [-1, 0, 1], pierce: 99, range: 0.8, kind: 'trishul', color: '#FFFFFF' },
+};
+const DANAV = {
+  rakshas: { name: 'Rakshas', hp: 2,  speed: 0.105, size: 1.0,  skin: '#B5432A', dark: '#6E1E12', horn: '#EADBB4', eye: '#FFE14D', pts: 10 },
+  danav:   { name: 'Danav',   hp: 5,  speed: 0.09,  size: 1.18, skin: '#2F7F78', dark: '#164845', horn: '#F1E3C0', eye: '#FF5A36', pts: 25 },
+  mayavi:  { name: 'Mayavi',  hp: 6,  speed: 0.095, size: 1.08, skin: '#7A4FA0', dark: '#3E2357', horn: '#EADCF8', eye: '#7CFFEA', pts: 35, hop: true },
+  maha:    { name: 'Maha-danav', hp: 14, speed: 0.062, size: 1.5, skin: '#4A4A66', dark: '#22222F', horn: '#FFD27D', eye: '#FF3B2F', pts: 60, crown: true },
+};
+const WAVES = [
+  { kills: 10, every: 1.7, mix: { rakshas: 1 } },
+  { kills: 12, every: 1.55, mix: { rakshas: 0.7, danav: 0.3 } },
+  { kills: 14, every: 1.45, mix: { rakshas: 0.5, danav: 0.35, maha: 0.15 } },
+  { kills: 16, every: 1.35, mix: { rakshas: 0.4, danav: 0.3, mayavi: 0.2, maha: 0.1 } },
+  { kills: 18, every: 1.25, mix: { rakshas: 0.3, danav: 0.3, mayavi: 0.25, maha: 0.15 } },
 ];
-const OBSTACLES = ['stone', 'fire', 'gate'];
+const BLESSINGS = [
+  { name: 'Shri Ganesh', title: 'Vighnaharta clears your path', weapon: 'parashu', gift: 'Double damage. Your body grows stronger!', img: 'ganesha-lord-of-obstacles-lacma-ac1999-127-34', credit: 'Kota painting, early 19th century (public domain)' },
+  { name: 'Hanuman ji', title: 'The strength of Bajrangbali is yours', weapon: 'gada', gift: 'Huge blows that smash through two danav at once. +1 prana.', img: 'hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th', credit: 'Ravi Varma Press, 1910s (public domain)' },
+  { name: 'Maa Durga', title: 'The Mother rides into battle with you', weapon: 'khadga', gift: 'Every strike now flies down all three paths. +1 prana.', img: 'mahishasura-mardini', credit: 'Ravi Varma Press, c.1910 (public domain)' },
+  { name: 'Shri Vishnu & Maa Lakshmi', title: 'The protector of the worlds blesses you', weapon: 'chakra', gift: 'The Chakra slices through every danav in its path. All prana restored.', img: 'vishnu-laxmi-and-serpent-anant', credit: 'Ravi Varma Press (public domain)' },
+  { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'trishul', gift: 'Andhakasura, king of darkness, is coming. Only the Trishul can defeat him. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: true },
+];
+BLESSINGS.forEach(b => { b.src = IMG + b.img + '-960.webp'; const i = new Image(); i.src = b.src; });
+const MAX_LIVES = 5;
+const BOSS_HP = 260;
 
-let lastSpawnZ = 1;
-let spawnTimer = 0;
-let diyaSpawnCooldown = 0;
-function spawn() {
-  // Main spawn logic - obstacles should appear 3x more than diyas
-  // Check distance - spawn every ~0.12 z-units (more frequent)
-  if (lastSpawnZ - distance < 0.12) {
-    lastSpawnZ = distance + 0.11 + Math.random() * 0.05;   // more breathing room
-    
-    // Decide pattern - 75% chance for obstacles, 25% for collectibles only
-    const r = Math.random();
-    if (r < 0.6) {   // fewer obstacles, more diyas
-      // OBSTACLE PATTERNS (75% of spawns) - 3x more than diyas
-      const obsCount = Math.random() < 0.2 ? 2 : 1; // mostly a single obstacle
-      const usedLanes = [];
-      
-      for (let i = 0; i < obsCount; i++) {
-        let obsLane = Math.floor(Math.random() * 3);
-        // Make sure we don't use the same lane twice
-        while (usedLanes.includes(obsLane)) {
-          obsLane = Math.floor(Math.random() * 3);
-        }
-        usedLanes.push(obsLane);
-        
-        objects.push({ 
-          kind: 'obstacle', 
-          subtype: OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)], 
-          lane: obsLane, 
-          z: 1 + i * 0.03 
-        });
-      }
-      
-      // Add collectibles in remaining lanes
-      for (let l = 0; l < 3; l++) {
-        if (!usedLanes.includes(l) && Math.random() < 0.5) {
-          const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-          objects.push({ 
-            kind: 'collect', 
-            subtype: c.type, 
-            color: c.color, 
-            glow: c.glow, 
-            points: c.points, 
-            lane: l, 
-            z: 1 + Math.random() * 0.05 
-          });
-        }
-      }
-    } else {
-      // COLLECTIBLE PATTERN (25% of spawns) - line of collectibles
-      const lane = Math.floor(Math.random() * 3);
-      const count = 2 + Math.floor(Math.random() * 3);
-      const c = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
-      for (let i = 0; i < count; i++) {
-        objects.push({ 
-          kind: 'collect', 
-          subtype: c.type, 
-          color: c.color, 
-          glow: c.glow, 
-          points: c.points, 
-          lane, 
-          z: 1 + i * 0.04 
-        });
-      }
-    }
+// ---------------- Perspective (3 lanes) ----------------
+const HORIZON_Y = 0.30, PLAYER_Y = 0.80, LANE_FAR = 0.05, LANE_NEAR = 0.27;
+function project(z, laneX) {
+  const t = Math.min(Math.max(z, 0), 1);
+  const near = W < 600 ? 0.31 : LANE_NEAR;
+  const laneW = LANE_FAR * W * t + near * Math.min(W, H * 1.1) * (1 - t);
+  return { x: W / 2 + laneX * laneW, y: HORIZON_Y * H * t + PLAYER_Y * H * (1 - t), scale: 0.15 + 0.85 * (1 - t) };
+}
+const unit = () => Math.min(W, H * 0.75) / 420;   // size unit for different screens
+
+// ---------------- State ----------------
+let state = 'intro';            // intro, playing, blessing, gameover, victory
+let paused = false;
+let score = 0, best = parseInt(store.get('mahakal_best', '0'), 10) || 0;
+let wave = 0, kills = 0, spawnT = 0, lives = MAX_LIVES, weapon = 'bow', bulk = 0, time = 0;
+let boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false;
+const player = { lane: 1, x: 0, fireT: 0, hurt: 0, flash: 0, recoil: 0 };
+const danavs = [], shots = [], fires = [], parts = [], texts = [], drops = [];
+let checkpoint = null;
+
+function saveCheckpoint() { checkpoint = { wave, weapon, bulk, score }; }
+function resetField() { pendingBlessing = false; danavs.length = shots.length = fires.length = parts.length = texts.length = drops.length = 0; boss = null; $('bossbar').classList.remove('show'); }
+
+// ---------------- HUD ----------------
+function hud() {
+  $('score').textContent = Math.floor(score).toLocaleString('en-IN');
+  $('best-score').textContent = best.toLocaleString('en-IN');
+  $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
+  const w = WEAPONS[weapon];
+  $('hud-weapon').innerHTML = `Weapon: <b>${w.name}</b>`;
+  if (boss) {
+    $('hud-wave').textContent = 'Final battle';
+    $('hud-bar').style.width = (100 * boss.hp / BOSS_HP) + '%';
+    $('hud-next').textContent = 'Defeat Andhakasura!';
+    $('boss-hp').style.width = Math.max(0, 100 * boss.hp / BOSS_HP) + '%';
+  } else {
+    const wv = WAVES[wave];
+    $('hud-wave').textContent = `Wave ${wave + 1} of ${WAVES.length} · ${Math.min(kills, wv.kills)}/${wv.kills} danav`;
+    $('hud-bar').style.width = (100 * Math.min(1, kills / wv.kills)) + '%';
+    $('hud-next').textContent = 'Next Ashirvaad: ' + BLESSINGS[wave].name;
   }
-  
-  // Spawn diya collectible separately with longer cooldown (less frequent than obstacles)
-  if (diyaSpawnCooldown <= 0) {
-    objects.push({
-      kind: 'collect',
-      subtype: 'diya',
-      color: '#C0531A',
-      glow: '#FFD27D',
-      points: 25,
-      lane: Math.floor(Math.random() * 3),
-      z: 1.1 + Math.random() * 0.1
-    });
-    diyaSpawnCooldown = 180; // Longer cooldown = diyas spawn less frequently
-  }
+}
+let bannerT = null;
+function banner(big, small, ms = 2200) {
+  const b = $('banner'); b.querySelector('b').textContent = big; b.querySelector('span').textContent = small || '';
+  b.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('show'), ms);
+}
+function floatText(x, y, text, color = '#F4D58D', size = 18) { texts.push({ x, y, text, color, size, life: 1 }); }
+function burst(x, y, color, n = 14, speed = 4) {
+  for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = speed * (0.4 + Math.random()); parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5, r: 2 + Math.random() * 3, life: 1, color }); }
 }
 
-// =========================================================================
-// CONTROLS
-// =========================================================================
-let touchStart = null;
-function changeLane(dir) {
-  if (state !== 'playing') return;
-  const newLane = Math.max(0, Math.min(2, player.lane + dir));
-  if (newLane !== player.lane) {
-    player.lane = newLane;
-    player.targetLaneX = newLane - 1;
-    playSlide();
-  }
+// ---------------- Flow ----------------
+function startRun() {
+  score = 0; wave = 0; weapon = 'bow'; bulk = 0;
+  startWave(true);
 }
-function jump() {
-  if (state !== 'playing' || player.jumping || player.sliding) return;
-  player.jumping = true;
-  player.jumpVy = 16;
-  playJump();
+function startWave(fresh) {
+  resetField();
+  kills = 0; spawnT = -1.2; lives = fresh ? MAX_LIVES : Math.max(lives, 3);
+  player.lane = 1; player.x = 0; player.hurt = 0;
+  saveCheckpoint();
+  state = 'playing'; betweenWaves = 0;
+  banner('Wave ' + (wave + 1), wave === 0 ? 'Stop the danav before they reach you!' : 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc);
+  hud();
 }
-function slide() {
-  if (state !== 'playing' || player.jumping || player.sliding) return;
-  player.sliding = true;
-  player.slideTimer = 40;
-  playSlide();
+function waveCleared() {
+  // remaining danav burn away in golden light
+  for (const d of danavs) { const p = project(d.z, d.lane - 1); burst(p.x, p.y - 30 * p.scale, '#FFD27D', 10, 3); score += DANAV[d.type].pts; }
+  danavs.length = 0; shots.length = 0;
+  betweenWaves = 1.4;   // short pause, then the deity appears
+  banner('Wave ' + (wave + 1) + ' cleared!', 'An Ashirvaad is coming…', 1500);
+  sfx.bell();
+  pendingBlessing = true;
 }
+function showAshirvaad(b) {
+  state = 'blessing';
+  const box = $('ashirvaad');
+  box.classList.toggle('final', !!b.final);
+  $('ash-img').src = b.src; $('ash-img').alt = b.name + ', ' + b.credit;
+  $('ash-name').textContent = b.name;
+  $('ash-title').textContent = b.title;
+  $('ash-weapon').textContent = 'You receive: ' + WEAPONS[b.weapon].name;
+  $('ash-gift').textContent = b.gift;
+  $('ash-credit').textContent = b.credit;
+  $('ash-btn').textContent = b.final ? '🙏 Har Har Mahadev' : '🙏 Accept Ashirvaad';
+  box.classList.add('show');
+  sfx.bell(); setTimeout(sfx.win, 500);
+  track('game_ashirvaad', { deity: b.name, wave: wave + 1 });
+}
+function acceptAshirvaad() {
+  if (state !== 'blessing') return;
+  const b = BLESSINGS[wave];
+  $('ashirvaad').classList.remove('show');
+  weapon = b.weapon; bulk = wave + 1;
+  player.flash = 1.2;
+  if (b.weapon === 'chakra' || b.final) lives = MAX_LIVES; else lives = Math.min(MAX_LIVES, lives + 1);
+  burst(project(0, player.x).x, PLAYER_Y * H - 60, '#FFE9A8', 40, 6);
+  if (b.final) { startBoss(); return; }
+  wave++;
+  startWave(false);
+}
+$('ash-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); acceptAshirvaad(); });
 
-document.addEventListener('keydown', (e) => {
-  if (state === 'ritual') {
-    if (e.key === ' ' || e.key === 'Enter') ritualTap();
-    return;
+function startBoss() {
+  resetField();
+  wave = WAVES.length;
+  saveCheckpoint();
+  boss = { hp: BOSS_HP, lane: 1, x: 0, z: 0.66, moveT: 2.5, atkT: 2.2, hitFlash: 0, summoned: 0, enter: 0 };
+  lives = MAX_LIVES; player.lane = 1; player.x = 0;
+  state = 'playing';
+  $('bossbar').classList.add('show');
+  banner('Andhakasura!', 'Dodge his fireballs and strike with the Trishul', 2800);
+  sfx.roar(); shake = 0.6;
+  hud();
+}
+function bossDefeated() {
+  const p = project(boss.z, boss.x);
+  for (let i = 0; i < 5; i++) setTimeout(() => { burst(p.x + (Math.random() - 0.5) * 120, p.y - 120 * Math.random(), i % 2 ? '#FFD27D' : '#FF6B3D', 40, 7); sfx.kill(); }, i * 180);
+  score += 1000; boss.dead = true; fires.length = 0; danavs.length = 0;
+  shake = 0.8;
+  banner('Andhakasura is defeated!', 'Jai Mahakal!', 2000);
+  setTimeout(victory, 2200);
+}
+function victory() {
+  state = 'victory'; boss = null; $('bossbar').classList.remove('show');
+  saveBest();
+  let code = store.get('mahakal_coupon', '');
+  if (!/^MAHAKAL21-[A-Z0-9]{5}$/.test(code)) {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    code = 'MAHAKAL21-' + Array.from({ length: 5 }, () => A[Math.floor(Math.random() * A.length)]).join('');
+    store.set('mahakal_coupon', code);
   }
-  if (state !== 'playing') return;
-  if (e.key === 'ArrowLeft' || e.key === 'a') changeLane(-1);
-  else if (e.key === 'ArrowRight' || e.key === 'd') changeLane(1);
-  else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') { e.preventDefault(); jump(); }
-  else if (e.key === 'ArrowDown' || e.key === 's') slide();
+  $('coupon-code').textContent = code;
+  $('win-score').textContent = Math.floor(score).toLocaleString('en-IN');
+  $('win-best').textContent = best.toLocaleString('en-IN');
+  const msg = ['Namaste Apoorv ji 🙏', 'I completed the Mahakal game on your website and won a 21% discount coupon.', '', '🎟️ Coupon: ' + code, '🏡 Villa: Rudrangan Suites / AP Residency', '📅 My dates: ', '👨‍👩‍👧 Guests: ', '', 'Please share availability and the discounted price. Thank you!', '(Ref: WEB-GAME-COUPON)'].join('\n');
+  $('claim-btn').href = 'https://wa.me/918999061598?text=' + encodeURIComponent(msg);
+  $('victory').classList.add('show');
+  sfx.win(); setTimeout(sfx.bell, 600);
+  track('game_win_coupon', { score: Math.floor(score) });
+}
+function gameOver() {
+  state = 'gameover';
+  saveBest();
+  $('go-sub').textContent = boss ? 'Andhakasura was too strong this time' : 'The danav broke through';
+  $('retry-btn').textContent = boss ? '↻ Fight Andhakasura again' : '↻ Try wave ' + (wave + 1) + ' again';
+  $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
+  $('best-line').innerHTML = 'Best: <span id="final-best">' + best.toLocaleString('en-IN') + '</span>';
+  $('gameover').classList.add('show');
+  track('game_over', { wave: wave + 1, score: Math.floor(score) });
+}
+function saveBest() { if (score > best) { best = Math.floor(score); store.set('mahakal_best', String(best)); } }
+$('retry-btn').addEventListener('click', () => {
+  $('gameover').classList.remove('show');
+  const c = checkpoint; weapon = c.weapon; bulk = c.bulk; score = c.score; wave = c.wave;
+  if (wave >= WAVES.length) startBoss(); else startWave(true);
 });
+$('restart-btn').addEventListener('click', () => { $('gameover').classList.remove('show'); startRun(); });
+$('again-btn').addEventListener('click', () => { $('victory').classList.remove('show'); startRun(); });
+$('copy-btn').addEventListener('click', async () => {
+  const code = $('coupon-code').textContent;
+  try { await navigator.clipboard.writeText(code); $('copy-btn').textContent = 'Copied ✓'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents($('coupon-code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('copy-btn').textContent = 'Selected: copy it'; }
+  setTimeout(() => ($('copy-btn').textContent = 'Copy code'), 2200);
+});
+$('claim-btn').addEventListener('click', () => track('game_coupon_claim', {}));
 
-stage.addEventListener('touchstart', (e) => {
-  ensureAudio();
-  if (state === 'ritual') { ritualTap(); return; }
-  if (e.touches.length === 1) {
-    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
-  }
-}, { passive: true });
-
-stage.addEventListener('touchend', (e) => {
-  if (!touchStart) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStart.x;
-  const dy = t.clientY - touchStart.y;
-  const dt = Date.now() - touchStart.t;
-  const absX = Math.abs(dx), absY = Math.abs(dy);
-  if (dt < 600 && Math.max(absX, absY) > 20) {
-    if (absX > absY) {
-      if (dx > 0) changeLane(1); else changeLane(-1);
-    } else {
-      if (dy < 0) jump(); else slide();
-    }
-  }
-  touchStart = null;
-}, { passive: true });
-
-// Keyboard fallback for mouse on desktop
-stage.addEventListener('click', () => ensureAudio());
-
-// =========================================================================
-// INTRO SEQUENCE
-// =========================================================================
-function startIntro() {
-  setTimeout(() => $('intro').classList.add('show-content'), 700);
+// ---------------- Input ----------------
+function move(dir) {
+  if (state !== 'playing') return;
+  const n = Math.max(0, Math.min(2, player.lane + dir));
+  if (n !== player.lane) { player.lane = n; sfx.move(); }
 }
-startIntro();
-
-$('enter-btn').addEventListener('click', () => {
+addEventListener('keydown', e => {
+  if (state === 'blessing' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); acceptAshirvaad(); return; }
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); move(-1); }
+  else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); move(1); }
+});
+stage.addEventListener('pointerdown', e => {
   ensureAudio();
-  playBell();
+  if (state !== 'playing' || e.target.closest('a, button, .ashirvaad, .gameover, .victory')) return;
+  const r = stage.getBoundingClientRect();
+  move(e.clientX - r.left < r.width / 2 ? -1 : 1);
+});
+document.addEventListener('visibilitychange', () => { paused = document.hidden; last = performance.now(); });
+
+// ---------------- Intro ----------------
+setTimeout(() => $('intro').classList.add('show-content'), 700);
+$('enter-btn').addEventListener('click', () => {
+  ensureAudio(); sfx.bell();
   $('intro').classList.add('opening');
   setTimeout(() => {
     $('intro').style.display = 'none';
     $('hud').classList.add('show');
-    $('best-score').textContent = bestScore.toLocaleString('en-IN');
-    state = 'playing';
-    if (!localStorage.getItem('mahakal_played_before')) {
-      $('tutorial').classList.add('show');
-      setTimeout(() => $('tutorial').classList.remove('show'), 3500);
-      localStorage.setItem('mahakal_played_before', '1');
-    }
-    startGame();
+    $('tutorial').classList.add('show');
+    setTimeout(() => $('tutorial').classList.remove('show'), 3800);
+    startRun();
+    track('game_start', {});
   }, 2200);
 });
 
-// =========================================================================
-// MAIN LOOP
-// =========================================================================
-let last = performance.now();
-let nextRitualScore = 450;
-
-function startGame() {
-  // Reset all game state
-  score = 0; speed = 0.012; speedTarget = 0.012; distance = 0; runFrame = 0;
-  streakCount = 0; multiplier = 1; blessingsCollected = 0;
-  hitCount = 0; gameWon = false;
-  player.lane = 1; player.laneX = 0; player.targetLaneX = 0;
-  player.jumpY = 0; player.jumpVy = 0; player.jumping = false;
-  player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
-  objects.length = 0; particles.length = 0;
-  lastSpawnZ = 1; nextRitualScore = 450; nextDeity = 0; $('hud-next').textContent = 'Next blessing: Shri Ganesh · 150';
-  spawnTimer = 0;
-  
-  // Cleanup any in-flight ritual
-  ritualRunning = false; ritualSolved = false;
-  if (ritualLoopId) { cancelAnimationFrame(ritualLoopId); ritualLoopId = null; }
-  if (ritualTimeout) { clearTimeout(ritualTimeout); ritualTimeout = null; }
-  $('ritual').classList.remove('show');
-  
-  // Reset score display
-  $('score').textContent = '0';
-  $('hits').textContent = '0/' + MAX_HITS;
-  $('multiplier').classList.remove('active');
-  $('multiplier').textContent = '×2 Streak';
-  
-  // Set state to playing BEFORE starting loop
-  state = 'playing';
-  
-  // Reset timing
-  last = performance.now();
-  touchStart = null;
-  
-  // Cancel any stale frame and start fresh
-  if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
-  gameLoopId = requestAnimationFrame(loop);
+// ---------------- Update ----------------
+function pickType() {
+  const mix = WAVES[wave].mix; let r = Math.random();
+  for (const k in mix) { if ((r -= mix[k]) <= 0) return k; }
+  return Object.keys(mix)[0];
 }
-
-function loop(now) {
-  // Always continue the loop, only skip update/render based on state
-  const dt = Math.min(33, now - last);
-  last = now;
-  
-  if (state === 'playing') {
-    update(dt);
-    render();
+function spawnDanav(type, lane) {
+  type = type || pickType();
+  if (lane === undefined) {
+    const free = [0, 1, 2].filter(l => !danavs.some(d => d.lane === l && d.z > 0.82));
+    if (!free.length) return;
+    lane = free[Math.floor(Math.random() * free.length)];
   }
-  
-  gameLoopId = requestAnimationFrame(loop);
+  const t = DANAV[type];
+  danavs.push({ type, lane, x: lane - 1, z: 1.02, hp: t.hp, max: t.hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2 });
 }
-let gameLoopId = null;
-
+function fire() {
+  const w = WEAPONS[weapon];
+  for (const s of w.spread) {
+    const lane = player.lane + s;
+    if (lane < 0 || lane > 2) continue;
+    shots.push({ lane, z: 0.04, range: w.range, dmg: w.dmg, pierce: w.pierce, kind: w.kind, color: w.color, hit: new Set(), spin: 0, side: s !== 0 });
+  }
+  player.recoil = 1;
+  sfx.shoot(w.kind);
+}
+function hurtPlayer(reason) {
+  if (player.hurt > 0) return;
+  lives--; player.hurt = 1.1; shake = 0.45; sfx.hurt();
+  floatText(project(0, player.x).x, PLAYER_Y * H - 120 * unit(), reason === 'fire' ? 'Ouch! −1 prana' : 'A danav broke through! −1 prana', '#FF8A65', 16);
+  hud();
+  if (lives <= 0) setTimeout(gameOver, 500);
+}
 function update(dt) {
+  time += dt;
+  player.x += (player.lane - 1 - player.x) * Math.min(1, dt * 14);
+  if (player.hurt > 0) player.hurt -= dt;
+  if (player.flash > 0) player.flash -= dt;
+  player.recoil = Math.max(0, player.recoil - dt * 6);
+  if (shake > 0) shake -= dt;
 
-spawnTimer++;
-
-if (spawnTimer > 35) {
-  spawn();
-  spawnTimer = 0;
-}
-  runFrame++;
-  if (diyaSpawnCooldown > 0) diyaSpawnCooldown--;
-  // Speed scales with score
-  speedTarget = 0.012 + Math.min(0.014, score / 90000);   // gentler ramp
-  speed += (speedTarget - speed) * 0.01;
-  distance += speed * dt / 16;
-
-  // Player smooth lane
-  player.laneX += (player.targetLaneX - player.laneX) * 0.22;
-
-  // Jump physics
-  if (player.jumping) {
-    player.jumpY += player.jumpVy;
-    player.jumpVy -= 1.0;
-    if (player.jumpY <= 0) { player.jumpY = 0; player.jumpVy = 0; player.jumping = false; }
-  }
-  // Slide timer
-  if (player.sliding) {
-    player.slideTimer--;
-    if (player.slideTimer <= 0) player.sliding = false;
-  }
-
-  // Shield/magnet decay
-  if (player.shieldTimer > 0) player.shieldTimer--;
-  if (player.magnetTimer > 0) player.magnetTimer--;
-
-  // Spawn
-
-
-  // Move objects toward player (their z decreases as we move forward)
-  for (const o of objects) {
-    o.z -= speed * dt / 16;
-    // Collect by magnet
-    if (o.kind === 'collect' && player.magnetTimer > 0 && o.z < 0.5 && o.z > 0) {
-      // Pull toward player lane
-      o.lane += (player.lane - o.lane) * 0.15;
+  if (betweenWaves > 0) { betweenWaves -= dt; if (betweenWaves <= 0 && pendingBlessing) { pendingBlessing = false; showAshirvaad(BLESSINGS[wave]); return; } }
+  else if (pendingBlessing) { pendingBlessing = false; showAshirvaad(BLESSINGS[wave]); return; }
+  else if (lives > 0) {
+    // auto-fire
+    player.fireT -= dt;
+    if (player.fireT <= 0) { fire(); player.fireT = WEAPONS[weapon].rate; }
+    // spawn
+    if (!boss) {
+      spawnT += dt;
+      const wv = WAVES[wave];
+      const alive = danavs.length;
+      if (spawnT > wv.every && kills + alive < wv.kills + 2 && alive < 6) { spawnT = 0; spawnDanav(); }
     }
   }
 
-  // Collisions / collection
-  for (let i = objects.length - 1; i >= 0; i--) {
-    const o = objects[i];
-    // Player at z near 0, in lane (0,1,2), at jumpY
-    const sameLane = Math.abs((o.lane !== undefined ? o.lane : 1) - player.lane) < 0.6;
-    if (o.z < 0.07 && o.z > -0.05 && sameLane) {
-      if (o.kind === 'collect') {
-        // Collect
-        const points = (o.points || 10) * multiplier;
-        score += points;
-        blessingsCollected++;
-        streakCount++;
-        if (streakCount % 5 === 0) {
-          multiplier = Math.min(8, multiplier + 1);
-          showStreak('×' + multiplier + ' Streak!');
-          $('multiplier').classList.add('active');
-          $('multiplier').textContent = '×' + multiplier + ' Streak';
-        }
-        spawnCollectParticles(o);
-        playCollect();
-        objects.splice(i, 1);
-        continue;
-      } else if (o.kind === 'obstacle') {
-        const dodge = (o.subtype === 'fire' && player.sliding) ||
-                      (o.subtype === 'stone' && player.jumping) ||
-                      (o.subtype === 'gate' && (player.jumping || player.sliding));
-        if (!dodge) {
-          if (player.shieldTimer > 0) {
-            // Shield absorbs
-            player.shieldTimer = 0;
-            spawnShieldBreak();
-            playPerfect();
-            objects.splice(i, 1);
-            continue;
-          }
-          // Track hit - game over after 3 hits
-          hitCount++;
-          playHit();
-          if (hitCount >= MAX_HITS) {
-            // GAME OVER
-            gameOver();
-            return;
-          } else {
-            // Show remaining hits
-            showStreak('Hit ' + hitCount + '/' + MAX_HITS + '!');
-            objects.splice(i, 1);
-            continue;
-          }
-        } else {
-          // Dodged successfully — bonus
-          score += 5;
-        }
-      }
+  // danav move
+  for (let i = danavs.length - 1; i >= 0; i--) {
+    const d = danavs[i], t = DANAV[d.type];
+    d.z -= t.speed * dt * (boss ? 1.1 : 1);
+    d.phase += dt * 6;
+    if (d.flash > 0) d.flash -= dt * 5;
+    if (t.hop && d.z < 0.8 && d.z > 0.3) { d.hopT -= dt; if (d.hopT <= 0) { d.hopT = 1.8 + Math.random() * 1.5; const opts = [d.lane - 1, d.lane + 1].filter(l => l >= 0 && l <= 2); d.lane = opts[Math.floor(Math.random() * opts.length)]; } }
+    d.x += (d.lane - 1 - d.x) * Math.min(1, dt * 6);
+    if (d.z <= 0.01) { danavs.splice(i, 1); if (lives > 0) hurtPlayer('breach'); }
+  }
+
+  // shots
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i];
+    s.z += WEAPONS[weapon].speed * dt * (s.kind === 'gada' ? 0.9 : 1);
+    s.spin += dt * 18;
+    let gone = s.z > s.range;
+    for (const d of danavs) {
+      if (gone || d.lane !== s.lane || s.hit.has(d) || Math.abs(d.z - s.z) > 0.04 || d.z > 1) continue;
+      s.hit.add(d); d.hp -= s.dmg; d.flash = 1; sfx.hit();
+      const p = project(d.z, d.x);
+      burst(p.x, p.y - 40 * p.scale * unit(), s.color, 5, 2.5);
+      if (s.hit.size > s.pierce) gone = true;
     }
-    // Off screen
-    if (o.z < -0.1) objects.splice(i, 1);
-  }
-
-  // Score scales with distance traveled too
-  score += Math.floor(speed * 60);
-
-  // Deity blessings at milestones; Mahakal at 1000 completes the game
-  if (nextDeity < DEITIES.length && score >= DEITIES[nextDeity].at) {
-    showAshirvaad(DEITIES[nextDeity]);
-    nextDeity++;
-    return;
-  }
-
-  // Particles
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.life -= dt;
-    p.x += p.vx; p.y += p.vy;
-    p.vy += p.gravity || 0;
-    p.alpha = Math.max(0, p.life / p.maxLife);
-    if (p.life <= 0) particles.splice(i, 1);
-  }
-
-  // Petals (background ambience)
-  for (const p of petals) {
-    p.x += p.vx; p.y += p.vy;
-    p.rot += p.vrot;
-    if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
-  }
-
-  // Update score in DOM
-  if (runFrame % 3 === 0) {
-    $('score').textContent = Math.floor(score).toLocaleString('en-IN');
-    $('hits').textContent = hitCount + '/' + MAX_HITS;
-  }
-
-  // Ritual trigger
-  if (score >= nextRitualScore) {
-    nextRitualScore += 400;   // one more bell around 850
-    startRitual();
-  }
-}
-
-// =========================================================================
-// RENDER
-// =========================================================================
-function render() {
-  // Clear
-  ctx.clearRect(0, 0, W, H);
-  fxCtx.clearRect(0, 0, W, H);
-
-  // Background — gradient sky + temple wall hint
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#0A0E1A');
-  grad.addColorStop(0.30, '#1A1208');
-  grad.addColorStop(0.60, '#0F0A04');
-  grad.addColorStop(1, '#000');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Distant temple silhouette
-  drawTempleSilhouette();
-
-  // Floor / path with perspective
-  drawFloor();
-
-  // Lane stones (glowing path stones)
-  drawPathStones();
-
-  // Petals (background)
-  for (const p of petals) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.fillStyle = `hsla(${p.hue}, 80%, 65%, ${p.alpha})`;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // Sort objects by z descending (far to near)
-  objects.sort((a, b) => b.z - a.z);
-
-  // Draw objects
-  for (const o of objects) {
-    if (o.z > 1.0 || o.z < -0.1) continue;
-    if (o.kind === 'obstacle') drawObstacle(o);
-    else drawCollectible(o);
-  }
-
-  // Player
-  drawPlayer();
-
-  // FX particles (on top)
-  for (const p of particles) {
-    fxCtx.save();
-    fxCtx.globalAlpha = p.alpha;
-    fxCtx.fillStyle = p.color;
-    fxCtx.beginPath();
-    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    fxCtx.fill();
-    if (p.glow) {
-      fxCtx.shadowColor = p.color; fxCtx.shadowBlur = 20;
-      fxCtx.fill();
+    if (boss && !boss.dead && !gone && s.kind === 'trishul' && s.lane === boss.lane && s.z >= boss.z - 0.02) {
+      boss.hp -= 2; boss.hitFlash = 1; gone = true; sfx.hit();
+      const p = project(boss.z, boss.x); burst(p.x, p.y - 120 * p.scale * unit(), '#FFFFFF', 6, 3);
+      if (boss.hp <= 0) bossDefeated();
+      hud();
     }
-    fxCtx.restore();
+    if (gone) shots.splice(i, 1);
+  }
+  // deaths
+  for (let i = danavs.length - 1; i >= 0; i--) {
+    const d = danavs[i];
+    if (d.hp > 0) continue;
+    const t = DANAV[d.type], p = project(d.z, d.x);
+    burst(p.x, p.y - 40 * p.scale * unit(), t.skin, 18, 5); burst(p.x, p.y - 40 * p.scale * unit(), '#FFD27D', 8, 3);
+    floatText(p.x, p.y - 80 * p.scale * unit(), '+' + t.pts, '#F4D58D', 14 + 6 * p.scale);
+    score += t.pts; sfx.kill();
+    if (!boss) kills++;
+    if (lives < MAX_LIVES && Math.random() < 0.08) drops.push({ x: p.x, y: p.y - 30 * p.scale, t: 0 });
+    danavs.splice(i, 1);
+    if (!boss && kills >= WAVES[wave].kills && betweenWaves <= 0) { waveCleared(); break; }
+  }
+  // prasad (laddoo) drops fly to the player and heal
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i]; d.t += dt * 0.9;
+    const tx = project(0, player.x).x, ty = PLAYER_Y * H - 50 * unit();
+    d.x += (tx - d.x) * Math.min(1, dt * 3 * d.t); d.y += (ty - d.y) * Math.min(1, dt * 3 * d.t);
+    if (d.t > 1.2) { drops.splice(i, 1); if (lives < MAX_LIVES) { lives++; sfx.heal(); floatText(tx, ty - 60 * unit(), 'Prasad! +1 prana', '#A8F0B0', 16); hud(); } }
   }
 
-  // Vignette
-  const vGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W, H) * 0.3, W/2, H/2, Math.max(W, H) * 0.7);
-  vGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  vGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
-  ctx.fillStyle = vGrad;
-  ctx.fillRect(0, 0, W, H);
-}
-
-function drawTempleSilhouette() {
-  // Distant temple roofline at horizon
-  ctx.save();
-  ctx.fillStyle = 'rgba(20, 14, 8, 0.9)';
-  const h = HORIZON_Y * H;
-  ctx.beginPath();
-  ctx.moveTo(W * 0.15, h);
-  ctx.lineTo(W * 0.18, h - 40);
-  ctx.lineTo(W * 0.22, h - 60);
-  ctx.lineTo(W * 0.26, h - 80);
-  ctx.lineTo(W * 0.3, h - 60);
-  ctx.lineTo(W * 0.35, h - 100);
-  ctx.lineTo(W * 0.40, h - 70);
-  ctx.lineTo(W * 0.45, h - 50);
-  ctx.lineTo(W * 0.5, h - 130); // central spire
-  ctx.lineTo(W * 0.55, h - 50);
-  ctx.lineTo(W * 0.60, h - 70);
-  ctx.lineTo(W * 0.65, h - 100);
-  ctx.lineTo(W * 0.70, h - 60);
-  ctx.lineTo(W * 0.74, h - 80);
-  ctx.lineTo(W * 0.78, h - 60);
-  ctx.lineTo(W * 0.82, h - 40);
-  ctx.lineTo(W * 0.85, h);
-  ctx.closePath();
-  ctx.fill();
-
-  // Glowing sanctum at center
-  const cx = W * 0.5, cy = h - 100;
-  const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 100);
-  glowGrad.addColorStop(0, 'rgba(255, 180, 80, 0.5)');
-  glowGrad.addColorStop(0.5, 'rgba(192, 83, 26, 0.2)');
-  glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glowGrad;
-  ctx.fillRect(cx - 100, cy - 80, 200, 160);
-  ctx.restore();
-}
-
-function drawFloor() {
-  // Trapezoidal stone floor
-  ctx.save();
-  const horizonY = HORIZON_Y * H;
-  const playerY = PLAYER_Y * H;
-  const horizWidth = W * 0.18;
-  const nearWidth = W * 1.8;
-
-  const grad = ctx.createLinearGradient(0, horizonY, 0, H);
-  grad.addColorStop(0, '#1A1208');
-  grad.addColorStop(0.5, '#1F1A12');
-  grad.addColorStop(1, '#0A0805');
-
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - horizWidth/2, horizonY);
-  ctx.lineTo(W/2 + horizWidth/2, horizonY);
-  ctx.lineTo(W/2 + nearWidth/2, H);
-  ctx.lineTo(W/2 - nearWidth/2, H);
-  ctx.closePath();
-  ctx.fill();
-
-  // Center path glow
-  const pathGrad = ctx.createLinearGradient(0, horizonY, 0, H);
-  pathGrad.addColorStop(0, 'rgba(192, 83, 26, 0.15)');
-  pathGrad.addColorStop(1, 'rgba(192, 83, 26, 0.02)');
-  ctx.fillStyle = pathGrad;
-  ctx.beginPath();
-  ctx.moveTo(W/2 - W*0.04, horizonY);
-  ctx.lineTo(W/2 + W*0.04, horizonY);
-  ctx.lineTo(W/2 + W*0.5, H);
-  ctx.lineTo(W/2 - W*0.5, H);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawPathStones() {
-  // Animated stones moving toward camera (scrolling road texture)
-  const stoneCount = 18;
-  for (let i = 0; i < stoneCount; i++) {
-    const z = ((i / stoneCount) + (1 - (distance % 1))) % 1;
-    const p = project(z, 0);
-    const w = 0.3 * W * (1 - z) + 0.04 * W * z;
-    const h = 6 * (1 - z) + 1;
-    ctx.save();
-    ctx.fillStyle = `rgba(80, 50, 20, ${0.3 + 0.5 * (1 - z)})`;
-    ctx.fillRect(p.x - w/2, p.y - h/2, w, h);
-    // Side glow torches
-    if (i % 3 === 0) {
-      const torchSize = (1 - z) * 24 + 4;
-      const tx1 = p.x - w/2 - torchSize * 0.6;
-      const tx2 = p.x + w/2 + torchSize * 0.6;
-      drawTorch(tx1, p.y, torchSize);
-      drawTorch(tx2, p.y, torchSize);
+  // boss
+  if (boss && !boss.dead) {
+    boss.enter = Math.min(1, boss.enter + dt * 0.6);
+    boss.hitFlash = Math.max(0, boss.hitFlash - dt * 5);
+    boss.moveT -= dt;
+    const rage = boss.hp < BOSS_HP / 2;
+    if (boss.moveT <= 0) { boss.moveT = (rage ? 1.8 : 2.6) + Math.random() * 1.5; let l; do { l = Math.floor(Math.random() * 3); } while (l === boss.lane); boss.lane = l; }
+    boss.x += (boss.lane - 1 - boss.x) * Math.min(1, dt * 2.5);
+    boss.atkT -= dt;
+    if (boss.atkT <= 0 && boss.enter >= 1) {
+      boss.atkT = rage ? 1.55 : 2.1;
+      const lane = Math.random() < 0.65 ? player.lane : Math.floor(Math.random() * 3);
+      fires.push({ lane, z: boss.z - 0.02, warn: 1.1 });
+      if (rage && Math.random() < 0.3) { const l2 = (lane + 1 + Math.floor(Math.random() * 2)) % 3; fires.push({ lane: l2, z: boss.z - 0.02, warn: 1.1 }); }
     }
-    ctx.restore();
+    const thresholds = [0.66, 0.33];
+    if (boss.summoned < 2 && boss.hp < BOSS_HP * thresholds[boss.summoned]) { boss.summoned++; [0, 2].forEach(l => spawnDanav('rakshas', l)); banner('He summons his danav!', '', 1400); }
   }
-}
-
-function drawTorch(x, y, size) {
-  ctx.save();
-  // Flame
-  const grad = ctx.createRadialGradient(x, y - size/2, 0, x, y - size/2, size * 0.8);
-  const flicker = 0.85 + Math.sin(runFrame * 0.3 + x) * 0.15;
-  grad.addColorStop(0, `rgba(255, 220, 100, ${0.9 * flicker})`);
-  grad.addColorStop(0.4, `rgba(192, 83, 26, ${0.6 * flicker})`);
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(x - size, y - size * 1.5, size * 2, size * 2);
-  ctx.restore();
-}
-
-function drawCollectible(o) {
-  const lane = o.lane !== undefined ? o.lane : 1;
-  const p = project(o.z, lane - 1);
-  const size = 18 * p.scale + 4;
-  const t = runFrame * 0.08 + (lane * 1.3) + (o.z * 6);
-  const bob = Math.sin(t) * 4 * p.scale;
-
-  ctx.save();
-  ctx.translate(p.x, p.y - size - bob);
-
-  // Glow
-  ctx.shadowColor = o.glow;
-  ctx.shadowBlur = 30 * p.scale;
-  ctx.fillStyle = o.glow;
-  ctx.globalAlpha = 0.45;
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.85, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // Body — varies by type
-  ctx.shadowBlur = 0;
-  if (o.subtype === 'rudraksha') {
-    ctx.fillStyle = o.color;
-    ctx.beginPath(); ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2); ctx.fill();
-    // Bead lines
-    ctx.strokeStyle = '#000'; ctx.lineWidth = 1 * p.scale;
-    for (let a = 0; a < 6; a++) {
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(a / 3 * Math.PI) * size * 0.7, Math.sin(a / 3 * Math.PI) * size * 0.7);
-      ctx.lineTo(-Math.cos(a / 3 * Math.PI) * size * 0.7, -Math.sin(a / 3 * Math.PI) * size * 0.7);
-      ctx.stroke();
-    }
-  } else if (o.subtype === 'belpatra') {
-    ctx.fillStyle = o.color;
-    // Three-leaf shape
-    for (let i = -1; i <= 1; i++) {
-      ctx.save();
-      ctx.rotate((i * 60) * Math.PI / 180);
-      ctx.beginPath();
-      ctx.ellipse(0, -size * 0.5, size * 0.3, size * 0.7, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  } else if (o.subtype === 'diya') {
-    // Lamp
-    ctx.fillStyle = o.color;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.2, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Flame
-    ctx.fillStyle = '#FFD27D';
-    ctx.beginPath();
-    const flameH = size * 0.7 + Math.sin(runFrame * 0.4) * 2;
-    ctx.moveTo(0, -size * 0.2);
-    ctx.quadraticCurveTo(size * 0.2, -flameH * 0.5, 0, -flameH);
-    ctx.quadraticCurveTo(-size * 0.2, -flameH * 0.5, 0, -size * 0.2);
-    ctx.fill();
-  } else if (o.subtype === 'damru') {
-    // Hour-glass
-    ctx.fillStyle = o.color;
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 0.5, size * 0.5, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.ellipse(0, size * 0.5, size * 0.5, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.3, -size * 0.5);
-    ctx.lineTo(size * 0.3, -size * 0.5);
-    ctx.lineTo(size * 0.3, size * 0.5);
-    ctx.lineTo(-size * 0.3, size * 0.5);
-    ctx.closePath(); ctx.fill();
-  } else { // orb
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.7);
-    g.addColorStop(0, '#FFFFFF');
-    g.addColorStop(0.5, o.glow);
-    g.addColorStop(1, o.color);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, size * 0.7, 0, Math.PI * 2); ctx.fill();
+  for (let i = fires.length - 1; i >= 0; i--) {
+    const f = fires[i];
+    if (f.warn > 0) { f.warn -= dt; continue; }
+    f.z -= 0.85 * dt;
+    if (f.z <= 0.05) { if (f.lane === player.lane && lives > 0) hurtPlayer('fire'); const p = project(0.03, f.lane - 1); burst(p.x, p.y - 10, '#FF6B3D', 12, 4); fires.splice(i, 1); }
   }
 
-  ctx.restore();
-}
-
-function drawObstacle(o) {
-  const p = project(o.z, o.lane - 1);
-  const size = 36 * p.scale + 6;
-
-  ctx.save();
-  ctx.translate(p.x, p.y);
-
-  if (o.subtype === 'stone') {
-    // Stone barrier (jumpable)
-    ctx.fillStyle = '#3a2c1c';
-    ctx.shadowColor = '#000'; ctx.shadowBlur = 12 * p.scale;
-    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, size * 0.6);
-    ctx.shadowBlur = 0;
-    // Highlight
-    ctx.fillStyle = '#5a4530';
-    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, 4 * p.scale);
-    // Bottom shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(-size * 0.6, 0, size * 1.2, 6 * p.scale);
-  } else if (o.subtype === 'fire') {
-    // Fire pit (slide-able)
-    const grad = ctx.createRadialGradient(0, -size * 0.2, 0, 0, -size * 0.2, size * 0.8);
-    grad.addColorStop(0, '#FFC04D');
-    grad.addColorStop(0.4, '#C0531A');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    const flameH = size * 0.8 + Math.sin(runFrame * 0.4 + o.z * 10) * 4;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.5, 0);
-    ctx.quadraticCurveTo(-size * 0.4, -flameH * 0.6, 0, -flameH);
-    ctx.quadraticCurveTo(size * 0.4, -flameH * 0.6, size * 0.5, 0);
-    ctx.closePath(); ctx.fill();
-    // Coals
-    ctx.fillStyle = '#3a1f0a';
-    ctx.beginPath(); ctx.ellipse(0, 0, size * 0.5, size * 0.12, 0, 0, Math.PI * 2); ctx.fill();
-  } else { // gate (jump or slide)
-    // Tall pillar with closing motion
-    ctx.fillStyle = '#2a1d0f';
-    ctx.shadowColor = 'rgba(192, 83, 26, 0.4)'; ctx.shadowBlur = 16 * p.scale;
-    ctx.fillRect(-size * 0.5, -size * 1.2, size * 1.0, size * 1.2);
-    ctx.shadowBlur = 0;
-    // Gold trim
-    ctx.fillStyle = '#8C6512';
-    ctx.fillRect(-size * 0.5, -size * 1.2, size * 1.0, 3 * p.scale);
-    ctx.fillRect(-size * 0.5, -size * 0.6, size * 1.0, 2 * p.scale);
-    // Center symbol
-    ctx.fillStyle = '#C9A24F';
-    ctx.beginPath(); ctx.arc(0, -size * 0.6, size * 0.12, 0, Math.PI * 2); ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function drawPlayer() {
-  const p = project(0, player.laneX, player.jumpY);
-  const size = 36;
-  const runPhase = runFrame * 0.22;
-
-  // Color palette — muscular pandit, fair complexion
-  const SKIN = '#F5C99F';      // fair skin
-  const SKIN_SHADOW = '#D49A6A'; // muscle shadow
-  const SKIN_HIGHLIGHT = '#FCDDB8';
-  const DHOTI = '#FAF6EE';     // cream dhoti
-  const DHOTI_SHADOW = '#D8CFB6';
-  const DHOTI_BORDER = '#C9A24F'; // gold dhoti border
-  const HAIR = '#1A0E08';
-  const TILAK_RED = '#B5121B';
-  const TILAK_YELLOW = '#E8B23A';
-  const JANEU = '#FFFFFF';
-  const RUDRAKSHA = '#5C2A0E';
-
-  ctx.save();
-  ctx.translate(p.x, p.y - size);
-
-  // Shadow on ground
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.beginPath();
-  ctx.ellipse(0, player.jumpY * 0.3 + 6, size * 0.55, size * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Shield aura
-  if (player.shieldTimer > 0) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(168, 181, 232, ' + (0.3 + Math.sin(runFrame * 0.3) * 0.1) + ')';
-    ctx.beginPath();
-    ctx.arc(0, -size * 0.5, size * 1.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(168, 181, 232, 0.6)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, -size * 0.5, size * 1.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
-  }
-
-  // Magnet aura
-  if (player.magnetTimer > 0) {
-    ctx.fillStyle = 'rgba(232, 205, 142, 0.2)';
-    ctx.beginPath();
-    ctx.arc(0, -size * 0.5, size * 1.9 + Math.sin(runFrame * 0.4) * 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Animation phases
-  const legBob = Math.sin(runPhase) * 5;
-  const armSwing = Math.sin(runPhase) * 0.5;
-  const bodyBob = Math.abs(Math.sin(runPhase * 2)) * 1.5;
-
-  if (player.sliding) {
-    // ===== SLIDING POSE — pandit crouched low =====
-    // Dhoti (cream) — flat
-    ctx.fillStyle = DHOTI;
-    ctx.beginPath();
-    ctx.ellipse(0, -2, size * 0.7, size * 0.32, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = DHOTI_BORDER;
-    ctx.fillRect(-size * 0.7, -size * 0.05, size * 1.4, 2);
-    // Bare torso (skin)
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.05, -size * 0.22, size * 0.5, size * 0.22, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Head
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.arc(-size * 0.45, -size * 0.32, size * 0.18, 0, Math.PI * 2);
-    ctx.fill();
-    // Tilak
-    ctx.fillStyle = TILAK_RED;
-    ctx.fillRect(-size * 0.46, -size * 0.42, 2, 5);
-  } else {
-    // ===== RUNNING POSE — muscular pandit, fair complexion =====
-
-    ctx.translate(0, -bodyBob);
-
-    // ----- LEGS (under dhoti) -----
-    const backLegLift = Math.max(0, legBob);
-    const frontLegLift = Math.max(0, -legBob);
-
-    // Back leg (skin showing under dhoti)
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.13, size * 0.08 - backLegLift * 0.3, size * 0.09, size * 0.25, 0.1, 0, Math.PI * 2);
-    ctx.fill();
-    // Front leg
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(size * 0.13, size * 0.08 - frontLegLift * 0.3, size * 0.09, size * 0.25, -0.1, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Feet (bare, traditional)
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.13, size * 0.32 - backLegLift * 0.5, size * 0.1, size * 0.06, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(size * 0.13, size * 0.32 - frontLegLift * 0.5, size * 0.1, size * 0.06, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // ----- DHOTI (cream wrap from waist) -----
-    // Main wrap
-    const dhotiGrad = ctx.createLinearGradient(0, -size * 0.4, 0, size * 0.1);
-    dhotiGrad.addColorStop(0, DHOTI_SHADOW);
-    dhotiGrad.addColorStop(0.4, DHOTI);
-    dhotiGrad.addColorStop(1, DHOTI);
-    ctx.fillStyle = dhotiGrad;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.42, -size * 0.4);
-    ctx.quadraticCurveTo(-size * 0.48, -size * 0.1, -size * 0.4, size * 0.05);
-    ctx.lineTo(size * 0.4, size * 0.05);
-    ctx.quadraticCurveTo(size * 0.48, -size * 0.1, size * 0.42, -size * 0.4);
-    ctx.closePath();
-    ctx.fill();
-    // Dhoti gold border (kinari)
-    ctx.fillStyle = DHOTI_BORDER;
-    ctx.fillRect(-size * 0.4, size * 0.03, size * 0.8, 2);
-    // Dhoti center fold
-    ctx.strokeStyle = DHOTI_SHADOW;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.4);
-    ctx.lineTo(0, size * 0.05);
-    ctx.stroke();
-    // Side folds
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.2, -size * 0.4);
-    ctx.lineTo(-size * 0.22, size * 0.05);
-    ctx.moveTo(size * 0.2, -size * 0.4);
-    ctx.lineTo(size * 0.22, size * 0.05);
-    ctx.stroke();
-
-    // ----- TORSO (bare, muscular) -----
-    // Lower abs section (narrower)
-    const torsoGrad = ctx.createLinearGradient(-size * 0.3, -size * 0.95, size * 0.3, -size * 0.95);
-    torsoGrad.addColorStop(0, SKIN_SHADOW);
-    torsoGrad.addColorStop(0.3, SKIN);
-    torsoGrad.addColorStop(0.5, SKIN_HIGHLIGHT);
-    torsoGrad.addColorStop(0.7, SKIN);
-    torsoGrad.addColorStop(1, SKIN_SHADOW);
-    ctx.fillStyle = torsoGrad;
-
-    // Abs section (V-shaped to chest)
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.3, -size * 0.4);
-    ctx.lineTo(-size * 0.36, -size * 0.75);
-    ctx.lineTo(size * 0.36, -size * 0.75);
-    ctx.lineTo(size * 0.3, -size * 0.4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Chest (broader)
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.36, -size * 0.75);
-    ctx.lineTo(-size * 0.46, -size * 1.0);
-    ctx.lineTo(size * 0.46, -size * 1.0);
-    ctx.lineTo(size * 0.36, -size * 0.75);
-    ctx.closePath();
-    ctx.fill();
-
-    // Pec definition lines
-    ctx.strokeStyle = SKIN_SHADOW;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.95);
-    ctx.lineTo(0, -size * 0.78);
-    ctx.stroke();
-    // Pec curves
-    ctx.beginPath();
-    ctx.arc(-size * 0.18, -size * 0.88, size * 0.18, -0.2, 1.0, false);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(size * 0.18, -size * 0.88, size * 0.18, Math.PI - 1.0, Math.PI + 0.2, false);
-    ctx.stroke();
-    // Abs (4-pack hint)
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.13, -size * 0.7);
-    ctx.lineTo(size * 0.13, -size * 0.7);
-    ctx.moveTo(-size * 0.12, -size * 0.6);
-    ctx.lineTo(size * 0.12, -size * 0.6);
-    ctx.moveTo(-size * 0.1, -size * 0.5);
-    ctx.lineTo(size * 0.1, -size * 0.5);
-    ctx.stroke();
-
-    // ----- JANEU (sacred thread, diagonal) -----
-    ctx.strokeStyle = JANEU;
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.34, -size * 0.95);
-    ctx.quadraticCurveTo(0, -size * 0.7, size * 0.28, -size * 0.45);
-    ctx.stroke();
-
-    // Rudraksha mala (necklace)
-    ctx.fillStyle = RUDRAKSHA;
-    for (let i = -3; i <= 3; i++) {
-      ctx.beginPath();
-      ctx.arc(i * size * 0.07, -size * 1.0 - Math.abs(i) * size * 0.01, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // ----- ARMS (muscular, swinging) -----
-    // Back arm
-    ctx.save();
-    ctx.translate(-size * 0.42, -size * 0.92);
-    ctx.rotate(-armSwing);
-    // Bicep
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.18, size * 0.1, size * 0.18, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Forearm
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.5, size * 0.08, size * 0.16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Hand
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.arc(0, size * 0.65, size * 0.07, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Front arm (more visible)
-    ctx.save();
-    ctx.translate(size * 0.42, -size * 0.92);
-    ctx.rotate(armSwing);
-    // Bicep (highlighted)
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.18, size * 0.11, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Bicep highlight
-    ctx.fillStyle = SKIN_HIGHLIGHT;
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.02, size * 0.13, size * 0.05, size * 0.1, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Forearm
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.5, size * 0.09, size * 0.17, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Hand
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.arc(0, size * 0.66, size * 0.08, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // ----- NECK -----
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.fillRect(-size * 0.06, -size * 1.05, size * 0.12, size * 0.06);
-    ctx.fillStyle = SKIN;
-    ctx.fillRect(-size * 0.06, -size * 1.08, size * 0.12, size * 0.06);
-
-    // ----- HEAD -----
-    // Head shape (slightly oval)
-    ctx.fillStyle = SKIN;
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 1.22, size * 0.18, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Face highlight (left side)
-    ctx.fillStyle = SKIN_HIGHLIGHT;
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.04, -size * 1.22, size * 0.07, size * 0.14, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Cheek shadow (right side)
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(size * 0.12, -size * 1.18, size * 0.05, size * 0.08, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Jaw / chin definition
-    ctx.fillStyle = SKIN_SHADOW;
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 1.07, size * 0.1, size * 0.04, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hair / shaven head with shikha (top knot)
-    ctx.fillStyle = HAIR;
-    // Slight hair line on sides + back
-    ctx.beginPath();
-    ctx.arc(0, -size * 1.32, size * 0.15, Math.PI * 1.1, Math.PI * 1.9, false);
-    ctx.lineWidth = size * 0.05;
-    ctx.strokeStyle = HAIR;
-    ctx.stroke();
-    // Shikha (top knot)
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 1.45, size * 0.04, size * 0.07, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Tilak (Shaivite — three horizontal lines + red dot)
-    ctx.strokeStyle = TILAK_YELLOW;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.07, -size * 1.34);
-    ctx.lineTo(size * 0.07, -size * 1.34);
-    ctx.moveTo(-size * 0.07, -size * 1.31);
-    ctx.lineTo(size * 0.07, -size * 1.31);
-    ctx.moveTo(-size * 0.07, -size * 1.28);
-    ctx.lineTo(size * 0.07, -size * 1.28);
-    ctx.stroke();
-    // Red dot tilak
-    ctx.fillStyle = TILAK_RED;
-    ctx.beginPath();
-    ctx.arc(0, -size * 1.31, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eyes (subtle)
-    ctx.fillStyle = '#1A1208';
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.06, -size * 1.22, 1.5, 1.2, 0, 0, Math.PI * 2);
-    ctx.ellipse(size * 0.06, -size * 1.22, 1.5, 1.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Subtle moustache
-    ctx.strokeStyle = HAIR;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.05, -size * 1.13);
-    ctx.lineTo(size * 0.05, -size * 1.13);
-    ctx.stroke();
-
-    // ----- KAMANDAL / TRISHUL HINT (golden glow on back) -----
-    ctx.fillStyle = 'rgba(232, 205, 142, 0.35)';
-    ctx.beginPath();
-    ctx.arc(0, -size * 0.85, size * 0.55, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Glow on jump
-  if (player.jumping) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(232, 205, 142, 0.3)';
-    ctx.beginPath();
-    ctx.ellipse(0, 4, size * 0.7, size * 0.15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  ctx.restore();
-}
-
-// =========================================================================
-// PARTICLE EFFECTS
-// =========================================================================
-function spawnCollectParticles(o) {
-  const lane = o.lane !== undefined ? o.lane : 1;
-  const p = project(o.z, lane - 1);
-  for (let i = 0; i < 14; i++) {
-    const angle = (i / 14) * Math.PI * 2;
-    particles.push({
-      x: p.x, y: p.y - 20,
-      vx: Math.cos(angle) * (1 + Math.random() * 3),
-      vy: Math.sin(angle) * (1 + Math.random() * 3) - 1,
-      r: 2 + Math.random() * 2,
-      color: o.glow || '#C9A24F',
-      glow: true,
-      gravity: 0.1,
-      life: 600, maxLife: 600, alpha: 1
-    });
-  }
-}
-function spawnShieldBreak() {
-  const p = project(0, player.laneX, player.jumpY);
-  for (let i = 0; i < 30; i++) {
-    const angle = (i / 30) * Math.PI * 2;
-    particles.push({
-      x: p.x, y: p.y - 20,
-      vx: Math.cos(angle) * 6,
-      vy: Math.sin(angle) * 6,
-      r: 3, color: '#A8B5E8', glow: true,
-      gravity: 0.1, life: 800, maxLife: 800, alpha: 1
-    });
-  }
-}
-
-// =========================================================================
-// STREAK / BLESSING TEXT
-// =========================================================================
-function showStreak(text) {
-  const el = $('streak');
-  el.textContent = text;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 900);
-}
-const BLESSINGS = [
-  'Mahakal walks with you',
-  'Your darshan is near',
-  'You are protected',
-  'The path is sacred',
-  'Bhakti is your shield',
-  'Mahadev sees your effort',
-];
-function showBlessing() {
-  const el = $('blessing');
-  el.textContent = BLESSINGS[Math.floor(Math.random() * BLESSINGS.length)];
-  el.style.transition = 'none';
-  el.style.opacity = '0';
-  el.style.transform = 'translate(-50%, 30px)';
-  requestAnimationFrame(() => {
-    el.style.transition = 'all 1.8s ease';
-    el.style.opacity = '1';
-    el.style.transform = 'translate(-50%, -20px)';
-    setTimeout(() => {
-      el.style.opacity = '0';
-      el.style.transform = 'translate(-50%, -50px)';
-    }, 1500);
-  });
-}
-setInterval(() => { if (state === 'playing' && Math.random() < 0.3) showBlessing(); }, 8000);
-
-// =========================================================================
-// RITUAL — Bell tap mini event
-// =========================================================================
-let ritualCursor = 0, ritualTargetX = 50, ritualDir = 1, ritualRunning = false, ritualSolved = false;
-function startRitual() {
-  if (state !== 'playing') return;
-  state = 'ritual';
-  ritualRunning = true; ritualSolved = false;
-  ritualCursor = 0; ritualDir = 1;
-  ritualTargetX = 30 + Math.random() * 40; // 30-70%
-  $('meter-target').style.left = ritualTargetX + '%';
-  $('ritual').classList.add('show');
-  $('ritual-bell').classList.remove('tapped');
-  // Start ritual animation loop
-  ritualLoopId = requestAnimationFrame(ritualLoop);
-}
-let ritualLoopId = null;
-function ritualLoop() {
-  if (!ritualRunning) return;
-  ritualCursor += ritualDir * 0.7;   // slower = easier
-  if (ritualCursor > 100) { ritualCursor = 100; ritualDir = -1; }
-  if (ritualCursor < 0) { ritualCursor = 0; ritualDir = 1; }
-  $('meter-cursor').style.left = ritualCursor + '%';
-  if (ritualRunning) ritualLoopId = requestAnimationFrame(ritualLoop);
-}
-function ritualTap() {
-  if (!ritualRunning || ritualSolved) return;
-  ritualSolved = true;
-  ritualRunning = false;
-  
-  // Clear any auto-resolve timeout
-  if (ritualTimeout) { clearTimeout(ritualTimeout); ritualTimeout = null; }
-  
-  $('ritual-bell').classList.add('tapped');
-  const distToTarget = Math.abs(ritualCursor - ritualTargetX);
-  let outcome, bonus, gift;
-  if (distToTarget < 7) {
-    outcome = 'perfect'; bonus = 120; gift = 'Divine shield for a while';
-    player.shieldTimer = 600;
-    playPerfect(); playBell();
-  } else if (distToTarget < 18) {
-    outcome = 'good'; bonus = 70; gift = 'Diyas fly to you';
-    player.magnetTimer = 400;
-    playBell();
-  } else {
-    outcome = 'miss'; bonus = 30; gift = 'The bell still rings for you';
-    playBell();
-  }
-  // never jump past the next blessing, so each deity appears in turn
-  const cap = nextDeity < DEITIES.length ? DEITIES[nextDeity].at + 10 : Infinity;
-  score = Math.min(score + bonus, Math.max(score, cap));
+  // particles + texts
+  for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= dt * 1.6; if (p.life <= 0) parts.splice(i, 1); }
+  for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
   $('score').textContent = Math.floor(score).toLocaleString('en-IN');
+  if (!boss && wave < WAVES.length) $('hud-wave').textContent = `Wave ${wave + 1} of ${WAVES.length} · ${Math.min(kills, WAVES[wave].kills)}/${WAVES[wave].kills} danav`, $('hud-bar').style.width = (100 * Math.min(1, kills / WAVES[wave].kills)) + '%';
+}
 
-  // Cancel ritual animation immediately
-  if (ritualLoopId) {
-    cancelAnimationFrame(ritualLoopId);
-    ritualLoopId = null;
+// ---------------- Render ----------------
+function render() {
+  ctx.clearRect(0, 0, W, H); fxCtx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  const dark = boss ? 1 : 0;
+  g.addColorStop(0, dark ? '#120714' : '#0A0E1A'); g.addColorStop(0.3, dark ? '#24080A' : '#1A1208'); g.addColorStop(0.6, '#0F0A04'); g.addColorStop(1, '#000');
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
+  drawTemple(); drawFloor(); drawLanes();
+  for (const f of fires) if (f.warn > 0) drawWarn(f);
+  const all = danavs.map(d => ({ z: d.z, draw: () => drawDanav(d) }));
+  if (boss) all.push({ z: boss.z, draw: drawBoss });
+  all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
+  for (const s of shots) drawShot(s);
+  for (const f of fires) if (f.warn <= 0) drawFireball(f);
+  drawWarrior();
+  for (const d of drops) drawLaddoo(d);
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(120,0,0,0.6)' : 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = v; ctx.fillRect(-20, -20, W + 40, H + 40);
+  ctx.restore();
+  for (const p of parts) { fxCtx.globalAlpha = Math.max(0, p.life); fxCtx.fillStyle = p.color; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill(); }
+  fxCtx.globalAlpha = 1;
+  for (const t of texts) { fxCtx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5)); fxCtx.font = `600 ${t.size}px Inter, sans-serif`; fxCtx.textAlign = 'center'; fxCtx.fillStyle = '#000'; fxCtx.fillText(t.text, t.x + 1, t.y + 1); fxCtx.fillStyle = t.color; fxCtx.fillText(t.text, t.x, t.y); }
+  fxCtx.globalAlpha = 1;
+}
+function drawTemple() {
+  const h = HORIZON_Y * H;
+  ctx.fillStyle = 'rgba(20,14,8,0.95)';
+  ctx.beginPath(); ctx.moveTo(W * 0.15, h);
+  [[.18, 40], [.22, 60], [.26, 80], [.3, 60], [.35, 100], [.4, 70], [.45, 50], [.5, 135], [.55, 50], [.6, 70], [.65, 100], [.7, 60], [.74, 80], [.78, 60], [.82, 40]].forEach(([x, y]) => ctx.lineTo(W * x, h - y * unit()));
+  ctx.lineTo(W * 0.85, h); ctx.closePath(); ctx.fill();
+  const cx = W / 2, cy = h - 100 * unit();
+  const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 110 * unit());
+  gg.addColorStop(0, boss ? 'rgba(255,90,60,0.35)' : 'rgba(255,180,80,0.5)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gg; ctx.fillRect(cx - 120 * unit(), cy - 100 * unit(), 240 * unit(), 200 * unit());
+  // flag on the shikhara
+  ctx.fillStyle = '#E2702A'; ctx.beginPath(); ctx.moveTo(cx, h - 135 * unit()); ctx.lineTo(cx + 18 * unit(), h - 128 * unit() + Math.sin(time * 4) * 2); ctx.lineTo(cx, h - 121 * unit()); ctx.fill();
+}
+function drawFloor() {
+  const hy = HORIZON_Y * H;
+  const fg = ctx.createLinearGradient(0, hy, 0, H);
+  fg.addColorStop(0, '#1A1208'); fg.addColorStop(0.5, '#211A11'); fg.addColorStop(1, '#0A0805');
+  ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(W / 2 - W * 0.09, hy); ctx.lineTo(W / 2 + W * 0.09, hy); ctx.lineTo(W / 2 + W, H); ctx.lineTo(W / 2 - W, H); ctx.closePath(); ctx.fill();
+  // scrolling stones + torches
+  for (let i = 0; i < 16; i++) {
+    const z = ((i / 16) + (time * 0.12) % 1) % 1, zz = 1 - z;
+    const p = project(zz, 0), w = (LANE_NEAR * 3.2 * Math.min(W, H * 1.1)) * (1 - zz) + W * 0.12 * zz;
+    ctx.fillStyle = `rgba(80,50,20,${0.25 + 0.45 * (1 - zz)})`; ctx.fillRect(p.x - w / 2, p.y - 2, w, 3 + 4 * (1 - zz));
+    if (i % 4 === 0) { const s = (1 - zz) * 26 * unit() + 4; torch(p.x - w / 2 - s * 0.5, p.y, s); torch(p.x + w / 2 + s * 0.5, p.y, s); }
   }
-
-  // Show the result for a moment (bell swings, glow), then resume
-  const res = $('ritual-result');
-  res.innerHTML = '<b>' + (outcome === 'perfect' ? 'PERFECT! 🔔' : outcome === 'good' ? 'Good! 🔔' : 'Ding! 🔔') + '</b><span>+' + bonus + ' · ' + gift + '</span>';
-  res.classList.add('show');
-  $('ritual').classList.add('done');
-  setTimeout(() => {
-    res.classList.remove('show');
-    $('ritual').classList.remove('show', 'done');
-    if (state !== 'ritual') return;
-    state = 'playing';
-    last = performance.now();   // prevent a large dt jump
-    showStreak(outcome === 'perfect' ? 'Har Har Mahadev!' : 'Jai Mahakal!');
-  }, 1300);
+}
+function torch(x, y, s) {
+  const f = 0.85 + Math.sin(time * 18 + x) * 0.15;
+  const g = ctx.createRadialGradient(x, y - s / 2, 0, x, y - s / 2, s * 0.9);
+  g.addColorStop(0, `rgba(255,220,100,${0.9 * f})`); g.addColorStop(0.4, `rgba(192,83,26,${0.55 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - s, y - s * 1.5, s * 2, s * 2);
+}
+function drawLanes() {
+  // soft lane guides + highlight under the player
+  for (let l = 0; l < 3; l++) {
+    const a = project(1, l - 1.5), b = project(0, l - 1.5), c = project(0, l - 0.5), d = project(1, l - 0.5);
+    ctx.fillStyle = l === player.lane ? 'rgba(232,199,122,0.07)' : 'rgba(0,0,0,0)';
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 30); ctx.lineTo(c.x, c.y + 30); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(201,162,79,0.14)'; ctx.lineWidth = 1.5;
+  for (const k of [-0.5, 0.5]) { const a = project(1, k), b = project(0, k); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x + (b.x - W / 2) * 0.3, H); ctx.stroke(); }
+}
+function drawWarn(f) {
+  const a = project(0.64, f.lane - 1.5), b = project(0, f.lane - 1.5), c = project(0, f.lane - 0.5), d = project(0.64, f.lane - 0.5);
+  ctx.fillStyle = `rgba(255,60,30,${0.12 + 0.18 * Math.abs(Math.sin(time * 14))})`;
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 30); ctx.lineTo(c.x, c.y + 30); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
 }
 
-// =========================================================================
-// GAME OVER
-// =========================================================================
-function gameOver() {
-  state = 'gameover';
-  playHit();
-  setTimeout(() => {
-    if (score > bestScore) {
-      bestScore = Math.floor(score);
-      localStorage.setItem('mahakal_best', String(bestScore));
-      $('best-line').classList.add('new');
-      $('best-line').innerHTML = '★ NEW BEST! ★ <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
-    } else {
-      $('best-line').classList.remove('new');
-      $('best-line').innerHTML = 'Best: <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
-    }
-    $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
-    $('gameover').classList.add('show');
-  }, 600);
+function drawDanav(d) {
+  const t = DANAV[d.type], p = project(d.z, d.x), u = unit();
+  const s = 40 * p.scale * t.size * u + 5;
+  const bob = Math.sin(d.phase) * 2 * p.scale, step = Math.sin(d.phase) * 0.35;
+  ctx.save(); ctx.translate(p.x, p.y);
+  if (d.type === 'mayavi') ctx.globalAlpha = 0.75 + Math.sin(time * 8 + d.phase) * 0.2;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.translate(0, -bob);
+  // legs
+  ctx.fillStyle = t.dark;
+  ctx.save(); ctx.translate(-s * 0.18, -s * 0.45); ctx.rotate(step); ctx.fillRect(-s * 0.09, 0, s * 0.18, s * 0.45); ctx.restore();
+  ctx.save(); ctx.translate(s * 0.18, -s * 0.45); ctx.rotate(-step); ctx.fillRect(-s * 0.09, 0, s * 0.18, s * 0.45); ctx.restore();
+  // loincloth
+  ctx.fillStyle = '#2A160C'; ctx.beginPath(); ctx.moveTo(-s * 0.34, -s * 0.62); ctx.lineTo(s * 0.34, -s * 0.62); ctx.lineTo(s * 0.26, -s * 0.36); ctx.lineTo(-s * 0.26, -s * 0.36); ctx.fill();
+  // body
+  const bg = ctx.createLinearGradient(-s * 0.4, 0, s * 0.4, 0); bg.addColorStop(0, t.dark); bg.addColorStop(0.5, t.skin); bg.addColorStop(1, t.dark);
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(0, -s * 0.88, s * 0.42, s * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#C9A24F'; ctx.fillRect(-s * 0.34, -s * 0.66, s * 0.68, s * 0.05);   // belt
+  // arms (raised claws)
+  for (const side of [-1, 1]) {
+    ctx.save(); ctx.translate(side * s * 0.38, -s * 1.0); ctx.rotate(side * (-0.9 + Math.sin(d.phase + side) * 0.25));
+    ctx.fillStyle = t.skin; ctx.fillRect(-s * 0.08, -s * 0.42, s * 0.16, s * 0.44);
+    ctx.fillStyle = t.horn; for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.05, -s * 0.42); ctx.lineTo(k * s * 0.07, -s * 0.55); ctx.lineTo(k * s * 0.05 + s * 0.03, -s * 0.42); ctx.fill(); }
+    ctx.restore();
+  }
+  if (d.type === 'maha') { // club
+    ctx.save(); ctx.translate(s * 0.5, -s * 1.3); ctx.rotate(0.5 + Math.sin(d.phase) * 0.2); ctx.fillStyle = '#5A3A1A'; ctx.fillRect(-s * 0.05, -s * 0.5, s * 0.1, s * 0.6); ctx.fillStyle = '#3A2410'; ctx.beginPath(); ctx.ellipse(0, -s * 0.55, s * 0.13, s * 0.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  // head
+  const hy = -s * 1.34;
+  ctx.fillStyle = '#140A06'; for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.07, hy - s * 0.12); ctx.lineTo(k * s * 0.09, hy - s * 0.34 - Math.abs(k) * -s * 0.02); ctx.lineTo(k * s * 0.07 + s * 0.06, hy - s * 0.12); ctx.fill(); }
+  ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.24, s * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = t.horn;
+  for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.14, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.42, hy - s * 0.3, side * s * 0.34, hy - s * 0.58); ctx.quadraticCurveTo(side * s * 0.28, hy - s * 0.3, side * s * 0.05, hy - s * 0.2); ctx.fill(); }
+  if (t.crown) { ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.2, hy - s * 0.2); for (let k = 0; k <= 4; k++) { ctx.lineTo(-s * 0.2 + k * s * 0.1, hy - s * (k % 2 ? 0.3 : 0.44)); } ctx.lineTo(s * 0.2, hy - s * 0.2); ctx.fill(); }
+  ctx.fillStyle = t.eye; ctx.shadowColor = t.eye; ctx.shadowBlur = 8 * p.scale;
+  ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.03, s * 0.05, s * 0.035, 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.03, s * 0.05, s * 0.035, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); }
+  if (d.flash > 0) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = `rgba(255,255,255,${d.flash * 0.7})`; ctx.fillRect(-s, -s * 2, s * 2, s * 2.2); ctx.globalCompositeOperation = 'source-over'; }
+  ctx.restore();
+  // health bar
+  if (d.hp < d.max && d.z < 0.95) {
+    const bw = Math.max(22, s * 0.9), bx = p.x - bw / 2, by = p.y - bob - s * 1.95;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, 6);
+    ctx.fillStyle = d.hp / d.max > 0.5 ? '#7BD88F' : d.hp / d.max > 0.25 ? '#F4C152' : '#FF5A36'; ctx.fillRect(bx, by, bw * Math.max(0, d.hp / d.max), 4);
+  }
+  if (d.z < 0.97 && d.z > 0.55 && d.max >= 5) { ctx.font = `600 ${Math.round(9 + 4 * p.scale)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(244,236,219,0.75)'; ctx.fillText(t.name, p.x, p.y - bob - s * 2.05 - 4); }
 }
 
-// =========================================================================
-// WIN CONDITION - Score 1000 points
-// =========================================================================
-function gameWin() {
-  state = 'gameover';
-  playBell();
-  setTimeout(() => {
-    document.querySelector('.gameover__namo').textContent = '🙏 ॐ नमः शिवाय ॐ 🙏';
-    document.querySelector('.gameover__sub').textContent = 'You Have Won!';
-    document.querySelector('.gameover__score-label').textContent = 'Final Score';
-    $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
-    if (score > bestScore) {
-      bestScore = Math.floor(score);
-      localStorage.setItem('mahakal_best', String(bestScore));
-      $('best-line').classList.add('new');
-      $('best-line').innerHTML = '★ NEW BEST! ★ <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
-    } else {
-      $('best-line').classList.remove('new');
-      $('best-line').innerHTML = 'Best: <span id="final-best">' + bestScore.toLocaleString('en-IN') + '</span>';
-    }
-    document.querySelector('.gameover__pitch').innerHTML = 'Mahakal has accepted your devotion.<br>You have completed the sacred path!';
-    document.querySelector('.gameover__scarcity').textContent = '★ Visit AP Villas & Resorts for Mahakal Darshan ★';
-    $('play-again-btn').textContent = '↻ Play Again';
-    $('gameover').classList.add('show');
-  }, 600);
+function drawBoss() {
+  const b = boss, p = project(b.z, b.x), u = unit();
+  const s = 84 * u * (0.6 + 0.4 * b.enter), breathe = Math.sin(time * 2.2) * 3;
+  ctx.save(); ctx.translate(p.x, p.y + (1 - b.enter) * 80);
+  if (b.dead) ctx.globalAlpha = 0.4;
+  // dark aura
+  const ag = ctx.createRadialGradient(0, -s * 0.9, s * 0.2, 0, -s * 0.9, s * 1.3);
+  ag.addColorStop(0, 'rgba(120,20,40,0.45)'); ag.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 0.9, s * 1.3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.6, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // legs + dhoti
+  ctx.fillStyle = '#16122A'; ctx.fillRect(-s * 0.32, -s * 0.5, s * 0.2, s * 0.5); ctx.fillRect(s * 0.12, -s * 0.5, s * 0.2, s * 0.5);
+  ctx.fillStyle = '#5A0F1C'; ctx.beginPath(); ctx.moveTo(-s * 0.42, -s * 0.8); ctx.lineTo(s * 0.42, -s * 0.8); ctx.lineTo(s * 0.36, -s * 0.38); ctx.lineTo(-s * 0.36, -s * 0.38); ctx.fill();
+  // four arms
+  for (const side of [-1, 1]) for (const k of [0, 1]) {
+    ctx.save(); ctx.translate(side * s * 0.42, -s * (1.15 - k * 0.12)); ctx.rotate(side * (-1.1 + k * 0.9 + Math.sin(time * 2 + k + side) * 0.15));
+    ctx.fillStyle = '#2B2550'; ctx.fillRect(-s * 0.07, -s * 0.5, s * 0.14, s * 0.52);
+    ctx.fillStyle = '#C9A24F'; ctx.fillRect(-s * 0.08, -s * 0.2, s * 0.16, s * 0.04);
+    if (k === 0) { ctx.fillStyle = '#9AA0B5'; ctx.fillRect(-s * 0.02, -s * 0.95, s * 0.04, s * 0.45); }   // sword
+    ctx.restore();
+  }
+  // torso
+  const tg = ctx.createLinearGradient(-s * 0.5, 0, s * 0.5, 0); tg.addColorStop(0, '#120E26'); tg.addColorStop(0.5, '#332B66'); tg.addColorStop(1, '#120E26');
+  ctx.fillStyle = tg; ctx.beginPath(); ctx.ellipse(0, -s * 1.12 + breathe, s * 0.5, s * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#C9A24F'; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(0, -s * 1.3 + breathe, s * 0.26, 0.2, Math.PI - 0.2); ctx.stroke();   // necklace
+  // head
+  const hy = -s * 1.68 + breathe;
+  ctx.fillStyle = '#2B2550'; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.24, s * 0.27, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#EADBB4';
+  for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.16, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.55, hy - s * 0.3, side * s * 0.46, hy - s * 0.72); ctx.quadraticCurveTo(side * s * 0.36, hy - s * 0.32, side * s * 0.06, hy - s * 0.22); ctx.fill(); }
+  ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.24, hy - s * 0.18); for (let k = 0; k <= 6; k++) ctx.lineTo(-s * 0.24 + k * s * 0.08, hy - s * (k % 2 ? 0.32 : 0.5)); ctx.lineTo(s * 0.24, hy - s * 0.18); ctx.fill();
+  ctx.fillStyle = '#FF2A1A'; ctx.shadowColor = '#FF2A1A'; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.02, s * 0.055, s * 0.03, 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.02, s * 0.055, s * 0.03, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.1, hy + s * 0.1); ctx.lineTo(side * s * 0.07, hy + s * 0.26); ctx.lineTo(side * s * 0.03, hy + s * 0.11); ctx.fill(); }
+  if (b.hitFlash > 0) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = `rgba(255,255,255,${b.hitFlash * 0.5})`; ctx.fillRect(-s, -s * 2.5, s * 2, s * 2.6); ctx.globalCompositeOperation = 'source-over'; }
+  ctx.restore();
+}
+function drawFireball(f) {
+  const p = project(f.z, f.lane - 1), r = (10 + 22 * p.scale) * unit();
+  const g = ctx.createRadialGradient(p.x, p.y - r, 0, p.x, p.y - r, r * 1.6);
+  g.addColorStop(0, '#FFF3C4'); g.addColorStop(0.35, '#FF8A3D'); g.addColorStop(0.7, 'rgba(200,30,20,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y - r, r * 1.6, 0, Math.PI * 2); ctx.fill();
+}
+function drawShot(s) {
+  const p = project(s.z, s.lane - 1), u = unit(), k = (6 + 16 * p.scale) * u;
+  const y = p.y - 46 * p.scale * u;
+  ctx.save(); ctx.translate(p.x, y);
+  ctx.globalAlpha = Math.max(0.15, Math.min(1, (s.range - s.z) / 0.12));
+  ctx.shadowColor = s.color; ctx.shadowBlur = 14;
+  if (s.kind === 'arrow') {
+    ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, k * 1.2); ctx.lineTo(0, -k); ctx.stroke();
+    ctx.fillStyle = s.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.5); ctx.lineTo(-k * 0.3, -k * 0.9); ctx.lineTo(k * 0.3, -k * 0.9); ctx.fill();
+  } else if (s.kind === 'axe') {
+    ctx.rotate(s.spin); ctx.fillStyle = '#7A4A1E'; ctx.fillRect(-k * 0.08, -k * 0.8, k * 0.16, k * 1.6);
+    ctx.fillStyle = s.color; ctx.beginPath(); ctx.moveTo(0, -k * 0.8); ctx.quadraticCurveTo(k * 0.9, -k * 0.6, k * 0.6, 0); ctx.lineTo(0, -k * 0.2); ctx.fill();
+  } else if (s.kind === 'gada') {
+    ctx.rotate(s.spin * 0.5); ctx.fillStyle = '#8C6512'; ctx.fillRect(-k * 0.1, 0, k * 0.2, k * 1.1);
+    ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(0, 0, k * 0.65, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#8C6512'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, k * 0.4, 0, Math.PI * 2); ctx.stroke();
+  } else if (s.kind === 'blade') {
+    ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(0, 0, k * 0.9, Math.PI * 1.1, Math.PI * 1.9); ctx.arc(0, k * 0.35, k * 0.75, Math.PI * 1.85, Math.PI * 1.15, true); ctx.fill();
+  } else if (s.kind === 'chakra') {
+    ctx.rotate(s.spin); ctx.strokeStyle = s.color; ctx.lineWidth = Math.max(2, k * 0.18); ctx.beginPath(); ctx.arc(0, 0, k * 0.7, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#E8F4FF'; for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(k * 0.7, -k * 0.12); ctx.lineTo(k * 1.05, 0); ctx.lineTo(k * 0.7, k * 0.12); ctx.fill(); }
+    ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(0, 0, k * 0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (s.kind === 'trishul') {
+    ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = Math.max(2, k * 0.14); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, k * 1.3); ctx.lineTo(0, -k * 1.1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-k * 0.6, -k * 0.9); ctx.quadraticCurveTo(-k * 0.55, -k * 0.2, 0, -k * 0.2); ctx.quadraticCurveTo(k * 0.55, -k * 0.2, k * 0.6, -k * 0.9); ctx.stroke();
+    ctx.fillStyle = '#FFE9A8'; ctx.beginPath(); ctx.arc(0, -k * 0.05, k * 0.14, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawLaddoo(d) {
+  ctx.save(); ctx.shadowColor = '#FFD27D'; ctx.shadowBlur = 16; ctx.fillStyle = '#F2A93B';
+  ctx.beginPath(); ctx.arc(d.x, d.y, 9 * unit() + 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FFD98A'; ctx.beginPath(); ctx.arc(d.x - 3, d.y - 3, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
 }
 
-$('play-again-btn').addEventListener('click', () => {
-  // Hide game over modal immediately
-  $('gameover').classList.remove('show');
-  
-  // Reset game over modal to default (loss) state
-  document.querySelector('.gameover__namo').textContent = '🙏 Har Har Mahadev 🙏';
-  document.querySelector('.gameover__sub').textContent = 'Your Run Has Ended';
-  document.querySelector('.gameover__score-label').textContent = 'Score';
-  document.querySelector('.gameover__pitch').innerHTML = 'Stay close to <em>Mahakal.</em><br>Stay closer to <em>peace.</em>';
-  document.querySelector('.gameover__scarcity').textContent = '★ WhatsApp us your darshan dates for a quick quote';
-  $('play-again-btn').textContent = '↻ Play Again';
-  
-  $('multiplier').classList.remove('active');
-  $('best-score').textContent = bestScore.toLocaleString('en-IN');
-  
-  // Start fresh game - this will reset everything including state
-  startGame();
-});
-
-// Click handlers for ritual (desktop + as fallback for mobile)
-$('ritual-bell').addEventListener('click', (e) => {
-  e.stopPropagation();
-  ensureAudio();
-  ritualTap();
-});
-$('ritual').addEventListener('click', (e) => {
-  // Tap anywhere on the ritual modal also resolves it
-  ensureAudio();
-  ritualTap();
-});
-// Auto-resolve ritual if user doesn't tap within 6 seconds (so game never freezes)
-let ritualTimeout = null;
-const _origStartRitual = startRitual;
-startRitual = function() {
-  _origStartRitual();
-  if (ritualTimeout) clearTimeout(ritualTimeout);
-  ritualTimeout = setTimeout(() => {
-    if (state === 'ritual' && !ritualSolved) ritualTap();
-  }, 6000);
-};
-
-
-// =========================================================================
-// ASHIRVAAD — deity blessings at score milestones (public-domain paintings)
-// =========================================================================
-const DEITIES = [
- {
-  "at": 150,
-  "key": "ganesh",
-  "name": "Shri Ganesh",
-  "title": "Vighnaharta clears your path",
-  "reward": "shield",
-  "gift": "Obstacles cannot touch you for a while.",
-  "img": "images/blog/mahakal-game/ganesha-lord-of-obstacles-lacma-ac1999-127-34-960.webp",
-  "credit": "Kota painting, early 19th century (public domain)"
- },
- {
-  "at": 350,
-  "key": "hanuman",
-  "name": "Hanuman ji",
-  "title": "Strength for the journey",
-  "reward": "heal",
-  "gift": "One hit forgiven. Keep running!",
-  "img": "images/blog/mahakal-game/hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th-960.webp",
-  "credit": "Ravi Varma Press, 1910s (public domain)"
- },
- {
-  "at": 550,
-  "key": "lakshmi",
-  "name": "Maa Lakshmi",
-  "title": "Prosperity on your path",
-  "reward": "magnet",
-  "gift": "Blessings flow to you: double points and diyas come to you.",
-  "img": "images/blog/mahakal-game/raja-ravi-varma-goddess-lakshmi-1896-960.webp",
-  "credit": "Raja Ravi Varma, 1896 (public domain)"
- },
- {
-  "at": 750,
-  "key": "durga",
-  "name": "Maa Durga",
-  "title": "The Mother protects you",
-  "reward": "shield",
-  "gift": "A divine shield surrounds you.",
-  "img": "images/blog/mahakal-game/mahishasura-mardini-960.webp",
-  "credit": "Ravi Varma Press, c.1910 (public domain)"
- },
- {
-  "at": 1000,
-  "key": "mahakal",
-  "name": "Mahakal",
-  "title": "Har Har Mahadev! Your darshan is complete",
-  "reward": "final",
-  "gift": "Mahakal blesses you and your family.",
-  "img": "images/blog/mahakal-game/a-version-from-the-ravi-varma-press-shankar-c-1910-s-960.webp",
-  "credit": "\"Shankar\", Ravi Varma Press, 1910s (public domain)"
- }
-];
-let nextDeity = 0, ashTimer = null, pendingWin = false;
-DEITIES.forEach(d => { const i = new Image(); i.src = d.img; });   // preload
-function showAshirvaad(d) {
-  state = 'blessing';
-  const box = $('ashirvaad');
-  box.classList.toggle('final', d.reward === 'final');
-  $('ash-img').src = d.img; $('ash-img').alt = d.name + ' — ' + d.credit;
-  $('ash-name').textContent = d.name;
-  $('ash-title').textContent = d.title;
-  $('ash-gift').textContent = d.gift;
-  $('ash-credit').textContent = d.credit;
-  $('ash-btn').textContent = d.reward === 'final' ? '🙏 Har Har Mahadev' : '🙏 Accept Ashirvaad';
-  box.classList.add('show');
-  try { playBell(); setTimeout(playPerfect, 400); } catch (e) {}
-  // reward
-  if (d.reward === 'shield') player.shieldTimer = 720;
-  if (d.reward === 'heal') hitCount = Math.max(0, hitCount - 1);
-  if (d.reward === 'magnet') { player.magnetTimer = 720; multiplier = Math.min(8, multiplier * 2); }
-  pendingWin = d.reward === 'final';
-  const nd = DEITIES[DEITIES.indexOf(d) + 1];
-  $('hud-next').textContent = nd ? 'Next blessing: ' + nd.name + ' · ' + nd.at : 'Mahakal has blessed you';
-  if (ashTimer) clearTimeout(ashTimer);
-  if (!pendingWin) ashTimer = setTimeout(closeAshirvaad, 4500);   // auto-continue so play never stalls
+// The yoddha, seen from behind. "bulk" (0–5) grows with every Ashirvaad: broader, taller, gold armour, brighter aura.
+function drawWarrior() {
+  const p = project(0, player.x), u = unit(), B = bulk;
+  const s = 40 * u * (1 + 0.07 * B);
+  const wide = 1 + 0.13 * B;
+  const SKIN = '#E9B486', SHADOW = '#B97F52', DHOTI = '#F6EEDB', GOLD = '#D4A53A';
+  const blink = player.hurt > 0 && Math.floor(player.hurt * 12) % 2 === 0;
+  ctx.save(); ctx.translate(p.x, p.y);
+  if (blink) ctx.globalAlpha = 0.45;
+  // aura (stronger with each blessing)
+  if (B > 0 || player.flash > 0) {
+    const col = B >= 5 ? '150,200,255' : '255,210,120';
+    const r = s * (1.2 + 0.1 * B) + Math.sin(time * 4) * 3;
+    const ag = ctx.createRadialGradient(0, -s * 1.1, s * 0.2, 0, -s * 1.1, r * 1.4);
+    ag.addColorStop(0, `rgba(${col},${0.18 + 0.05 * B + Math.max(0, player.flash) * 0.4})`); ag.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 1.1, r * 1.4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.6 * wide, s * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+  const stride = Math.sin(time * 9) * 0.12;
+  // legs
+  ctx.fillStyle = SHADOW;
+  ctx.save(); ctx.translate(-s * 0.16 * wide, -s * 0.5); ctx.rotate(stride); ctx.fillRect(-s * 0.1 * wide, 0, s * 0.2 * wide, s * 0.5); ctx.restore();
+  ctx.save(); ctx.translate(s * 0.16 * wide, -s * 0.5); ctx.rotate(-stride); ctx.fillRect(-s * 0.1 * wide, 0, s * 0.2 * wide, s * 0.5); ctx.restore();
+  // dhoti
+  ctx.fillStyle = DHOTI; ctx.beginPath(); ctx.moveTo(-s * 0.4 * wide, -s * 0.92); ctx.lineTo(s * 0.4 * wide, -s * 0.92); ctx.lineTo(s * 0.36 * wide, -s * 0.42); ctx.lineTo(-s * 0.36 * wide, -s * 0.42); ctx.fill();
+  ctx.fillStyle = GOLD; ctx.fillRect(-s * 0.36 * wide, -s * 0.46, s * 0.72 * wide, s * 0.04);
+  ctx.fillStyle = B >= 3 ? '#B5121B' : '#C0531A'; ctx.fillRect(-s * 0.41 * wide, -s * 0.95, s * 0.82 * wide, s * 0.07);   // waist sash
+  // back (V-shape, broadens with bulk)
+  const bg = ctx.createLinearGradient(-s * 0.55 * wide, 0, s * 0.55 * wide, 0);
+  bg.addColorStop(0, SHADOW); bg.addColorStop(0.5, SKIN); bg.addColorStop(1, SHADOW);
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.moveTo(-s * 0.36 * wide, -s * 0.93); ctx.lineTo(-s * 0.56 * wide, -s * 1.5); ctx.quadraticCurveTo(0, -s * 1.62, s * 0.56 * wide, -s * 1.5); ctx.lineTo(s * 0.36 * wide, -s * 0.93); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = SHADOW; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -s * 1.52); ctx.lineTo(0, -s * 0.98); ctx.stroke();   // spine
+  if (B >= 1) { ctx.beginPath(); ctx.arc(-s * 0.22 * wide, -s * 1.3, s * 0.18 * wide, 0.2, 2.2); ctx.arc(s * 0.22 * wide, -s * 1.3, s * 0.18 * wide, 0.9, 2.9); ctx.stroke(); }   // muscles
+  if (B >= 3) { // gold armour straps
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.moveTo(-s * 0.5 * wide, -s * 1.48); ctx.lineTo(s * 0.34 * wide, -s * 0.98); ctx.moveTo(s * 0.5 * wide, -s * 1.48); ctx.lineTo(-s * 0.34 * wide, -s * 0.98); ctx.stroke();
+  } else { ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-s * 0.46 * wide, -s * 1.5); ctx.quadraticCurveTo(0, -s * 1.15, s * 0.32 * wide, -s * 0.96); ctx.stroke(); }   // janeu
+  // arms: left relaxed, right raised with the weapon
+  const armW = s * 0.13 * (1 + 0.12 * B);
+  ctx.save(); ctx.translate(-s * 0.55 * wide, -s * 1.45); ctx.rotate(0.25);
+  ctx.fillStyle = SKIN; ctx.fillRect(-armW / 2, 0, armW, s * 0.62);
+  if (B >= 1) { ctx.fillStyle = GOLD; ctx.fillRect(-armW / 2 - 1, s * 0.15, armW + 2, s * 0.06); }
+  ctx.restore();
+  ctx.save(); ctx.translate(s * 0.55 * wide, -s * 1.45); ctx.rotate(-2.6 + player.recoil * 0.25);
+  ctx.fillStyle = SKIN; ctx.fillRect(-armW / 2, 0, armW, s * 0.62);
+  if (B >= 1) { ctx.fillStyle = GOLD; ctx.fillRect(-armW / 2 - 1, s * 0.15, armW + 2, s * 0.06); }
+  ctx.translate(0, s * 0.66); ctx.rotate(2.6);
+  drawHeldWeapon(s);
+  ctx.restore();
+  // neck + head (from behind) + shikha
+  ctx.fillStyle = SHADOW; ctx.fillRect(-s * 0.08, -s * 1.66, s * 0.16, s * 0.14);
+  ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.ellipse(0, -s * 1.8, s * 0.19, s * 0.21, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = SKIN; ctx.beginPath(); ctx.ellipse(-s * 0.19, -s * 1.78, s * 0.04, s * 0.06, 0, 0, Math.PI * 2); ctx.ellipse(s * 0.19, -s * 1.78, s * 0.04, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.ellipse(0, -s * 2.02, s * 0.05, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+  if (B >= 2) { ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(-s * 0.2, -s * 1.86); for (let k = 0; k <= 4; k++) ctx.lineTo(-s * 0.2 + k * s * 0.1, -s * (k % 2 ? 1.93 : 2.05)); ctx.lineTo(s * 0.2, -s * 1.86); ctx.closePath(); ctx.fill(); }   // mukut
+  if (B >= 5) { ctx.strokeStyle = '#DDE8FF'; ctx.lineWidth = 2.5 * u; ctx.beginPath(); ctx.arc(0, -s * 2.12, s * 0.12, 0.3, Math.PI - 0.3); ctx.stroke(); }   // crescent
+  ctx.restore();
 }
-function closeAshirvaad() {
-  if (state !== 'blessing') return;
-  if (ashTimer) { clearTimeout(ashTimer); ashTimer = null; }
-  $('ashirvaad').classList.remove('show');
-  if (pendingWin) { pendingWin = false; gameWon = true; gameWin(); return; }
-  state = 'playing';
-  last = performance.now();
-  showStreak('Blessed! 🙏');
+function drawHeldWeapon(s) {
+  const w = WEAPONS[weapon], k = s * 0.55;
+  ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 12;
+  if (weapon === 'bow') { ctx.strokeStyle = '#8C5A2B'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -k * 0.2, k * 0.8, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); ctx.strokeStyle = '#EEE'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-k * 0.66, -k * 0.65); ctx.lineTo(k * 0.66, -k * 0.65); ctx.stroke(); }
+  else if (weapon === 'parashu') { ctx.fillStyle = '#7A4A1E'; ctx.fillRect(-2, -k * 1.2, 4, k * 1.3); ctx.fillStyle = w.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.2); ctx.quadraticCurveTo(k * 0.8, -k * 1.1, k * 0.55, -k * 0.6); ctx.lineTo(0, -k * 0.75); ctx.fill(); }
+  else if (weapon === 'gada') { ctx.fillStyle = '#8C6512'; ctx.fillRect(-3, -k, 6, k * 1.1); ctx.fillStyle = w.color; ctx.beginPath(); ctx.arc(0, -k * 1.15, k * 0.38, 0, Math.PI * 2); ctx.fill(); }
+  else if (weapon === 'khadga') { ctx.fillStyle = '#E6E9F0'; ctx.beginPath(); ctx.moveTo(-3, 0); ctx.lineTo(3, 0); ctx.lineTo(5, -k * 1.4); ctx.lineTo(0, -k * 1.6); ctx.lineTo(-2, -k * 1.4); ctx.fill(); ctx.fillStyle = '#D4A53A'; ctx.fillRect(-k * 0.2, -3, k * 0.4, 5); }
+  else if (weapon === 'chakra') { ctx.translate(0, -k * 0.5); ctx.rotate(time * 10); ctx.strokeStyle = w.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, k * 0.45, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#E8F4FF'; for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(k * 0.45, -3); ctx.lineTo(k * 0.65, 0); ctx.lineTo(k * 0.45, 3); ctx.fill(); } }
+  else { ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, k * 0.2); ctx.lineTo(0, -k * 1.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-k * 0.45, -k * 1.55); ctx.quadraticCurveTo(-k * 0.42, -k * 1.05, 0, -k * 1.05); ctx.quadraticCurveTo(k * 0.42, -k * 1.05, k * 0.45, -k * 1.55); ctx.stroke(); ctx.fillStyle = '#C9A24F'; ctx.beginPath(); ctx.arc(0, -k * 0.75, k * 0.12, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
 }
-$('ash-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); closeAshirvaad(); });
-$('ashirvaad').addEventListener('click', () => closeAshirvaad());
-document.addEventListener('keydown', e => { if (state === 'blessing' && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); closeAshirvaad(); } });
 
-// Initial display of best
-$('best-score').textContent = bestScore.toLocaleString('en-IN');
-
-// Prevent page scroll on game area touches (mobile)
-document.body.addEventListener('touchmove', (e) => {
-  if (e.target.closest('#stage')) e.preventDefault();
-}, { passive: false });
-
+// ---------------- Main loop ----------------
+let last = performance.now(), frozen = false;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!paused && !frozen && state === 'playing') update(dt);
+  if (state !== 'intro') render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+hud();
+// test hook for automated play-testing; only switched on with ?test=1
+if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, move, accept: acceptAshirvaad, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
 </script>
 </body>
 </html>
