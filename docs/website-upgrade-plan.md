@@ -38,12 +38,12 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 4.6 Villa structured data (LodgingBusiness per villa), sitemap, internal links from guides.
 
 ## Phase 5 — Homepage restructure (audit §14)
-- [ ] 5.1 Hero copy (owner approves wording).
-- [ ] 5.2 "Why a whole home" section (one home vs three rooms, own kitchen, host for 4 AM darshan, per-person price maths).
-- [ ] 5.3 Compare-your-villa section linking to villa pages.
-- [ ] 5.4 "Darshan made easy" timeline (evening briefing → 3:30 AM shuttle → aarti → breakfast).
-- [?] 5.5 "Book directly with us" benefits strip (owner chooses benefits they can always honour).
-- [ ] 5.6 Travel & packages strip; founder note; homepage FAQ + mini form.
+- [x] 5.1 Hero headline kept (owner's brand line); buttons updated in Phase 1.
+- [x] 5.2 "Why a whole home" section (one home vs three rooms, own kitchen, host for 4 AM darshan, per-person price maths).
+- [x] 5.3 Compare-your-villa section linking to villa pages.
+- [x] 5.4 "Darshan made easy" timeline (evening briefing → 3:30 AM shuttle → aarti → breakfast).
+- [x] 5.5 "Book directly with us" strip using only benefits already offered (direct host contact, free shuttle + aarti guidance in writing, flexible check-out on request, fixed-price cars). Owner can add/remove.
+- [x] 5.6 Travel & packages strip; founder note; homepage FAQ + mini form.
 
 ## Phase 6 — Brand system "Emerald Haveli"
 - [?] 6.1 Owner approves direction (emerald + antique gold to match the logo, replacing navy/saffron).
