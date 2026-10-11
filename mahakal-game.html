@@ -308,6 +308,26 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   letter-spacing: 1px;
 }
 
+
+/* ========== ASHIRVAAD (deity blessing) ========== */
+.ashirvaad { position: absolute; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 20px;
+  background: radial-gradient(ellipse at center, rgba(60,30,6,0.88) 0%, rgba(8,6,4,0.97) 75%); backdrop-filter: blur(6px); }
+.ashirvaad.show { display: flex; animation: ritualIn 0.6s ease; }
+.ashirvaad__card { max-width: 420px; width: 100%; text-align: center; color: #FFF6E0; }
+.ashirvaad__halo { position: relative; width: min(62vw, 260px); margin: 0 auto 16px; }
+.ashirvaad__halo::before { content: ''; position: absolute; inset: -18%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,214,120,0.75) 0%, rgba(255,170,60,0.25) 45%, transparent 70%); animation: haloPulse 2.4s ease-in-out infinite; }
+@keyframes haloPulse { 0%,100% { transform: scale(0.94); opacity: .8; } 50% { transform: scale(1.06); opacity: 1; } }
+.ashirvaad__img { position: relative; width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 18px; border: 3px solid #E8C77A; box-shadow: 0 0 40px rgba(255,200,90,.55); animation: deityIn .9s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes deityIn { from { transform: translateY(40px) scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+.ashirvaad__name { font-family: 'Cormorant Garamond', serif; font-size: 34px; color: #F4D58D; margin: 6px 0 2px; }
+.ashirvaad__title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.ashirvaad__gift { font-size: 15px; opacity: .92; margin-bottom: 16px; }
+.ashirvaad__btn { background: linear-gradient(135deg, #E8C77A, #B88A2C); color: #2A1608; border: 0; border-radius: 999px; padding: 13px 28px; font-weight: 700; font-size: 16px; cursor: pointer; }
+.ashirvaad__credit { font-size: 11px; opacity: .6; margin-top: 12px; }
+.ashirvaad.final .ashirvaad__img { border-color: #FFFFFF; box-shadow: 0 0 70px rgba(255,230,160,.9); }
+.hud__next { font-size: 12px; color: #F4D58D; margin-top: 4px; letter-spacing: .3px; }
+
 /* ========== RITUAL MINI EVENT (bell tap) ========== */
 .ritual {
   position: absolute; inset: 0; z-index: 40;
@@ -342,6 +362,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 .ritual__bell svg { width: 100%; height: 100%; filter: drop-shadow(0 0 30px rgba(201, 162, 79, 0.6)); }
 .ritual__bell.tapped { transform: scale(0.92); }
+.ritual__result { min-height: 0; font-family: 'Cormorant Garamond', serif; color: #F4D58D; text-align: center; opacity: 0; transform: scale(.7); transition: all .35s cubic-bezier(.2,.9,.3,1.3); }
+.ritual__result.show { opacity: 1; transform: scale(1); min-height: 64px; }
+.ritual__result b { display: block; font-size: 40px; letter-spacing: 1px; text-shadow: 0 0 24px rgba(255,200,90,.8); }
+.ritual__result span { font-family: inherit; font-size: 17px; color: #FFF6E0; }
+.ritual.done .ritual__meter, .ritual.done .ritual__hint, .ritual.done .ritual__sub { opacity: .25; }
+.ritual.done::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(255,215,130,.45), transparent 60%); animation: bellGlow 1.2s ease-out; }
+@keyframes bellGlow { from { opacity: 1; } to { opacity: 0; } }
 .ritual__bell.tapped svg { animation: bellRing 0.6s ease-out; }
 @keyframes bellRing {
   0%, 100% { transform: rotate(0); }
@@ -516,7 +543,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 .go-btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(192, 83, 26, 0.5); }
 .go-btn--whatsapp {
-  background: #25D366; color: white;
+  background: #177A40; color: white;
   box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
 }
 .go-btn--whatsapp:hover { transform: translateY(-2px); }
@@ -605,6 +632,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
         <strong>AP Villas &amp; Resorts</strong>
       </a>
       <div class="hud__best">Best: <span id="best-score">0</span></div>
+      <div class="hud__next" id="hud-next">Next blessing: Shri Ganesh · 150</div>
     </div>
     <div class="hud__group hud__group--right">
       <div class="hud__score-card">
@@ -614,7 +642,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       </div>
       <div class="hud__score-card" id="hits-card" style="margin-top:8px;">
         <div class="hud__label">Hits</div>
-        <div class="hud__value" id="hits">0/3</div>
+        <div class="hud__value" id="hits">0/5</div>
       </div>
       <button class="hud__mute" id="mute-btn" style="margin-top:8px;" aria-label="Toggle sound">🔔</button>
     </div>
@@ -630,10 +658,23 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div class="tutorial__sub">Up to jump · Down to slide</div>
   </div>
 
+  <!-- Ashirvaad: deity blessing at score milestones -->
+  <div class="ashirvaad" id="ashirvaad" role="dialog" aria-live="polite">
+    <div class="ashirvaad__card">
+      <div class="ashirvaad__halo"><img class="ashirvaad__img" id="ash-img" src="" alt=""></div>
+      <div class="ashirvaad__name" id="ash-name"></div>
+      <div class="ashirvaad__title" id="ash-title"></div>
+      <div class="ashirvaad__gift" id="ash-gift"></div>
+      <button class="ashirvaad__btn" id="ash-btn" type="button">🙏 Accept Ashirvaad</button>
+      <div class="ashirvaad__credit" id="ash-credit"></div>
+    </div>
+  </div>
+
   <!-- Ritual: Bell tap -->
   <div class="ritual" id="ritual">
     <div class="ritual__title">Ring the Sacred Bell</div>
     <div class="ritual__sub">Tap when the cursor meets the gold mark</div>
+    <div class="ritual__result" id="ritual-result" aria-live="polite"></div>
     <div class="ritual__bell" id="ritual-bell">
       <svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -678,7 +719,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="gameover__btns">
         <button class="go-btn go-btn--play" id="play-again-btn">↻ Play Again</button>
         <a class="go-btn go-btn--primary" href="villas.html">Book Your Stay</a>
-        <a class="go-btn go-btn--whatsapp" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%20played%20your%20Mahakal%20game%20and%20I%27d%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener">💬 WhatsApp Us</a>
+        <a class="go-btn go-btn--whatsapp" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%20played%20your%20Mahakal%20game%20and%20I%27d%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener"><svg class="ic-wa" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false" style="width:16px;height:16px;flex:none"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88a9.88 9.88 0 0 1 9.88 9.89c0 5.45-4.43 9.88-9.89 9.88M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg> WhatsApp Us</a>
         <a class="go-btn go-btn--ghost" href="index.html">Home</a>
       </div>
     </div>
@@ -788,7 +829,7 @@ let streakCount = 0;
 let multiplier = 1;
 let blessingsCollected = 0;
 let hitCount = 0;
-const MAX_HITS = 3;
+const MAX_HITS = 5;   // forgiving: easy but satisfying
 let gameWon = false;
 
 const player = {
@@ -862,13 +903,13 @@ function spawn() {
   // Main spawn logic - obstacles should appear 3x more than diyas
   // Check distance - spawn every ~0.12 z-units (more frequent)
   if (lastSpawnZ - distance < 0.12) {
-    lastSpawnZ = distance + 0.08 + Math.random() * 0.04;
+    lastSpawnZ = distance + 0.11 + Math.random() * 0.05;   // more breathing room
     
     // Decide pattern - 75% chance for obstacles, 25% for collectibles only
     const r = Math.random();
-    if (r < 0.75) {
+    if (r < 0.6) {   // fewer obstacles, more diyas
       // OBSTACLE PATTERNS (75% of spawns) - 3x more than diyas
-      const obsCount = 1 + Math.floor(Math.random() * 2); // 1 or 2 obstacles
+      const obsCount = Math.random() < 0.2 ? 2 : 1; // mostly a single obstacle
       const usedLanes = [];
       
       for (let i = 0; i < obsCount; i++) {
@@ -1032,7 +1073,7 @@ $('enter-btn').addEventListener('click', () => {
 // MAIN LOOP
 // =========================================================================
 let last = performance.now();
-let nextRitualScore = 600;
+let nextRitualScore = 450;
 
 function startGame() {
   // Reset all game state
@@ -1043,7 +1084,7 @@ function startGame() {
   player.jumpY = 0; player.jumpVy = 0; player.jumping = false;
   player.sliding = false; player.slideTimer = 0; player.shieldTimer = 0; player.magnetTimer = 0;
   objects.length = 0; particles.length = 0;
-  lastSpawnZ = 1; nextRitualScore = 600;
+  lastSpawnZ = 1; nextRitualScore = 450; nextDeity = 0; $('hud-next').textContent = 'Next blessing: Shri Ganesh · 150';
   spawnTimer = 0;
   
   // Cleanup any in-flight ritual
@@ -1054,7 +1095,7 @@ function startGame() {
   
   // Reset score display
   $('score').textContent = '0';
-  $('hits').textContent = '0/3';
+  $('hits').textContent = '0/' + MAX_HITS;
   $('multiplier').classList.remove('active');
   $('multiplier').textContent = '×2 Streak';
   
@@ -1095,7 +1136,7 @@ if (spawnTimer > 35) {
   runFrame++;
   if (diyaSpawnCooldown > 0) diyaSpawnCooldown--;
   // Speed scales with score
-  speedTarget = 0.012 + Math.min(0.025, score / 60000);
+  speedTarget = 0.012 + Math.min(0.014, score / 90000);   // gentler ramp
   speed += (speedTarget - speed) * 0.01;
   distance += speed * dt / 16;
 
@@ -1192,10 +1233,10 @@ if (spawnTimer > 35) {
   // Score scales with distance traveled too
   score += Math.floor(speed * 60);
 
-  // Check win condition at 1000 points
-  if (score >= 1000 && !gameWon) {
-    gameWon = true;
-    gameWin();
+  // Deity blessings at milestones; Mahakal at 1000 completes the game
+  if (nextDeity < DEITIES.length && score >= DEITIES[nextDeity].at) {
+    showAshirvaad(DEITIES[nextDeity]);
+    nextDeity++;
     return;
   }
 
@@ -1224,7 +1265,7 @@ if (spawnTimer > 35) {
 
   // Ritual trigger
   if (score >= nextRitualScore) {
-    nextRitualScore += 800 + Math.random() * 600;
+    nextRitualScore += 400;   // one more bell around 850
     startRitual();
   }
 }
@@ -1985,7 +2026,7 @@ function startRitual() {
 let ritualLoopId = null;
 function ritualLoop() {
   if (!ritualRunning) return;
-  ritualCursor += ritualDir * 0.9;
+  ritualCursor += ritualDir * 0.7;   // slower = easier
   if (ritualCursor > 100) { ritualCursor = 100; ritualDir = -1; }
   if (ritualCursor < 0) { ritualCursor = 0; ritualDir = 1; }
   $('meter-cursor').style.left = ritualCursor + '%';
@@ -2001,36 +2042,43 @@ function ritualTap() {
   
   $('ritual-bell').classList.add('tapped');
   const distToTarget = Math.abs(ritualCursor - ritualTargetX);
-  let outcome;
-  if (distToTarget < 5) {
-    outcome = 'perfect';
-    score += 200 * multiplier;
+  let outcome, bonus, gift;
+  if (distToTarget < 7) {
+    outcome = 'perfect'; bonus = 120; gift = 'Divine shield for a while';
     player.shieldTimer = 600;
     playPerfect(); playBell();
-    showStreak('PERFECT!');
-  } else if (distToTarget < 15) {
-    outcome = 'good';
-    score += 100;
+  } else if (distToTarget < 18) {
+    outcome = 'good'; bonus = 70; gift = 'Diyas fly to you';
     player.magnetTimer = 400;
     playBell();
-    showStreak('Good!');
   } else {
-    outcome = 'miss';
-    score += 30;
-    playTone(220, 0.4, 'sawtooth', 0.08);
+    outcome = 'miss'; bonus = 30; gift = 'The bell still rings for you';
+    playBell();
   }
-  
+  // never jump past the next blessing, so each deity appears in turn
+  const cap = nextDeity < DEITIES.length ? DEITIES[nextDeity].at + 10 : Infinity;
+  score = Math.min(score + bonus, Math.max(score, cap));
+  $('score').textContent = Math.floor(score).toLocaleString('en-IN');
+
   // Cancel ritual animation immediately
   if (ritualLoopId) {
     cancelAnimationFrame(ritualLoopId);
     ritualLoopId = null;
   }
-  
-  // Hide ritual and resume game immediately (no delay)
-  $('ritual').classList.remove('show');
-  state = 'playing';
-  // Reset timing to prevent large dt jump
-  last = performance.now();
+
+  // Show the result for a moment (bell swings, glow), then resume
+  const res = $('ritual-result');
+  res.innerHTML = '<b>' + (outcome === 'perfect' ? 'PERFECT! 🔔' : outcome === 'good' ? 'Good! 🔔' : 'Ding! 🔔') + '</b><span>+' + bonus + ' · ' + gift + '</span>';
+  res.classList.add('show');
+  $('ritual').classList.add('done');
+  setTimeout(() => {
+    res.classList.remove('show');
+    $('ritual').classList.remove('show', 'done');
+    if (state !== 'ritual') return;
+    state = 'playing';
+    last = performance.now();   // prevent a large dt jump
+    showStreak(outcome === 'perfect' ? 'Har Har Mahadev!' : 'Jai Mahakal!');
+  }, 1300);
 }
 
 // =========================================================================
@@ -2064,7 +2112,7 @@ function gameWin() {
     document.querySelector('.gameover__namo').textContent = '🙏 ॐ नमः शिवाय ॐ 🙏';
     document.querySelector('.gameover__sub').textContent = 'You Have Won!';
     document.querySelector('.gameover__score-label').textContent = 'Final Score';
-    $('gameover__score').textContent = Math.floor(score).toLocaleString('en-IN');
+    $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
     if (score > bestScore) {
       bestScore = Math.floor(score);
       localStorage.setItem('mahakal_best', String(bestScore));
@@ -2121,6 +2169,99 @@ startRitual = function() {
     if (state === 'ritual' && !ritualSolved) ritualTap();
   }, 6000);
 };
+
+
+// =========================================================================
+// ASHIRVAAD — deity blessings at score milestones (public-domain paintings)
+// =========================================================================
+const DEITIES = [
+ {
+  "at": 150,
+  "key": "ganesh",
+  "name": "Shri Ganesh",
+  "title": "Vighnaharta clears your path",
+  "reward": "shield",
+  "gift": "Obstacles cannot touch you for a while.",
+  "img": "images/blog/mahakal-game/ganesha-lord-of-obstacles-lacma-ac1999-127-34-960.webp",
+  "credit": "Kota painting, early 19th century (public domain)"
+ },
+ {
+  "at": 350,
+  "key": "hanuman",
+  "name": "Hanuman ji",
+  "title": "Strength for the journey",
+  "reward": "heal",
+  "gift": "One hit forgiven. Keep running!",
+  "img": "images/blog/mahakal-game/hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th-960.webp",
+  "credit": "Ravi Varma Press, 1910s (public domain)"
+ },
+ {
+  "at": 550,
+  "key": "lakshmi",
+  "name": "Maa Lakshmi",
+  "title": "Prosperity on your path",
+  "reward": "magnet",
+  "gift": "Blessings flow to you: double points and diyas come to you.",
+  "img": "images/blog/mahakal-game/raja-ravi-varma-goddess-lakshmi-1896-960.webp",
+  "credit": "Raja Ravi Varma, 1896 (public domain)"
+ },
+ {
+  "at": 750,
+  "key": "durga",
+  "name": "Maa Durga",
+  "title": "The Mother protects you",
+  "reward": "shield",
+  "gift": "A divine shield surrounds you.",
+  "img": "images/blog/mahakal-game/mahishasura-mardini-960.webp",
+  "credit": "Ravi Varma Press, c.1910 (public domain)"
+ },
+ {
+  "at": 1000,
+  "key": "mahakal",
+  "name": "Mahakal",
+  "title": "Har Har Mahadev! Your darshan is complete",
+  "reward": "final",
+  "gift": "Mahakal blesses you and your family.",
+  "img": "images/blog/mahakal-game/a-version-from-the-ravi-varma-press-shankar-c-1910-s-960.webp",
+  "credit": "\"Shankar\", Ravi Varma Press, 1910s (public domain)"
+ }
+];
+let nextDeity = 0, ashTimer = null, pendingWin = false;
+DEITIES.forEach(d => { const i = new Image(); i.src = d.img; });   // preload
+function showAshirvaad(d) {
+  state = 'blessing';
+  const box = $('ashirvaad');
+  box.classList.toggle('final', d.reward === 'final');
+  $('ash-img').src = d.img; $('ash-img').alt = d.name + ' — ' + d.credit;
+  $('ash-name').textContent = d.name;
+  $('ash-title').textContent = d.title;
+  $('ash-gift').textContent = d.gift;
+  $('ash-credit').textContent = d.credit;
+  $('ash-btn').textContent = d.reward === 'final' ? '🙏 Har Har Mahadev' : '🙏 Accept Ashirvaad';
+  box.classList.add('show');
+  try { playBell(); setTimeout(playPerfect, 400); } catch (e) {}
+  // reward
+  if (d.reward === 'shield') player.shieldTimer = 720;
+  if (d.reward === 'heal') hitCount = Math.max(0, hitCount - 1);
+  if (d.reward === 'magnet') { player.magnetTimer = 720; multiplier = Math.min(8, multiplier * 2); }
+  pendingWin = d.reward === 'final';
+  const nd = DEITIES[DEITIES.indexOf(d) + 1];
+  $('hud-next').textContent = nd ? 'Next blessing: ' + nd.name + ' · ' + nd.at : 'Mahakal has blessed you';
+  if (ashTimer) clearTimeout(ashTimer);
+  if (!pendingWin) ashTimer = setTimeout(closeAshirvaad, 4500);   // auto-continue so play never stalls
+}
+function closeAshirvaad() {
+  if (state !== 'blessing') return;
+  if (ashTimer) { clearTimeout(ashTimer); ashTimer = null; }
+  $('ashirvaad').classList.remove('show');
+  if (pendingWin) { pendingWin = false; gameWon = true; gameWin(); return; }
+  state = 'playing';
+  last = performance.now();
+  showStreak('Blessed! 🙏');
+}
+$('ash-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); closeAshirvaad(); });
+$('ashirvaad').addEventListener('click', () => closeAshirvaad());
+document.addEventListener('keydown', e => { if (state === 'blessing' && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); closeAshirvaad(); } });
 
 // Initial display of best
 $('best-score').textContent = bestScore.toLocaleString('en-IN');

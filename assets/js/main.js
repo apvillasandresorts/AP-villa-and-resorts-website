@@ -427,7 +427,7 @@ document.querySelectorAll('[data-enquiry]').forEach((host, i) => {
       <span>Call</span></a>
     <button type="button" class="m-bar__ask" aria-controls="chatbot">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.5 9.5a2.5 2.5 0 0 1 4.8.9c0 1.6-2.3 2.1-2.3 3.1M12 16.5h.01"/></svg>
-      <span>Quick answers</span></button>`;
+      <span>FAQs</span></button>`;
   document.body.appendChild(bar);
   document.body.classList.add('has-m-bar');
   bar.querySelector('.m-bar__ask').addEventListener('click', () => {

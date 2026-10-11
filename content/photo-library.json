@@ -1038,6 +1038,97 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Snay015 / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/mahakal-game/ganesha-lord-of-obstacles-lacma-ac1999-127-34.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "deity",
+        "ganesha",
+        "painting"
+      ],
+      "alt": "Lord Ganesha, early 19th-century Kota painting",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ganesha,_Lord_of_Obstacles_LACMA_AC1999.127.34.jpg",
+      "author": "Unknown",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: Unknown / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/mahakal-game/hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "deity",
+        "hanuman",
+        "painting"
+      ],
+      "alt": "Hanuman carrying the mountain of herbs, Ravi Varma Press print",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Hanuman_fetches_the_herb-bearing_mountain,_in_a_print_from_the_Ravi_Varma_Press,_1910%27s.jpg",
+      "author": "Unknown",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: Unknown / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/mahakal-game/raja-ravi-varma-goddess-lakshmi-1896.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "deity",
+        "lakshmi",
+        "painting"
+      ],
+      "alt": "Goddess Lakshmi on a lotus, Raja Ravi Varma, 1896",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Raja_Ravi_Varma,_Goddess_Lakshmi,_1896.jpg",
+      "author": "Raja Ravi Varma",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: Raja Ravi Varma / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/mahakal-game/mahishasura-mardini.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "deity",
+        "durga",
+        "painting"
+      ],
+      "alt": "Maa Durga as Mahishasura-mardini, Ravi Varma Press print",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mahishasura-mardini.jpg",
+      "author": "Ravi Varma Press",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: Ravi Varma Press / Wikimedia Commons, Public domain"
+    },
+    {
+      "path": "images/blog/mahakal-game/a-version-from-the-ravi-varma-press-shankar-c-1910-s.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "deity",
+        "shiva",
+        "mahakal",
+        "painting"
+      ],
+      "alt": "Lord Shiva (Shankar), Ravi Varma Press print",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:A_version_from_the_Ravi_Varma_press-_%22Shankar,%22_c.1910%27s.jpg",
+      "author": "ravi varma press",
+      "license": "Public domain",
+      "license_url": "",
+      "credit": "Photo: ravi varma press / Wikimedia Commons, Public domain"
     }
   ]
 }
