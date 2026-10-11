@@ -30,12 +30,12 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [ ] 3.4 Booking sheet template (date, source, villa, quoted, booked, value, cancelled) + WhatsApp Business labels guide.
 
 ## Phase 4 — Villa pages, comparison and policies
-- [?] 4.1 Owner data per villa: bathrooms, floor/lift, bed types, area, house rules, ID policy.
+- [?] 4.1 (fields ready as TODO in business-facts.json; pages show them automatically once filled) Owner data per villa: bathrooms, floor/lift, bed types, area, house rules, ID policy.
 - [?] 4.2 Owner policies: cancellation, advance/payment, festival dates, couples/ID, quiet hours.
-- [ ] 4.3 Five villa pages `/villas/<name>.html` (gallery, specs, price, amenities, darshan logistics, rules, FAQ, enquiry form, related villas). Only verified facts; missing fields are left out, never guessed.
-- [ ] 4.4 Compare table on villas.html + "For elders / For 8+ / With rooftop" filter chips.
-- [ ] 4.5 Policies page (`/policies.html`) + privacy notice (needed for Analytics/Ads).
-- [ ] 4.6 Villa structured data (LodgingBusiness per villa), sitemap, internal links from guides.
+- [x] 4.3 Five villa pages `/villas/<name>.html` (gallery, specs, price, amenities, darshan logistics, rules, FAQ, enquiry form, related villas). Only verified facts; missing fields are left out, never guessed.
+- [x] 4.4 Compare table on villas.html + "For elders / For 8+ / With rooftop" filter chips.
+- [x] 4.5 Policies page (`/policies.html`) + privacy notice (needed for Analytics/Ads).
+- [x] 4.6 Villa structured data (LodgingBusiness per villa), sitemap, internal links from guides.
 
 ## Phase 5 — Homepage restructure (audit §14)
 - [ ] 5.1 Hero copy (owner approves wording).

@@ -51,7 +51,8 @@ Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
      - one sentence with the shared facts (all five villas within 2 km, complimentary Mahakal shuttle);
      - a **Rudrangan Suites spotlight**: an `<h3>` naming it, a `<figure class="post-figure">` with a real photo from `villas/rudrangan/` (library alt text; caption "A bedroom at Rudrangan Suites…" or similar), and a paragraph tying its facts to this post's reader (newest villa opened 2026, designer finishes, garden seating, 3 bedrooms/sleeps 6, from-price, lift, wheelchair friendly, pets welcome, kitchen with induction, check-in/out times when useful);
      - a short list of 1–3 other villas for larger or different groups;
-     - caretaker help with Bhasma Aarti, link `../villas.html`.
+     - caretaker help with Bhasma Aarti, link `../villas.html`;
+     - link every villa you name to its own page: `../villas/<page_slug>.html` (page_slug is in business-facts.json, e.g. `../villas/rudrangan-suites.html`).
      Never state anything marked TODO. Then the first CTA.
   3. `Frequently asked questions`: exactly 5 questions as `<h3>` with a `<p>` answer each (40–80 words). The same 5 Q&As go into FAQPage JSON-LD, word for word.
   4. `Sources`: a `<ul>` of every external page you used, as links with `target="_blank" rel="noopener"`, followed by: `<p><em>Timings, prices and dates change, especially on festival days. Please verify before you travel with the official temple or government site.</em></p>`

@@ -11,6 +11,7 @@ const today = new Date().toISOString().slice(0, 10);
 const pages = [
   ...readdirSync('.').filter(f => f.endsWith('.html')),
   ...readdirSync('blog').filter(f => f.endsWith('.html')).map(f => `blog/${f}`),
+  ...readdirSync('villas').filter(f => f.endsWith('.html')).map(f => `villas/${f}`),
 ].filter(f => !/noindex/i.test(readFileSync(f, 'utf8').match(/<meta name="robots"[^>]*>/)?.[0] ?? ''));
 
 function lastmod(file) {
@@ -26,12 +27,12 @@ function lastmod(file) {
 
 function priority(f) {
   if (f === 'index.html') return '1.0';
-  if (['villas.html', 'contact.html'].includes(f)) return '0.9';
+  if (['villas.html', 'contact.html'].includes(f) || f.startsWith('villas/')) return '0.9';
   if (f.startsWith('blog/')) return '0.7';
   return '0.8';
 }
 
-const order = f => (f === 'index.html' ? 0 : f.startsWith('blog/') ? 2 : 1);
+const order = f => (f === 'index.html' ? 0 : f.startsWith('villas/') ? 1 : f.startsWith('blog/') ? 3 : 2);
 pages.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
 
 const urls = pages.map(f => {

@@ -298,8 +298,9 @@ const VILLA_CODES = { 'Divinestay': 'DIV', 'AP Suite': 'APS', 'Om Shanti Stay': 
 function pageCode() {
   const p = location.pathname.replace(/\/$/, '/index.html');
   if (p.includes('/blog/')) return 'BLOG-' + p.split('/').pop().replace('.html', '').slice(0, 24).toUpperCase();
+  if (p.includes('/villas/')) return 'VILLA';
   const name = (p.split('/').pop() || 'index.html').replace('.html', '');
-  return ({ index: 'HOME', villas: 'VILLAS', contact: 'CONTACT', about: 'ABOUT', blog: 'JOURNAL', gallery: 'GALLERY', menu: 'DINING', travel: 'TRAVEL', 'mahakal-game': 'GAME' })[name] || name.toUpperCase();
+  return ({ index: 'HOME', villas: 'VILLAS', contact: 'CONTACT', policies: 'POLICIES', '404': 'NOTFOUND', about: 'ABOUT', blog: 'JOURNAL', gallery: 'GALLERY', menu: 'DINING', travel: 'TRAVEL', 'mahakal-game': 'GAME' })[name] || name.toUpperCase();
 }
 function waLink({ villa = '', checkin = '', nights = '', adults = '', children = '', elders = false, place = '' } = {}) {
   const ref = 'WEB-' + pageCode() + (villa && VILLA_CODES[villa] ? '-' + VILLA_CODES[villa] : '') + (place ? '-' + place.toUpperCase() : '');

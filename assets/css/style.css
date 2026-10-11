@@ -1360,3 +1360,101 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px;
 }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ============================================================
+   PHASE 4 — villa detail pages (villas/<name>.html), compare table, policies
+   ============================================================ */
+.vp { padding: 120px 0 40px; }
+.vp-crumbs { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.vp-crumbs a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.vp-hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 44px; align-items: center; }
+.vp-hero__media { position: relative; border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-lg); aspect-ratio: 4/3; }
+.vp-hero__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vp-badge { position: absolute; top: 18px; left: 18px; background: var(--saffron); color: #fff; padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.vp-hero__text h1 { font-size: clamp(40px, 5vw, 64px); margin: 14px 0 8px; }
+.vp-tagline { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--saffron); margin: 0 0 22px; }
+.vp-keyfacts { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0; margin: 0 0 18px; }
+.vp-keyfacts li { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 10px; text-align: center; }
+.vp-keyfacts b { display: block; font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--navy); line-height: 1.1; }
+.vp-keyfacts span { font-size: 12px; color: var(--muted); letter-spacing: .5px; }
+.vp-best { font-size: 15px; margin: 0 0 20px; }
+.vp-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.vp-cta .btn { white-space: normal; text-align: center; }
+.vp-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+.vp-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 26px; }
+.vp-thumb { padding: 0; border: 0; border-radius: 14px; overflow: hidden; aspect-ratio: 4/3; cursor: pointer; background: var(--line); }
+.vp-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease); }
+.vp-thumb:hover img { transform: scale(1.06); }
+.vp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 44px; margin-top: 50px; align-items: start; }
+.vp-side { position: sticky; top: 100px; }
+.vp-side .enquiry { margin: 0; }
+.vp-side .enquiry__grid { grid-template-columns: 1fr 1fr; }
+.vp-side .enquiry__grid label:first-child { grid-column: 1 / -1; }
+.vp-block { padding: 30px 0; border-bottom: 1px solid var(--line); }
+.vp-block:first-child { padding-top: 0; }
+.vp-block h2 { font-size: 32px; margin: 0 0 16px; }
+.vp-block h3 { font-size: 20px; margin: 22px 0 8px; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--navy); }
+.vp-block p { color: var(--ink); line-height: 1.75; }
+.vp-small { font-size: 14.5px; color: var(--muted) !important; }
+.vp-small a, .vp-block a { color: var(--saffron); }
+.vp-specs { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 0; }
+.vp-specs div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.vp-specs dt { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.vp-specs dd { margin: 4px 0 0; font-weight: 600; color: var(--navy); }
+.vp-ticks, .vp-amenities { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.vp-amenities { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 20px; }
+.vp-ticks li, .vp-amenities li { position: relative; padding-left: 24px; }
+.vp-ticks li::before, .vp-amenities li::before { content: '✦'; position: absolute; left: 0; color: var(--gold); }
+.vp-steps { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 14px; counter-reset: s; }
+.vp-steps li { display: grid; grid-template-columns: 130px 1fr; gap: 14px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.vp-steps b { color: var(--saffron); }
+.vp-others { margin-top: 60px; }
+.vp-others h2 { font-size: 32px; margin-bottom: 18px; }
+.vp-others__grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
+.vp-other { display: block; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; color: var(--ink); text-decoration: none; transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
+.vp-other:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.vp-other img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.vp-other span { display: block; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+.vp-other b { display: block; color: var(--navy); font-size: 16px; margin-bottom: 2px; }
+.vp-guides-h { margin-top: 44px; }
+.vp-guides { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.vp-guides a { display: block; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; color: var(--navy); text-decoration: none; }
+.vp-guides a:hover { border-color: var(--saffron); color: var(--saffron); }
+
+/* Compare table on villas.html */
+.compare { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; box-shadow: var(--shadow-sm); }
+.compare table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 640px; }
+.compare th, .compare td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+.compare th { background: var(--cream); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.compare tr:last-child td { border-bottom: 0; }
+.compare td a { color: var(--navy); font-weight: 600; }
+.compare td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.villa-card__actions .btn--details { flex-basis: 100%; }
+
+/* Policies page */
+.policy { max-width: 860px; margin: 0 auto; padding: 130px 24px 80px; }
+.policy h1 { font-size: clamp(38px, 5vw, 56px); margin-bottom: 12px; }
+.policy h2 { font-size: 28px; margin: 40px 0 10px; }
+.policy p, .policy li { line-height: 1.75; }
+.policy ul { padding-left: 22px; }
+.policy .policy__note { background: var(--cream); border-left: 3px solid var(--gold); padding: 14px 18px; border-radius: 0 12px 12px 0; }
+
+@media (max-width: 900px) {
+  .vp { padding-top: 100px; }
+  .vp-hero, .vp-grid { grid-template-columns: 1fr; gap: 24px; }
+  .vp-gallery { grid-template-columns: repeat(2, 1fr); }
+  .vp-gallery .vp-thumb:nth-child(n+5) { display: none; }
+  .vp-side { position: static; }
+  .vp-specs { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .vp-amenities, .vp-guides { grid-template-columns: 1fr; }
+  .vp-steps li { grid-template-columns: 1fr; gap: 4px; }
+  .vp-others__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+.villa-card__more { display: inline-block; margin: 0 0 16px; color: var(--saffron); font-weight: 600; font-size: 14.5px; text-decoration: none; }
+.villa-card__more:hover { text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 600px) {
+  .compare table { min-width: 0; font-size: 14px; }
+  .compare th, .compare td { padding: 11px 9px; }
+  .compare th:nth-child(5), .compare td:nth-child(5) { display: none; }
+  .compare th { font-size: 10.5px; letter-spacing: .5px; }
+}

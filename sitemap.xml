@@ -6,6 +6,31 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://www.apvillasandresorts.in/villas/ap-suite.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.apvillasandresorts.in/villas/divinestay.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.apvillasandresorts.in/villas/om-shanti-stay.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.apvillasandresorts.in/villas/rudrangan-suites.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.apvillasandresorts.in/villas/villa-aranya.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.apvillasandresorts.in/about.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
@@ -32,6 +57,11 @@
   </url>
   <url>
     <loc>https://www.apvillasandresorts.in/menu.html</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.apvillasandresorts.in/policies.html</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>

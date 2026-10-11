@@ -55,7 +55,10 @@
     "ac_in_all_rooms": "Air-conditioned",
     "guest_reviews": "4.9 star average; 200+ verified 5-star reviews across Airbnb, Booking.com, MakeMyTrip and Google (as stated on the site)",
     "kitchen_detail": "Separate kitchen or kitchenette with all cooking equipment, induction cooktop, microwave and mini fridge, so Indian families can cook their own meals during a darshan trip",
-    "_amenities_note": "Pets, wheelchair access, lift, power backup, AC, geysers and kitchen details were confirmed by the owner on 2026-10-10 as applying to the collection."
+    "_amenities_note": "Pets, wheelchair access, lift, power backup, AC, geysers and kitchen details were confirmed by the owner on 2026-10-10 as applying to the collection.",
+    "advance_payment": "TODO",
+    "id_policy": "TODO",
+    "prices_include_gst": "TODO"
   },
   "villas": [
     {
@@ -73,7 +76,15 @@
         "24-hour caretaker"
       ],
       "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
-      "photo_folder": "villas/divinestay"
+      "photo_folder": "villas/divinestay",
+      "page_slug": "divinestay",
+      "hero_photo": "villas/divinestay/d95bb5c2-b413-446d-9430-35f0ea1e8132.jpg",
+      "best_for": "Large families and three generations (up to 8)",
+      "bathrooms": "TODO",
+      "beds": "TODO",
+      "floor_and_lift": "TODO",
+      "area_sqft": "TODO",
+      "house_rules": "TODO"
     },
     {
       "id": "ap_suite",
@@ -90,7 +101,15 @@
         "Security cameras"
       ],
       "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
-      "photo_folder": "villas/ap_suite"
+      "photo_folder": "villas/ap_suite",
+      "page_slug": "ap-suite",
+      "hero_photo": "villas/ap_suite/5c1ed7fd-d42c-4e69-9d91-8a7e3e4f9d62.JPG",
+      "best_for": "Couples and small families (up to 4)",
+      "bathrooms": "TODO",
+      "beds": "TODO",
+      "floor_and_lift": "TODO",
+      "area_sqft": "TODO",
+      "house_rules": "TODO"
     },
     {
       "id": "om_shanti",
@@ -107,7 +126,15 @@
         "High-quality linens"
       ],
       "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
-      "photo_folder": "villas/om_shanti"
+      "photo_folder": "villas/om_shanti",
+      "page_slug": "om-shanti-stay",
+      "hero_photo": "villas/om_shanti/693419485.jpg",
+      "best_for": "Families with children (up to 6)",
+      "bathrooms": "TODO",
+      "beds": "TODO",
+      "floor_and_lift": "TODO",
+      "area_sqft": "TODO",
+      "house_rules": "TODO"
     },
     {
       "id": "villa_aranya",
@@ -124,7 +151,15 @@
         "Shuttle to Mahakal"
       ],
       "exact_distance_to_mahakal": "TODO (use the shared 'within 2 km' fact)",
-      "photo_folder": "villas/villa_aranya"
+      "photo_folder": "villas/villa_aranya",
+      "page_slug": "villa-aranya",
+      "hero_photo": "villas/villa_aranya/668297588.jpg",
+      "best_for": "Large families who want calm interiors (up to 8)",
+      "bathrooms": "TODO",
+      "beds": "TODO",
+      "floor_and_lift": "TODO",
+      "area_sqft": "TODO",
+      "house_rules": "TODO"
     },
     {
       "id": "rudrangan",
@@ -144,7 +179,15 @@
       "photo_folder": "villas/rudrangan",
       "address": "Kesar Parisar, 53, Indore Rd, near Anjushree, Pawapuri Colony, Ujjain, Madhya Pradesh 456010",
       "google_maps": "https://www.google.com/maps/place/?q=place_id:ChIJoURgpAh1YzkR-EA--R8-S4o",
-      "address_note": "Address taken from the Google Maps listing on 2026-10-10"
+      "address_note": "Address taken from the Google Maps listing on 2026-10-10",
+      "page_slug": "rudrangan-suites",
+      "hero_photo": "villas/rudrangan/IMG_4022.jpg",
+      "best_for": "Families who want our newest, freshest stay (up to 6)",
+      "bathrooms": "TODO",
+      "beds": "TODO",
+      "floor_and_lift": "TODO",
+      "area_sqft": "TODO",
+      "house_rules": "TODO"
     }
   ],
   "transport_indicative_prices_2026": {
