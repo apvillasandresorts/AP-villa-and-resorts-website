@@ -38,7 +38,8 @@
   const isForeign = () => q('nationality').value.startsWith('Other');
   function applyShow() {
     const st = q('payment_status').value;
-    const on = { ota: isOta(), direct: isDirect(), foreign: isForeign(), paid: !!st && !st.startsWith('Pay on arrival') };
+    const paid = !!st && !st.startsWith('Pay on arrival');
+    const on = { ota: isOta(), direct: isDirect(), foreign: isForeign(), paid, directpaid: isDirect() && paid };
     $$('[data-show]').forEach(el => {
       const show = on[el.dataset.show];
       el.hidden = !show;
@@ -47,6 +48,7 @@
     });
     q('booking_id').required = on.ota;
     ['amount_paid', 'payment_timing', 'payment_mode'].forEach(n => { q(n).required = on.paid; });
+    q('payment_proof').required = on.directpaid;   // direct bookings: proof of payment is mandatory
     if (on.paid && isOta() && !q('payment_mode').value && st === 'Fully paid') q('payment_mode').value = q('payment_mode').options[1].value;
     balance();
     ['country', 'passport_no', 'visa_no', 'visa_expiry', 'passport_page', 'visa_page'].forEach(n => { q(n).required = on.foreign; });
@@ -156,6 +158,8 @@
       id_type: v('id_type'), id_last4: v('id_last4'),
       payment_status: v('payment_status'), total_amount: v('total_amount'), amount_paid: v('amount_paid'), balance_due: balance(),
       payment_timing: v('payment_timing'), payment_mode: v('payment_mode'), payment_ref: v('payment_ref'), payment_date: v('payment_date'),
+      payment_proof: q('payment_proof').disabled ? '' : (q('payment_proof').files.length ? q('payment_proof').files.length + ' file(s) uploaded' : ''),
+      booking_voucher: q('booking_voucher').disabled ? '' : (q('booking_voucher').files.length ? q('booking_voucher').files.length + ' file(s) uploaded' : ''),
       purpose: v('purpose'), heard_from: v('heard_from'), first_visit: v('first_visit'), requests: v('requests'),
       consent_data: q('consent_data').checked ? 'Yes' : 'No', consent_offers: q('consent_offers').checked ? 'Yes' : 'No', signature: v('signature'),
     };
@@ -184,6 +188,7 @@
         btn.textContent = 'Preparing your ID photos…';
         await add('id_front', 'ID-front'); await add('id_back', 'ID-back'); await add('other_ids', 'Other-adult-ID');
         await add('passport_page', 'Passport'); await add('visa_page', 'Visa');
+        await add('payment_proof', 'Payment-screenshot'); await add('booking_voucher', 'Booking-voucher');
         btn.textContent = 'Sending securely…';
         const res = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ref: r, submitted_at: new Date().toISOString(), page: location.href, fields: f, files, website: '' }) });
         const out = await res.json().catch(() => ({}));
@@ -192,6 +197,7 @@
       } else {
         // Not connected to Google yet: hand the details over on WhatsApp, IDs to be sent in the chat
         waText.push(`🪪 ID: ${f.id_type} ending ${f.id_last4} (I'll send the photo here)`, `🏠 ${f.address}, ${f.city}, ${f.state} ${f.pincode}`, `👥 ${f.members || 'No other guests'}`);
+        if (f.booking_source.startsWith('Direct') && f.amount_paid) waText.push('🧾 I will attach the payment screenshot here.');
         waText.push(`💰 ${f.payment_status}${f.amount_paid ? ` · paid ₹${f.amount_paid}` : ''}${f.total_amount ? ` of ₹${f.total_amount}` : ''}${f.balance_due ? ` · balance ₹${f.balance_due}` : ''}${f.payment_timing ? ` · ${f.payment_timing}` : ''}${f.payment_mode ? ` · ${f.payment_mode}` : ''}${f.payment_ref ? ' ' + f.payment_ref : ''}`);
         if (f.requests) waText.push(`📝 ${f.requests}`);
         done(f, r, waText, false);

@@ -260,6 +260,10 @@
             <input name="payment_date" type="date"></label>
         </div>
         <p class="ci-balance" id="ci-balance" aria-live="polite"></p>
+        <div class="ci-files">
+          <label class="ci-drop ci-drop--wide" data-show="directpaid"><span class="ci-l">Payment screenshot <b>*</b> <small>(UPI / bank transfer confirmation, so we can match your payment)</small></span><input type="file" name="payment_proof" accept="image/*,application/pdf" multiple><span class="ci-drop__ui">Upload screenshot</span><span class="ci-drop__name"></span></label>
+          <label class="ci-drop ci-drop--wide" data-show="ota"><span class="ci-l">Booking voucher <small>(optional: MakeMyTrip, Booking.com or Airbnb confirmation)</small></span><input type="file" name="booking_voucher" accept="image/*,application/pdf" multiple><span class="ci-drop__ui">Upload voucher</span><span class="ci-drop__name"></span></label>
+        </div>
 
         <h3 class="ci-sub">About your visit</h3>
         <div class="ci-grid">

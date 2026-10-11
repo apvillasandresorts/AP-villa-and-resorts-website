@@ -12,7 +12,7 @@ const NOTIFY_EMAIL = '';
 // ---- Welcome email to the guest (sent from this Google account after every successful check-in) ----
 const SITE = 'https://www.apvillasandresorts.in';
 const CARETAKER = { name: 'Mahesh Kumar', phone: 'CARETAKER_PHONE', wa: 'CARETAKER_WA' };   // real number is set only in the Google script (this repo is public)   // help at the villa
-const OWNER = { name: 'Apoorv', phone: '+91 89990 61598', wa: '918999061598' };               // bookings, payments, decisions
+const OWNER = { name: 'Apoorv Singh', phone: '+91 89990 61598', wa: '918999061598' };               // bookings, payments, decisions
 // Wi-Fi per villa: fill in { name: 'NETWORK', password: 'PASSWORD' }. Empty = "your caretaker will share it on arrival".
 const WIFI = {
   'Divinestay': null, 'AP Suite': null, 'Om Shanti Stay': null, 'Villa Aranya': null, 'Rudrangan Suites': null,
@@ -47,6 +47,7 @@ const COLUMNS = [
   ['payment_timing', 'When paid'], ['payment_mode', 'Paid through'], ['payment_ref', 'Payment ref'], ['payment_date', 'Paid on'],
   ['purpose', 'Purpose'], ['heard_from', 'Found us via'], ['first_visit', 'First visit to Ujjain'], ['requests', 'Special requests'],
   ['consent_data', 'Data consent'], ['consent_offers', 'Offers on WhatsApp'], ['signature', 'Signature (typed)'],
+  ['payment_proof', 'Payment screenshot'], ['booking_voucher', 'Booking voucher'],   // files are in the guest's Drive folder
 ];
 
 function doPost(e) {
@@ -127,26 +128,24 @@ function guestEmail_(f, ref) {
       <table style="border-collapse:collapse;width:100%">
         <tr><td style="padding:10px;background:#FBF6EA;border-radius:10px;vertical-align:top">
           <b style="color:${green}">${CARETAKER.name} · Caretaker</b><br><a href="tel:${CARETAKER.phone.replace(/\s/g, '')}" style="color:#B5532A;font-size:16px;font-weight:bold">${CARETAKER.phone}</a> · <a href="https://wa.me/${CARETAKER.wa}" style="color:#177A40">WhatsApp</a><br>
-          <span style="font-size:13px;color:${muted}">For anything at the villa: arrival and keys, Wi-Fi, housekeeping, the Mahakal shuttle, food orders and Bhasma Aarti help.</span></td></tr>
+          <span style="font-size:13px;color:${muted}">For anything at the villa: arrival and keys, Wi-Fi, housekeeping, maintenance and Bhasma Aarti help.</span></td></tr>
         <tr><td style="height:8px"></td></tr>
         <tr><td style="padding:10px;background:#F3F6F4;border-radius:10px;vertical-align:top">
           <b style="color:${green}">${OWNER.name} · Owner</b><br><a href="tel:${OWNER.phone.replace(/\s/g, '')}" style="color:#B5532A;font-size:16px;font-weight:bold">${OWNER.phone}</a> · <a href="https://wa.me/${OWNER.wa}" style="color:#177A40">WhatsApp</a><br>
-          <span style="font-size:13px;color:${muted}">For bookings, payments, changes to your stay and any decision you need from us.</span></td></tr>
+          <span style="font-size:13px;color:${muted}">For food orders, bookings, payments, changes to your stay and any decision you need from us.</span></td></tr>
       </table>
 
       ${h('Included &amp; on request')}
       <ul style="padding-left:18px;margin:0">
-        <li><b>Complimentary breakfast</b>, welcome tea and prasad.</li>
-        <li><b>Free Mahakal shuttle</b> between your villa and Mahakaleshwar temple (up to 5 guests per trip). Ask ${CARETAKER.name.split(' ')[0]} for timings.</li>
-        <li><b>Bhasma Aarti guidance:</b> your caretaker explains the booking process (online or at the counter) on your arrival evening, and the shuttle drops you at the temple gate by 3:30 AM for the 4 AM aarti. The temple permit itself is booked by you.</li>
-        <li><b>Food in your villa:</b> order from the menu below through your caretaker, or cook in your villa's kitchen.</li>
+        <li><b>Bhasma Aarti guidance:</b> your caretaker explains the booking process (online or at the counter) on your arrival evening. The temple permit itself is booked by you.</li>
+        <li><b>Food in your villa:</b> order from the menu below by calling or WhatsApp-ing ${OWNER.name} (${OWNER.phone}), or cook in your villa's kitchen.</li>
         <li><b>Travel:</b> Indore airport pickup (sedan from ₹2,500), Omkareshwar day trip (SUV from ₹5,500) and local temple tours. These are indicative prices; WhatsApp ${OWNER.name} for a confirmed quote. <a href="${SITE}/travel.html" style="color:#B5532A">See all trips</a></li>
       </ul>
 
       ${h('In-villa dining menu')}
       <table style="border-collapse:collapse;width:100%">${menu}</table>
       <p style="margin:14px 0 0"><a href="${MENU_IMAGE}"><img src="${MENU_IMAGE}" alt="AP Villas dining menu" width="560" style="width:100%;max-width:560px;border-radius:10px;border:1px solid #E6DCC6"></a></p>
-      <p style="font-size:13px;color:${muted};margin:6px 0 0">To order, call or WhatsApp ${CARETAKER.name} (${CARETAKER.phone}).</p>
+      <p style="font-size:13px;color:${muted};margin:6px 0 0">To order food, call or WhatsApp ${OWNER.name} (${OWNER.phone}).</p>
 
       ${h('Good to know')}
       <ul style="padding-left:18px;margin:0;font-size:14px">
@@ -162,7 +161,7 @@ function guestEmail_(f, ref) {
   </div>
 </div>`;
   const text = `Namaste ${first},\n\nYour e-check-in is complete (ref ${ref}).\n${f.villa}: ${day(f.checkin_date)} 10:30 AM to ${day(f.checkout_date)} 9:30 AM.\n` +
-    `Caretaker ${CARETAKER.name}: ${CARETAKER.phone} (anything at the villa). Owner ${OWNER.name}: ${OWNER.phone} (bookings, payments).\n` +
+    `Caretaker ${CARETAKER.name}: ${CARETAKER.phone} (anything at the villa). Owner ${OWNER.name}: ${OWNER.phone} (food orders, bookings, payments).\n` +
     `Wi-Fi: ${wifi && wifi.name ? wifi.name + ' / ' + wifi.password : 'your caretaker will share it on arrival'}.\nMenu: ${MENU_IMAGE}\nPolicies: ${SITE}/policies.html\n\nHar Har Mahadev!\nAP Villas & Resorts`;
   MailApp.sendEmail({ to: String(f.email).trim(), subject: `Your stay at ${f.villa}, ${day(f.checkin_date)} · AP Villas & Resorts`, htmlBody: html, body: text, name: 'AP Villas & Resorts', replyTo: 'apvillasandresorts@gmail.com' });
 }
@@ -177,11 +176,10 @@ function doGet() { return json_({ ok: true, service: 'AP Villas e-check-in' }); 
 function sheet_() {
   const ss = SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(COLUMNS.map(c => c[1]));
-    sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, COLUMNS.length).setFontWeight('bold').setBackground('#F3EEE3');
-  }
+  if (sh.getLastRow() === 0) sh.appendRow(COLUMNS.map(c => c[1]));
+  if (sh.getLastColumn() < COLUMNS.length) sh.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS.map(c => c[1])]);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, COLUMNS.length).setFontWeight('bold').setBackground('#F3EEE3');
   return sh;
 }
 function folder_(parent, name) { const it = parent.getFoldersByName(name); return it.hasNext() ? it.next() : parent.createFolder(name); }
