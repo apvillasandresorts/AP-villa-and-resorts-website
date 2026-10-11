@@ -37,7 +37,8 @@
   const isDirect = () => q('booking_source').value.startsWith('Direct');
   const isForeign = () => q('nationality').value.startsWith('Other');
   function applyShow() {
-    const on = { ota: isOta(), direct: isDirect(), foreign: isForeign(), advance: q('advance_paid').value === 'Yes' };
+    const st = q('payment_status').value;
+    const on = { ota: isOta(), direct: isDirect(), foreign: isForeign(), paid: !!st && !st.startsWith('Pay on arrival') };
     $$('[data-show]').forEach(el => {
       const show = on[el.dataset.show];
       el.hidden = !show;
@@ -45,10 +46,23 @@
       if (el.matches('input, select')) el.disabled = !show;
     });
     q('booking_id').required = on.ota;
-    q('advance_paid').required = on.direct;
+    ['amount_paid', 'payment_timing', 'payment_mode'].forEach(n => { q(n).required = on.paid; });
+    if (on.paid && isOta() && !q('payment_mode').value && st === 'Fully paid') q('payment_mode').value = q('payment_mode').options[1].value;
+    balance();
     ['country', 'passport_no', 'visa_no', 'visa_expiry', 'passport_page', 'visa_page'].forEach(n => { q(n).required = on.foreign; });
   }
-  form.addEventListener('change', e => { if (['booking_source', 'nationality', 'advance_paid'].includes(e.target.name)) applyShow(); });
+  form.addEventListener('change', e => { if (['booking_source', 'nationality', 'payment_status'].includes(e.target.name)) applyShow(); });
+  // balance due = total − paid (shown live; also saved)
+  function balance() {
+    const total = +q('total_amount').value || 0, paid = q('amount_paid').disabled ? 0 : (+q('amount_paid').value || 0);
+    const el = document.getElementById('ci-balance'); const inr = n => '₹' + n.toLocaleString('en-IN');
+    if (!total && !paid) { el.textContent = ''; return ''; }
+    if (!total) { el.innerHTML = `Paid so far: <b>${inr(paid)}</b>`; return ''; }
+    const due = Math.max(0, total - paid);
+    el.innerHTML = due ? `Paid ${inr(paid)} of ${inr(total)} · Balance due: <b>${inr(due)}</b>` : `Fully paid: <b>${inr(total)}</b>`;
+    return String(due);
+  }
+  form.addEventListener('input', e => { if (e.target.name === 'total_amount' || e.target.name === 'amount_paid') balance(); });
 
   // ---- other members: one row per extra person ----
   const membersBox = document.getElementById('ci-members');
@@ -140,8 +154,8 @@
       india_arrival: v('india_arrival'), coming_from: v('coming_from'), next_destination: v('next_destination'),
       members: members.map(m => `${m[0]} (${m[1]}, ${m[2]}${m[3] ? ', ' + m[3] : ''})`).join('; '),
       id_type: v('id_type'), id_last4: v('id_last4'),
-      advance_paid: v('advance_paid'), advance_amount: v('advance_amount'), payment_mode: v('payment_mode'), payment_ref: v('payment_ref'), payment_date: v('payment_date'),
-      total_amount: v('total_amount'), ota_payment: v('ota_payment'),
+      payment_status: v('payment_status'), total_amount: v('total_amount'), amount_paid: v('amount_paid'), balance_due: balance(),
+      payment_timing: v('payment_timing'), payment_mode: v('payment_mode'), payment_ref: v('payment_ref'), payment_date: v('payment_date'),
       purpose: v('purpose'), heard_from: v('heard_from'), first_visit: v('first_visit'), requests: v('requests'),
       consent_data: q('consent_data').checked ? 'Yes' : 'No', consent_offers: q('consent_offers').checked ? 'Yes' : 'No', signature: v('signature'),
     };
@@ -178,7 +192,7 @@
       } else {
         // Not connected to Google yet: hand the details over on WhatsApp, IDs to be sent in the chat
         waText.push(`🪪 ID: ${f.id_type} ending ${f.id_last4} (I'll send the photo here)`, `🏠 ${f.address}, ${f.city}, ${f.state} ${f.pincode}`, `👥 ${f.members || 'No other guests'}`);
-        if (f.advance_paid === 'Yes') waText.push(`💰 Advance ₹${f.advance_amount} by ${f.payment_mode} ${f.payment_ref}`);
+        waText.push(`💰 ${f.payment_status}${f.amount_paid ? ` · paid ₹${f.amount_paid}` : ''}${f.total_amount ? ` of ₹${f.total_amount}` : ''}${f.balance_due ? ` · balance ₹${f.balance_due}` : ''}${f.payment_timing ? ` · ${f.payment_timing}` : ''}${f.payment_mode ? ` · ${f.payment_mode}` : ''}${f.payment_ref ? ' ' + f.payment_ref : ''}`);
         if (f.requests) waText.push(`📝 ${f.requests}`);
         done(f, r, waText, false);
       }

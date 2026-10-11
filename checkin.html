@@ -57,6 +57,8 @@
 .ci input:focus, .ci select:focus, .ci textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 .ci .is-bad { border-color: #C0392B !important; background: #FFF5F3 !important; }
 .ci-note { font-size: 14px; color: var(--ink); background: #FBF6EA; border: 1px solid #EBDDBE; border-radius: 12px; padding: 12px 14px; margin: 0 0 16px; line-height: 1.55; }
+.ci-balance { margin: 12px 0 0; font-size: 15px; font-weight: 600; color: var(--navy); }
+.ci-balance b { color: var(--saffron); }
 .ci-hint { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
 .ci-foreign { margin-top: 18px; }
 .ci-member { display: grid; grid-template-columns: 28px 2fr 0.8fr 1fr 1.4fr; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -241,24 +243,23 @@
       <!-- Step 4: payment, visit and consent -->
       <fieldset class="ci-step" data-step="3">
         <legend>Payment</legend>
-        <div class="ci-grid" data-show="direct">
-          <label><span class="ci-l">Advance paid? <b>*</b></span>
-            <select name="advance_paid"><option value="">Choose</option><option>Yes</option><option>No</option></select></label>
-          <label data-show="advance"><span class="ci-l">Advance amount (₹)</span>
-            <input name="advance_amount" type="number" min="0" inputmode="numeric"></label>
-          <label data-show="advance"><span class="ci-l">Paid by</span>
-            <select name="payment_mode"><option value="">Choose</option><option>UPI</option><option>Bank transfer</option><option>Cash</option><option>Card</option><option>Other</option></select></label>
-          <label data-show="advance"><span class="ci-l">UPI / transaction reference</span>
-            <input name="payment_ref" type="text" maxlength="40"></label>
-          <label data-show="advance"><span class="ci-l">Paid on</span>
+        <div class="ci-grid">
+          <label class="ci-wide"><span class="ci-l">Payment status <b>*</b></span>
+            <select name="payment_status" required><option value="">Choose</option><option>Fully paid</option><option>Partly paid (advance)</option><option>Pay on arrival (nothing paid yet)</option></select></label>
+          <label><span class="ci-l">Total amount for the stay (₹)</span>
+            <input name="total_amount" type="number" min="0" inputmode="numeric" placeholder="e.g. 11000"></label>
+          <label data-show="paid"><span class="ci-l">Amount paid so far (₹) <b>*</b></span>
+            <input name="amount_paid" type="number" min="1" inputmode="numeric" placeholder="e.g. 3000"></label>
+          <label data-show="paid"><span class="ci-l">When was it paid? <b>*</b></span>
+            <select name="payment_timing"><option value="">Choose</option><option>At the time of booking (pre-booking)</option><option>Before arrival</option><option>On arrival</option></select></label>
+          <label data-show="paid"><span class="ci-l">Paid through <b>*</b></span>
+            <select name="payment_mode"><option value="">Choose</option><option>On the booking site (MakeMyTrip, Booking.com…)</option><option>UPI</option><option>Bank transfer</option><option>Cash</option><option>Card</option><option>Other</option></select></label>
+          <label data-show="paid"><span class="ci-l">UPI / transaction reference</span>
+            <input name="payment_ref" type="text" maxlength="40" placeholder="UTR or transaction ID"></label>
+          <label data-show="paid"><span class="ci-l">Paid on</span>
             <input name="payment_date" type="date"></label>
-          <label><span class="ci-l">Total amount agreed (₹)</span>
-            <input name="total_amount" type="number" min="0" inputmode="numeric"></label>
         </div>
-        <div class="ci-grid" data-show="ota">
-          <label class="ci-wide"><span class="ci-l">Payment for this booking</span>
-            <select name="ota_payment"><option value="">Choose</option><option>Fully prepaid on the booking site</option><option>Partly paid, balance at the villa</option><option>Pay at the villa</option></select></label>
-        </div>
+        <p class="ci-balance" id="ci-balance" aria-live="polite"></p>
 
         <h3 class="ci-sub">About your visit</h3>
         <div class="ci-grid">

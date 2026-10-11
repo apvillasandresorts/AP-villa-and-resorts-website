@@ -21,8 +21,8 @@ const COLUMNS = [
   ['india_arrival', 'Arrived in India'], ['coming_from', 'Coming from'], ['next_destination', 'Next destination'],
   ['members', 'Other guests (name, age, gender, relation)'],
   ['id_type', 'ID type'], ['id_last4', 'ID last 4'], ['id_files', 'ID files (Drive)'],
-  ['advance_paid', 'Advance paid'], ['advance_amount', 'Advance ₹'], ['payment_mode', 'Paid by'], ['payment_ref', 'Payment ref'], ['payment_date', 'Paid on'],
-  ['total_amount', 'Total agreed ₹'], ['ota_payment', 'OTA payment'],
+  ['payment_status', 'Payment status'], ['total_amount', 'Total ₹'], ['amount_paid', 'Amount paid ₹'], ['balance_due', 'Balance due ₹'],
+  ['payment_timing', 'When paid'], ['payment_mode', 'Paid through'], ['payment_ref', 'Payment ref'], ['payment_date', 'Paid on'],
   ['purpose', 'Purpose'], ['heard_from', 'Found us via'], ['first_visit', 'First visit to Ujjain'], ['requests', 'Special requests'],
   ['consent_data', 'Data consent'], ['consent_offers', 'Offers on WhatsApp'], ['signature', 'Signature (typed)'],
 ];
@@ -56,7 +56,7 @@ function doPost(e) {
       const to = NOTIFY_EMAIL || Session.getEffectiveUser().getEmail();
       MailApp.sendEmail(to, `New e-check-in: ${f.guest_name} · ${f.villa} · ${f.checkin_date}`,
         `${f.guest_name} (${f.phone})\n${f.villa}: ${f.checkin_date} → ${f.checkout_date}, ${f.adults} adults, ${f.children || 0} children\n` +
-        `Booked through: ${f.booking_source} ${f.booking_id || ''}\nID: ${f.id_type} ending ${f.id_last4}, ${links.length} file(s): ${sub.getUrl()}\nReference: ${ref}`);
+        `Booked through: ${f.booking_source} ${f.booking_id || ''}\nPayment: ${f.payment_status || ''} ${f.amount_paid ? '₹' + f.amount_paid + ' paid' : ''} ${f.balance_due ? '· balance ₹' + f.balance_due : ''}\nID: ${f.id_type} ending ${f.id_last4}, ${links.length} file(s): ${sub.getUrl()}\nReference: ${ref}`);
     } catch (mailErr) { /* email is optional */ }
 
     return json_({ ok: true, ref });
