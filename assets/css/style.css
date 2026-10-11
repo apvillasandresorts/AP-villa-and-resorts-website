@@ -333,7 +333,7 @@ button { font-family: inherit; cursor: none; border: none; background: none; }
   position: relative; z-index: 2; max-width: 920px; color: white;
   animation: fadeUp 1.3s var(--ease) both;
 }
-@keyframes fadeUp { from {opacity: 0; transform: translateY(50px);} to {opacity: 1; transform: translateY(0);} }
+@keyframes fadeUp { from {opacity: 0.01; transform: translateY(50px);} to {opacity: 1; transform: translateY(0);} } /* 0.01 not 0: lets browsers count the hero as painted (faster LCP), looks the same */
 .hero__eyebrow {
   display: inline-block; padding: 9px 22px;
   background: rgba(255,255,255,0.12);
