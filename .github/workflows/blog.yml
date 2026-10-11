@@ -242,7 +242,8 @@ jobs:
         id: verdict
         env:
           REVIEW: ${{ steps.review2.outputs.structured_output || steps.review.outputs.structured_output }}
-          VALIDATE: ${{ steps.validate2.outcome || steps.validate.outcome }}
+          VALIDATE1: ${{ steps.validate.outcome }}
+          VALIDATE2: ${{ steps.validate2.outcome }}
         run: |
           echo "$REVIEW" > review.json
           node -e '
@@ -253,6 +254,8 @@ jobs:
             console.log(JSON.stringify(r,null,2));
           '
           review_pass=$(node -p 'require("./review.json").pass')
+          # the re-validation only runs after an auto-fix; otherwise use the first result
+          if [ "$VALIDATE2" = "success" ] || [ "$VALIDATE2" = "failure" ]; then VALIDATE="$VALIDATE2"; else VALIDATE="$VALIDATE1"; fi
           passed=false
           if [ "$VALIDATE" = "success" ] && [ "$review_pass" = "true" ]; then passed=true; fi
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
