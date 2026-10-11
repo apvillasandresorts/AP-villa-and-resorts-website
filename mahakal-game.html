@@ -1153,7 +1153,9 @@ function fire() {
   for (const s of w.spread) {
     const lane = player.lane + s;
     if (lane < 0 || lane > 2) continue;
-    shots.push({ lane, z: 0.04, range: w.range, dmg: w.dmg, pierce: w.pierce, kind: w.kind, color: w.color, hit: new Set(), spin: 0, side: s !== 0 });
+    const lp = launchPoint();
+    const target = danavs.filter(d => d.lane === lane && d.z > 0.04).sort((a, b) => a.z - b.z)[0];
+    shots.push({ lane, z: 0.04, range: w.range, dmg: w.dmg, pierce: w.pierce, kind: w.kind, color: w.color, hit: new Set(), spin: 0, side: s !== 0, sx: lp.x, sy: lp.y, fly: !!(target && DANAV[target.type].mount === 'dragon') });
   }
   player.recoil = 1;
   sfx.shoot(w.kind);
@@ -1688,11 +1690,35 @@ function drawFireball(f) {
   g.addColorStop(0, '#FFF3C4'); g.addColorStop(0.35, '#FF8A3D'); g.addColorStop(0.7, 'rgba(200,30,20,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y - r, r * 1.6, 0, Math.PI * 2); ctx.fill();
 }
+// Where a shot leaves the yoddha: the bow, the raised hand, or the lion's mouth.
+function launchPoint() {
+  const u = unit(), p = project(0, player.x), sz = 48 * u * (0.76 + 0.075 * bulk);
+  if (weapon === 'simha') { const L = sz * 0.9 * 1.6; return { x: p.x - L * 0.55, y: p.y - L * 1.15 }; }
+  if (weapon === 'bow') return { x: p.x - sz * 0.15, y: p.y - sz * 2.15 };
+  return { x: p.x + sz * 0.45, y: p.y - sz * 2.05 };
+}
+// Screen position of a shot at depth z: it starts at the launch point and settles onto its lane at the
+// target's chest height (higher for dragon riders), so it always flies along the lane's perspective line.
+function shotPos(s, z) {
+  const u = unit(), b = project(z, s.lane - 1);
+  const h = s.fly ? 1.9 * (44 * b.scale * u + 5) : 46 * b.scale * u;
+  const t0 = Math.min(1, Math.max(0, (z - 0.04) / 0.16)), t = t0 * t0 * (3 - 2 * t0);
+  return { x: s.sx + (b.x - s.sx) * t, y: s.sy + (b.y - h - s.sy) * t, scale: b.scale };
+}
 function drawShot(s) {
-  const p = project(s.z, s.lane - 1), u = unit(), k = (6 + 16 * p.scale) * u;
-  const y = p.y - 46 * p.scale * u;
-  ctx.save(); ctx.translate(p.x, y);
-  ctx.globalAlpha = Math.max(0.15, Math.min(1, (s.range - s.z) / 0.12));
+  const p = shotPos(s, s.z), u = unit(), k = (6 + 16 * p.scale) * u;
+  const ahead = shotPos(s, s.z + 0.02), ang = Math.atan2(ahead.y - p.y, ahead.x - p.x) + Math.PI / 2;   // points along the flight path
+  const fade = Math.max(0.15, Math.min(1, (s.range - s.z) / 0.12));
+  // motion trail
+  if (s.z > 0.06) {
+    const back = shotPos(s, Math.max(0.04, s.z - 0.07));
+    const tg = ctx.createLinearGradient(back.x, back.y, p.x, p.y); tg.addColorStop(0, 'rgba(255,240,200,0)'); tg.addColorStop(1, s.kind === 'flame' ? 'rgba(255,160,60,0.55)' : 'rgba(255,240,200,0.45)');
+    ctx.save(); ctx.globalAlpha = fade; ctx.strokeStyle = tg; ctx.lineWidth = Math.max(1.5, k * (s.kind === 'flame' ? 0.6 : 0.18)); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(back.x, back.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.translate(p.x, p.y);
+  if (s.kind === 'arrow' || s.kind === 'blade' || s.kind === 'trishul' || s.kind === 'flame') ctx.rotate(ang);
+  ctx.globalAlpha = fade;
   ctx.shadowColor = s.color; ctx.shadowBlur = 14;
   if (s.kind === 'arrow') {
     ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, k * 1.2); ctx.lineTo(0, -k); ctx.stroke();
