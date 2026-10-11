@@ -1217,30 +1217,25 @@ section { padding: 130px 0; position: relative; }
 .article .post-figure figcaption a { color: var(--muted); }
 
 /* ============================================================
-   BRAND 2026 — Shikhara Home mark (replaces the round medallion)
+   BRAND — owner's AP Villas & Resorts logo (gold AP emblem + green wordmark)
    ============================================================ */
-.nav__logo { width: 50px; height: 50px; border-radius: 0; }
-.nav__logo::before, .nav__logo::after { display: none; }
-.nav__logo img {
-  width: 50px; height: 50px; animation: none;
-  filter: drop-shadow(0 3px 8px rgba(184,138,44,0.18));
+.nav__logo-full { height: 54px; width: auto; display: block; transition: transform .4s var(--ease), filter .4s var(--ease); }
+.nav__brand:hover .nav__logo-full { transform: translateY(-1px); filter: drop-shadow(0 6px 14px rgba(184,138,44,.3)); }
+/* Over the dark homepage hero: a soft cream plate keeps the green wordmark readable */
+body:has(.hero) .nav:not(.scrolled) .nav__brand {
+  background: rgba(250,246,238,.92); border-radius: 14px; padding: 6px 12px; box-shadow: 0 6px 24px rgba(0,0,0,.18);
 }
-.nav__brand:hover .nav__logo img { transform: translateY(-2px); filter: drop-shadow(0 8px 16px rgba(184,138,44,0.35)); }
-.nav__name strong { font-size: 22px; letter-spacing: .2px; white-space: nowrap; }
-.nav__name span { font-size: 10px; letter-spacing: 1.8px; white-space: nowrap; margin-top: 3px; }
-.footer__logo { display: block; margin: 0 auto 14px; width: 76px; height: 76px; }
+.footer__logo-full {
+  display: block; margin: 0 auto 18px; height: 84px; width: auto;
+  background: #FAF6EE; padding: 12px 20px; border-radius: 16px; box-sizing: content-box;
+}
+.hud__brand img { width: 34px !important; height: 34px !important; object-fit: contain; }
 @media (max-width: 900px) {
-  .nav__logo, .nav__logo img { width: 42px; height: 42px; }
-  .nav__brand { gap: 8px; min-width: 0; }
-  .nav__name strong { font-size: 18px; }
-  .nav__name span { font-size: 8.5px; letter-spacing: 1.1px; }
+  .nav__logo-full { height: 42px; }
   .nav .btn { padding: 10px 14px; font-size: 12.5px; white-space: nowrap; }
+  .footer__logo-full { height: 64px; }
 }
 @media (max-width: 400px) {
-  .nav__name span { display: none; }
+  .nav__logo-full { height: 36px; }
   .nav .btn { padding: 9px 12px; font-size: 12px; }
 }
-/* Over the dark homepage hero (before scrolling) use the light gold mark + light name */
-body:has(.hero) .nav:not(.scrolled) .nav__logo img { content: url('../brand/logo-mark-light.svg'); }
-body:has(.hero) .nav:not(.scrolled) .nav__name strong { color: #FAF6EE; }
-body:has(.hero) .nav:not(.scrolled) .nav__name span { color: #E8C77A; }

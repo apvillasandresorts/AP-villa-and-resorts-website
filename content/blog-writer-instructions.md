@@ -77,7 +77,7 @@ Use 1–2 Commons photos per post (hero + optionally one in the body), plus the 
 
 ### JSON-LD
 Put one object with an `@graph` array:
-- `Article`: headline, description (= meta description), image `[absolute hero URL]`, datePublished, dateModified (today), author `{ "@type": "Person", "name": "Apoorv", "url": "https://www.apvillasandresorts.in/about.html" }`, publisher `{ "@type": "Organization", "name": "AP Villas & Resorts", "logo": { "@type": "ImageObject", "url": "https://www.apvillasandresorts.in/assets/brand/favicon-512.png" } }`, mainEntityOfPage (canonical URL), inLanguage `en-IN`.
+- `Article`: headline, description (= meta description), image `[absolute hero URL]`, datePublished, dateModified (today), author `{ "@type": "Person", "name": "Apoorv", "url": "https://www.apvillasandresorts.in/about.html" }`, publisher `{ "@type": "Organization", "name": "AP Villas & Resorts", "logo": { "@type": "ImageObject", "url": "https://www.apvillasandresorts.in/assets/brand/logo-full-1200.png" } }`, mainEntityOfPage (canonical URL), inLanguage `en-IN`.
 - `BreadcrumbList`: Home (`https://www.apvillasandresorts.in/`) → Journal (`…/blog.html`) → this post.
 - `FAQPage`: the 5 Q&As (`Question` with `name`, `acceptedAnswer` `Answer` with `text`), plain text.
 It must be valid JSON (double quotes, no trailing commas).

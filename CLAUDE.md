@@ -25,7 +25,7 @@ This repo is the whole public website. Claude Code in this folder is the permane
 | `scripts/validate-post.mjs <slug>` | Checks a new post (word count, links, images, JSON-LD, logs) |
 | `.github/workflows/blog.yml` | Daily/one-click AI blog pipeline (Claude subscription token) |
 | `robots.txt`, `sitemap.xml` | SEO |
-| `assets/brand/` | Logo (Oct 2026): `logo-mark.svg` (Shikhara Home with trishul, navy/gold), `logo-mark-light.svg` (on dark), `logo-icon.svg` seal (favicon/app/WhatsApp DP), `logo-primary/reversed/stacked` .svg/.png lockups (text outlined), favicons. Never redraw or recolour ad hoc |
+| `assets/brand/` | Owner's logo (gold AP emblem with home/lotus/diya + green "AP VILLAS and Resorts" wordmark, transparent PNG): `logo-full.png` (master, 1954px), `logo-full-720.webp` (nav/footer), `logo-full-1200.png` (JSON-LD/press), `logo-emblem.png` / `logo-emblem-512.webp` (emblem only), `logo-icon-1024.png` (WhatsApp/Instagram DP), `logo-social-1200.png`, favicons. Use these files; never redraw, recolour or replace the logo |
 
 ## Content rules (always)
 - Property claims only from `content/business-facts.json`. Never state anything marked TODO.
