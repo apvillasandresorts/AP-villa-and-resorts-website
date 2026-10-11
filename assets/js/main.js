@@ -267,3 +267,12 @@ if (chatSend) chatSend.addEventListener('click', () => {
 if (chatInput) chatInput.addEventListener('keypress', e => {
   if (e.key === 'Enter') chatSend.click();
 });
+
+// ====== Logo shine: wrap brand logos so CSS can sweep a light across them ======
+document.querySelectorAll('.nav__logo-full, .footer__logo-full').forEach(img => {
+  if (img.parentElement.classList.contains('logo-shine')) return;
+  const wrap = document.createElement('span');
+  wrap.className = 'logo-shine' + (img.classList.contains('footer__logo-full') ? ' logo-shine--footer' : '');
+  img.parentNode.insertBefore(wrap, img);
+  wrap.appendChild(img);
+});
