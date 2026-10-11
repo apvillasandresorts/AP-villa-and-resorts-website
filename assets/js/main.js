@@ -8,6 +8,28 @@ if (nav) {
   });
 }
 
+// ====== Mobile menu (☰) ======
+if (nav) {
+  const inner = nav.querySelector('.nav__inner'), menu = nav.querySelector('.nav__menu');
+  if (inner && menu && !nav.querySelector('.nav__toggle')) {
+    const b = document.createElement('button');
+    b.className = 'nav__toggle'; b.type = 'button';
+    b.setAttribute('aria-label', 'Open menu'); b.setAttribute('aria-expanded', 'false');
+    menu.id = menu.id || 'nav-menu'; b.setAttribute('aria-controls', menu.id);
+    b.innerHTML = '<span></span><span></span><span></span>';
+    inner.appendChild(b);
+    const setOpen = open => {
+      nav.classList.toggle('nav--open', open);
+      document.documentElement.classList.toggle('nav-locked', open);
+      b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+    b.addEventListener('click', () => setOpen(!nav.classList.contains('nav--open')));
+    menu.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+    addEventListener('resize', () => { if (innerWidth > 900) setOpen(false); });
+  }
+}
+
 // ====== Reveal-on-scroll ======
 const io = new IntersectionObserver((entries) => {
   entries.forEach(e => {

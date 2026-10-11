@@ -1604,3 +1604,34 @@ html.enq-open { overflow: hidden; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .reveal, .reveal-left, .reveal-right, .reveal-scale { opacity: 1 !important; transform: none !important; }
 }
+
+/* ====== Header: E-Check-in tab + mobile menu ====== */
+.nav__menu a.nav__checkin { padding: 6px 12px; border: 1.5px solid var(--saffron); border-radius: 999px; color: var(--saffron); font-weight: 600; }
+.nav__menu a.nav__checkin::after { display: none; }
+.nav__menu a.nav__checkin:hover, .nav__menu a.nav__checkin.active { background: var(--saffron); color: #fff !important; }
+body:has(.hero) .nav:not(.scrolled) .nav__menu a.nav__checkin { border-color: #E8C77A; color: #E8C77A; }
+@media (max-width: 1180px) and (min-width: 901px) { .nav__menu { gap: 14px; } .nav__menu a { font-size: 13px; } .nav .btn { padding: 10px 14px; font-size: 12.5px; } }
+.nav__toggle { display: none; }
+@media (max-width: 900px) {
+  .nav__toggle { display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 0 11px; margin-left: 6px; border: 0; border-radius: 12px; background: rgba(255,255,255,0.85); box-shadow: 0 2px 10px rgba(0,0,0,0.12); cursor: pointer; flex: none; }
+  .nav__toggle span { display: block; height: 2px; border-radius: 2px; background: var(--navy); transition: transform .3s, opacity .3s; }
+  .nav--open .nav__toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav--open .nav__toggle span:nth-child(2) { opacity: 0; }
+  .nav--open .nav__toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .nav__inner { gap: 10px; }
+  .nav .btn { margin-left: auto; }
+  .nav--open { background: rgba(255,253,248,0.98) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+  .nav--open .nav__menu {
+    display: flex; flex-direction: column; align-items: stretch; gap: 0;
+    position: absolute; top: 100%; left: 0; right: 0; padding: 8px 20px 20px;
+    background: #FFFDF8; box-shadow: 0 16px 30px rgba(0,0,0,0.12); opacity: 1;
+    max-height: calc(100dvh - 80px); overflow-y: auto; animation: navDrop .25s ease;
+  }
+  .nav--open .nav__menu a { color: var(--navy) !important; text-shadow: none !important; font-size: 17px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+  .nav--open .nav__menu a.active { color: var(--saffron) !important; }
+  .nav--open .nav__menu a::after { display: none; }
+  .nav--open .nav__menu a.nav__checkin { margin-top: 12px; border: 1.5px solid var(--saffron); border-radius: 12px; text-align: center; color: var(--saffron) !important; background: #FBEFE8; }
+  html.nav-locked { overflow: hidden; }
+}
+@keyframes navDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 380px) { .nav .btn { padding: 9px 10px; font-size: 11.5px; } .nav__logo-full { height: 32px !important; } }
