@@ -48,7 +48,7 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 ## Phase 6 — Brand system "Emerald Haveli"
 - [x] 6.1 Owner approved (11 Oct 2026). Direction (emerald + antique gold to match the logo, replacing navy/saffron).
 - [x] 6.2 Emerald #1F4D3A / deep #12301F replace navy site-wide; terracotta #B5532A accent; emerald primary buttons, gold buttons on dark panels; contact band + footer emerald.
-- [ ] 6.3 Line icons replace emoji amenity icons.
+- [x] 6.3 Line icons (Lucide-style, scripts/emoji-to-icons.py) replace emoji in amenities, villa cards, contact cards, travel page.
 - [ ] 6.4 Typography: no small italic Cormorant; type scale.
 
 ## Phase 7 — SEO & growth

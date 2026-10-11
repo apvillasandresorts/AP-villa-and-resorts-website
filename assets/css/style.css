@@ -1530,3 +1530,12 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   background: linear-gradient(135deg, #D4AE5A, #B88A2C); color: #12301F; box-shadow: 0 10px 28px rgba(0,0,0,0.25);
 }
 .direct .btn--primary::before, .journal-cta .btn--primary::before, .contact-bg .btn--primary::before { background: linear-gradient(135deg, #E2C27A, #C9A24F); }
+
+/* Phase 6: line icons (replace emoji) */
+.ic { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: -0.16em; flex-shrink: 0; }
+.amenity__icon { color: var(--navy); line-height: 1; }
+.amenity__icon .ic { width: 34px; height: 34px; stroke-width: 1.5; }
+.villa-card__meta span { display: inline-flex; align-items: center; gap: 7px; }
+.villa-card__meta .ic { width: 18px; height: 18px; color: var(--gold-deep); }
+.contact-card__icon .ic { width: 40px; height: 40px; stroke-width: 1.5; color: var(--gold-soft); }
+.travel-feature__icon, .travel-cat-icon { color: var(--navy); }
