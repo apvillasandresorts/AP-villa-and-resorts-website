@@ -5,6 +5,7 @@
  * and the ID photos are saved in a private Google Drive folder (one sub-folder per check-in).
  * You also get an email for each new check-in. Setup steps: docs/echeckin-setup.md
  */
+const SHEET_ID = '15Q47OsFicp6svW2OtIzLDV15mKYiEO2ppuZUkiCmfwg';   // the "AP Villas E-Check-in" Google Sheet
 const SHEET_NAME = 'E-Check-in';
 const FOLDER_NAME = 'AP Villas E-Check-in IDs';
 const NOTIFY_EMAIL = '';   // leave empty to email the Google account that owns this script
@@ -68,7 +69,7 @@ function doPost(e) {
 function doGet() { return json_({ ok: true, service: 'AP Villas e-check-in' }); }
 
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   if (sh.getLastRow() === 0) {
     sh.appendRow(COLUMNS.map(c => c[1]));
