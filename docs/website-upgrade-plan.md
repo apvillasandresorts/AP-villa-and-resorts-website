@@ -18,13 +18,13 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 
 ## Phase 2 — Speed (mobile LCP 4.2–7.7 s → target < 2.5 s lab)
 - [ ] 2.1 Self-host the two Google Fonts (WOFF2, `font-display: swap`, preload) — removes ~2.2 s render-blocking.
-- [ ] 2.2 Image pipeline: 480/960/1600 px WebP for villa and blog photos, `srcset` + `sizes`, width/height; the pipeline does the same for new blog photos.
+- [ ] 2.2 Image pipeline (incl. img/Founder.jpg, currently 3.8 MB): 480/960/1600 px WebP for villa and blog photos, `srcset` + `sizes`, width/height; the pipeline does the same for new blog photos.
 - [ ] 2.3 Preload the hero/LCP image on each page; never lazy-load it.
 - [ ] 2.4 Cache headers in `vercel.json` for images, CSS, JS, fonts.
 - [ ] 2.5 Branded 404 page; one-hop redirect for `http://apvillasandresorts.in`.
 
 ## Phase 3 — Measurement
-- [?] 3.1 (moved into Phase 1 at owner's request) Google Search Console: verify the domain (DNS TXT at GoDaddy), submit sitemap. *Needs owner login.*
+- [x] 3.1 Google Search Console verified (URL prefix https://www.apvillasandresorts.in/, via GA4, account apvillasandresorts@gmail.com); sitemap.xml submitted 11 Oct 2026 (first fetch pending).
 - [x] 3.2 Google Analytics 4 (G-BEZ8KC5XGV) installed site-wide and in the blog template.
 - [x] 3.3 Events (code ready; sends once GA4 is installed): `whatsapp_click` (page, villa, button position), `phone_click`, `enquiry_form_submit`, `gallery_open`, `view_villa`.
 - [ ] 3.4 Booking sheet template (date, source, villa, quoted, booked, value, cancelled) + WhatsApp Business labels guide.
