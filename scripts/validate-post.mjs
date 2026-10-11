@@ -103,6 +103,16 @@ for (const [tag, src] of imgs) {
   const entry = library.find(x => x.path === baseOf(normalize(join(dirname(file), src))));
   if (entry?.source === 'wikimedia-commons' && !html.slice(0, html.indexOf(tag)).match(/<figure[^>]*>[^]*$/) ) fail(`Commons photo ${src} must be inside <figure> with a credit <figcaption>`);
 }
+// The same photo must not appear twice in a post (hero + body, or two body figures)
+{
+  const seen = new Map();
+  for (const [, src] of imgs) {
+    if (src.includes('assets/brand/')) continue;
+    const base = baseOf(normalize(join(dirname(file), src)));
+    seen.set(base, (seen.get(base) || 0) + 1);
+  }
+  for (const [p, n] of seen) if (n > 1) fail(`Photo used ${n} times in the post: ${p}. Use a different real photo for the body.`);
+}
 const heroSrc = html.match(/<img[^>]*class="article__hero"[^>]*>/)?.[0].match(/src="([^"]+)"/)?.[1] ?? '';
 if (heroSrc.includes('villas/') || /^\.\.\/images\/[^/]+\.(jpe?g|png)$/i.test(heroSrc)) warnings.push('Hero is a villa photo; a topic-relevant photo (owner or Wikimedia Commons) is preferred');
 // Rudrangan Suites spotlight in "Where to stay"

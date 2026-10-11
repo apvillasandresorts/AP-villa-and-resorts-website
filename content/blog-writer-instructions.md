@@ -74,7 +74,7 @@ Readers should see the real place or event the post is about, e.g. a Navratri po
    - `node scripts/commons-photo.mjs get "File:<exact title>" <slug> "<honest alt: what the photo shows and where>" "<tags>"`. This downloads to `images/blog/<slug>/` and adds the library entry with author/licence. Use the printed credit in the caption.
    - Never claim a photo shows something it doesn't (e.g. a Harsiddhi photo is not "Mahakaleshwar"; a 2010 photo is not "this year").
 3. Only if nothing relevant exists: a villa photo, captioned honestly as our villa.
-Use 1–2 Commons photos per post (hero + optionally one in the body), plus the Rudrangan Suites photo in "Where to stay". Every Commons photo must be inside `<figure class="post-figure">` with a `<figcaption>` that contains the credit.
+Use 1–2 Commons photos per post (hero + optionally one *different* photo in the body; never repeat the hero), plus the Rudrangan Suites photo in "Where to stay". Every Commons photo must be inside `<figure class="post-figure">` with a `<figcaption>` that contains the credit.
 
 ### JSON-LD
 Put one object with an `@graph` array:
