@@ -836,6 +836,45 @@
       "license": "CC BY 4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0",
       "credit": "Photo: Rajveer Bairagi / Wikimedia Commons, CC BY 4.0"
+    },
+    {
+      "path": "images/blog/ujjain-in-november-kartik/ram-ghat-ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ghat",
+        "shipra",
+        "ujjain",
+        "river"
+      ],
+      "alt": "Ram Ghat on the Shipra River in Ujjain, with steps leading down to the water",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ram_Ghat,_Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-in-november-kartik/pitru-paksha-amavasya-deepdaan-at-ram-ghat-kshipra-river-ujj.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ram-ghat",
+        "shipra",
+        "lamps",
+        "deepdaan",
+        "ghat"
+      ],
+      "alt": "Women devotees standing in the Shipra at Ram Ghat with diyas for deepdaan, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Pitru_Paksha_Amavasya_deepdaan_at_Ram_Ghat,_Kshipra_River,_Ujjain_in_2024.jpg",
+      "author": "Ujjain Chronicles",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Ujjain Chronicles / Wikimedia Commons, CC BY-SA 4.0"
     }
   ]
 }
