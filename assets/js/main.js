@@ -381,6 +381,8 @@ document.addEventListener('click', e => {
 
 // ====== "Check dates & price" engine → opens WhatsApp with every detail filled in ======
 const VILLA_SLEEPS = { 'Divinestay': 8, 'AP Suite': 4, 'Om Shanti Stay': 6, 'Villa Aranya': 8, 'Rudrangan Suites': 6 };
+const VILLA_FROM = { 'Divinestay': 5500, 'AP Suite': 4200, 'Om Shanti Stay': 4500, 'Villa Aranya': 5800, 'Rudrangan Suites': 5200 };   // from content/business-facts.json
+const inr = n => '₹' + n.toLocaleString('en-IN');
 const ENQ_EXTRAS = ['Airport / railway pickup', 'Bhasma Aarti guidance', 'Meals in the villa', 'Early check-in', 'Omkareshwar trip'];
 function isoDate(d) { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); }
 function niceDate(v) { return v ? new Date(v + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
@@ -426,6 +428,7 @@ function mountEnquiry(host) {
         <textarea id="${id}-req" name="request" rows="3" maxlength="400" placeholder="Anniversary decoration, ground-floor room, Bhasma Aarti on a date, dietary needs…"></textarea></label>
     </div>
     <p class="enq-msg" aria-live="polite"></p>
+    <p class="enq-price"></p>
     <details class="enq-preview"><summary>Preview your WhatsApp message</summary><pre></pre></details>
     <button type="submit" class="btn btn--primary enquiry__submit">Send on WhatsApp</button>
     <p class="enquiry__note">No payment now. Check-in 10:30 AM · check-out 9:30 AM. We reply within a few hours.</p>
@@ -460,6 +463,10 @@ function mountEnquiry(host) {
     else if (!d.villa && total > 8) warn = ' · For bigger groups we combine villas.';
     f.querySelector('.enq-msg').textContent = msg.join(' · ') + warn;
     f.querySelector('.enq-msg').classList.toggle('is-warn', !!warn);
+    const n = d.nights || 1;
+    f.querySelector('.enq-price').innerHTML = d.villa
+      ? `${d.villa} starts from <b>${inr(VILLA_FROM[d.villa])}</b>/night${d.nights ? ` · from <b>${inr(VILLA_FROM[d.villa] * n)}</b> for ${n} night${n === 1 ? '' : 's'}` : ''}. We confirm the exact price for your dates on WhatsApp.`
+      : `Villas from <b>${inr(Math.min(...Object.values(VILLA_FROM)))}</b>/night. Pick a villa to see its starting price.`;
     f.querySelector('.enq-preview pre').textContent = decodeURIComponent(waLink(d).split('text=')[1]);
   }
   f.addEventListener('click', e => {
