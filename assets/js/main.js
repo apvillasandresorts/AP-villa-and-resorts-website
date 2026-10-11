@@ -167,7 +167,7 @@ function addUserMsg(text) {
 }
 const KB = [
   { keys: ['hello','hi','hey','namaste','start'],
-    answer: 'Namaste! 🙏 Welcome to AP Villas, Mahakal Collection. I can help with availability, prices, shuttle service, amenities, and Mahakal darshan tips. What would you like to know?',
+    answer: 'Namaste! 🙏 Welcome to AP Villas & Resorts. I can help with availability, prices, shuttle service, amenities, and Mahakal darshan tips. What would you like to know?',
     quick: ['Show villas','Price per night','Mahakal distance','Shuttle service','Book now'] },
   { keys: ['villa','show villa','room','property','accommodation'],
     answer: 'We have <b>5 curated villas</b> in Ujjain:<br>◆ <b>Divinestay</b> — 3BR · sleeps 8 · from ₹5,500/night<br>◆ <b>AP Suite</b> — 2BR · sleeps 4 · from ₹4,200/night<br>◆ <b>Om Shanti Stay</b> — 2BR · sleeps 6 · from ₹4,500/night<br>◆ <b>Villa Aranya</b> — 3BR · sleeps 8 · from ₹5,800/night<br>◆ <b>Rudrangan Suites</b> (NEW) — 3BR · sleeps 6 · from ₹5,200/night<br><br>All include kitchen, shuttle, and 24-hour caretaker.',

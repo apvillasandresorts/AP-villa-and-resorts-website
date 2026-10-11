@@ -1215,3 +1215,32 @@ section { padding: 130px 0; position: relative; }
 .article .post-figure--hero { margin: 0 0 50px; }
 .article .post-figure--hero .article__hero { margin-bottom: 0; }
 .article .post-figure figcaption a { color: var(--muted); }
+
+/* ============================================================
+   BRAND 2026 — Shikhara Home mark (replaces the round medallion)
+   ============================================================ */
+.nav__logo { width: 50px; height: 50px; border-radius: 0; }
+.nav__logo::before, .nav__logo::after { display: none; }
+.nav__logo img {
+  width: 50px; height: 50px; animation: none;
+  filter: drop-shadow(0 3px 8px rgba(184,138,44,0.18));
+}
+.nav__brand:hover .nav__logo img { transform: translateY(-2px); filter: drop-shadow(0 8px 16px rgba(184,138,44,0.35)); }
+.nav__name strong { font-size: 22px; letter-spacing: .2px; white-space: nowrap; }
+.nav__name span { font-size: 10px; letter-spacing: 1.8px; white-space: nowrap; margin-top: 3px; }
+.footer__logo { display: block; margin: 0 auto 14px; width: 76px; height: 76px; }
+@media (max-width: 900px) {
+  .nav__logo, .nav__logo img { width: 42px; height: 42px; }
+  .nav__brand { gap: 8px; min-width: 0; }
+  .nav__name strong { font-size: 18px; }
+  .nav__name span { font-size: 8.5px; letter-spacing: 1.1px; }
+  .nav .btn { padding: 10px 14px; font-size: 12.5px; white-space: nowrap; }
+}
+@media (max-width: 400px) {
+  .nav__name span { display: none; }
+  .nav .btn { padding: 9px 12px; font-size: 12px; }
+}
+/* Over the dark homepage hero (before scrolling) use the light gold mark + light name */
+body:has(.hero) .nav:not(.scrolled) .nav__logo img { content: url('../brand/logo-mark-light.svg'); }
+body:has(.hero) .nav:not(.scrolled) .nav__name strong { color: #FAF6EE; }
+body:has(.hero) .nav:not(.scrolled) .nav__name span { color: #E8C77A; }

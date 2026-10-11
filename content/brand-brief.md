@@ -1,7 +1,7 @@
 # AP Villas brand brief (for blog writing)
 
 ## Who we are
-AP Villas, Mahakal Collection: five owner-operated villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain. Founded in 2023 by Apoorv in his hometown. We host. We do not aggregate.
+AP Villas & Resorts: five owner-operated villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain. Founded in 2023 by Apoorv in his hometown. We host. We do not aggregate.
 
 ## Voice
 Taken from the four hand-written posts in `/blog`:

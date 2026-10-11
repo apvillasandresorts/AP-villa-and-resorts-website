@@ -60,7 +60,7 @@ Start from `scripts/post-template.html` and replace every `{{PLACEHOLDER}}`:
   `<p style="text-align:center;"><a class="btn btn--primary" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas." target="_blank" rel="noopener">Message us on WhatsApp</a></p>`
   One after "Where to stay", one just before the sign-off.
 - **Internal links (in body text):** `../villas.html`, `../contact.html`, `../travel.html`, and 2 related posts from published.json (same folder, so `href="mahakaleshwar.html"`). Use descriptive anchor text, not "click here".
-- **Sign-off:** end with `<p style="font-style: italic; color: var(--muted);">— Apoorv, Founder, AP Villas, Mahakal Collection</p>` like the example post.
+- **Sign-off:** end with `<p style="font-style: italic; color: var(--muted);">— Apoorv, Founder, AP Villas & Resorts</p>` like the example post.
 - **Images:** see **Photos** below. Never use AI-generated images, stock photos, or hotlinked images.
 - **Style:** follow brand-brief.md. None of the banned phrases. Indian English. No emoji in headings.
 
@@ -77,7 +77,7 @@ Use 1–2 Commons photos per post (hero + optionally one in the body), plus the 
 
 ### JSON-LD
 Put one object with an `@graph` array:
-- `Article`: headline, description (= meta description), image `[absolute hero URL]`, datePublished, dateModified (today), author `{ "@type": "Person", "name": "Apoorv", "url": "https://www.apvillasandresorts.in/about.html" }`, publisher `{ "@type": "Organization", "name": "AP Villas, Mahakal Collection", "logo": { "@type": "ImageObject", "url": "https://www.apvillasandresorts.in/assets/brand/favicon-512.png" } }`, mainEntityOfPage (canonical URL), inLanguage `en-IN`.
+- `Article`: headline, description (= meta description), image `[absolute hero URL]`, datePublished, dateModified (today), author `{ "@type": "Person", "name": "Apoorv", "url": "https://www.apvillasandresorts.in/about.html" }`, publisher `{ "@type": "Organization", "name": "AP Villas & Resorts", "logo": { "@type": "ImageObject", "url": "https://www.apvillasandresorts.in/assets/brand/favicon-512.png" } }`, mainEntityOfPage (canonical URL), inLanguage `en-IN`.
 - `BreadcrumbList`: Home (`https://www.apvillasandresorts.in/`) → Journal (`…/blog.html`) → this post.
 - `FAQPage`: the 5 Q&As (`Question` with `name`, `acceptedAnswer` `Answer` with `text`), plain text.
 It must be valid JSON (double quotes, no trailing commas).

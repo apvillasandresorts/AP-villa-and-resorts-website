@@ -1,6 +1,6 @@
 # AP Villas website: project memory
 
-AP Villas, Mahakal Collection: five owner-operated villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain. Owner: Apoorv.
+AP Villas & Resorts (tagline: "Where devotion feels at home"): five owner-operated villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain. Owner: Apoorv.
 This repo is the whole public website. Claude Code in this folder is the permanent deploy console: edit, preview, ship, verify live.
 
 ## Facts
@@ -25,6 +25,7 @@ This repo is the whole public website. Claude Code in this folder is the permane
 | `scripts/validate-post.mjs <slug>` | Checks a new post (word count, links, images, JSON-LD, logs) |
 | `.github/workflows/blog.yml` | Daily/one-click AI blog pipeline (Claude subscription token) |
 | `robots.txt`, `sitemap.xml` | SEO |
+| `assets/brand/` | Logo (Oct 2026): `logo-mark.svg` (Shikhara Home with trishul, navy/gold), `logo-mark-light.svg` (on dark), `logo-icon.svg` seal (favicon/app/WhatsApp DP), `logo-primary/reversed/stacked` .svg/.png lockups (text outlined), favicons. Never redraw or recolour ad hoc |
 
 ## Content rules (always)
 - Property claims only from `content/business-facts.json`. Never state anything marked TODO.
