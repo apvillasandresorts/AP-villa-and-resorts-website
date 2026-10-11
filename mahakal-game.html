@@ -7,11 +7,11 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');</script>
 <title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
-<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, defeat Andhakasura with Mahakal's Trishul and win a 21% stay coupon. By AP Villas &amp; Resorts, Ujjain.">
+<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, ride Mahakal's divine lion against Andhakasura and win a 21% stay coupon. By AP Villas &amp; Resorts, Ujjain.">
 <meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="Path to Darshan — A Mahakal Mini Game by AP Villas, Ujjain">
-<meta property="og:description" content="Stop the danav, earn divine weapons from the gods and defeat Andhakasura with Mahakal's Trishul. A mini game by AP Villas & Resorts, Ujjain.">
+<meta property="og:description" content="Stop the danav, earn divine weapons from the gods and ride Mahakal's fire-breathing lion against Andhakasura. A mini game by AP Villas & Resorts, Ujjain.">
 <meta property="og:type" content="game">
 <link rel="canonical" href="https://www.apvillasandresorts.in/mahakal-game.html">
 <meta property="og:url" content="https://www.apvillasandresorts.in/mahakal-game.html">
@@ -603,6 +603,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 
 /* ========== YODDHA (shooter) additions ========== */
+.ash-grow { display: flex; align-items: center; gap: 12px; margin: 0 auto 14px; padding: 8px 14px 8px 8px; max-width: 340px; border-radius: 16px; background: rgba(255,214,140,.1); border: 1px solid rgba(232,199,122,.35); text-align: left; }
+.ash-grow canvas { position: static; inset: auto; display: block; width: 75px; height: 85px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, rgba(255,214,140,.25), rgba(0,0,0,.2)); flex: none; }
+.ash-grow span { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: rgba(244,236,219,.7); }
+.ash-grow b { display: block; font-family: 'Cormorant Garamond', serif; font-size: 24px; color: #F4D58D; line-height: 1.1; }
+.ash-grow small { display: block; font-size: 12.5px; color: #FFF6E0; opacity: .85; margin-top: 2px; }
+@media (max-height: 700px) { .ashirvaad__halo { width: min(44vw, 180px); } }
 .celebrate-btn { position: absolute; left: 50%; bottom: max(8vh, 40px); transform: translateX(-50%) scale(.6); z-index: 58; opacity: 0; pointer-events: none;
   border: 0; border-radius: 999px; padding: 18px 40px; font: 700 20px/1 'Inter', sans-serif; letter-spacing: 1px; color: #3A1A04; cursor: pointer;
   background: linear-gradient(135deg, #FFF0B8, #F2C04E 45%, #D98B1E); box-shadow: 0 0 0 4px rgba(255,236,170,.35), 0 12px 40px rgba(255,160,40,.6);
@@ -681,7 +687,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="intro__small">— HAR HAR MAHADEV —</div>
       <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Mahakal Game: Path to Darshan by AP Villas &amp; Resorts</h1>
       <div class="intro__title">Path to <em>Darshan</em></div>
-      <div class="intro__sub">Danav block the path to the temple. Stop them, earn the Ashirvaad and divine weapons of the gods, and defeat Andhakasura with Mahakal's Trishul. Win a 21% stay coupon from AP Villas &amp; Resorts, Ujjain.</div>
+      <div class="intro__sub">Danav block the path to the temple. Stop them, earn the Ashirvaad and divine weapons of the gods, grow from a little monk boy into a Siddha sadhu, and ride Mahakal's fire-breathing lion against Andhakasura. Win a 21% stay coupon from AP Villas &amp; Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
     </div>
     <div class="intro__diya"></div>
@@ -743,6 +749,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="ashirvaad__title" id="ash-title"></div>
       <div class="ashirvaad__weapon" id="ash-weapon"></div>
       <div class="ashirvaad__gift" id="ash-gift"></div>
+      <div class="ash-grow"><canvas id="ash-portrait" width="150" height="170" aria-hidden="true"></canvas><div><span>Your yoddha grows into</span><b id="ash-stage"></b><small id="ash-stage-sub"></small></div></div>
       <button class="ashirvaad__btn" id="ash-btn" type="button">🙏 Accept Ashirvaad</button>
       <div class="ashirvaad__credit" id="ash-credit"></div>
     </div>
@@ -800,7 +807,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 <script>
 // =========================================================================
 // PATH TO DARSHAN — lane shooter: stop the danav, earn divine weapons,
-// defeat Andhakasura with Mahakal's Trishul, win a 21% stay coupon.
+// ride Mahakal's fire-breathing lion against Andhakasura, win a 21% stay coupon.
 // =========================================================================
 const $ = (id) => document.getElementById(id);
 const stage = $('stage'), game = $('game'), fx = $('fx');
@@ -837,7 +844,7 @@ function noise(dur, vol = 0.18, freq = 900) {
 }
 const sfx = {
   bell() { [880, 1320, 1760, 2640].forEach((f, i) => setTimeout(() => tone(f, 1.6 - i * 0.3, 'sine', 0.07 - i * 0.012), i * 8)); },
-  shoot(kind) { if (kind === 'gada') tone(160, 0.12, 'triangle', 0.05, 90); else if (kind === 'chakra' || kind === 'trishul') tone(900, 0.1, 'sine', 0.035, 1400); else tone(620, 0.07, 'triangle', 0.03, 380); },
+  shoot(kind) { if (kind === 'flame') noise(0.18, 0.06, 900); else if (kind === 'gada') tone(160, 0.12, 'triangle', 0.05, 90); else if (kind === 'chakra' || kind === 'trishul') tone(900, 0.1, 'sine', 0.035, 1400); else tone(620, 0.07, 'triangle', 0.03, 380); },
   hit() { tone(240, 0.06, 'square', 0.025, 180); },
   kill() { noise(0.22, 0.12, 1400); tone(520, 0.18, 'triangle', 0.06, 980); },
   hurt() { noise(0.45, 0.22, 600); tone(140, 0.4, 'sawtooth', 0.05, 70); },
@@ -846,6 +853,7 @@ const sfx = {
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.45, 'triangle', 0.08), i * 110)); },
   roar() { noise(1.0, 0.25, 300); tone(90, 1.0, 'sawtooth', 0.06, 50); },
   thunder() { noise(1.4, 0.2, 260); },
+  lionRoar() { noise(0.9, 0.22, 420); tone(150, 0.9, 'sawtooth', 0.05, 80); },
   pop() { noise(0.35, 0.08, 2600); tone(1200 + Math.random() * 600, 0.25, 'sine', 0.03, 600); },
   drum() { noise(0.12, 0.22, 200); tone(95, 0.18, 'sine', 0.14, 55); },
   shankh() {   // conch: a swelling, buzzing horn
@@ -867,29 +875,32 @@ const WEAPONS = {
   gada:    { name: 'Gada', desc: "Hanuman ji's mighty mace", dmg: 4, rate: 0.34, speed: 1.5, spread: [0], pierce: 1, range: 0.6, kind: 'gada', color: '#F1C75B' },
   khadga:  { name: 'Khadga', desc: "Maa Durga's sword, lightning-fast strikes", dmg: 4, rate: 0.17, speed: 2.0, spread: [0], pierce: 0, range: 0.64, kind: 'blade', color: '#FF8A65' },
   chakra:  { name: 'Sudarshan Chakra', desc: 'slices through every danav in its path', dmg: 7, rate: 0.24, speed: 1.8, spread: [0], pierce: 99, range: 0.74, kind: 'chakra', color: '#9AD0FF' },
-  trishul: { name: 'Trishul', desc: "Mahakal's trident, the only weapon that harms Andhakasura", dmg: 10, rate: 0.22, speed: 2.1, spread: [0], pierce: 99, range: 0.85, kind: 'trishul', color: '#FFFFFF' },
+  trishul: { name: 'Trishul', desc: "Mahakal's trident", dmg: 10, rate: 0.22, speed: 2.1, spread: [0], pierce: 99, range: 0.85, kind: 'trishul', color: '#FFFFFF' },
+  simha:   { name: 'Simha Agni', desc: "the divine lion's sacred fire, the only power that burns Andhakasura", dmg: 11, rate: 0.2, speed: 2.0, spread: [0], pierce: 99, range: 0.85, kind: 'flame', color: '#FFB347' },
 };
 const DANAV = {
   rakshas: { name: 'Rakshas', hp: 2,  speed: 0.105, size: 1.0,  skin: '#B5432A', dark: '#6E1E12', horn: '#EADBB4', eye: '#FFE14D', pts: 10 },
   danav:   { name: 'Danav',   hp: 5,  speed: 0.09,  size: 1.18, skin: '#2F7F78', dark: '#164845', horn: '#F1E3C0', eye: '#FF5A36', pts: 25 },
   mayavi:  { name: 'Mayavi',  hp: 6,  speed: 0.095, size: 1.08, skin: '#7A4FA0', dark: '#3E2357', horn: '#EADCF8', eye: '#7CFFEA', pts: 35, hop: true },
+  vrishabh: { name: 'Vrishabh-asura', hp: 9, speed: 0.13, size: 1.15, skin: '#8E2A3A', dark: '#4A1020', horn: '#F1E3C0', eye: '#FFB020', pts: 45, mount: 'bull' },
+  naag:    { name: 'Naag-asura', hp: 7, speed: 0.1, size: 1.1, skin: '#3E7A3A', dark: '#1E3E1C', horn: '#D8F0A0', eye: '#FF4040', pts: 50, mount: 'dragon', hop: true },
   maha:    { name: 'Maha-danav', hp: 14, speed: 0.062, size: 1.5, skin: '#4A4A66', dark: '#22222F', horn: '#FFD27D', eye: '#FF3B2F', pts: 60, crown: true },
 };
 const shade = (c, k) => '#' + hex(c).map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
 const DEAD_DANAV = Object.fromEntries(Object.entries(DANAV).map(([k, t]) => [k, { ...t, skin: shade(t.skin, 0.62), dark: shade(t.dark, 0.6), horn: shade(t.horn, 0.75), eye: '#2A1410' }]));
 const WAVES = [
   { kills: 10, every: 1.7, mix: { rakshas: 1 } },
-  { kills: 12, every: 1.55, mix: { rakshas: 0.7, danav: 0.3 } },
-  { kills: 14, every: 1.45, mix: { rakshas: 0.5, danav: 0.35, maha: 0.15 } },
-  { kills: 16, every: 1.35, mix: { rakshas: 0.4, danav: 0.3, mayavi: 0.2, maha: 0.1 } },
-  { kills: 18, every: 1.25, mix: { rakshas: 0.3, danav: 0.3, mayavi: 0.25, maha: 0.15 } },
+  { kills: 12, every: 1.55, mix: { rakshas: 0.6, danav: 0.3, vrishabh: 0.1 } },
+  { kills: 14, every: 1.45, mix: { rakshas: 0.4, danav: 0.25, vrishabh: 0.12, naag: 0.1, maha: 0.13 } },
+  { kills: 16, every: 1.35, mix: { rakshas: 0.3, danav: 0.2, mayavi: 0.15, vrishabh: 0.13, naag: 0.12, maha: 0.1 } },
+  { kills: 18, every: 1.25, mix: { rakshas: 0.2, danav: 0.2, mayavi: 0.15, vrishabh: 0.15, naag: 0.15, maha: 0.15 } },
 ];
 const BLESSINGS = [
   { name: 'Shri Ganesh', title: 'Vighnaharta clears your path', weapon: 'parashu', gift: 'Double damage. Your body grows stronger!', img: 'ganesha-lord-of-obstacles-lacma-ac1999-127-34', credit: 'Kota painting, early 19th century (public domain)' },
   { name: 'Hanuman ji', title: 'The strength of Bajrangbali is yours', weapon: 'gada', gift: 'Huge blows that smash through two danav at once. +1 prana.', img: 'hanuman-fetches-the-herb-bearing-mountain-in-a-print-from-th', credit: 'Ravi Varma Press, 1910s (public domain)' },
   { name: 'Maa Durga', title: 'The Mother rides into battle with you', weapon: 'khadga', gift: 'Lightning-fast strikes, almost twice as fast as before. +1 prana.', img: 'mahishasura-mardini', credit: 'Ravi Varma Press, c.1910 (public domain)' },
   { name: 'Shri Vishnu & Maa Lakshmi', title: 'The protector of the worlds blesses you', weapon: 'chakra', gift: 'The Chakra slices through every danav in its path. All prana restored.', img: 'vishnu-laxmi-and-serpent-anant', credit: 'Ravi Varma Press (public domain)' },
-  { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'trishul', gift: 'Andhakasura, king of darkness, is coming. Only the Trishul can defeat him. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: true },
+  { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'simha', gift: 'Mahakal sends you his divine lion. Ride it into battle: its sacred fire is the only power that can burn Andhakasura, king of darkness. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: true },
 ];
 BLESSINGS.forEach(b => { b.src = IMG + b.img + '-960.webp'; const i = new Image(); i.src = b.src; });
 const MAX_LIVES = 5;
@@ -924,7 +935,7 @@ function hud() {
   $('best-score').textContent = best.toLocaleString('en-IN');
   $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
   const w = WEAPONS[weapon];
-  $('hud-weapon').innerHTML = `Weapon: <b>${w.name}</b>`;
+  $('hud-weapon').innerHTML = `${STAGES[Math.min(5, bulk)].name} · <b>${w.name}</b>`;
   if (boss && boss.dead) {
     $('hud-wave').textContent = 'Victory!'; $('hud-bar').style.width = '100%'; $('hud-next').textContent = 'Andhakasura is defeated';
   } else if (boss) {
@@ -983,6 +994,8 @@ function showAshirvaad(b) {
   $('ash-weapon').textContent = 'You receive: ' + WEAPONS[b.weapon].name;
   $('ash-gift').textContent = b.gift;
   $('ash-credit').textContent = b.credit;
+  const nst = Math.min(5, wave + 1);
+  drawSadhuPortrait($('ash-portrait'), nst); $('ash-stage').textContent = STAGES[nst].name; $('ash-stage-sub').textContent = STAGES[nst].sub;
   $('ash-btn').textContent = b.final ? '🙏 Har Har Mahadev' : '🙏 Accept Ashirvaad';
   box.classList.add('show');
   sfx.bell(); setTimeout(sfx.win, 500);
@@ -1011,7 +1024,7 @@ function startBoss() {
   lives = MAX_LIVES; player.lane = 1; player.x = 0;
   state = 'playing';
   $('bossbar').classList.add('show');
-  banner('Andhakasura!', bossTries ? "Mahakal's grace: he is weaker this time. Stand in his path to strike!" : 'Stand in his path to strike with the Trishul, and dodge his fireballs', 3000);
+  banner('Andhakasura!', bossTries ? "Mahakal's grace: he is weaker this time. Stand in his path to strike!" : "Stand in his path so your lion's sacred fire burns him, and dodge his fireballs", 3000);
   bossTries++;
   sfx.roar(); shake = 0.6;
   hud();
@@ -1201,7 +1214,7 @@ function update(dt) {
       burst(p.x, p.y - 40 * p.scale * unit(), s.color, 5, 2.5);
       if (s.hit.size > s.pierce) gone = true;
     }
-    if (boss && !boss.dead && !gone && s.kind === 'trishul' && s.lane === boss.lane && s.z >= boss.z - 0.02) {
+    if (boss && !boss.dead && !gone && (s.kind === 'flame' || s.kind === 'trishul') && s.lane === boss.lane && s.z >= boss.z - 0.02) {
       boss.hp -= 3; boss.hitFlash = 1; gone = true; sfx.hit();
       const p = project(boss.z, boss.x); burst(p.x, p.y - 120 * p.scale * unit(), '#FFFFFF', 6, 3);
       if (boss.hp <= 0) bossDefeated();
@@ -1249,7 +1262,7 @@ function update(dt) {
       if (rage && Math.random() < 0.3) { const l2 = (lane + 1 + Math.floor(Math.random() * 2)) % 3; fires.push({ lane: l2, z: boss.z - 0.02, warn: 1.1 }); }
     }
     const thresholds = [0.66, 0.33];
-    if (boss.summoned < 2 && boss.hp < boss.max * thresholds[boss.summoned]) { boss.summoned++; [0, 2].forEach(l => spawnDanav('rakshas', l)); banner('He summons his danav!', '', 1400); }
+    if (boss.summoned < 2 && boss.hp < boss.max * thresholds[boss.summoned]) { boss.summoned++; spawnDanav('vrishabh', 0); spawnDanav('naag', 2); banner('He summons his danav!', '', 1400); }
   }
   for (let i = fires.length - 1; i >= 0; i--) {
     const f = fires[i];
@@ -1475,7 +1488,7 @@ function drawLanes() {
 
 // ---------------- Grand celebration ----------------
 // Andhakasura falls onto a pile of the danav defeated during the game. The yoddha gets a Celebrate button,
-// leaps onto the fallen asura and raises the Trishul, while the gods shower flowers, fireworks burst,
+// leaps onto the fallen asura on his lion, while the gods shower flowers, fireworks burst,
 // golden rays fill the sky and the conch, bells and drums play.
 const fallen = [];
 const C = { t: 0, ct: 0, fwT: 0, drumT: 0, bellT: 0, petals: [], btn: false, start: null, won: false };
@@ -1485,7 +1498,7 @@ function buildPile() {
   for (let i = 0; i < n; i++) {
     const type = types[Math.floor(Math.random() * types.length)];
     const behind = i < n * 0.7;
-    fallen.push({ type, lane: 1, x: -1.5 + Math.random() * 2.6, z: behind ? 0.68 + Math.random() * 0.12 : 0.6 + Math.random() * 0.05, hp: 0, max: 1, flash: 0, phase: Math.random() * 6, lying: (Math.random() < 0.5 ? -1 : 1) * (1.35 + Math.random() * 0.3), big: 1.7, dead: true, drop: 0 });
+    fallen.push({ type, lane: 1, x: -1.5 + Math.random() * 2.6, z: behind ? 0.68 + Math.random() * 0.12 : 0.6 + Math.random() * 0.05, hp: 0, max: 1, flash: 0, phase: Math.random() * 6, lying: (Math.random() < 0.5 ? -1 : 1) * (1.35 + Math.random() * 0.3), big: DANAV[type].mount ? 1.2 : 1.7, dead: true, drop: 0 });
     fallen[fallen.length - 1].dz = fallen[fallen.length - 1].z - boss.z;
   }
 }
@@ -1537,8 +1550,10 @@ function celebUpdate(dt) {
     C.fwT -= dt; if (C.fwT <= 0) { C.fwT = (0.35 + Math.random() * 0.4) / strong; firework(); }
     C.drumT -= dt; if (C.drumT <= 0) { C.drumT = 0.42; if (strong > 0.5) sfx.drum(); }
     C.bellT -= dt; if (C.bellT <= 0) { C.bellT = 2.4; sfx.bell(); }
+    C.roarT = (C.roarT || 0) - dt; if (C.landed && C.roarT <= 0) { C.roarT = 1.8; C.roar = 1; sfx.lionRoar(); }
     if (state === 'celebrate' && C.ct > 7) victory();
   }
+  C.roar = Math.max(0, (C.roar || 0) - dt * 1.1);
   for (let i = C.petals.length - 1; i >= 0; i--) { const p = C.petals[i]; p.x += p.vx + Math.sin(time * 2 + p.rot) * 0.4; p.y += p.vy; p.rot += p.vr; if (p.y > H + 20) C.petals.splice(i, 1); }
   for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.life -= dt * 0.9; if (p.life <= 0) parts.splice(i, 1); }
   for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
@@ -1577,6 +1592,10 @@ function drawDanav(d) {
   if (d.type === 'mayavi') ctx.globalAlpha = 0.75 + Math.sin(time * 8 + d.phase) * 0.2;
   ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
   ctx.translate(0, -bob);
+  // mounts: the rider sits on a charging bull or a flying dragon
+  ctx.save();
+  if (t.mount === 'bull') { drawBull(s, d, 'body'); ctx.translate(0, -s * 0.72); ctx.scale(0.74, 0.74); }
+  if (t.mount === 'dragon') { const fly = d.dead ? s * 0.2 : s * 1.15 + Math.sin(time * 3 + d.phase) * s * 0.12; ctx.translate(0, -fly); drawDragon(s, d); ctx.translate(0, -s * 0.12); ctx.scale(0.7, 0.7); }
   // legs
   ctx.fillStyle = t.dark;
   ctx.save(); ctx.translate(-s * 0.18, -s * 0.45); ctx.rotate(step); ctx.fillRect(-s * 0.09, 0, s * 0.18, s * 0.45); ctx.restore();
@@ -1609,16 +1628,19 @@ function drawDanav(d) {
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); }
+  ctx.restore();
+  if (t.mount === 'bull') drawBull(s, d, 'head');
   if (d.flash > 0) { const fg = ctx.createRadialGradient(0, -s, 0, 0, -s, s); fg.addColorStop(0, `rgba(255,255,240,${d.flash * 0.75})`); fg.addColorStop(1, 'rgba(255,255,240,0)'); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, -s, s, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
   // health bar
   if (d.dead) return;
+  const ride = t.mount === 'dragon' ? s * 1.45 : t.mount === 'bull' ? s * 0.4 : 0;
   if (d.hp < d.max && d.z < 0.95) {
-    const bw = Math.max(22, s * 0.9), bx = p.x - bw / 2, by = p.y - bob - s * 1.95;
+    const bw = Math.max(22, s * 0.9), bx = p.x - bw / 2, by = p.y - bob - s * 1.95 - ride;
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, 6);
     ctx.fillStyle = d.hp / d.max > 0.5 ? '#7BD88F' : d.hp / d.max > 0.25 ? '#F4C152' : '#FF5A36'; ctx.fillRect(bx, by, bw * Math.max(0, d.hp / d.max), 4);
   }
-  if (d.z < 0.97 && d.z > 0.55 && d.max >= 5) { ctx.font = `600 ${Math.round(9 + 4 * p.scale)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(244,236,219,0.75)'; ctx.fillText(t.name, p.x, p.y - bob - s * 2.05 - 4); }
+  if (d.z < 0.97 && d.z > 0.55 && d.max >= 5) { ctx.font = `600 ${Math.round(9 + 4 * p.scale)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(244,236,219,0.75)'; ctx.fillText(t.name, p.x, p.y - bob - s * 2.05 - 4 - ride); }
 }
 
 function drawBoss() {
@@ -1688,6 +1710,8 @@ function drawShot(s) {
     ctx.rotate(s.spin); ctx.strokeStyle = s.color; ctx.lineWidth = Math.max(2, k * 0.18); ctx.beginPath(); ctx.arc(0, 0, k * 0.7, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#E8F4FF'; for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(k * 0.7, -k * 0.12); ctx.lineTo(k * 1.05, 0); ctx.lineTo(k * 0.7, k * 0.12); ctx.fill(); }
     ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(0, 0, k * 0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (s.kind === 'flame') {
+    for (let i = 0; i < 3; i++) { const r = k * (0.9 - i * 0.25) * (0.9 + 0.2 * Math.sin(time * 30 + i)); const g = ctx.createRadialGradient(0, i * k * 0.5, 0, 0, i * k * 0.5, r); g.addColorStop(0, 'rgba(255,250,210,0.95)'); g.addColorStop(0.4, 'rgba(255,170,40,0.85)'); g.addColorStop(1, 'rgba(220,40,20,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, i * k * 0.5, r, 0, Math.PI * 2); ctx.fill(); }
   } else if (s.kind === 'trishul') {
     ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = Math.max(2, k * 0.14); ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(0, k * 1.3); ctx.lineTo(0, -k * 1.1); ctx.stroke();
@@ -1705,6 +1729,214 @@ function drawLaddoo(d) {
 // ---------------- The yoddha (seen from behind, running toward the temple) ----------------
 // Skeleton-based drawing: joints are computed every frame, limbs are tapered, shaded capsules.
 // bulkVis eases toward "bulk" (0–5) so each Ashirvaad visibly grows him: broader, taller, armour, aura.
+// ---------------- The yoddha's journey: from a little monk boy to a Siddha sadhu ----------------
+const STAGES = [
+  { name: 'Bal Brahmachari', sub: 'A little monk boy with a big heart' },
+  { name: 'Kishor Sadhak', sub: 'A young seeker, growing stronger' },
+  { name: 'Yuva Sadhu', sub: 'His hair grows long, his first beard appears' },
+  { name: 'Tapasvi', sub: 'Matted jata, rudraksha and sacred ash' },
+  { name: 'Maha Yogi', sub: 'A long beard touched with grey, wisdom in his eyes' },
+  { name: 'Siddha Sadhu', sub: 'A white flowing beard and the crescent of Mahakal' },
+];
+const HAIR_COL = ['#120A05', '#140B06', '#160C06', '#1E1109', '#5E5650', '#E9E5DC'];
+const BEARD_COL = ['#000', '#000', '#1A0E08', '#22140B', '#6E655E', '#F1EEE7'];
+const DHOTI_COL = [['#F7EFDC', '#D9CBAA'], ['#F7EFDC', '#D9CBAA'], ['#F08A3C', '#C45F1C'], ['#E8782A', '#B5501A'], ['#DE6A22', '#A84414'], ['#E06B1F', '#A83E10']];
+
+// Back view of the head: skin or hair, beard showing around the jaw, hair hanging down the back, jata and crescent.
+function drawBackHead(hx, hy, s, ST, moving, ph, u) {
+  const hs = 1 + 0.16 * Math.max(0, 1 - ST / 2);    // a child's head is a little larger
+  const rx = s * 0.155 * hs, ry = s * 0.175 * hs, hair = HAIR_COL[ST];
+  // long hair down the back (Yuva onward)
+  if (ST >= 2) {
+    const len = s * [0, 0, 0.26, 0.48, 0.62, 0.78][ST], sw = moving ? Math.sin(ph) * s * 0.02 : 0;
+    const hg = ctx.createLinearGradient(0, hy, 0, hy + len); hg.addColorStop(0, hair); hg.addColorStop(1, ST >= 4 ? shade2(hair, 0.85) : hair);
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.moveTo(hx - rx * 0.95, hy);
+    ctx.quadraticCurveTo(hx - rx * 1.15 + sw, hy + len * 0.6, hx - rx * 0.55 + sw, hy + len);
+    ctx.quadraticCurveTo(hx + sw, hy + len * 1.08, hx + rx * 0.55 + sw, hy + len);
+    ctx.quadraticCurveTo(hx + rx * 1.15 + sw, hy + len * 0.6, hx + rx * 0.95, hy);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = ST >= 5 ? 'rgba(160,150,140,0.6)' : 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(hx + i * rx * 0.3, hy + ry * 0.4); ctx.quadraticCurveTo(hx + i * rx * 0.35 + sw, hy + len * 0.6, hx + i * rx * 0.25 + sw, hy + len * 0.95); ctx.stroke(); }
+  }
+  // beard visible around the jaw (Yuva onward); longer and whiter with age
+  if (ST >= 2) {
+    const bl = s * [0, 0, 0.05, 0.08, 0.11, 0.14][ST], bw = rx * (1.02 + 0.03 * ST);
+    ctx.fillStyle = BEARD_COL[ST];
+    ctx.beginPath(); ctx.moveTo(hx - bw, hy + ry * 0.1);
+    ctx.quadraticCurveTo(hx - bw * 1.05, hy + ry + bl * 0.6, hx - bw * 0.35, hy + ry + bl);
+    ctx.quadraticCurveTo(hx, hy + ry + bl * 1.15, hx + bw * 0.35, hy + ry + bl);
+    ctx.quadraticCurveTo(hx + bw * 1.05, hy + ry + bl * 0.6, hx + bw, hy + ry * 0.1);
+    ctx.closePath(); ctx.fill();
+  }
+  // ears
+  ctx.fillStyle = '#E7B184'; ctx.beginPath(); ctx.ellipse(hx - rx * 1.08, hy + ry * 0.1, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.ellipse(hx + rx * 1.08, hy + ry * 0.1, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
+  // skull: shaven (child) or hair
+  const g = ctx.createRadialGradient(hx - rx * 0.3, hy - ry * 0.45, s * 0.02, hx, hy, rx * 1.3);
+  if (ST === 0) { g.addColorStop(0, '#F3C9A0'); g.addColorStop(1, '#C98D5E'); } else { g.addColorStop(0, shade2(hair, 2.2)); g.addColorStop(1, hair); }
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(hx, hy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  if (ST <= 1) { // shikha: tied tuft that bounces
+    const tuft = moving ? Math.sin(ph * 2) * 0.35 : Math.sin(time * 2) * 0.1;
+    ctx.save(); ctx.translate(hx, hy - ry * 0.92); ctx.rotate(tuft);
+    ctx.fillStyle = '#120A05'; ctx.beginPath(); ctx.ellipse(0, -s * 0.06, s * 0.035, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#B5121B'; ctx.fillRect(-s * 0.03, -s * 0.01, s * 0.06, s * 0.02);
+    ctx.restore();
+  } else { // jata: matted hair coiled on top, bigger with age
+    const jr = s * [0, 0, 0.08, 0.125, 0.155, 0.19][ST];
+    ctx.fillStyle = hair; ctx.beginPath(); ctx.ellipse(hx, hy - ry - jr * 0.55, jr * 1.1, jr, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = ST >= 5 ? 'rgba(150,140,130,0.7)' : 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.ellipse(hx, hy - ry - jr * 0.55, jr * (1.05 - i * 0.3), jr * (0.9 - i * 0.25), 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    if (ST >= 3) { ctx.fillStyle = '#6A2E10'; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(hx + i * jr * 0.3, hy - ry - jr * 0.05 + Math.abs(i) * jr * 0.04, s * 0.014, 0, Math.PI * 2); ctx.fill(); } }   // rudraksha wound in the jata
+    if (ST >= 5) { ctx.strokeStyle = '#E6EEFF'; ctx.lineWidth = 2.5 * u; ctx.shadowColor = '#BFD6FF'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(hx + jr * 0.9, hy - ry - jr * 1.3, jr * 0.55, 0.35, Math.PI - 0.35); ctx.stroke(); ctx.shadowBlur = 0; }   // crescent moon
+  }
+}
+function shade2(c, k) { return '#' + hex(c).map(v => Math.max(0, Math.min(255, Math.round(v * k))).toString(16).padStart(2, '0')).join(''); }
+
+// Front-facing portrait for the Ashirvaad screen, so players can see how their yoddha has grown.
+function drawSadhuPortrait(cv, ST) {
+  const c = cv.getContext('2d'), w = cv.width, h = cv.height, cx = w / 2;
+  c.clearRect(0, 0, w, h);
+  const glow = c.createRadialGradient(cx, h * 0.42, 5, cx, h * 0.42, w * 0.6);
+  glow.addColorStop(0, ST >= 5 ? 'rgba(170,205,255,0.55)' : 'rgba(255,214,140,0.5)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = glow; c.fillRect(0, 0, w, h);
+  const hs = 1 + 0.12 * Math.max(0, 1 - ST / 2), fw = w * 0.2 * hs, fh = w * 0.25 * hs, fy = h * (0.42 + 0.035 * Math.max(0, ST - 2));
+  const hair = HAIR_COL[ST], beard = BEARD_COL[ST];
+  // shoulders + cloth
+  const sw = w * (0.3 + 0.03 * ST);
+  c.fillStyle = '#D79A6C'; c.beginPath(); c.moveTo(cx - sw, h); c.quadraticCurveTo(cx - sw, h * 0.72, cx - w * 0.08, h * 0.68); c.lineTo(cx + w * 0.08, h * 0.68); c.quadraticCurveTo(cx + sw, h * 0.72, cx + sw, h); c.fill();
+  c.fillStyle = DHOTI_COL[ST][0]; c.beginPath(); c.moveTo(cx - sw * 0.95, h); c.lineTo(cx + sw * 0.2, h * 0.7); c.lineTo(cx + sw * 0.55, h * 0.74); c.lineTo(cx - sw * 0.3, h); c.fill();   // angavastram
+  // hair behind the face
+  if (ST >= 2) { const len = h * [0, 0, 0.16, 0.26, 0.32, 0.38][ST]; c.fillStyle = hair; c.beginPath(); c.ellipse(cx, fy + len * 0.35, fw * 1.25, fh + len * 0.55, 0, 0, Math.PI * 2); c.fill(); }
+  // face
+  const fg = c.createRadialGradient(cx - fw * 0.3, fy - fh * 0.3, 2, cx, fy, fw * 1.3); fg.addColorStop(0, '#F6D0A8'); fg.addColorStop(1, '#C98D5E');
+  c.fillStyle = fg; c.beginPath(); c.ellipse(cx, fy, fw, fh, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#E7B184'; c.beginPath(); c.ellipse(cx - fw * 1.02, fy + fh * 0.05, fw * 0.16, fh * 0.22, 0, 0, Math.PI * 2); c.ellipse(cx + fw * 1.02, fy + fh * 0.05, fw * 0.16, fh * 0.22, 0, 0, Math.PI * 2); c.fill();
+  // hair line / shaven head
+  if (ST === 0) { c.fillStyle = '#120A05'; c.beginPath(); c.ellipse(cx, fy - fh * 1.0, fw * 0.12, fh * 0.2, 0, 0, Math.PI * 2); c.fill(); }
+  else { c.fillStyle = hair; c.beginPath(); c.ellipse(cx, fy - fh * 0.55, fw * 1.03, fh * 0.55, 0, Math.PI, Math.PI * 2); c.fill(); }
+  if (ST >= 2) { const jr = fw * [0, 0, 0.45, 0.6, 0.75, 0.9][ST]; c.fillStyle = hair; c.beginPath(); c.ellipse(cx, fy - fh * 1.05 - jr * 0.4, jr * 1.1, jr, 0, 0, Math.PI * 2); c.fill(); if (ST >= 3) { c.fillStyle = '#6A2E10'; for (let i = -3; i <= 3; i++) { c.beginPath(); c.arc(cx + i * jr * 0.3, fy - fh * 1.0, 2, 0, Math.PI * 2); c.fill(); } } }
+  if (ST >= 5) { c.strokeStyle = '#EAF2FF'; c.lineWidth = 3; c.shadowColor = '#BFD6FF'; c.shadowBlur = 10; c.beginPath(); c.arc(cx + fw * 0.6, fy - fh * 1.7, fw * 0.32, 0.3, Math.PI - 0.3); c.stroke(); c.shadowBlur = 0; }
+  // tripundra (3 ash lines) + red dot
+  if (ST >= 1) { c.strokeStyle = '#FFFFFF'; c.lineWidth = 1.6; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(cx - fw * 0.6, fy - fh * (0.52 - i * 0.1)); c.lineTo(cx + fw * 0.6, fy - fh * (0.52 - i * 0.1)); c.stroke(); } }
+  c.fillStyle = '#C8102E'; c.beginPath(); c.arc(cx, fy - fh * 0.4, 2.4, 0, Math.PI * 2); c.fill();
+  // eyes: wide (child) to calm half-closed (sage)
+  c.strokeStyle = '#2A1408'; c.fillStyle = '#2A1408'; c.lineWidth = 1.8;
+  for (const sd of [-1, 1]) {
+    const ex = cx + sd * fw * 0.4, ey = fy - fh * 0.12;
+    if (ST <= 1) { c.fillStyle = '#FFF'; c.beginPath(); c.ellipse(ex, ey, fw * 0.17, fh * 0.1, 0, 0, Math.PI * 2); c.fill(); c.fillStyle = '#2A1408'; c.beginPath(); c.arc(ex, ey, fw * 0.08, 0, Math.PI * 2); c.fill(); }
+    else { c.beginPath(); c.arc(ex, ey - fh * 0.03, fw * 0.17, 0.25 * Math.PI, 0.75 * Math.PI); c.stroke(); }
+    c.beginPath(); c.moveTo(ex - fw * 0.2, ey - fh * 0.16); c.quadraticCurveTo(ex, ey - fh * 0.22, ex + fw * 0.2, ey - fh * 0.16); c.strokeStyle = ST >= 4 ? shade2(beard, 0.8) : '#1A0E08'; c.stroke(); c.strokeStyle = '#2A1408';
+  }
+  // nose + mouth
+  c.strokeStyle = '#A8683E'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(cx, fy - fh * 0.05); c.lineTo(cx - fw * 0.08, fy + fh * 0.18); c.lineTo(cx + fw * 0.05, fy + fh * 0.2); c.stroke();
+  if (ST < 2) { c.strokeStyle = '#9A4A30'; c.beginPath(); c.arc(cx, fy + fh * 0.32, fw * 0.2, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+  // moustache + beard
+  if (ST >= 2) {
+    const bl = fh * [0, 0, 0.05, 0.6, 0.95, 1.3][ST];
+    c.fillStyle = beard; c.beginPath(); const bx = ST === 2 ? 0.88 : 0.98; c.moveTo(cx - fw * bx, fy + fh * (ST === 2 ? 0.25 : 0.05));
+    c.quadraticCurveTo(cx - fw * bx, fy + fh * 0.75 + bl * 0.5, cx, fy + fh * 0.85 + bl);
+    c.quadraticCurveTo(cx + fw * bx, fy + fh * 0.75 + bl * 0.5, cx + fw * bx, fy + fh * (ST === 2 ? 0.25 : 0.05));
+    c.quadraticCurveTo(cx + fw * 0.5, fy + fh * (ST === 2 ? 0.62 : 0.5), cx, fy + fh * (ST === 2 ? 0.6 : 0.45)); c.quadraticCurveTo(cx - fw * 0.5, fy + fh * (ST === 2 ? 0.62 : 0.5), cx - fw * bx, fy + fh * (ST === 2 ? 0.25 : 0.05)); c.fill();
+    c.beginPath(); c.moveTo(cx - fw * 0.5, fy + fh * 0.36); c.quadraticCurveTo(cx, fy + fh * 0.22, cx + fw * 0.5, fy + fh * 0.36); c.quadraticCurveTo(cx, fy + fh * 0.32, cx - fw * 0.5, fy + fh * 0.36); c.fill();
+    c.strokeStyle = ST >= 5 ? 'rgba(170,165,160,0.7)' : 'rgba(255,255,255,0.12)'; c.lineWidth = 1;
+    for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(cx + i * fw * 0.3, fy + fh * 0.55); c.quadraticCurveTo(cx + i * fw * 0.32, fy + fh * 0.75 + bl * 0.5, cx + i * fw * 0.15, fy + fh * 0.8 + bl * 0.9); c.stroke(); }
+  }
+  // rudraksha malas
+  if (ST >= 1) { c.fillStyle = '#6A2E10'; const n = ST >= 3 ? 2 : 1; for (let m = 0; m < n; m++) for (let i = 0; i <= 14; i++) { const a = Math.PI * (0.15 + 0.7 * i / 14); c.beginPath(); c.arc(cx + Math.cos(a) * w * (0.22 + m * 0.05), h * (0.66 + m * 0.04) + Math.sin(a) * h * (0.16 + m * 0.05), 2.4, 0, Math.PI * 2); c.fill(); } }
+}
+
+// ---------------- Mounts ----------------
+function drawBull(s, d, part) {   // front view, charging toward the player
+  const step = d.dead ? 0 : Math.sin(d.phase * 1.4);
+  if (part === 'body') {
+    ctx.fillStyle = '#2E211C';
+    for (const sd of [-1, 1]) { const lift = Math.max(0, step * sd) * s * 0.12; ctx.fillRect(sd * s * 0.3 - s * 0.07, -s * 0.5, s * 0.14, s * 0.5 - lift); ctx.fillStyle = '#111'; ctx.fillRect(sd * s * 0.3 - s * 0.08, -lift - s * 0.06, s * 0.16, s * 0.06); ctx.fillStyle = '#2E211C'; }
+    const bg = ctx.createRadialGradient(0, -s * 0.75, s * 0.1, 0, -s * 0.65, s * 0.6); bg.addColorStop(0, '#5C463A'); bg.addColorStop(1, '#241913');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(0, -s * 0.66, s * 0.58, s * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.94, s * 0.3, s * 0.15, 0, 0, Math.PI * 2); ctx.fill();   // hump
+  } else {
+    const hy = -s * 0.5;
+    ctx.fillStyle = '#E8DCC0';
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sd * s * 0.14, hy - s * 0.14); ctx.quadraticCurveTo(sd * s * 0.5, hy - s * 0.12, sd * s * 0.48, hy - s * 0.42); ctx.quadraticCurveTo(sd * s * 0.4, hy - s * 0.2, sd * s * 0.06, hy - s * 0.2); ctx.fill(); }
+    const hg = ctx.createLinearGradient(0, hy - s * 0.25, 0, hy + s * 0.25); hg.addColorStop(0, '#5A443A'); hg.addColorStop(1, '#2A1E18');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.19, s * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7A6052'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.15, s * 0.13, s * 0.09, 0, 0, Math.PI * 2); ctx.fill();   // muzzle
+    ctx.fillStyle = d.dead ? '#2A1410' : '#FF3B20'; ctx.shadowColor = '#FF3B20'; ctx.shadowBlur = d.dead ? 0 : 6;
+    ctx.beginPath(); ctx.arc(-s * 0.09, hy - s * 0.05, s * 0.03, 0, Math.PI * 2); ctx.arc(s * 0.09, hy - s * 0.05, s * 0.03, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#D9AE45'; ctx.lineWidth = Math.max(1.5, s * 0.03); ctx.beginPath(); ctx.arc(0, hy + s * 0.24, s * 0.05, 0, Math.PI * 2); ctx.stroke();   // nose ring
+    if (!d.dead && Math.random() < 0.06) parts.push({ x: project(d.z, d.x).x + (Math.random() - 0.5) * s * 0.2, y: project(d.z, d.x).y + hy + s * 0.2, vx: (Math.random() - 0.5), vy: 0.6, r: 2, life: 0.5, color: 'rgba(230,230,230,0.6)' });   // snorting breath
+  }
+}
+function drawDragon(s, d) {   // front view, wings beating; the rider sits on its back
+  const flap = d.dead ? 0.2 : Math.sin(time * 7 + d.phase);
+  for (const sd of [-1, 1]) {   // wings
+    ctx.save(); ctx.scale(sd, 1); ctx.rotate(-0.25 + flap * 0.35);
+    const wg = ctx.createLinearGradient(0, 0, s * 1.3, 0); wg.addColorStop(0, '#2F5E2C'); wg.addColorStop(1, '#7FB06A');
+    ctx.fillStyle = wg; ctx.beginPath(); ctx.moveTo(s * 0.15, -s * 0.2);
+    ctx.lineTo(s * 1.25, -s * 0.75); ctx.lineTo(s * 1.05, -s * 0.35); ctx.lineTo(s * 1.2, -s * 0.15); ctx.lineTo(s * 0.9, -s * 0.05); ctx.lineTo(s * 0.95, s * 0.15); ctx.lineTo(s * 0.2, s * 0.05); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#1E3E1C'; ctx.lineWidth = 1.2; for (const [x, y] of [[1.05, -0.35], [0.9, -0.05], [0.95, 0.15]]) { ctx.beginPath(); ctx.moveTo(s * 0.18, -s * 0.12); ctx.lineTo(s * x, s * y); ctx.stroke(); }
+    ctx.restore();
+  }
+  const bg = ctx.createRadialGradient(0, -s * 0.05, s * 0.05, 0, 0, s * 0.45); bg.addColorStop(0, '#5E9A52'); bg.addColorStop(1, '#244A22');
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.32, s * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#C9B26A'; ctx.beginPath(); ctx.ellipse(0, s * 0.12, s * 0.16, s * 0.24, 0, 0, Math.PI * 2); ctx.fill();   // belly scales
+  // neck + head, low in front
+  ctx.fillStyle = '#3E7A3A'; ctx.beginPath(); ctx.ellipse(0, s * 0.42, s * 0.1, s * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+  const hy = s * 0.62;
+  ctx.fillStyle = '#4C8A44'; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.17, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#E8DCC0'; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sd * s * 0.1, hy - s * 0.08); ctx.lineTo(sd * s * 0.22, hy - s * 0.26); ctx.lineTo(sd * s * 0.04, hy - s * 0.1); ctx.fill(); }
+  ctx.fillStyle = d.dead ? '#2A1410' : '#FFD23C'; ctx.beginPath(); ctx.ellipse(-s * 0.07, hy - s * 0.02, s * 0.035, s * 0.025, 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.07, hy - s * 0.02, s * 0.035, s * 0.025, -0.3, 0, Math.PI * 2); ctx.fill();
+  if (!d.dead && Math.sin(time * 2 + d.phase) > 0.85) {   // puffs of smoke and sparks
+    ctx.fillStyle = 'rgba(255,140,40,0.85)'; ctx.beginPath(); ctx.moveTo(-s * 0.05, hy + s * 0.08); ctx.lineTo(0, hy + s * 0.32); ctx.lineTo(s * 0.05, hy + s * 0.08); ctx.fill();
+  }
+}
+// The divine lion, seen from behind as it gallops up the bridge with the sadhu on its back.
+function drawLion(L, moving, firing) {
+  const ph = time * (moving ? 10 : 2.5);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, L * 0.6, L * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  // mane and head (ahead of the body, so higher on screen)
+  const mx = -L * 0.5, my = -L * 1.12 - (moving ? Math.abs(Math.sin(ph)) * L * 0.03 : 0);   // head turned slightly left, so it shows beside the rider
+  if (firing > 0.02) {   // sacred fire from the mouth, streaming ahead
+    const fl = L * (0.9 + 0.4 * firing) * (0.85 + 0.15 * Math.sin(time * 40));
+    const fg = ctx.createLinearGradient(0, my, 0, my - fl); fg.addColorStop(0, `rgba(255,250,210,${0.95 * firing})`); fg.addColorStop(0.35, `rgba(255,170,40,${0.85 * firing})`); fg.addColorStop(1, 'rgba(220,40,20,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(mx - L * 0.12, my - L * 0.12); ctx.quadraticCurveTo(mx - L * 0.4, my - fl * 0.6, mx + L * 0.12, my - fl); ctx.quadraticCurveTo(mx + L * 0.3, my - fl * 0.6, mx + L * 0.1, my - L * 0.12); ctx.fill();
+  }
+  for (let i = 0; i < 22; i++) {
+    const a = (i / 22) * Math.PI * 2, r1 = L * 0.26, r2 = L * (0.44 + 0.05 * Math.sin(i * 1.7 + time * 3));
+    ctx.fillStyle = i % 2 ? '#8A4313' : '#A85A1C';
+    ctx.beginPath(); ctx.moveTo(mx + Math.cos(a - 0.18) * r1, my + Math.sin(a - 0.18) * r1 * 0.85); ctx.lineTo(mx + Math.cos(a) * r2, my + Math.sin(a) * r2 * 0.85); ctx.lineTo(mx + Math.cos(a + 0.18) * r1, my + Math.sin(a + 0.18) * r1 * 0.85); ctx.fill();
+  }
+  ctx.fillStyle = '#C07226'; ctx.beginPath(); ctx.ellipse(mx, my, L * 0.3, L * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#D89A4A'; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.arc(mx + sd * L * 0.16, my - L * 0.27, L * 0.065, Math.PI, 0); ctx.fill(); }   // ears
+  // a glimpse of the face in profile: muzzle, eye and open jaw
+  ctx.fillStyle = '#E2A85A'; ctx.beginPath(); ctx.ellipse(mx - L * 0.2, my + L * 0.04, L * 0.15, L * 0.12, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3A1A08'; ctx.beginPath(); ctx.ellipse(mx - L * 0.33, my - L * 0.01, L * 0.04, L * 0.03, 0, 0, Math.PI * 2); ctx.fill();   // nose
+  ctx.fillStyle = '#FFE08A'; ctx.beginPath(); ctx.arc(mx - L * 0.12, my - L * 0.08, L * 0.025, 0, Math.PI * 2); ctx.fill();   // eye
+  ctx.fillStyle = '#7A1E10'; ctx.beginPath(); ctx.ellipse(mx - L * 0.25, my + L * 0.1, L * 0.08, L * 0.04 + firing * L * 0.04, -0.2, 0, Math.PI * 2); ctx.fill();   // open mouth
+  // neck joining the head to the body
+  ctx.fillStyle = '#B87A35'; ctx.beginPath(); ctx.moveTo(mx + L * 0.1, my + L * 0.15); ctx.quadraticCurveTo(-L * 0.25, -L * 0.85, -L * 0.1, -L * 0.75); ctx.lineTo(-L * 0.35, -L * 0.7); ctx.closePath(); ctx.fill();
+  // hind legs galloping
+  for (const sd of [-1, 1]) {
+    const lift = moving ? Math.max(0, Math.sin(ph + (sd > 0 ? Math.PI : 0))) : 0;
+    const tg = ctx.createLinearGradient(sd * L * 0.4, 0, sd * L * 0.1, 0); tg.addColorStop(0, '#9E6428'); tg.addColorStop(1, '#D9A055');
+    ctx.fillStyle = tg; ctx.beginPath(); ctx.ellipse(sd * L * 0.24, -L * 0.42 - lift * L * 0.05, L * 0.17, L * 0.26, sd * 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#B87A35'; ctx.fillRect(sd * L * 0.27 - L * 0.06, -L * 0.25 - lift * L * 0.12, L * 0.12, L * 0.25 - lift * L * 0.06);
+    ctx.fillStyle = lift > 0.3 ? '#5A3418' : '#C9894A'; ctx.beginPath(); ctx.ellipse(sd * L * 0.27, -lift * L * 0.18, L * 0.08, L * (lift > 0.3 ? 0.06 : 0.035), 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // body / rump
+  const bg = ctx.createRadialGradient(0, -L * 0.8, L * 0.1, 0, -L * 0.62, L * 0.5); bg.addColorStop(0, '#EBB565'); bg.addColorStop(1, '#A86E2A');
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.ellipse(0, -L * 0.64 - (moving ? Math.abs(Math.sin(ph)) * L * 0.04 : 0), L * 0.42, L * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,70,30,0.5)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -L * 0.98); ctx.lineTo(0, -L * 0.4); ctx.stroke();
+  // tail with a dark tuft, swishing
+  const tsw = Math.sin(time * 4) * L * 0.25;
+  ctx.strokeStyle = '#B87A35'; ctx.lineWidth = L * 0.05; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -L * 0.42); ctx.quadraticCurveTo(L * 0.2 + tsw * 0.5, -L * 0.1, L * 0.35 + tsw, -L * 0.3); ctx.stroke();
+  ctx.fillStyle = '#5A2A0C'; ctx.beginPath(); ctx.ellipse(L * 0.37 + tsw, -L * 0.33, L * 0.06, L * 0.09, 0.5, 0, Math.PI * 2); ctx.fill();
+  // saddle cloth
+  ctx.fillStyle = '#B5121B'; ctx.beginPath(); ctx.ellipse(0, -L * 0.92, L * 0.3, L * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#D9AE45'; ctx.lineWidth = 2; ctx.stroke();
+}
+
 let WZ = 1;   // test-only zoom
 const WR = { bulkVis: 0, lean: 0, prevX: 0, dustT: 0, scarf: [] };
 function limb(x1, y1, x2, y2, w1, w2, fill) {
@@ -1727,18 +1959,21 @@ function drawWarrior() {
   WR.bulkVis += (bulk - WR.bulkVis) * 0.04;
   const B = WR.bulkVis;
   const p = WR.at || project(0, player.x);
-  const s = 48 * u * (1 + 0.065 * B) * WZ * (WR.at ? WR.at.scale : 1);           // overall height unit
-  const W = 1 + 0.12 * B;                         // breadth
+  const ST = Math.max(0, Math.min(5, bulk));        // life stage: 0 boy monk … 5 Siddha sadhu
+  const mounted = weapon === 'simha';
+  const s = 48 * u * (0.76 + 0.075 * B) * WZ * (WR.at ? WR.at.scale : 1) * (mounted ? 0.9 : 1);   // overall height unit (a child is small)
+  const W = 0.84 + 0.12 * B;                        // breadth
   const moving = state === 'playing' && betweenWaves <= 0;
+  const riding = moving;                            // the lion gallops; the rider sits
   const ph = time * (moving ? 11 : 3);
   // lean into lane changes, ease back
   const vx = player.x - WR.prevX; WR.prevX = player.x;
   WR.lean += (Math.max(-0.35, Math.min(0.35, vx * 9)) - WR.lean) * 0.25;
   // dust puffs from the feet
   WR.dustT -= 1 / 60;
-  if (moving && WR.dustT <= 0) { WR.dustT = Math.abs(vx) > 0.01 ? 0.03 : 0.16; parts.push({ x: p.x + (Math.random() - 0.5) * s * 0.5, y: p.y - 2, vx: (Math.random() - 0.5) * 1.2 - vx * 40, vy: -0.6 - Math.random() * 0.6, r: 2 + Math.random() * 3 * u, life: 0.6, color: 'rgba(150,120,80,0.55)' }); }
+  if (moving && WR.dustT <= 0 && (!mounted || Math.random() < 0.6)) { WR.dustT = Math.abs(vx) > 0.01 ? 0.03 : 0.16; parts.push({ x: p.x + (Math.random() - 0.5) * s * 0.5, y: p.y - 2, vx: (Math.random() - 0.5) * 1.2 - vx * 40, vy: -0.6 - Math.random() * 0.6, r: 2 + Math.random() * 3 * u, life: 0.6, color: 'rgba(150,120,80,0.55)' }); }
 
-  const SKIN = '#E7B184', SK_D = '#A86F45', SK_L = '#F6CFA4', DHOTI = '#F7EFDC', DH_D = '#D9CBAA', GOLD = '#D9AE45', GOLD_D = '#9C7420', SAFF = B >= 3 ? '#B5121B' : '#D2601F';
+  const SKIN = '#E7B184', SK_D = '#A86F45', SK_L = '#F6CFA4', DHOTI = DHOTI_COL[ST][0], DH_D = DHOTI_COL[ST][1], GOLD = '#D9AE45', GOLD_D = '#9C7420', SAFF = ST >= 3 ? '#B5121B' : '#D2601F', RUD = '#6A2E10';
   const hurt = player.hurt > 0;
   const bob = moving ? Math.abs(Math.sin(ph)) * s * 0.05 : Math.sin(time * 2) * s * 0.012;
   const knock = hurt ? Math.max(0, player.hurt - 0.6) * s * 0.35 : 0;
@@ -1761,19 +1996,28 @@ function drawWarrior() {
     ctx.beginPath(); ctx.ellipse(0, -s * 0.05, s * (1.6 - player.flash * 0.8), s * 0.3 * (1.6 - player.flash * 0.8), 0, 0, Math.PI * 2); ctx.stroke();
   }
 
+  // ---- the divine lion (final level): drawn first, the sadhu rides on its back ----
+  let rideBob = 0;
+  if (mounted) {
+    const L = s * 1.6;
+    drawLion(L, riding, Math.max(player.recoil, C.roar || 0));
+    rideBob = riding ? Math.abs(Math.sin(time * 10)) * L * 0.04 : 0;
+    ctx.translate(L * 0.08, -L * 0.92 + s * 0.88 - rideBob);
+  }
   // ---- legs (alternating; the lifted foot shows its sole) ----
-  const hipY = -s * 0.98 - bob;
+  const hipY = -s * 0.98 - (mounted ? 0 : bob);
   for (const side of [-1, 1]) {
-    const lift = WR.at && WR.at.air ? 0.85 : moving ? Math.max(0, Math.sin(ph + (side > 0 ? Math.PI : 0))) : 0;
-    const hx = side * s * 0.14 * W, kx = side * s * (0.15 + 0.02 * lift) * W, fx = side * s * 0.13 * W;
-    const ky = -s * 0.5 - lift * s * 0.12 - bob * 0.5, fy = -lift * s * 0.3;
+    const lift = mounted ? 0 : WR.at && WR.at.air ? 0.85 : moving ? Math.max(0, Math.sin(ph + (side > 0 ? Math.PI : 0))) : 0;
+    let hx = side * s * 0.14 * W, kx = side * s * (0.15 + 0.02 * lift) * W, fx = side * s * 0.13 * W;
+    let ky = -s * 0.5 - lift * s * 0.12 - bob * 0.5, fy = -lift * s * 0.3;
+    if (mounted) { kx = side * s * 0.44 * W; ky = hipY + s * 0.22; fx = side * s * 0.47 * W; fy = hipY + s * 0.62; }   // legs astride the lion
     const legCol = side < 0 ? SK_D : SKIN;
     limb(hx, hipY, kx, ky, s * 0.12 * W, s * 0.085 * W, legCol);
     limb(kx, ky, fx, fy - s * 0.04, s * 0.085 * W, s * 0.055 * W, legCol);
     ctx.fillStyle = 'rgba(255,215,170,0.35)'; ctx.beginPath(); ctx.ellipse(kx - side * s * 0.02, (ky + fy) / 2, s * 0.022, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();   // calf highlight
     ctx.fillStyle = lift > 0.3 ? '#8E5A34' : SK_D;   // heel / sole
     ctx.beginPath(); ctx.ellipse(fx, fy - s * 0.02, s * 0.065 * W, s * (lift > 0.3 ? 0.06 : 0.035), 0, 0, Math.PI * 2); ctx.fill();
-    if (B >= 2) { ctx.fillStyle = GOLD; ctx.fillRect(fx - s * 0.05 * W, fy - s * 0.1, s * 0.1 * W, s * 0.025); }   // anklet
+    if (ST >= 2) { ctx.fillStyle = ST >= 4 ? GOLD : RUD; ctx.fillRect(fx - s * 0.05 * W, fy - s * 0.1, s * 0.1 * W, s * 0.025); }   // anklet
   }
 
   // ---- dhoti (pleated, hem flutters with the stride) ----
@@ -1833,12 +2077,16 @@ function drawWarrior() {
   ctx.beginPath(); ctx.ellipse(shW * 0.45, shY + s * 0.2 - blade, shW * 0.3, s * 0.11, -0.3, 0.2, Math.PI - 0.2); ctx.stroke();
   if (B >= 1) { ctx.beginPath(); ctx.moveTo(-shW * 0.85, shY + s * 0.3); ctx.quadraticCurveTo(-s * 0.2 * W, waistY - s * 0.2, -s * 0.12, waistY - s * 0.05); ctx.moveTo(shW * 0.85, shY + s * 0.3); ctx.quadraticCurveTo(s * 0.2 * W, waistY - s * 0.2, s * 0.12, waistY - s * 0.05); ctx.stroke(); }
   // janeu (sacred thread) or gold armour straps
-  if (B >= 3) {
-    ctx.strokeStyle = GOLD; ctx.lineWidth = 3.2 * u;
-    ctx.beginPath(); ctx.moveTo(-shW * 0.9, shY + s * 0.06); ctx.lineTo(s * 0.28 * W, waistY - s * 0.02); ctx.moveTo(shW * 0.9, shY + s * 0.06); ctx.lineTo(-s * 0.28 * W, waistY - s * 0.02); ctx.stroke();
-    ctx.fillStyle = GOLD; ctx.beginPath(); ctx.arc(0, (shY + waistY) / 2 + s * 0.02, s * 0.06, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = GOLD_D; ctx.beginPath(); ctx.arc(0, (shY + waistY) / 2 + s * 0.02, s * 0.03, 0, Math.PI * 2); ctx.fill();
-  } else {
+  if (ST >= 3) {   // sacred ash (bhasma) stripes across the shoulders
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = Math.max(1.2, s * 0.022);
+    for (let i = 0; i < 3; i++) { const y = shY + s * (0.16 + i * 0.07); ctx.beginPath(); ctx.moveTo(-shW * 0.55, y); ctx.quadraticCurveTo(0, y + s * 0.03, shW * 0.55, y); ctx.stroke(); }
+  }
+  if (ST >= 1) {   // rudraksha malas crossing the back (two for a Tapasvi and older)
+    const malas = ST >= 3 ? [[-1, 1], [1, -1]] : [[-1, 1]];
+    ctx.fillStyle = RUD;
+    for (const [a, b] of malas) for (let i = 0; i <= 18; i++) { const q = i / 18; const x = a * shW * 0.85 + (b * s * 0.28 * W - a * shW * 0.85) * q, y = shY + s * 0.05 + (waistY - shY - s * 0.07) * q + Math.sin(q * Math.PI) * s * 0.08; ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, s * 0.018), 0, Math.PI * 2); ctx.fill(); }
+  }
+  {
     ctx.strokeStyle = '#FFFDF5'; ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.moveTo(-shW * 0.8, shY + s * 0.04); ctx.quadraticCurveTo(-s * 0.05, (shY + waistY) / 2, s * 0.28 * W, waistY - s * 0.02); ctx.stroke();
   }
@@ -1858,16 +2106,18 @@ function drawWarrior() {
   // left arm: swings when running; holds the bow forward when the bow is equipped
   let lex, ley, lhx, lhy;
   if (WR.pose === 'victory') { const pump = Math.sin(time * 6) * s * 0.04; lex = lsx - s * 0.16; ley = sy - s * 0.3 - pump; lhx = lsx - s * 0.12; lhy = sy - s * 0.62 - pump; }
+  else if (mounted) { lex = lsx - s * 0.08; ley = sy + s * 0.28; lhx = lsx + s * 0.05; lhy = sy + s * 0.55; }
   else if (weapon === 'bow') { lex = lsx - s * 0.05; ley = sy - s * 0.32; lhx = lsx + s * 0.12; lhy = sy - s * 0.62; }
   else { const sw = moving ? Math.sin(ph) : 0; lex = lsx - s * 0.1; ley = sy + s * 0.3 - sw * s * 0.06; lhx = lsx - s * 0.06 + sw * s * 0.04; lhy = sy + s * 0.58 - sw * s * 0.14; }
   limb(lsx, sy, lex, ley, armW * 1.15, armW * 0.95, SK_D);
   limb(lex, ley, lhx, lhy, armW * 0.9, armW * 0.75, SK_D);
   ctx.fillStyle = SK_D; ctx.beginPath(); ctx.arc(lhx, lhy, armW * 0.85, 0, Math.PI * 2); ctx.fill();
-  if (B >= 1) { ctx.fillStyle = GOLD; ctx.save(); ctx.translate((lsx + lex) / 2, (sy + ley) / 2); ctx.rotate(Math.atan2(ley - sy, lex - lsx)); ctx.fillRect(-armW * 0.3, -armW * 1.15, armW * 0.6, armW * 2.3); ctx.restore(); }
+  if (B >= 1) { ctx.fillStyle = ST >= 4 ? GOLD : RUD; ctx.save(); ctx.translate((lsx + lex) / 2, (sy + ley) / 2); ctx.rotate(Math.atan2(ley - sy, lex - lsx)); ctx.fillRect(-armW * 0.3, -armW * 1.15, armW * 0.6, armW * 2.3); ctx.restore(); }
 
   // right arm: per-weapon attack animation driven by the fire cycle
   let ang, reach;   // angle of the whole arm from the shoulder (0 = pointing up)
   if (WR.pose === 'victory') { ang = 0.05 + Math.sin(time * 6) * 0.08; reach = 1.05; }
+  else if (mounted) { ang = 0.35 + 0.15 * player.recoil; reach = 0.95; }   // abhaya mudra while the lion breathes fire
   else if (weapon === 'bow') { ang = -0.9 - 0.5 * cyc; reach = 0.75 - 0.3 * cyc; }             // draws the string back, snaps forward on release
   else if (weapon === 'parashu' || weapon === 'gada') { ang = 0.25 + 1.0 * cyc - 1.4 * player.recoil; reach = 1; } // wind up over the shoulder, chop forward
   else if (weapon === 'khadga') { ang = 0.9 - 1.8 * (1 - cyc) * (1 - cyc); reach = 1; }     // quick diagonal slash
@@ -1879,7 +2129,7 @@ function drawWarrior() {
   limb(rsx, sy, rex, rey, armW * 1.2, armW, SKIN);
   limb(rex, rey, rhx, rhy, armW * 0.95, armW * 0.8, SKIN);
   ctx.fillStyle = 'rgba(255,225,190,0.45)'; ctx.beginPath(); ctx.ellipse((rsx + rex) / 2, (sy + rey) / 2, armW * 0.35, armW * 0.8, ang + 0.35, 0, Math.PI * 2); ctx.fill();   // bicep highlight
-  if (B >= 1) { ctx.fillStyle = GOLD; ctx.save(); ctx.translate((rsx + rex) / 2, (sy + rey) / 2); ctx.rotate(ang + 0.35); ctx.fillRect(-armW * 1.15, -armW * 0.3, armW * 2.3, armW * 0.6); ctx.restore(); }
+  if (B >= 1) { ctx.fillStyle = ST >= 4 ? GOLD : RUD; ctx.save(); ctx.translate((rsx + rex) / 2, (sy + rey) / 2); ctx.rotate(ang + 0.35); ctx.fillRect(-armW * 1.15, -armW * 0.3, armW * 2.3, armW * 0.6); ctx.restore(); }
   ctx.fillStyle = SKIN; ctx.beginPath(); ctx.arc(rhx, rhy, armW * 0.9, 0, Math.PI * 2); ctx.fill();
   // slash trail for the sword
   if (weapon === 'khadga' && player.recoil > 0.05) {
@@ -1893,25 +2143,8 @@ function drawWarrior() {
   // ---- neck, head, shikha ----
   limb(0, shY + s * 0.04, 0, shY - s * 0.14, s * 0.1 * W, s * 0.075, SK_D);
   const hx = Math.sin(ph) * s * 0.01, hy = shY - s * 0.27;
-  ctx.fillStyle = SKIN; ctx.beginPath(); ctx.ellipse(hx - s * 0.17, hy + s * 0.02, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.ellipse(hx + s * 0.17, hy + s * 0.02, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
-  const hg = ctx.createRadialGradient(hx - s * 0.05, hy - s * 0.08, s * 0.02, hx, hy, s * 0.2);
-  hg.addColorStop(0, '#3A2416'); hg.addColorStop(1, '#120A05');
-  ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(hx, hy, s * 0.155, s * 0.175, 0, 0, Math.PI * 2); ctx.fill();
-  // shikha: tied tuft that bounces
-  const tuft = moving ? Math.sin(ph * 2) * 0.35 : Math.sin(time * 2) * 0.1;
-  ctx.save(); ctx.translate(hx, hy - s * 0.16); ctx.rotate(tuft);
-  ctx.fillStyle = '#120A05'; ctx.beginPath(); ctx.ellipse(0, -s * 0.06, s * 0.035, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#B5121B'; ctx.fillRect(-s * 0.03, -s * 0.01, s * 0.06, s * 0.02);
-  ctx.restore();
-  // rudraksha string at the nape
-  ctx.fillStyle = '#5C2A0E'; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(i * s * 0.035, shY - s * 0.04 + Math.abs(i) * s * 0.008, s * 0.016, 0, Math.PI * 2); ctx.fill(); }
-  if (B >= 2) { // mukut (crown) band from behind
-    ctx.fillStyle = GOLD; ctx.beginPath(); ctx.moveTo(hx - s * 0.18, hy - s * 0.04);
-    for (let k = 0; k <= 6; k++) ctx.lineTo(hx - s * 0.18 + k * s * 0.06, hy - s * (k % 2 ? 0.13 : 0.22));
-    ctx.lineTo(hx + s * 0.18, hy - s * 0.04); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#B5121B'; ctx.beginPath(); ctx.arc(hx, hy - s * 0.1, s * 0.025, 0, Math.PI * 2); ctx.fill();
-  }
-  if (bulk >= 5) { ctx.strokeStyle = '#E6EEFF'; ctx.lineWidth = 2.5 * u; ctx.shadowColor = '#BFD6FF'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(hx, hy - s * 0.3, s * 0.11, 0.35, Math.PI - 0.35); ctx.stroke(); ctx.shadowBlur = 0; }
+  drawBackHead(hx, hy, s, ST, moving && !mounted, ph, u);
+  ctx.fillStyle = '#5C2A0E'; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.arc(i * s * 0.035, shY - s * 0.04 + Math.abs(i) * s * 0.008, s * 0.016, 0, Math.PI * 2); ctx.fill(); }   // rudraksha at the nape
   ctx.restore();   // lean
   if (hurt && player.hurt > 0.8) { const hg2 = ctx.createRadialGradient(p.x, p.y - s, 0, p.x, p.y - s, s * 1.3); hg2.addColorStop(0, 'rgba(255,60,30,0.45)'); hg2.addColorStop(1, 'rgba(255,60,30,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hg2; ctx.beginPath(); ctx.arc(p.x, p.y - s, s * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
   ctx.restore();
@@ -1921,7 +2154,10 @@ function drawWarrior() {
 function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
   const w = WEAPONS[weapon], k = s * 0.55;
   ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 10; ctx.lineCap = 'round';
-  if (weapon === 'bow') {
+  if (weapon === 'simha') {
+    const g = ctx.createRadialGradient(hx, hy - s * 0.08, 0, hx, hy - s * 0.08, s * 0.16); g.addColorStop(0, 'rgba(255,245,200,0.95)'); g.addColorStop(1, 'rgba(255,140,40,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(hx, hy - s * 0.08, s * 0.16, 0, Math.PI * 2); ctx.fill();
+  } else if (weapon === 'bow') {
     // bow held in the left hand, string pulled to the right hand
     ctx.strokeStyle = '#6E4019'; ctx.lineWidth = 3.5;
     ctx.beginPath(); ctx.moveTo(lx - k * 0.55, ly + k * 0.45); ctx.quadraticCurveTo(lx - k * 0.1, ly - k * 0.25, lx + k * 0.55, ly - k * 0.8); ctx.stroke();
@@ -1963,7 +2199,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only switched on with ?test=1
-if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'trishul'; WR.bulkVis = 5; wave = WAVES.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDefeated(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) celebUpdate(1 / 60); render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
+if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; wave = WAVES.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDefeated(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) celebUpdate(1 / 60); render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
 </script>
 </body>
 </html>
