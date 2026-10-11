@@ -600,6 +600,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 
 /* ========== YODDHA (shooter) additions ========== */
+.celebrate-btn { position: absolute; left: 50%; bottom: max(8vh, 40px); transform: translateX(-50%) scale(.6); z-index: 58; opacity: 0; pointer-events: none;
+  border: 0; border-radius: 999px; padding: 18px 40px; font: 700 20px/1 'Inter', sans-serif; letter-spacing: 1px; color: #3A1A04; cursor: pointer;
+  background: linear-gradient(135deg, #FFF0B8, #F2C04E 45%, #D98B1E); box-shadow: 0 0 0 4px rgba(255,236,170,.35), 0 12px 40px rgba(255,160,40,.6);
+  transition: opacity .4s, transform .5s cubic-bezier(.34,1.56,.64,1); }
+.celebrate-btn.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); animation: celebPulse 1.4s ease-in-out infinite .5s; }
+@keyframes celebPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(255,236,170,.35), 0 12px 40px rgba(255,160,40,.6); } 50% { box-shadow: 0 0 0 14px rgba(255,236,170,0), 0 12px 60px rgba(255,160,40,.9); } }
 .pausebox { position: absolute; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); text-align: center; }
 .pausebox.show { display: flex; }
 .pausebox b { display: block; font-family: 'Cormorant Garamond', serif; font-size: 44px; color: var(--gold-light); }
@@ -626,7 +632,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .banner span { display: block; margin-top: 8px; font-size: clamp(13px, 3.4vw, 16px); color: #FFF6E0; letter-spacing: .5px; text-shadow: 0 2px 8px #000; }
 .ashirvaad__weapon { display: inline-block; margin: 2px 0 10px; padding: 6px 14px; border-radius: 999px; background: rgba(232,199,122,.16); border: 1px solid rgba(232,199,122,.5); color: #F4D58D; font-weight: 600; font-size: 14px; }
 .victory { position: absolute; inset: 0; z-index: 65; display: none; align-items: center; justify-content: center; padding: 16px; overflow-y: auto;
-  background: radial-gradient(ellipse at center, rgba(70,40,8,.92) 0%, rgba(0,0,0,.98) 80%); }
+  background: radial-gradient(ellipse at center, rgba(40,15,30,.55) 0%, rgba(10,4,12,.82) 85%); }
 .victory.show { display: flex; animation: gameOverIn .6s ease; }
 .victory__inner { max-width: 460px; width: 100%; text-align: center; background: linear-gradient(180deg, rgba(31,36,51,.96), rgba(15,18,30,.96)); border: 1px solid rgba(232,199,122,.45); border-radius: 26px; padding: 28px 22px; box-shadow: 0 0 80px rgba(255,190,90,.25); margin: auto; }
 .victory__namo { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--gold-light); }
@@ -761,6 +767,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     </div>
   </div>
 
+  <!-- Celebrate (after Andhakasura falls) -->
+  <button class="celebrate-btn" id="celebrate-btn" type="button">🎉 Celebrate!</button>
+
   <!-- Victory + coupon -->
   <div class="victory" id="victory" role="dialog" aria-labelledby="victory-title">
     <div class="victory__inner">
@@ -776,7 +785,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="victory__btns">
         <a class="go-btn go-btn--whatsapp" id="claim-btn" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;flex:none"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.41-.08-.13-.27-.2-.57-.35M12.05 21.79a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88a9.88 9.88 0 0 1 9.88 9.89c0 5.45-4.43 9.88-9.89 9.88M20.46 3.49A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45c6.55 0 11.89-5.34 11.89-11.89 0-3.18-1.24-6.17-3.48-8.42"/></svg> Claim coupon on WhatsApp</a>
         <button class="go-btn go-btn--ghost" id="copy-btn" type="button">Copy code</button>
-        <button class="go-btn go-btn--ghost" id="again-btn" type="button">↻ Play again</button>
+        <button class="go-btn go-btn--ghost" id="celebrate-again-btn" type="button">🎆 Celebrate again</button>
+        <button class="go-btn go-btn--ghost" id="again-btn" type="button" style="grid-column: span 2">↻ Play again</button>
         <a class="go-btn go-btn--primary" href="villas/rudrangan-suites.html">See Rudrangan Suites</a>
       </div>
     </div>
@@ -832,6 +842,17 @@ const sfx = {
   heal() { [660, 880, 1100].forEach((f, i) => setTimeout(() => tone(f, 0.2, 'triangle', 0.06), i * 60)); },
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.45, 'triangle', 0.08), i * 110)); },
   roar() { noise(1.0, 0.25, 300); tone(90, 1.0, 'sawtooth', 0.06, 50); },
+  thunder() { noise(1.4, 0.2, 260); },
+  pop() { noise(0.35, 0.08, 2600); tone(1200 + Math.random() * 600, 0.25, 'sine', 0.03, 600); },
+  drum() { noise(0.12, 0.22, 200); tone(95, 0.18, 'sine', 0.14, 55); },
+  shankh() {   // conch: a swelling, buzzing horn
+    if (muted || !audioCtx) return;
+    const t = audioCtx.currentTime, g = audioCtx.createGain(), f = audioCtx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 1400;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.35); g.gain.setValueAtTime(0.12, t + 1.6); g.gain.exponentialRampToValueAtTime(0.001, t + 2.6);
+    for (const [fr, ty] of [[233, 'sawtooth'], [466, 'triangle'], [699, 'sine']]) { const o = audioCtx.createOscillator(); o.type = ty; o.frequency.setValueAtTime(fr * 0.97, t); o.frequency.linearRampToValueAtTime(fr, t + 0.4); o.connect(f); o.start(t); o.stop(t + 2.7); }
+    f.connect(g); g.connect(audioCtx.destination);
+  },
 };
 $('mute-btn').addEventListener('click', e => { e.stopPropagation(); muted = !muted; $('mute-btn').textContent = muted ? '🔕' : '🔔'; });
 
@@ -851,6 +872,8 @@ const DANAV = {
   mayavi:  { name: 'Mayavi',  hp: 6,  speed: 0.095, size: 1.08, skin: '#7A4FA0', dark: '#3E2357', horn: '#EADCF8', eye: '#7CFFEA', pts: 35, hop: true },
   maha:    { name: 'Maha-danav', hp: 14, speed: 0.062, size: 1.5, skin: '#4A4A66', dark: '#22222F', horn: '#FFD27D', eye: '#FF3B2F', pts: 60, crown: true },
 };
+const shade = (c, k) => '#' + hex(c).map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
+const DEAD_DANAV = Object.fromEntries(Object.entries(DANAV).map(([k, t]) => [k, { ...t, skin: shade(t.skin, 0.62), dark: shade(t.dark, 0.6), horn: shade(t.horn, 0.75), eye: '#2A1410' }]));
 const WAVES = [
   { kills: 10, every: 1.7, mix: { rakshas: 1 } },
   { kills: 12, every: 1.55, mix: { rakshas: 0.7, danav: 0.3 } },
@@ -884,13 +907,13 @@ let state = 'intro';            // intro, playing, blessing, gameover, victory
 let paused = false;
 let score = 0, best = parseInt(store.get('mahakal_best', '0'), 10) || 0;
 let wave = 0, kills = 0, spawnT = 0, lives = MAX_LIVES, weapon = 'bow', bulk = 0, time = 0;
-let bossTries = 0, boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false, userPaused = false, combo = 0, comboT = 0;
+let slain = 0, bossTries = 0, boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false, userPaused = false, combo = 0, comboT = 0;
 const player = { lane: 1, x: 0, fireT: 0, hurt: 0, flash: 0, recoil: 0 };
 const danavs = [], shots = [], fires = [], parts = [], texts = [], drops = [];
 let checkpoint = null;
 
 function saveCheckpoint() { checkpoint = { wave, weapon, bulk, score }; }
-function resetField() { pendingBlessing = false; danavs.length = shots.length = fires.length = parts.length = texts.length = drops.length = 0; boss = null; $('bossbar').classList.remove('show'); }
+function resetField() { pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = drops.length = 0; boss = null; $('bossbar').classList.remove('show'); }
 
 // ---------------- HUD ----------------
 function hud() {
@@ -899,7 +922,9 @@ function hud() {
   $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
   const w = WEAPONS[weapon];
   $('hud-weapon').innerHTML = `Weapon: <b>${w.name}</b>`;
-  if (boss) {
+  if (boss && boss.dead) {
+    $('hud-wave').textContent = 'Victory!'; $('hud-bar').style.width = '100%'; $('hud-next').textContent = 'Andhakasura is defeated';
+  } else if (boss) {
     $('hud-wave').textContent = 'Final battle';
     $('hud-bar').style.width = (100 * boss.hp / boss.max) + '%';
     $('hud-next').textContent = 'Defeat Andhakasura!';
@@ -923,7 +948,7 @@ function burst(x, y, color, n = 14, speed = 4) {
 
 // ---------------- Flow ----------------
 function startRun() {
-  bossTries = 0;
+  bossTries = 0; slain = 0;
   score = 0; wave = 0; weapon = 'bow'; bulk = 0;
   startWave(true);
 }
@@ -991,14 +1016,18 @@ function startBoss() {
 function bossDefeated() {
   const p = project(boss.z, boss.x);
   for (let i = 0; i < 5; i++) setTimeout(() => { burst(p.x + (Math.random() - 0.5) * 120, p.y - 120 * Math.random(), i % 2 ? '#FFD27D' : '#FF6B3D', 40, 7); sfx.kill(); }, i * 180);
-  score += 1000; boss.dead = true; fires.length = 0; danavs.length = 0;
+  score += 1000; boss.dead = true; boss.fall = 0; fires.length = 0; danavs.length = 0; shots.length = 0;
+  buildPile();
   try { navigator.vibrate && navigator.vibrate([80, 60, 160]); } catch (e) {}
-  shake = 0.8;
-  banner('Andhakasura is defeated!', 'Jai Mahakal!', 2000);
-  setTimeout(victory, 2200);
+  shake = 0.8; sfx.roar();
+  $('bossbar').classList.remove('show');
+  banner('Andhakasura is defeated!', 'Jai Mahakal! Tap Celebrate', 2600);
+  state = 'won'; C.t = 0; C.btn = false; C.landed = false;
+  $('hud-wave').textContent = 'Victory!'; $('hud-bar').style.width = '100%'; $('hud-next').textContent = 'Andhakasura is defeated';
+  saveBest();
 }
 function victory() {
-  state = 'victory'; boss = null; $('bossbar').classList.remove('show');
+  state = 'victory'; $('bossbar').classList.remove('show');
   saveBest();
   let code = store.get('mahakal_coupon', '');
   if (!/^MAHAKAL21-[A-Z0-9]{5}$/.test(code)) {
@@ -1012,8 +1041,8 @@ function victory() {
   const msg = ['Namaste Apoorv ji 🙏', 'I completed the Mahakal game on your website and won a 21% discount coupon.', '', '🎟️ Coupon: ' + code, '🏡 Villa: Rudrangan Suites / AP Residency', '📅 My dates: ', '👨‍👩‍👧 Guests: ', '', 'Please share availability and the discounted price. Thank you!', '(Ref: WEB-GAME-COUPON)'].join('\n');
   $('claim-btn').href = 'https://wa.me/918999061598?text=' + encodeURIComponent(msg);
   $('victory').classList.add('show');
-  sfx.win(); setTimeout(sfx.bell, 600);
-  track('game_win_coupon', { score: Math.floor(score) });
+  sfx.win();
+  if (!C.won) { C.won = true; track('game_win_coupon', { score: Math.floor(score) }); }
 }
 function gameOver() {
   state = 'gameover';
@@ -1040,6 +1069,8 @@ $('copy-btn').addEventListener('click', async () => {
   setTimeout(() => ($('copy-btn').textContent = 'Copy code'), 2200);
 });
 $('claim-btn').addEventListener('click', () => track('game_coupon_claim', {}));
+$('celebrate-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); startCelebration(); });
+$('celebrate-again-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); startCelebration(); });
 
 // ---------------- Input ----------------
 function move(dir) {
@@ -1184,7 +1215,7 @@ function update(dt) {
     floatText(p.x, p.y - 80 * p.scale * unit(), '+' + t.pts, '#F4D58D', 14 + 6 * p.scale);
     combo++; comboT = 2.2;
     const bonus = combo >= 3 ? Math.min(combo, 10) * 2 : 0;
-    score += t.pts + bonus; sfx.kill();
+    score += t.pts + bonus; sfx.kill(); slain++;
     if (combo >= 3) { $('combo').textContent = combo + ' in a row! +' + bonus; $('combo').classList.add('show'); }
     if (!boss) kills++;
     if (lives < MAX_LIVES && Math.random() < 0.08) drops.push({ x: p.x, y: p.y - 30 * p.scale, t: 0 });
@@ -1231,74 +1262,302 @@ function update(dt) {
   if (!boss && wave < WAVES.length) $('hud-wave').textContent = `Wave ${wave + 1} of ${WAVES.length} · ${Math.min(kills, WAVES[wave].kills)}/${WAVES[wave].kills} danav`, $('hud-bar').style.width = (100 * Math.min(1, kills / WAVES[wave].kills)) + '%';
 }
 
-// ---------------- Render ----------------
+// ---------------- Render: the heavenly sky world ----------------
+// Dawn sky (indigo → rose → gold), drifting white/pink clouds, Kailash in the distance,
+// a violet-stone bridge with golden trim floating over a sea of clouds, and a glowing temple.
+// mood 0 = divine dawn, 1 = Andhakasura's storm. glory rises during the victory celebration.
+const SKY = { mood: 0, glory: 0, flash: 0, bolt: null, sprites: [], clouds: [], birds: [] };
+function hex(c) { return [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); }
+function mix(a, b, t) { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
+function makeCloudSprite(seed) {
+  const c = document.createElement('canvas'); c.width = 340; c.height = 160;
+  const g = c.getContext('2d'); let r = seed * 9301 + 49297;
+  const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 11; i++) {
+    const x = 50 + rnd() * 240, y = 70 + rnd() * 40 - (i < 4 ? 15 : 0), rad = 28 + rnd() * 42;
+    const gr = g.createRadialGradient(x, y - rad * 0.3, rad * 0.1, x, y, rad);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.6, 'rgba(255,240,246,0.9)'); gr.addColorStop(1, 'rgba(255,220,236,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
+  }
+  g.globalCompositeOperation = 'source-atop';
+  const sh = g.createLinearGradient(0, 40, 0, 150);
+  sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(214,150,200,0.55)');
+  g.fillStyle = sh; g.fillRect(0, 0, 340, 160);
+  return c;
+}
+function initSky() {
+  for (let i = 0; i < 5; i++) SKY.sprites.push(makeCloudSprite(i + 1));
+  for (let i = 0; i < 10; i++) SKY.clouds.push({ x: Math.random() * 1.3 - 0.15, y: 0.03 + Math.random() * 0.22, sc: 0.45 + Math.random() * 0.9, sp: 0.004 + Math.random() * 0.01, spr: i % 5, a: 0.75 + Math.random() * 0.25 });
+  for (let i = 0; i < 5; i++) SKY.birds.push({ x: Math.random(), y: 0.08 + Math.random() * 0.12, sp: 0.02 + Math.random() * 0.02, ph: Math.random() * 6 });
+}
+initSky();
+
 function render() {
   ctx.clearRect(0, 0, W, H); fxCtx.clearRect(0, 0, W, H);
+  const stormTarget = boss && !boss.dead ? 1 : 0;
+  SKY.mood += (stormTarget - SKY.mood) * 0.02;
+  SKY.glory += ((state === 'celebrate' || state === 'victory' ? 1 : 0) - SKY.glory) * 0.03;
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  const dark = boss ? 1 : 0;
-  g.addColorStop(0, dark ? '#120714' : '#0A0E1A'); g.addColorStop(0.3, dark ? '#24080A' : '#1A1208'); g.addColorStop(0.6, '#0F0A04'); g.addColorStop(1, '#000');
-  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
-  drawTemple(); drawFloor(); drawLanes();
+  drawSky(); drawBridge(); drawLanes();
   for (const f of fires) if (f.warn > 0) drawWarn(f);
   const all = danavs.map(d => ({ z: d.z, draw: () => drawDanav(d) }));
+  for (const d of fallen) all.push({ z: d.z, draw: () => drawDanav(d) });
   if (boss) all.push({ z: boss.z, draw: drawBoss });
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawWarrior();
   for (const d of drops) drawLaddoo(d);
-  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(120,0,0,0.6)' : 'rgba(0,0,0,0.55)');
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.8);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(40,10,50,${0.28 + 0.25 * SKY.mood})`);
   ctx.fillStyle = v; ctx.fillRect(-20, -20, W + 40, H + 40);
+  if (SKY.flash > 0) { ctx.fillStyle = `rgba(255,240,255,${SKY.flash})`; ctx.fillRect(-20, -20, W + 40, H + 40); }
   ctx.restore();
+  drawCelebrationFx();
   for (const p of parts) { fxCtx.globalAlpha = Math.max(0, p.life); fxCtx.fillStyle = p.color; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill(); }
   fxCtx.globalAlpha = 1;
   for (const t of texts) { fxCtx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5)); fxCtx.font = `600 ${t.size}px Inter, sans-serif`; fxCtx.textAlign = 'center'; fxCtx.fillStyle = '#000'; fxCtx.fillText(t.text, t.x + 1, t.y + 1); fxCtx.fillStyle = t.color; fxCtx.fillText(t.text, t.x, t.y); }
   fxCtx.globalAlpha = 1;
 }
-function drawTemple() {
-  const h = HORIZON_Y * H;
-  ctx.fillStyle = 'rgba(20,14,8,0.95)';
-  ctx.beginPath(); ctx.moveTo(W * 0.15, h);
-  [[.18, 40], [.22, 60], [.26, 80], [.3, 60], [.35, 100], [.4, 70], [.45, 50], [.5, 135], [.55, 50], [.6, 70], [.65, 100], [.7, 60], [.74, 80], [.78, 60], [.82, 40]].forEach(([x, y]) => ctx.lineTo(W * x, h - y * unit()));
-  ctx.lineTo(W * 0.85, h); ctx.closePath(); ctx.fill();
-  const cx = W / 2, cy = h - 100 * unit();
-  const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 110 * unit());
-  gg.addColorStop(0, boss ? 'rgba(255,90,60,0.35)' : 'rgba(255,180,80,0.5)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gg; ctx.fillRect(cx - 120 * unit(), cy - 100 * unit(), 240 * unit(), 200 * unit());
-  // flag on the shikhara
-  ctx.fillStyle = '#E2702A'; ctx.beginPath(); ctx.moveTo(cx, h - 135 * unit()); ctx.lineTo(cx + 18 * unit(), h - 128 * unit() + Math.sin(time * 4) * 2); ctx.lineTo(cx, h - 121 * unit()); ctx.fill();
-}
-function drawFloor() {
-  const hy = HORIZON_Y * H;
-  const fg = ctx.createLinearGradient(0, hy, 0, H);
-  fg.addColorStop(0, '#1A1208'); fg.addColorStop(0.5, '#211A11'); fg.addColorStop(1, '#0A0805');
-  ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(W / 2 - W * 0.09, hy); ctx.lineTo(W / 2 + W * 0.09, hy); ctx.lineTo(W / 2 + W, H); ctx.lineTo(W / 2 - W, H); ctx.closePath(); ctx.fill();
-  // scrolling stones + torches
-  for (let i = 0; i < 16; i++) {
-    const z = ((i / 16) + (time * 0.12) % 1) % 1, zz = 1 - z;
-    const p = project(zz, 0), w = (LANE_NEAR * 3.2 * Math.min(W, H * 1.1)) * (1 - zz) + W * 0.12 * zz;
-    ctx.fillStyle = `rgba(80,50,20,${0.25 + 0.45 * (1 - zz)})`; ctx.fillRect(p.x - w / 2, p.y - 2, w, 3 + 4 * (1 - zz));
-    if (i % 4 === 0) { const s = (1 - zz) * 26 * unit() + 4; torch(p.x - w / 2 - s * 0.5, p.y, s); torch(p.x + w / 2 + s * 0.5, p.y, s); }
+
+function drawSky() {
+  const m = SKY.mood, hy = HORIZON_Y * H, u = unit();
+  const g = ctx.createLinearGradient(0, 0, 0, hy + 2);
+  g.addColorStop(0, mix('#2B2C7A', '#10061A', m));
+  g.addColorStop(0.35, mix('#7D5BB8', '#2A0C2C', m));
+  g.addColorStop(0.7, mix('#F096B9', '#5C1730', m));
+  g.addColorStop(1, mix('#FFD7A3', '#963326', m));
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, hy + 22);
+  // divine sun behind the temple
+  const sx = W / 2, sy = hy - 70 * u;
+  const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, H * 0.42);
+  sg.addColorStop(0, `rgba(255,244,214,${0.95 - 0.6 * m})`); sg.addColorStop(0.18, `rgba(255,214,150,${0.55 - 0.35 * m})`); sg.addColorStop(1, 'rgba(255,190,160,0)');
+  ctx.fillStyle = sg; ctx.fillRect(-20, -20, W + 40, hy + 40);
+  // light rays (stronger in the celebration)
+  const ra = (0.05 + 0.16 * SKY.glory) * (1 - m);
+  if (ra > 0.01) {
+    ctx.save(); ctx.translate(sx, sy); ctx.rotate(time * 0.05);
+    for (let i = 0; i < 16; i++) { ctx.rotate(Math.PI / 8); ctx.fillStyle = `rgba(255,236,190,${ra})`; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-W * 0.05, -H * 0.9); ctx.lineTo(W * 0.05, -H * 0.9); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
   }
+  // Kailash: distant snowy peaks
+  for (const [cx, hgt, wd] of [[0.13, 0.17, 0.2], [0.87, 0.14, 0.18]]) {
+    const bx = W * cx, top = hy - H * hgt;
+    ctx.fillStyle = mix('#B79AD0', '#2A1530', m); ctx.globalAlpha = 0.75;
+    ctx.beginPath(); ctx.moveTo(bx - W * wd, hy); ctx.lineTo(bx, top); ctx.lineTo(bx + W * wd, hy); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = mix('#FFFFFF', '#6A5370', m);
+    ctx.beginPath(); ctx.moveTo(bx - W * wd * 0.28, top + H * hgt * 0.28); ctx.lineTo(bx, top); ctx.lineTo(bx + W * wd * 0.28, top + H * hgt * 0.28); ctx.lineTo(bx + W * wd * 0.1, top + H * hgt * 0.22); ctx.lineTo(bx, top + H * hgt * 0.3); ctx.lineTo(bx - W * wd * 0.12, top + H * hgt * 0.2); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // sea of clouds below the horizon (soft top edge so there is no hard horizon line)
+  const cg = ctx.createLinearGradient(0, hy - 40 * u, 0, H);
+  cg.addColorStop(0, 'rgba(255,230,238,0)'); cg.addColorStop(0.08, mix('#FFE6EE', '#4A2236', m)); cg.addColorStop(0.5, mix('#F2CFE4', '#2C1426', m)); cg.addColorStop(1, mix('#D9B2D8', '#170A14', m));
+  ctx.fillStyle = cg; ctx.fillRect(-20, hy - 40 * u, W + 40, H - hy + 60 * u);
+  // drifting sky clouds
+  for (const c of SKY.clouds) {
+    c.x += c.sp * (1 / 60) * (1 + m * 2); if (c.x > 1.2) c.x = -0.3;
+    const sp = SKY.sprites[c.spr], w = 300 * c.sc * u, h = w * 160 / 340;
+    ctx.globalAlpha = c.a * (1 - 0.45 * m);
+    ctx.drawImage(sp, W * c.x - w / 2, H * c.y - h / 2, w, h);
+  }
+  ctx.globalAlpha = 1;
+  // birds
+  if (m < 0.5) {
+    ctx.strokeStyle = 'rgba(70,40,80,0.55)'; ctx.lineWidth = 1.5;
+    for (const b of SKY.birds) {
+      b.x += b.sp / 60; if (b.x > 1.1) b.x = -0.1;
+      const x = W * b.x, y = H * b.y + Math.sin(time + b.ph) * 6, f = Math.sin(time * 8 + b.ph) * 3;
+      ctx.beginPath(); ctx.moveTo(x - 7, y - f); ctx.quadraticCurveTo(x - 3, y - 3, x, y); ctx.quadraticCurveTo(x + 3, y - 3, x + 7, y - f); ctx.stroke();
+    }
+  }
+  // lightning while Andhakasura lives
+  if (m > 0.6 && Math.random() < 0.004) { SKY.flash = 0.35; SKY.bolt = { x: W * (0.15 + Math.random() * 0.7), t: 0.25 }; sfx.thunder(); }
+  if (SKY.flash > 0) SKY.flash = Math.max(0, SKY.flash - 0.02);
+  if (SKY.bolt && SKY.bolt.t > 0) {
+    SKY.bolt.t -= 1 / 60; ctx.strokeStyle = `rgba(255,240,255,${SKY.bolt.t * 4})`; ctx.lineWidth = 2.5; ctx.shadowColor = '#E8C8FF'; ctx.shadowBlur = 14;
+    ctx.beginPath(); let x = SKY.bolt.x, y = 0; ctx.moveTo(x, y); while (y < hy - 40) { x += (Math.random() - 0.5) * 40; y += 25 + Math.random() * 25; ctx.lineTo(x, y); } ctx.stroke(); ctx.shadowBlur = 0;
+  }
+  drawTemple();
+}
+function drawTemple() {
+  // a glowing sandstone temple (shikhara, mandapa domes, amalaka, kalash, flag) standing on a cloud
+  const u = unit() * 0.8, h = HORIZON_Y * H - 6 * u, m = SKY.mood, cx = W / 2;
+  const stone = mix('#D08A63', '#2A1018', m), shade = mix('#A4604A', '#16080E', m), gold = `rgba(255,214,130,${0.85 - 0.5 * m})`;
+  const g = ctx.createLinearGradient(cx - 60 * u, 0, cx + 60 * u, 0); g.addColorStop(0, shade); g.addColorStop(0.45, stone); g.addColorStop(1, shade);
+  // plinth
+  ctx.fillStyle = g; ctx.fillRect(cx - 78 * u, h - 22 * u, 156 * u, 22 * u);
+  ctx.fillStyle = gold; ctx.fillRect(cx - 80 * u, h - 24 * u, 160 * u, 2.5 * u);
+  // mandapa domes either side
+  for (const side of [-1, 1]) {
+    const dx = cx + side * 52 * u;
+    ctx.fillStyle = g; ctx.fillRect(dx - 20 * u, h - 46 * u, 40 * u, 24 * u);
+    ctx.beginPath(); ctx.moveTo(dx - 24 * u, h - 46 * u); ctx.quadraticCurveTo(dx - 18 * u, h - 78 * u, dx, h - 84 * u); ctx.quadraticCurveTo(dx + 18 * u, h - 78 * u, dx + 24 * u, h - 46 * u); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gold; ctx.beginPath(); ctx.arc(dx, h - 87 * u, 3 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(60,20,20,0.55)'; ctx.fillRect(dx - 5 * u, h - 40 * u, 10 * u, 18 * u);   // doorway
+  }
+  // main shikhara (curvilinear tower) with horizontal bands
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.moveTo(cx - 32 * u, h - 22 * u);
+  ctx.bezierCurveTo(cx - 34 * u, h - 80 * u, cx - 20 * u, h - 128 * u, cx - 8 * u, h - 142 * u);
+  ctx.lineTo(cx + 8 * u, h - 142 * u);
+  ctx.bezierCurveTo(cx + 20 * u, h - 128 * u, cx + 34 * u, h - 80 * u, cx + 32 * u, h - 22 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = gold; ctx.lineWidth = 1.2 * u;
+  for (let i = 1; i < 8; i++) { const y = h - 22 * u - i * 15 * u, w = 32 * u * (1 - Math.pow(i / 8.6, 1.6)); ctx.beginPath(); ctx.moveTo(cx - w, y); ctx.lineTo(cx + w, y); ctx.stroke(); }
+  // sanctum glow at the door
+  const sg = ctx.createRadialGradient(cx, h - 34 * u, 0, cx, h - 34 * u, 40 * u);
+  sg.addColorStop(0, m > 0.5 ? 'rgba(255,90,60,0.7)' : 'rgba(255,240,180,0.95)'); sg.addColorStop(1, 'rgba(255,200,120,0)');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, h - 34 * u, 40 * u, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = m > 0.5 ? '#5A1A14' : '#FFE9B0'; ctx.beginPath(); ctx.moveTo(cx - 8 * u, h - 22 * u); ctx.lineTo(cx - 8 * u, h - 40 * u); ctx.quadraticCurveTo(cx, h - 50 * u, cx + 8 * u, h - 40 * u); ctx.lineTo(cx + 8 * u, h - 22 * u); ctx.fill();
+  // amalaka, kalash, flag
+  ctx.fillStyle = stone; ctx.beginPath(); ctx.ellipse(cx, h - 146 * u, 12 * u, 5 * u, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = gold; ctx.stroke();
+  ctx.fillStyle = '#FFD86B'; ctx.beginPath(); ctx.ellipse(cx, h - 156 * u, 5 * u, 6 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(cx - 1.2 * u, h - 166 * u, 2.4 * u, 6 * u);
+  ctx.strokeStyle = '#7A3E2A'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, h - 160 * u); ctx.lineTo(cx, h - 186 * u); ctx.stroke();
+  ctx.fillStyle = '#E2702A'; ctx.beginPath(); ctx.moveTo(cx, h - 186 * u); ctx.lineTo(cx + 20 * u, h - 179 * u + Math.sin(time * 4) * 2); ctx.lineTo(cx, h - 171 * u); ctx.fill();
+  // cloud bank at the base only
+  const sp = SKY.sprites[0], w = W * 0.55, hh = w * 160 / 340;
+  ctx.globalAlpha = 0.95 - 0.5 * m; ctx.drawImage(sp, cx - w / 2, h - hh * 0.22, w, hh); ctx.globalAlpha = 1;
+}
+function drawBridge() {
+  const m = SKY.mood, u = unit();
+  // cloud puffs streaming past both sides of the bridge (gives the feeling of running through the sky)
+  for (let i = 0; i < 22; i++) {
+    const z = 1 - (((i / 22) + time * 0.06) % 1), side = i % 2 ? 1 : -1, off = side * (2.3 + (i % 5) * 0.45);
+    const p = project(z, off), sp = SKY.sprites[i % 5], w = 420 * p.scale * u, h = w * 160 / 340;
+    ctx.globalAlpha = Math.min(1, (1 - z) * 2.2) * (0.9 - 0.45 * m);
+    ctx.drawImage(sp, p.x - w / 2, p.y - h * 0.6, w, h);
+  }
+  ctx.globalAlpha = 1;
+  if (m > 0.05) { ctx.fillStyle = `rgba(32,8,32,${0.4 * m})`; ctx.fillRect(-20, -20, W + 40, H + 40); }   // storm tint over the whole sky and cloud sea
+  // the bridge
+  const a = project(1, -1.6), b = project(1, 1.6), c = project(0, 1.6), d = project(0, -1.6);
+  const ext = (q, k) => ({ x: q.x + (q.x - W / 2) * k, y: H + 10 });
+  const c2 = ext(c, (H + 10 - c.y) / (c.y - b.y)), d2 = ext(d, (H + 10 - d.y) / (d.y - a.y));
+  ctx.fillStyle = 'rgba(80,40,90,0.25)'; ctx.beginPath(); ctx.moveTo(a.x, a.y + 4); ctx.lineTo(b.x, b.y + 4); ctx.lineTo(c2.x + 30, H + 20); ctx.lineTo(d2.x - 30, H + 20); ctx.closePath(); ctx.fill();   // soft shadow on the clouds
+  const bg = ctx.createLinearGradient(0, a.y, 0, H);
+  bg.addColorStop(0, mix('#8C7BA8', '#3A2840', m)); bg.addColorStop(0.5, mix('#5B4A78', '#2A1C30', m)); bg.addColorStop(1, mix('#3C3154', '#170E18', m));
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c2.x, c2.y); ctx.lineTo(d2.x, d2.y); ctx.closePath(); ctx.fill();
+  // scrolling stone slabs
+  for (let i = 0; i < 18; i++) {
+    const z = 1 - (((i / 18) + time * 0.12) % 1);
+    const l = project(z, -1.6), r = project(z, 1.6);
+    ctx.fillStyle = `rgba(255,220,160,${0.08 + 0.18 * (1 - z)})`; ctx.fillRect(l.x, l.y - 1, r.x - l.x, 1.5 + 2.5 * (1 - z));
+    if (i % 4 === 0) { const s = (1 - z) * 24 * u + 4; torch(l.x - s * 0.15, l.y, s); torch(r.x + s * 0.15, r.y, s); }
+  }
+  // golden trims
+  ctx.strokeStyle = 'rgba(240,205,120,0.9)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(d2.x, d2.y); ctx.moveTo(b.x, b.y); ctx.lineTo(c2.x, c2.y); ctx.stroke();
 }
 function torch(x, y, s) {
+  // a small golden pillar with a diya on top
+  ctx.fillStyle = 'rgba(214,170,80,0.9)'; ctx.fillRect(x - s * 0.08, y - s * 0.9, s * 0.16, s * 0.9);
   const f = 0.85 + Math.sin(time * 18 + x) * 0.15;
-  const g = ctx.createRadialGradient(x, y - s / 2, 0, x, y - s / 2, s * 0.9);
-  g.addColorStop(0, `rgba(255,220,100,${0.9 * f})`); g.addColorStop(0.4, `rgba(192,83,26,${0.55 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g; ctx.fillRect(x - s, y - s * 1.5, s * 2, s * 2);
+  const g = ctx.createRadialGradient(x, y - s, 0, x, y - s, s * 0.7);
+  g.addColorStop(0, `rgba(255,236,150,${0.95 * f})`); g.addColorStop(0.45, `rgba(255,140,60,${0.5 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - s, y - s * 1.7, s * 2, s * 1.4);
 }
 function drawLanes() {
-  // soft lane guides + highlight under the player
   for (let l = 0; l < 3; l++) {
+    if (l !== player.lane || state !== 'playing') continue;
     const a = project(1, l - 1.5), b = project(0, l - 1.5), c = project(0, l - 0.5), d = project(1, l - 0.5);
-    ctx.fillStyle = l === player.lane ? 'rgba(232,199,122,0.07)' : 'rgba(0,0,0,0)';
+    ctx.fillStyle = 'rgba(255,225,150,0.10)';
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 30); ctx.lineTo(c.x, c.y + 30); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(201,162,79,0.14)'; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(240,205,120,0.22)'; ctx.lineWidth = 1.5; ctx.setLineDash([10, 12]); ctx.lineDashOffset = -time * 60;
   for (const k of [-0.5, 0.5]) { const a = project(1, k), b = project(0, k); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x + (b.x - W / 2) * 0.3, H); ctx.stroke(); }
+  ctx.setLineDash([]);
+}
+
+// ---------------- Grand celebration ----------------
+// Andhakasura falls onto a pile of the danav defeated during the game. The yoddha gets a Celebrate button,
+// leaps onto the fallen asura and raises the Trishul, while the gods shower flowers, fireworks burst,
+// golden rays fill the sky and the conch, bells and drums play.
+const fallen = [];
+const C = { t: 0, ct: 0, fwT: 0, drumT: 0, bellT: 0, petals: [], btn: false, start: null, won: false };
+function buildPile() {
+  fallen.length = 0;
+  const types = Object.keys(DANAV), n = Math.min(18, Math.max(10, slain));
+  for (let i = 0; i < n; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const behind = i < n * 0.7;
+    fallen.push({ type, lane: 1, x: -1.5 + Math.random() * 2.6, z: behind ? 0.68 + Math.random() * 0.12 : 0.6 + Math.random() * 0.05, hp: 0, max: 1, flash: 0, phase: Math.random() * 6, lying: (Math.random() < 0.5 ? -1 : 1) * (1.35 + Math.random() * 0.3), big: 1.7, dead: true, drop: 0 });
+    fallen[fallen.length - 1].dz = fallen[fallen.length - 1].z - boss.z;
+  }
+}
+function celebPos() {   // the top of the fallen Andhakasura
+  const p = project(boss.z, boss.x), s = 84 * unit();
+  return { x: p.x - s * 0.95, y: p.y - s * 0.62 };
+}
+function startCelebration() {
+  if (!(state === 'won' || state === 'victory')) return;
+  $('celebrate-btn').classList.remove('show'); $('victory').classList.remove('show');
+  state = 'celebrate'; C.ct = 0; C.fwT = 0; C.drumT = 0; C.bellT = 0; C.landed = false;
+  const p = project(0, player.x); C.start = { x: p.x, y: p.y };
+  WR.pose = 'victory';
+  sfx.shankh(); setTimeout(sfx.bell, 900);
+  try { navigator.vibrate && navigator.vibrate([60, 40, 60, 40, 200]); } catch (e) {}
+  track('game_celebrate', {});
+}
+function firework() {
+  const x = W * (0.15 + Math.random() * 0.7), y = H * (0.06 + Math.random() * 0.22);
+  const cols = ['#FFD27D', '#FF8FB8', '#FFFFFF', '#FF9A3D', '#B9A4FF', '#9BF0FF'];
+  const c1 = cols[Math.floor(Math.random() * cols.length)], c2 = cols[Math.floor(Math.random() * cols.length)];
+  for (let i = 0; i < 46; i++) { const a = (i / 46) * Math.PI * 2, sp = 3.2 + Math.random() * 1.6; parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 2 + Math.random() * 1.8, life: 1.1, color: i % 2 ? c1 : c2 }); }
+  sfx.pop();
+}
+function celebUpdate(dt) {
+  time += dt; C.t += dt;
+  if (boss) {
+    boss.fall = Math.min(1, (boss.fall || 0) + dt * 1.1);
+    boss.x += (0.45 - boss.x) * Math.min(1, dt * 2);
+    boss.z += (0.5 - boss.z) * Math.min(1, dt * 1.2);   // the fallen asura slides toward us, so the victory scene sits lower on screen
+    for (const d of fallen) d.z = boss.z + d.dz;
+    boss.lane = 1;
+  }
+  for (const d of fallen) d.drop = Math.min(1, d.drop + dt * 1.5);
+  if (state === 'won' && !C.btn && C.t > 1.5) { C.btn = true; $('celebrate-btn').classList.add('show'); }
+  if (state === 'celebrate' || state === 'victory') {
+    C.ct += dt;
+    const strong = state === 'celebrate' ? 1 : 0.45;
+    // the leap onto the fallen asura, then joyful victory hops
+    const target = celebPos();
+    const j = Math.min(1, C.ct / 1.1), e = j * j * (3 - 2 * j);
+    let x = C.start.x + (target.x - C.start.x) * e, y = C.start.y + (target.y - C.start.y) * e - Math.sin(Math.PI * j) * H * 0.12;
+    if (j >= 1) { const hop = (C.ct - 1.1) % 1.1; y -= Math.max(0, Math.sin(hop / 0.55 * Math.PI)) * H * 0.05 * (hop < 0.55 ? 1 : 0); }
+    WR.at = { x, y, scale: 1 - 0.32 * e, air: j < 1 };
+    if (j >= 1 && !C.landed) { C.landed = true; shake = 0.35; const p = target; burst(p.x, p.y, '#FFE9A8', 30, 5); sfx.drum(); }
+    // flower shower (pushpa vrishti)
+    const rate = 7 * strong;
+    for (let i = 0; i < rate; i++) if (C.petals.length < 260) C.petals.push({ x: Math.random() * W, y: -10 - Math.random() * 40, vx: (Math.random() - 0.5) * 0.8, vy: 1.2 + Math.random() * 1.6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.15, size: (3 + Math.random() * 4) * unit(), c: ['#FF9A1F', '#FFC93C', '#FF6FA3', '#FFFFFF', '#E0303A', '#FFB3CF'][Math.floor(Math.random() * 6)] });
+    C.fwT -= dt; if (C.fwT <= 0) { C.fwT = (0.35 + Math.random() * 0.4) / strong; firework(); }
+    C.drumT -= dt; if (C.drumT <= 0) { C.drumT = 0.42; if (strong > 0.5) sfx.drum(); }
+    C.bellT -= dt; if (C.bellT <= 0) { C.bellT = 2.4; sfx.bell(); }
+    if (state === 'celebrate' && C.ct > 7) victory();
+  }
+  for (let i = C.petals.length - 1; i >= 0; i--) { const p = C.petals[i]; p.x += p.vx + Math.sin(time * 2 + p.rot) * 0.4; p.y += p.vy; p.rot += p.vr; if (p.y > H + 20) C.petals.splice(i, 1); }
+  for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.life -= dt * 0.9; if (p.life <= 0) parts.splice(i, 1); }
+  for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
+  if (shake > 0) shake -= dt;
+}
+function drawCelebrationFx() {
+  if (SKY.glory > 0.02) {
+    const a = SKY.glory, cx = W / 2, cy = H * 0.14;
+    fxCtx.save(); fxCtx.textAlign = 'center'; fxCtx.globalAlpha = a;
+    fxCtx.shadowColor = '#FFD27D'; fxCtx.shadowBlur = 30;
+    fxCtx.fillStyle = '#FFF3C4'; fxCtx.font = `${Math.round(Math.min(W, H) * 0.12)}px serif`;
+    fxCtx.fillText('ॐ', cx, H * 0.12 + Math.sin(time * 1.5) * 4);
+    fxCtx.font = `700 ${Math.round(Math.min(W * 0.09, 46))}px serif`; fxCtx.fillStyle = '#FFE7A8';
+    fxCtx.fillText('हर हर महादेव', cx, H * 0.9);
+    fxCtx.restore();
+  }
+  for (const p of C.petals) {
+    fxCtx.save(); fxCtx.translate(p.x, p.y); fxCtx.rotate(p.rot); fxCtx.fillStyle = p.c;
+    fxCtx.beginPath(); fxCtx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2); fxCtx.fill();
+    fxCtx.fillStyle = 'rgba(255,255,255,0.35)'; fxCtx.beginPath(); fxCtx.ellipse(-p.size * 0.3, -p.size * 0.15, p.size * 0.35, p.size * 0.18, 0, 0, Math.PI * 2); fxCtx.fill();
+    fxCtx.restore();
+  }
 }
 function drawWarn(f) {
   const a = project(0.64, f.lane - 1.5), b = project(0, f.lane - 1.5), c = project(0, f.lane - 0.5), d = project(0.64, f.lane - 0.5);
@@ -1307,10 +1566,11 @@ function drawWarn(f) {
 }
 
 function drawDanav(d) {
-  const t = DANAV[d.type], p = project(d.z, d.x), u = unit();
-  const s = 40 * p.scale * t.size * u + 5;
-  const bob = Math.sin(d.phase) * 2 * p.scale, step = Math.sin(d.phase) * 0.35;
+  const t = d.dead ? DEAD_DANAV[d.type] : DANAV[d.type], p = project(d.z, d.x), u = unit();
+  const s = 40 * p.scale * t.size * u * (d.big || 1) + 5;
+  const bob = d.dead ? 0 : Math.sin(d.phase) * 2 * p.scale, step = d.dead ? 0.2 : Math.sin(d.phase) * 0.35;
   ctx.save(); ctx.translate(p.x, p.y);
+  if (d.dead) { ctx.translate(0, -s * 0.25); ctx.rotate(d.lying * d.drop); }
   if (d.type === 'mayavi') ctx.globalAlpha = 0.75 + Math.sin(time * 8 + d.phase) * 0.2;
   ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
   ctx.translate(0, -bob);
@@ -1346,9 +1606,10 @@ function drawDanav(d) {
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); }
-  if (d.flash > 0) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = `rgba(255,255,255,${d.flash * 0.7})`; ctx.fillRect(-s, -s * 2, s * 2, s * 2.2); ctx.globalCompositeOperation = 'source-over'; }
+  if (d.flash > 0) { const fg = ctx.createRadialGradient(0, -s, 0, 0, -s, s); fg.addColorStop(0, `rgba(255,255,240,${d.flash * 0.75})`); fg.addColorStop(1, 'rgba(255,255,240,0)'); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, -s, s, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
   // health bar
+  if (d.dead) return;
   if (d.hp < d.max && d.z < 0.95) {
     const bw = Math.max(22, s * 0.9), bx = p.x - bw / 2, by = p.y - bob - s * 1.95;
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, 6);
@@ -1361,10 +1622,11 @@ function drawBoss() {
   const b = boss, p = project(b.z, b.x), u = unit();
   const s = 84 * u * (0.6 + 0.4 * b.enter), breathe = Math.sin(time * 2.2) * 3;
   ctx.save(); ctx.translate(p.x, p.y + (1 - b.enter) * 80);
-  if (b.dead) ctx.globalAlpha = 0.4;
+  const fl = b.dead ? (b.fall || 0) : 0;
+  if (b.dead) { ctx.translate(0, -s * 0.3 * fl); ctx.rotate(-1.45 * fl * fl); }
   // dark aura
   const ag = ctx.createRadialGradient(0, -s * 0.9, s * 0.2, 0, -s * 0.9, s * 1.3);
-  ag.addColorStop(0, 'rgba(120,20,40,0.45)'); ag.addColorStop(1, 'rgba(0,0,0,0)');
+  ag.addColorStop(0, `rgba(120,20,40,${b.dead ? 0.45 * (1 - fl) : 0.45})`); ag.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 0.9, s * 1.3, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.6, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
   // legs + dhoti
@@ -1388,11 +1650,11 @@ function drawBoss() {
   ctx.fillStyle = '#EADBB4';
   for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.16, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.55, hy - s * 0.3, side * s * 0.46, hy - s * 0.72); ctx.quadraticCurveTo(side * s * 0.36, hy - s * 0.32, side * s * 0.06, hy - s * 0.22); ctx.fill(); }
   ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.24, hy - s * 0.18); for (let k = 0; k <= 6; k++) ctx.lineTo(-s * 0.24 + k * s * 0.08, hy - s * (k % 2 ? 0.32 : 0.5)); ctx.lineTo(s * 0.24, hy - s * 0.18); ctx.fill();
-  ctx.fillStyle = '#FF2A1A'; ctx.shadowColor = '#FF2A1A'; ctx.shadowBlur = 18;
+  ctx.fillStyle = b.dead ? '#3A1010' : '#FF2A1A'; ctx.shadowColor = '#FF2A1A'; ctx.shadowBlur = b.dead ? 0 : 18;
   ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.02, s * 0.055, s * 0.03, 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.02, s * 0.055, s * 0.03, -0.3, 0, Math.PI * 2); ctx.fill();
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.1, hy + s * 0.1); ctx.lineTo(side * s * 0.07, hy + s * 0.26); ctx.lineTo(side * s * 0.03, hy + s * 0.11); ctx.fill(); }
-  if (b.hitFlash > 0) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = `rgba(255,255,255,${b.hitFlash * 0.5})`; ctx.fillRect(-s, -s * 2.5, s * 2, s * 2.6); ctx.globalCompositeOperation = 'source-over'; }
+  if (b.hitFlash > 0) { const fg = ctx.createRadialGradient(0, -s * 1.2, 0, 0, -s * 1.2, s * 1.1); fg.addColorStop(0, `rgba(255,255,240,${b.hitFlash * 0.6})`); fg.addColorStop(1, 'rgba(255,255,240,0)'); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, -s * 1.2, s * 1.1, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
 }
 function drawFireball(f) {
@@ -1461,8 +1723,8 @@ function drawWarrior() {
   const u = unit();
   WR.bulkVis += (bulk - WR.bulkVis) * 0.04;
   const B = WR.bulkVis;
-  const p = project(0, player.x);
-  const s = 48 * u * (1 + 0.065 * B) * WZ;           // overall height unit
+  const p = WR.at || project(0, player.x);
+  const s = 48 * u * (1 + 0.065 * B) * WZ * (WR.at ? WR.at.scale : 1);           // overall height unit
   const W = 1 + 0.12 * B;                         // breadth
   const moving = state === 'playing' && betweenWaves <= 0;
   const ph = time * (moving ? 11 : 3);
@@ -1486,7 +1748,7 @@ function drawWarrior() {
   ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.5 * W, s * 0.12, 0, 0, Math.PI * 2); ctx.fill();
   if (B > 0.05 || player.flash > 0) {
     const col = bulk >= 5 ? '150,200,255' : '255,205,110';
-    const r = s * (1.25 + 0.1 * B) + Math.sin(time * 4) * 3;
+    const r = Math.max(2, s * (1.25 + 0.1 * B) + Math.sin(time * 4) * 3);
     const ag = ctx.createRadialGradient(0, -s * 1.15, s * 0.2, 0, -s * 1.15, r * 1.3);
     ag.addColorStop(0, `rgba(${col},${0.16 + 0.05 * B + Math.max(0, player.flash) * 0.45})`); ag.addColorStop(1, `rgba(${col},0)`);
     ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 1.15, r * 1.3, 0, Math.PI * 2); ctx.fill();
@@ -1499,7 +1761,7 @@ function drawWarrior() {
   // ---- legs (alternating; the lifted foot shows its sole) ----
   const hipY = -s * 0.98 - bob;
   for (const side of [-1, 1]) {
-    const lift = moving ? Math.max(0, Math.sin(ph + (side > 0 ? Math.PI : 0))) : 0;
+    const lift = WR.at && WR.at.air ? 0.85 : moving ? Math.max(0, Math.sin(ph + (side > 0 ? Math.PI : 0))) : 0;
     const hx = side * s * 0.14 * W, kx = side * s * (0.15 + 0.02 * lift) * W, fx = side * s * 0.13 * W;
     const ky = -s * 0.5 - lift * s * 0.12 - bob * 0.5, fy = -lift * s * 0.3;
     const legCol = side < 0 ? SK_D : SKIN;
@@ -1592,7 +1854,8 @@ function drawWarrior() {
   const lsx = -shW * 0.92, rsx = shW * 0.92, sy = shY + s * 0.06;
   // left arm: swings when running; holds the bow forward when the bow is equipped
   let lex, ley, lhx, lhy;
-  if (weapon === 'bow') { lex = lsx - s * 0.05; ley = sy - s * 0.32; lhx = lsx + s * 0.12; lhy = sy - s * 0.62; }
+  if (WR.pose === 'victory') { const pump = Math.sin(time * 6) * s * 0.04; lex = lsx - s * 0.16; ley = sy - s * 0.3 - pump; lhx = lsx - s * 0.12; lhy = sy - s * 0.62 - pump; }
+  else if (weapon === 'bow') { lex = lsx - s * 0.05; ley = sy - s * 0.32; lhx = lsx + s * 0.12; lhy = sy - s * 0.62; }
   else { const sw = moving ? Math.sin(ph) : 0; lex = lsx - s * 0.1; ley = sy + s * 0.3 - sw * s * 0.06; lhx = lsx - s * 0.06 + sw * s * 0.04; lhy = sy + s * 0.58 - sw * s * 0.14; }
   limb(lsx, sy, lex, ley, armW * 1.15, armW * 0.95, SK_D);
   limb(lex, ley, lhx, lhy, armW * 0.9, armW * 0.75, SK_D);
@@ -1601,7 +1864,8 @@ function drawWarrior() {
 
   // right arm: per-weapon attack animation driven by the fire cycle
   let ang, reach;   // angle of the whole arm from the shoulder (0 = pointing up)
-  if (weapon === 'bow') { ang = -0.9 - 0.5 * cyc; reach = 0.75 - 0.3 * cyc; }             // draws the string back, snaps forward on release
+  if (WR.pose === 'victory') { ang = 0.05 + Math.sin(time * 6) * 0.08; reach = 1.05; }
+  else if (weapon === 'bow') { ang = -0.9 - 0.5 * cyc; reach = 0.75 - 0.3 * cyc; }             // draws the string back, snaps forward on release
   else if (weapon === 'parashu' || weapon === 'gada') { ang = 0.25 + 1.0 * cyc - 1.4 * player.recoil; reach = 1; } // wind up over the shoulder, chop forward
   else if (weapon === 'khadga') { ang = 0.9 - 1.8 * (1 - cyc) * (1 - cyc); reach = 1; }     // quick diagonal slash
   else if (weapon === 'chakra') { ang = 0.05 + Math.sin(time * 3) * 0.05; reach = 1 - 0.15 * player.recoil; } // hand raised, chakra spins on the finger
@@ -1646,7 +1910,7 @@ function drawWarrior() {
   }
   if (bulk >= 5) { ctx.strokeStyle = '#E6EEFF'; ctx.lineWidth = 2.5 * u; ctx.shadowColor = '#BFD6FF'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(hx, hy - s * 0.3, s * 0.11, 0.35, Math.PI - 0.35); ctx.stroke(); ctx.shadowBlur = 0; }
   ctx.restore();   // lean
-  if (hurt && player.hurt > 0.8) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(255,40,20,0.35)'; ctx.fillRect(-s, -s * 2.3, s * 2, s * 2.4); ctx.globalCompositeOperation = 'source-over'; }
+  if (hurt && player.hurt > 0.8) { const hg2 = ctx.createRadialGradient(p.x, p.y - s, 0, p.x, p.y - s, s * 1.3); hg2.addColorStop(0, 'rgba(255,60,30,0.45)'); hg2.addColorStop(1, 'rgba(255,60,30,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = hg2; ctx.beginPath(); ctx.arc(p.x, p.y - s, s * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
   ctx.restore();
 }
 
@@ -1688,13 +1952,15 @@ let last = performance.now(), frozen = false;
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused && !userPaused && !frozen && state === 'playing') update(dt);
-  if (state !== 'intro') render();
+  else if (!paused && !frozen && (state === 'won' || state === 'celebrate' || state === 'victory')) celebUpdate(dt);
+  if (W < 10 || H < 10) resize();
+  if (state !== 'intro' && W >= 10 && H >= 10) render();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only switched on with ?test=1
-if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
+if (/[?&]test=1/.test(location.search)) window.__game = { get state() { return state; }, get wave() { return wave; }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'trishul'; WR.bulkVis = 5; wave = WAVES.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDefeated(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) celebUpdate(1 / 60); render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
 </script>
 </body>
 </html>
