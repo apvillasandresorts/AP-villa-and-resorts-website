@@ -49,7 +49,7 @@ Each phase ships on its own (preview → commit → push → verify live). Statu
 - [x] 6.1 Owner approved (11 Oct 2026). Direction (emerald + antique gold to match the logo, replacing navy/saffron).
 - [x] 6.2 Emerald #1F4D3A / deep #12301F replace navy site-wide; terracotta #B5532A accent; emerald primary buttons, gold buttons on dark panels; contact band + footer emerald.
 - [x] 6.3 Line icons (Lucide-style, scripts/emoji-to-icons.py) replace emoji in amenities, villa cards, contact cards, travel page.
-- [ ] 6.4 Typography polish (optional): small italic Cormorant taglines on phones.
+- [x] 6.4 Typography polish: reviews no longer italic, heavier/larger villa taglines on phones, 16px body text in new sections, brighter small text on dark panels.
 
 ## Phase 7 — SEO & growth
 - [x] 7.1 Titles/meta descriptions per audit §9 sheet (≤60 / ≤158 chars).

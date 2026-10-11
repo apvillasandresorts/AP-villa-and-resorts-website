@@ -1539,3 +1539,13 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .villa-card__meta .ic { width: 18px; height: 18px; color: var(--gold-deep); }
 .contact-card__icon .ic { width: 40px; height: 40px; stroke-width: 1.5; color: var(--gold-soft); }
 .travel-feature__icon, .travel-cat-icon { color: var(--navy); }
+
+/* Phase 6.4: typography polish for readability */
+.review-card__text { font-style: normal; }
+.stat-card__sub { color: rgba(255,255,255,0.75); }
+.villa-card__tagline { font-weight: 500; }
+@media (max-width: 900px) {
+  .villa-card__tagline { font-size: 20px; line-height: 1.35; }
+  .vp-tagline { font-size: 21px; line-height: 1.35; }
+  .blog-card__body p, .why-card p, .steps span, .faq-list p { font-size: 16px; }
+}
