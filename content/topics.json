@@ -320,6 +320,14 @@
       "intent": "informational",
       "cluster": "simhastha-2028",
       "status": "queued"
+    },
+    {
+      "slug": "ujjain-mein-rukne-ki-jagah",
+      "title": "Ujjain Mein Rukne Ki Jagah: Where to Stay for Mahakal Darshan",
+      "keyword": "ujjain mein rukne ki jagah",
+      "intent": "commercial",
+      "cluster": "where-to-stay",
+      "status": "published"
     }
   ]
 }
