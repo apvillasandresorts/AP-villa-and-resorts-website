@@ -86,6 +86,22 @@
         "https://www.dailypioneer.com/2024/state-editions/chief-minister-reviews-proposed-action-plan-of-simhastha-2028.html",
         "https://www.ujjaindarshan.com/simhastha-kumbh-mela-2028/"
       ]
+    },
+    {
+      "slug": "ujjain-mein-rukne-ki-jagah",
+      "title": "Ujjain Mein Rukne Ki Jagah: Where to Stay for Mahakal Darshan",
+      "url": "blog/ujjain-mein-rukne-ki-jagah.html",
+      "date": "2026-10-11",
+      "cluster": "where-to-stay",
+      "keyword": "ujjain mein rukne ki jagah",
+      "source": "ai-pipeline",
+      "hero": "images/blog/ujjain-mein-rukne-ki-jagah/ujjain-01.jpg",
+      "sources": [
+        "https://blog.ujjaindarshan.com/stay-near-mahakaleshwar-temple/",
+        "https://www.ujjaindarshan.com/ujjain-hotels.html",
+        "https://www.ujjaindarshan.com/stay-near-mahakaleshwar-temple/",
+        "https://www.mahakaleshwar.nic.in"
+      ]
     }
   ]
 }

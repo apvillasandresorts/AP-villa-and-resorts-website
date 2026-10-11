@@ -896,6 +896,25 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Suyash Dwivedi / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/ujjain-mein-rukne-ki-jagah/ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakaleshwar",
+        "temple",
+        "ujjain",
+        "street"
+      ],
+      "alt": "Street in front of the Mahakaleshwar Temple complex in Ujjain, photographed in 2013",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }
