@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');</script>
+<!-- Google Analytics 4 (loaded after the page so it never slows it down) -->
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV';document.head.appendChild(s);},1500);});</script>
 <title>In-Villa Dining Menu, Ujjain | AP Villas &amp; Resorts</title>
 <meta name="description" content="Sattvic and traditional Indian meals delivered to your villa: breakfast, lunch, dinner and snacks. Pilgrim-friendly menu. Order on WhatsApp.">
 <meta name="keywords" content="ujjain villa food, in-villa dining mahakal, breakfast lunch dinner ujjain villa, sattvic thali ujjain, mahakal bhog thali, food delivery villa ujjain">
@@ -22,7 +21,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/style.css?v=3ad5f256">
+<link rel="stylesheet" href="assets/css/style.css?v=6dbac926">
 <style>
 .menu-section { background: var(--paper-warm); padding: 60px 0; }
 .menu-header { text-align: center; margin-bottom: 50px; }
@@ -164,7 +163,7 @@
 <nav class="nav" id="nav">
   <div class="container nav__inner">
     <a href="index.html" class="nav__brand">
-      <img class="nav__logo-full" src="assets/brand/logo-full-720.webp" alt="AP Villas &amp; Resorts" width="720" height="181">
+      <img class="nav__logo-full" src="assets/brand/logo-full-400.webp" srcset="assets/brand/logo-full-400.webp 400w, assets/brand/logo-full-720.webp 720w" sizes="(max-width: 600px) 150px, (max-width: 900px) 175px, 215px" alt="AP Villas &amp; Resorts" width="720" height="181">
     </a>
     <div class="nav__menu">
       <a href="index.html">Home</a>
@@ -250,7 +249,7 @@
 
 <footer class="footer">
   <div class="container">
-    <img class="footer__logo-full" src="assets/brand/logo-full-720.webp" alt="AP Villas &amp; Resorts" width="720" height="181" loading="lazy">
+    <img class="footer__logo-full" src="assets/brand/logo-full-400.webp" srcset="assets/brand/logo-full-400.webp 400w, assets/brand/logo-full-720.webp 720w" sizes="(max-width: 600px) 200px, 260px" alt="AP Villas &amp; Resorts" width="720" height="181" loading="lazy">
     <div class="footer__tag">⸻ WHERE DEVOTION FEELS AT HOME ⸻</div>
     <div class="footer__links">
       <a href="index.html">Home</a><a href="villas.html">Villas</a>

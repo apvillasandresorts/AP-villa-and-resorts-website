@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');</script>
+<!-- Google Analytics 4 (loaded after the page so it never slows it down) -->
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV';document.head.appendChild(s);},1500);});</script>
 <title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
 <meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, ride Mahakal's divine lion against Andhakasura and win a 21% stay coupon. By AP Villas &amp; Resorts, Ujjain.">
 <meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
@@ -28,17 +27,12 @@
 @font-face {
   font-family: 'Cormorant Garamond'; font-style: normal; font-weight: 400 700; font-display: swap;
   src: url('assets/fonts/cormorant-garamond-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
   font-family: 'Cormorant Garamond'; font-style: normal; font-weight: 400 700; font-display: swap;
   src: url('assets/fonts/cormorant-garamond-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Inter'; font-style: normal; font-weight: 300 700; font-display: swap;
-  src: url('assets/fonts/inter-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
   font-family: 'Inter'; font-style: normal; font-weight: 300 700; font-display: swap;
@@ -697,7 +691,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="hud" id="hud">
     <div class="hud__group">
       <a href="index.html" class="hud__brand" style="pointer-events:auto">
-        <img src="assets/brand/logo-emblem-512.webp" alt="AP Villas &amp; Resorts emblem">
+        <img src="assets/brand/logo-emblem-96.webp" width="28" height="28" alt="AP Villas &amp; Resorts emblem">
         <strong>AP Villas &amp; Resorts</strong>
       </a>
       <div class="hud__panel">
@@ -902,7 +896,9 @@ const BLESSINGS = [
   { name: 'Shri Vishnu & Maa Lakshmi', title: 'The protector of the worlds blesses you', weapon: 'chakra', gift: 'The Chakra slices through every danav in its path. All prana restored.', img: 'vishnu-laxmi-and-serpent-anant', credit: 'Ravi Varma Press (public domain)' },
   { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'simha', gift: 'Mahakal sends you his divine lion. Ride it into battle: its sacred fire is the only power that can burn Andhakasura, king of darkness. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: true },
 ];
-BLESSINGS.forEach(b => { b.src = IMG + b.img + '-960.webp'; const i = new Image(); i.src = b.src; });
+BLESSINGS.forEach(b => { b.src = IMG + b.img + '-960.webp'; });
+// each painting is fetched only when the wave before its blessing starts, so the game opens fast
+function preloadBlessing(i) { const b = BLESSINGS[i]; if (b && !b.pre) { b.pre = new Image(); b.pre.decoding = 'async'; b.pre.src = b.src; } }
 const MAX_LIVES = 5;
 const BOSS_HP = 260;
 
@@ -968,6 +964,7 @@ function startRun() {
 }
 function startWave(fresh) {
   resetField();
+  preloadBlessing(wave);
   kills = 0; spawnT = -1.2; combo = 0; $('combo').classList.remove('show'); lives = fresh ? MAX_LIVES : Math.max(lives, 3);
   player.lane = 1; player.x = 0; player.hurt = 0;
   saveCheckpoint();
@@ -1117,7 +1114,7 @@ document.addEventListener('visibilitychange', () => { paused = document.hidden; 
 addEventListener('blur', () => setPause(true));
 
 // ---------------- Intro ----------------
-setTimeout(() => $('intro').classList.add('show-content'), 700);
+setTimeout(() => $('intro').classList.add('show-content'), 150);
 $('enter-btn').addEventListener('click', () => {
   ensureAudio(); sfx.bell();
   $('intro').classList.add('opening');
