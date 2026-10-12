@@ -1093,6 +1093,8 @@ const PICKUPS = {
   kavach:    { name: 'Kavach', sub: 'divine shield', col: '#7FD1FF', w: 0.16, t: 14 },
   damru:     { name: 'Damru', sub: 'Tandav shockwave', col: '#FFD27D', w: 0.12 },
   kalash:    { name: 'Amrit Kalash', sub: '+ shakti', col: '#9BF0B0', w: 0.16 },
+  token:     { name: 'Divine Weapon Token', sub: 'Trishul for 8 s', col: '#FFD27D', w: 0.08, t: 8 },
+  celestial: { name: 'Celestial Bonus', sub: 'double points for 10 s', col: '#E8C77A', w: 0.08, t: 10 },
 };
 const MAX_LIVES = 5;
 
@@ -1112,6 +1114,7 @@ let paused = false;
 let score = 0, best = parseInt(store.get('mahakal_best', '0'), 10) || 0;
 let level = 0, kills = 0, spawnT = 0, lives = MAX_LIVES, weapon = 'bow', bulk = 0, time = 0;
 let slain = 0, boss = null, betweenWaves = 0, shake = 0, pendingBlessing = false, userPaused = false, combo = 0, comboT = 0;
+let tokenT = 0, celestT = 0;
 let tej = 40, rudraT = 0, rapidT = 0, trinetraT = 0, shieldT = 0, shieldHits = 0, lakshmi = false, pickT = 8;
 let retries = 0, hitsTaken = 0, waveHits = 0, runSecs = 0, bossesBeaten = 0, wavesCleared = 0, finalWon = false;
 const triesAt = {};
@@ -1122,7 +1125,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = 0; shieldHits = 0; }
+function resetField() { GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1163,6 +1166,8 @@ function tejHud(force) {
   if (trinetraT > 0) b.push(['👁', Math.ceil(trinetraT)]);
   if (shieldT > 0) b.push(['🛡', shieldHits]);
   if (lakshmi) b.push(['🪷', '×1.5']);
+  if (tokenT > 0) b.push(['⚜', Math.ceil(tokenT)]);
+  if (celestT > 0) b.push(['✦×2', Math.ceil(celestT)]);
   const k = b.map(x => x.join('')).join('|');
   if (force || k !== buffKey) { buffKey = k; $('buffs').innerHTML = b.map(([i, n]) => `<span>${i}<b>${n}</b></span>`).join(''); }
 }
@@ -1465,7 +1470,7 @@ function gameOver() {
   track('game_over', { level: level + 1, score: Math.floor(score) });
 }
 function saveBest() { if (score > best) { best = Math.floor(score); store.set('mahakal_best', String(best)); } }
-function addScore(n) { score += n * (lakshmi ? 1.5 : 1); }
+function addScore(n) { score += n * (lakshmi ? 1.5 : 1) * (celestT > 0 ? 2 : 1); }
 $('retry-btn').addEventListener('click', () => {
   $('gameover').classList.remove('show');
   const c = checkpoint; weapon = c.weapon; bulk = c.bulk; score = c.score; level = c.level; lakshmi = c.lakshmi; tej = c.tej; wavesCleared = c.wavesCleared; bossesBeaten = c.bossesBeaten;
@@ -1554,8 +1559,9 @@ function spawnDanav(type, lane, o = {}) {
   danavs.push(d);
   return d;
 }
+const activeWeapon = () => tokenT > 0 ? 'trishul' : weapon;
 function fire() {
-  const w = WEAPONS[weapon], T = TEJ[tejLv()];
+  const w = WEAPONS[activeWeapon()], T = TEJ[tejLv()];
   const multi = rudraT > 0 || trinetraT > 0;
   const lanes = multi ? [0, 1, 2] : [player.lane];
   const lp = launchPoint();
@@ -1563,7 +1569,7 @@ function fire() {
   const range = boss && !boss.dead ? Math.max(w.range, boss.z + 0.06) : w.range;
   for (const lane of lanes) {
     const target = danavs.filter(d => d.lane === lane && d.z > 0.04).sort((a, b) => a.z - b.z)[0];
-    shots.push({ lane, z: 0.04, range, dmg, pierce: w.pierce, kind: w.kind, color: rudraT > 0 ? '#BFE6FF' : w.color, hit: new Set(), spin: 0, side: lane !== player.lane, sx: lp.x, sy: lp.y, fly: !!(target && DANAV[target.type].mount === 'dragon') });
+    shots.push({ lane, z: 0.04, range, dmg, pierce: w.pierce, kind: w.kind, speed: w.speed, color: rudraT > 0 ? '#BFE6FF' : w.color, hit: new Set(), spin: 0, side: lane !== player.lane, sx: lp.x, sy: lp.y, fly: !!(target && DANAV[target.type].mount === 'dragon') });
   }
   player.recoil = 1;
   sfx.shoot(w.kind);
@@ -1585,7 +1591,7 @@ function hurtPlayer(reason) {
 }
 function pickKind() {
   let r = Math.random() * Object.values(PICKUPS).reduce((a, p) => a + p.w, 0);
-  for (const k in PICKUPS) { if ((r -= PICKUPS[k].w) <= 0) return k === 'laddoo' && lives >= MAX_LIVES ? 'kalash' : k; }
+  for (const k in PICKUPS) { if ((r -= PICKUPS[k].w) <= 0) { if (k === 'laddoo' && lives >= MAX_LIVES) return 'kalash'; if (k === 'token' && (weapon === 'simha' || tokenT > 0)) return 'kalash'; if (k === 'celestial' && celestT > 0) return 'kalash'; return k; } }
   return 'kalash';
 }
 function spawnPickup(kind, lane, z) {
@@ -1603,6 +1609,8 @@ function collect(pk) {
   else if (pk.kind === 'kavach') { shieldT = P.t; shieldHits = 2; }
   else if (pk.kind === 'kalash') changeTej(25);
   else if (pk.kind === 'damru') tandav();
+  else if (pk.kind === 'token') tokenT = P.t;          // W07 Trishul, temporarily (reuses the existing weapon and projectile)
+  else if (pk.kind === 'celestial') celestT = P.t;
   if (pk.kind !== 'kalash') changeTej(5);
   hud();
 }
@@ -1746,6 +1754,9 @@ function update(dt) {
   if (rudraT > 0) { rudraT -= dt; if (rudraT <= 0) { tej = 55; floatText(playerPos().x, playerPos().y - 70 * unit(), 'Rudra form fades', '#BFE6FF', 15); } }
   if (rudraT <= 0 && tej > 60 && betweenWaves <= 0) tej -= dt * 0.8;   // great power must be earned again and again
   if (rapidT > 0) rapidT -= dt;
+  if (tokenT > 0) tokenT -= dt;
+  if (celestT > 0) celestT -= dt;
+  if (parts.length > 450) parts.splice(0, parts.length - 450);   // hard particle budget
   if (trinetraT > 0) trinetraT -= dt;
   if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) shieldHits = 0; }
   tejHud();
@@ -1756,7 +1767,7 @@ function update(dt) {
   else if (lives > 0) {
     // auto-fire
     player.fireT -= dt;
-    if (player.fireT <= 0) { fire(); player.fireT = WEAPONS[weapon].rate * TEJ[tejLv()].rate * (rapidT > 0 ? 0.55 : 1) * (rudraT > 0 ? 0.8 : 1); }
+    if (player.fireT <= 0) { fire(); player.fireT = WEAPONS[activeWeapon()].rate * TEJ[tejLv()].rate * (rapidT > 0 ? 0.55 : 1) * (rudraT > 0 ? 0.8 : 1); }
     // spawn danav and boons
     const lv = LV();
     if (!boss) {
@@ -1790,7 +1801,7 @@ function update(dt) {
   for (let i = shots.length - 1; i >= 0; i--) {
     const s = shots[i];
     if (!s) continue;   // a boss can fall mid-loop and clear the field
-    s.z += WEAPONS[weapon].speed * dt * (s.kind === 'gada' ? 0.9 : 1);
+    s.z += (s.speed || WEAPONS[weapon].speed) * dt * (s.kind === 'gada' ? 0.9 : 1);
     s.spin += dt * 18;
     let gone = s.z > s.range;
     for (const d of danavs) {
@@ -2869,6 +2880,7 @@ function celebUpdate(dt) {
     if (state === 'celebrate' && C.ct > 6.5) playCutscene('finale', victory);
   }
   C.roar = Math.max(0, (C.roar || 0) - dt * 1.1);
+  if (parts.length > 450) parts.splice(0, parts.length - 450);
   for (let i = C.petals.length - 1; i >= 0; i--) { const p = C.petals[i]; p.x += p.vx + Math.sin(time * 2 + p.rot) * 0.4; p.y += p.vy; p.rot += p.vr; if (p.y > H + 20) C.petals.splice(i, 1); }
   for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.life -= dt * 0.9; if (p.life <= 0) parts.splice(i, 1); }
   for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
@@ -3158,6 +3170,16 @@ function drawBoonIcon(c, kind, r, t) {
     c.strokeStyle = '#3A1A0A'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(r * 0.7, -r * 0.1 + Math.sin(t * 20) * r * 0.3, r * 0.95, 0); c.stroke();
     c.fillStyle = '#3A1A0A'; c.beginPath(); c.arc(r * 0.95, 0, r * 0.1, 0, Math.PI * 2); c.fill();
     c.restore();
+  } else if (kind === 'token') {   // golden star emblem with a small trishul
+    c.fillStyle = '#C9962E'; c.beginPath(); for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, rr = k % 2 ? r * 0.55 : r * 0.85; c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } c.closePath(); c.fill();
+    c.fillStyle = '#FFE08A'; c.beginPath(); c.arc(0, 0, r * 0.45, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#7A4A10'; c.lineWidth = Math.max(1.2, r * 0.08); c.lineCap = 'round'; c.beginPath(); c.moveTo(0, r * 0.3); c.lineTo(0, -r * 0.32); c.moveTo(-r * 0.2, -r * 0.3); c.quadraticCurveTo(-r * 0.18, -r * 0.1, 0, -r * 0.1); c.quadraticCurveTo(r * 0.18, -r * 0.1, r * 0.2, -r * 0.3); c.stroke();
+  } else if (kind === 'celestial') {   // bronze zodiac disc
+    const g = c.createRadialGradient(-r * 0.2, -r * 0.2, 0, 0, 0, r * 0.8); g.addColorStop(0, '#F2D08A'); g.addColorStop(1, '#8C5A1E');
+    c.fillStyle = g; c.beginPath(); c.arc(0, 0, r * 0.78, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#5A3A10'; c.lineWidth = Math.max(1, r * 0.05); c.beginPath(); c.arc(0, 0, r * 0.55, 0, Math.PI * 2); c.stroke();
+    for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6 + t * 0.5; c.beginPath(); c.moveTo(Math.cos(a) * r * 0.58, Math.sin(a) * r * 0.58); c.lineTo(Math.cos(a) * r * 0.74, Math.sin(a) * r * 0.74); c.stroke(); }
+    c.fillStyle = '#FFF3C4'; c.beginPath(); c.arc(0, 0, r * 0.14, 0, Math.PI * 2); c.fill();
   } else if (kind === 'kalash') {
     c.fillStyle = '#3E8A3A'; for (const a of [-0.8, -0.3, 0.3, 0.8]) { c.save(); c.translate(0, -r * 0.42); c.rotate(a); c.beginPath(); c.ellipse(0, -r * 0.3, r * 0.1, r * 0.32, 0, 0, Math.PI * 2); c.fill(); c.restore(); }
     c.fillStyle = '#8C5A2A'; c.beginPath(); c.arc(0, -r * 0.55, r * 0.2, 0, Math.PI * 2); c.fill();
@@ -3848,6 +3870,12 @@ function drawWarrior() {
 
 // Weapon in the hand. (hx,hy) = right hand, ang = arm angle; (lx,ly) = left hand (bow grip).
 function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
+  if (tokenT > 0 && weapon !== 'simha') {   // the Divine Weapon Token: a glowing trishul in hand
+    ctx.save(); ctx.strokeStyle = '#FFF6D8'; ctx.lineCap = 'round'; ctx.shadowColor = '#FFD27D'; ctx.shadowBlur = 12; ctx.lineWidth = Math.max(2, s * 0.05);
+    ctx.beginPath(); ctx.moveTo(hx, hy + s * 0.35); ctx.lineTo(hx, hy - s * 0.85); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hx - s * 0.2, hy - s * 0.95); ctx.quadraticCurveTo(hx - s * 0.18, hy - s * 0.7, hx, hy - s * 0.7); ctx.quadraticCurveTo(hx + s * 0.18, hy - s * 0.7, hx + s * 0.2, hy - s * 0.95); ctx.moveTo(hx, hy - s * 0.7); ctx.lineTo(hx, hy - s * 1.05); ctx.stroke();
+    ctx.restore(); return;
+  }
   const w = WEAPONS[weapon], k = s * 0.55;
   ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 10; ctx.lineCap = 'round';
   if (weapon === 'simha') {
@@ -3899,7 +3927,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
