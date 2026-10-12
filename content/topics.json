@@ -31,7 +31,7 @@
       "keyword": "ujjain stay with kitchen",
       "intent": "commercial",
       "cluster": "where-to-stay",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "ujjain-stay-with-elderly-parents",
