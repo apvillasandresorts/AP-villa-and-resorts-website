@@ -2635,24 +2635,49 @@ function drawParade() {
 // key → { portrait: 9:16 file for phones, landscape: 16:9 file for desktops } (either may be missing).
 // Keys: intro, boss-mahisha, boss-rakta, boss-andhaka, bless-ganesh, bless-hanuman, bless-durga, bless-vishnu,
 // bless-lakshmi, bless-mahakal, finale. Prompts to make them: docs/game-video-prompts.md. Each plays once per device and can be skipped.
-const CUTSCENES = Object.fromEntries(["intro","boss-mahisha","boss-rakta","boss-andhaka","bless-ganesh","bless-hanuman","bless-durga","bless-vishnu","bless-lakshmi","bless-mahakal","finale"].map(k => [k, { portrait: 'videos/game/' + k + '.mp4' }]));   // 9:16 clips made in Google Flow (Veo 3.1)
+// Cut-scene registry (data only). status: "verified" = file checked on disk and published with the site; "pending" = planned, no file yet.
+// Only verified entries are played; a pending entry is skipped and the game continues normally.
+const CUTSCENE_REGISTRY = [
+  { key: 'intro', portrait: 'videos/game/intro.mp4', status: 'verified' },
+  { key: 'boss-mahisha', portrait: 'videos/game/boss-mahisha.mp4', status: 'verified' },
+  { key: 'boss-rakta', portrait: 'videos/game/boss-rakta.mp4', status: 'verified' },
+  { key: 'boss-andhaka', portrait: 'videos/game/boss-andhaka.mp4', status: 'verified' },
+  { key: 'bless-ganesh', portrait: 'videos/game/bless-ganesh.mp4', status: 'verified' },
+  { key: 'bless-hanuman', portrait: 'videos/game/bless-hanuman.mp4', status: 'verified' },
+  { key: 'bless-durga', portrait: 'videos/game/bless-durga.mp4', status: 'verified' },
+  { key: 'bless-vishnu', portrait: 'videos/game/bless-vishnu.mp4', status: 'verified' },
+  { key: 'bless-lakshmi', portrait: 'videos/game/bless-lakshmi.mp4', status: 'verified' },
+  { key: 'bless-mahakal', portrait: 'videos/game/bless-mahakal.mp4', status: 'verified' },
+  { key: 'finale', portrait: 'videos/game/finale.mp4', status: 'verified' },
+  // landscape (16:9) versions for desktop are pending; desktop plays the portrait clip over a blurred backdrop
+];
+const CUTSCENES = Object.fromEntries(CUTSCENE_REGISTRY.filter(c => c.status === 'verified').map(c => [c.key, { portrait: c.portrait, landscape: c.landscape }]));
 const CUT_TITLES = { intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], finale: ['हर हर महादेव', 'Victory'] };
 let cutTok = 0;
 function playCutscene(key, done, opts = {}) {
   const e = CUTSCENES[key], tall = innerHeight > innerWidth;
   const src = typeof e === 'string' ? e : e ? (tall ? e.portrait || e.landscape : e.landscape || e.portrait) : null;
   if (!src || (!opts.force && store.get('mahakal_seen_' + key, ''))) { done(); return; }
-  if (!opts.force) store.set('mahakal_seen_' + key, '1');
   const box = $('cutscene'), v = $('cut-video'), bg = $('cut-bg'), tok = ++cutTok;
   if (state !== 'intro') state = 'cutscene';
-  let ended = false;
-  const end = () => {
-    if (ended) return; ended = true; v.pause(); bg.pause();
+  let ended = false, started = false, lastT = -1, stillFor = 0;
+  // "seen" is recorded only when the clip actually played: it finished, or the player skipped after it had started
+  const markSeen = () => { if (!opts.force && started) store.set('mahakal_seen_' + key, '1'); };
+  // watchdog: a clip that never starts (8 s) or freezes mid-way (5 s) is closed so the game can never hang on a video
+  const dog = setInterval(() => {
+    if (ended) { clearInterval(dog); return; }
+    if (!started) { stillFor += 0.5; if (stillFor >= 8) end(); return; }
+    if (v.currentTime === lastT && !v.paused) { stillFor += 0.5; if (stillFor >= 5) end(); } else { stillFor = 0; lastT = v.currentTime; }
+  }, 500);
+  v.onplaying = () => { if (!started) { started = true; stillFor = 0; } };
+  const end = (finished) => {
+    if (ended) return; ended = true; clearInterval(dog); v.pause(); bg.pause();
+    if (finished === true || started) markSeen();
     box.classList.add('out');
     setTimeout(() => { if (tok !== cutTok) return; box.classList.remove('show', 'out'); v.removeAttribute('src'); v.load(); bg.removeAttribute('src'); bg.load(); }, 380);
     last = performance.now(); done();
   };
-  v.onended = end; v.onerror = end;
+  v.onended = () => end(true); v.onerror = () => { started = false; end(); };   // load or decode error: not marked as seen
   v.ontimeupdate = () => { $('cut-bar').style.width = (100 * v.currentTime / (v.duration || 8)) + '%'; };
   $('cut-skip').textContent = opts.story !== undefined && opts.story < STORY.length - 1 ? 'Next ▸' : 'Skip ▸';
   $('cut-skip').onclick = ev => { ev.stopPropagation(); end(); };
@@ -2664,7 +2689,7 @@ function playCutscene(key, done, opts = {}) {
   v.poster = src.replace(/\.mp4$/, '.jpg'); v.src = src; $('cut-bar').style.width = '0';
   if (!tall) { bg.src = src; bg.play().catch(() => {}); }
   box.classList.remove('out'); box.classList.add('show'); v.muted = muted;
-  v.play().catch(() => { v.muted = true; v.play().catch(end); });
+  v.play().catch(() => { v.muted = true; v.play().catch(() => { started = false; end(); }); });   // autoplay refused twice: continue without it
   track('game_cutscene', { key, story: opts.story !== undefined });
 }
 

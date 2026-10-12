@@ -1742,5 +1742,228 @@
       ]
     }
   ],
-  "protagonistStagesNote": "Maa Lakshmi grants the Swarna Chakra but does not change the stage. Stages are not saved across a page reload (they never were); a retry restores the stage from the in-run checkpoint."
+  "protagonistStagesNote": "Maa Lakshmi grants the Swarna Chakra but does not change the stage. Stages are not saved across a page reload (they never were); a retry restores the stage from the in-run checkpoint.",
+  "enemyArchetypes": [
+    {
+      "gameType": "chhaya",
+      "name": "Chhaya Rakshasa",
+      "assets": [
+        {
+          "id": "enemy.chhaya-rakshasa.a",
+          "path": "new game videos/Create_character_sheet_for_Chhay…_20261012164715.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.chhaya-rakshasa.b",
+          "path": "new game videos/Create_character_sheet_for_Chhay…_20261012164720.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    },
+    {
+      "gameType": "naga",
+      "name": "Naga Rakshaka",
+      "assets": [
+        {
+          "id": "enemy.naga-rakshaka.a",
+          "path": "new game videos/Naga_Rakshaka_character_producti…_20261012164637.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.naga-rakshaka.b",
+          "path": "new game videos/Naga_Rakshaka_character_producti…_20261012164640.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    },
+    {
+      "gameType": "vajra",
+      "name": "Vajra Danava",
+      "assets": [
+        {
+          "id": "enemy.vajra-danava.a",
+          "path": "new game videos/Armor_character_sheet_creation_20261012164644.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.vajra-danava.b",
+          "path": "new game videos/Armor_character_sheet_creation_20261012164650.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    },
+    {
+      "gameType": "agni",
+      "name": "Agni Vetala",
+      "assets": [
+        {
+          "id": "enemy.agni-vetala.a",
+          "path": "new game videos/Character_sheet_for_fire_warrior_20261012164704.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.agni-vetala.b",
+          "path": "new game videos/Character_sheet_for_fire_warrior_20261012164711.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    },
+    {
+      "gameType": "maya",
+      "name": "Maya Mohini Asura",
+      "assets": [
+        {
+          "id": "enemy.maya-mohini.a",
+          "path": "new game videos/Character_sheet_for_illusionist_…_20261012164700.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.maya-mohini.b",
+          "path": "new game videos/Character_sheet_for_illusionist_…_20261012164653.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    },
+    {
+      "gameType": "kaal",
+      "name": "Kaal Pishacha",
+      "assets": [
+        {
+          "id": "enemy.kaal-pishacha.a",
+          "path": "new game videos/Creating_character_sheet_for_Kaal_20261012164633.mp4",
+          "recommended": true
+        },
+        {
+          "id": "enemy.kaal-pishacha.b",
+          "path": "new game videos/Creating_character_sheet_for_Kaal_20261012164628.mp4",
+          "recommended": false
+        }
+      ],
+      "inGameRendering": "code-drawn (drawDanav) with its own silhouette and tell",
+      "note": "fictional gameplay creation"
+    }
+  ],
+  "weapons": [
+    {
+      "id": "W01",
+      "gameWeapon": "bow",
+      "name": "Wooden bow",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W02",
+      "gameWeapon": "parashu",
+      "name": "Parashu",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W03",
+      "gameWeapon": "gada",
+      "name": "Gada",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W04",
+      "gameWeapon": "khadga",
+      "name": "Khadga",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W05",
+      "gameWeapon": "chakra",
+      "name": "Sudarshan Chakra",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W06",
+      "gameWeapon": "swarna",
+      "name": "Swarna Chakra",
+      "assets": [],
+      "assetStatus": "MISSING (no dedicated asset)",
+      "gameplay": "functional (existing weapon)"
+    },
+    {
+      "id": "W07",
+      "gameWeapon": "trishul",
+      "name": "Trishul",
+      "assets": [
+        {
+          "id": "weapon.trishul.a",
+          "path": "new game videos/Create_weapon_concept_design_20261012164616.mp4",
+          "recommended": false
+        },
+        {
+          "id": "weapon.trishul.b",
+          "path": "new game videos/Create_weapon_concept_design_20261012164621.mp4",
+          "recommended": true
+        }
+      ],
+      "assetStatus": "reference video only",
+      "gameplay": "functional via the Divine Weapon Token pickup (8 s)"
+    }
+  ],
+  "bossClips": [
+    {
+      "key": "mahisha-rage",
+      "path": "videos/game/boss/mahisha-rage.mp4",
+      "poster": "videos/game/boss/mahisha-rage.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    },
+    {
+      "key": "mahisha-defeat",
+      "path": "videos/game/boss/mahisha-defeat.mp4",
+      "poster": "videos/game/boss/mahisha-defeat.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    },
+    {
+      "key": "rakta-split",
+      "path": "videos/game/boss/rakta-split.mp4",
+      "poster": "videos/game/boss/rakta-split.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    },
+    {
+      "key": "rakta-defeat",
+      "path": "videos/game/boss/rakta-defeat.mp4",
+      "poster": "videos/game/boss/rakta-defeat.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    },
+    {
+      "key": "andhaka-rise",
+      "path": "videos/game/boss/andhaka-rise.mp4",
+      "poster": "videos/game/boss/andhaka-rise.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    },
+    {
+      "key": "andhaka-defeat",
+      "path": "videos/game/boss/andhaka-defeat.mp4",
+      "poster": "videos/game/boss/andhaka-defeat.jpg",
+      "status": "verified",
+      "source": "trimmed from the owner's Flow boss videos"
+    }
+  ]
 }
