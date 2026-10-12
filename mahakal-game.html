@@ -921,7 +921,28 @@ const $ = (id) => document.getElementById(id);
 const stage = $('stage'), game = $('game'), fx = $('fx');
 const ctx = game.getContext('2d'), fxCtx = fx.getContext('2d');
 let W = 0, H = 0;
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
+// Quality: phones draw at most 1.5x pixel density; if a device still drops frames the game steps its effects down by itself.
+const Q = { level: 0, dpr: Math.min(window.devicePixelRatio || 1, Math.min(screen.width, screen.height) < 820 ? 1.5 : 2), weather: 1, clouds: 1, shadows: true };
+let DPR = Q.dpr;
+function setQuality(lv) {
+  Q.level = lv;
+  Q.dpr = lv === 0 ? Q.dpr : lv === 1 ? Math.min(Q.dpr, 1.25) : 1;
+  Q.weather = lv === 0 ? 1 : lv === 1 ? 0.55 : 0.3;
+  Q.clouds = lv === 0 ? 1 : lv === 1 ? 0.7 : 0.5;
+  Q.shadows = lv < 2;
+  DPR = Q.dpr; resize();
+  for (const c of [ctx, fxCtx]) {   // no blurred glows in the lowest setting
+    if (!Q.shadows) Object.defineProperty(c, 'shadowBlur', { set() {}, get() { return 0; }, configurable: true });
+  }
+}
+const perf = { acc: 0, n: 0, slow: 0 };
+function watchPerf(dt) {   // average frame time over ~2 s; two slow windows in a row lower the quality one step
+  if (state !== 'playing' || document.hidden) return;
+  perf.acc += dt; perf.n++;
+  if (perf.acc < 2) return;
+  const fps = perf.n / perf.acc; perf.acc = 0; perf.n = 0;
+  if (fps < 45) { if (++perf.slow >= 2 && Q.level < 2) { setQuality(Q.level + 1); perf.slow = 0; } } else perf.slow = 0;
+}
 function resize() {
   W = stage.clientWidth; H = stage.clientHeight;
   for (const c of [game, fx]) { c.width = W * DPR; c.height = H * DPR; c.style.width = W + 'px'; c.style.height = H + 'px'; }
@@ -1864,7 +1885,8 @@ function drawSky() {
   cg.addColorStop(0, 'rgba(255,230,238,0)'); cg.addColorStop(0.08, mix(actCol('sea', 0), '#4A2236', m)); cg.addColorStop(0.5, mix(actCol('sea', 1), '#2C1426', m)); cg.addColorStop(1, mix(actCol('sea', 2), '#170A14', m));
   ctx.fillStyle = cg; ctx.fillRect(-20, hy - 40 * u, W + 40, H - hy + 60 * u);
   // drifting sky clouds
-  for (const c of SKY.clouds) {
+  for (let ci = 0; ci < SKY.clouds.length; ci++) {
+    const c = SKY.clouds[ci]; if (ci >= Math.round(SKY.clouds.length * Q.clouds)) break;
     c.x += c.sp * (1 / 60) * (1 + m * 2); if (c.x > 1.2) c.x = -0.3;
     const sp = SKY.sprites[c.spr], w = 300 * c.sc * u, h = w * 160 / 340;
     ctx.globalAlpha = c.a * (1 - 0.45 * m) * (1 - 0.55 * night);
@@ -1932,9 +1954,10 @@ function drawTemple() {
 function drawBridge() {
   const m = SKY.mood, u = unit();
   // cloud puffs streaming past both sides of the bridge (gives the feeling of running through the sky)
-  for (let i = 0; i < 22; i++) {
-    const z = 1 - (((i / 22) + time * 0.06) % 1), side = i % 2 ? 1 : -1, off = side * (2.3 + (i % 5) * 0.45);
-    const p = project(z, off), sp = SKY.sprites[i % 5], w = 420 * p.scale * u, h = w * 160 / 340;
+  const NC = Math.round(16 * Q.clouds);
+  for (let i = 0; i < NC; i++) {
+    const z = 1 - (((i / NC) + time * 0.06) % 1), side = i % 2 ? 1 : -1, off = side * (2.3 + (i % 5) * 0.45);
+    const p = project(z, off), sp = SKY.sprites[i % 5], w = 360 * p.scale * u, h = w * 160 / 340;
     ctx.globalAlpha = Math.min(1, (1 - z) * 2.2) * (0.9 - 0.45 * m) * (1 - 0.5 * Math.max(0, SKY.act - 1));
     ctx.drawImage(sp, p.x - w / 2, p.y - h * 0.6, w, h);
   }
@@ -1965,10 +1988,9 @@ function torch(x, y, s) {
   // a small golden pillar with a diya on top
   ctx.fillStyle = 'rgba(214,170,80,0.9)'; ctx.fillRect(x - s * 0.08, y - s * 0.9, s * 0.16, s * 0.9);
   const f = 0.85 + Math.sin(time * 18 + x) * 0.15;
-  const g = ctx.createRadialGradient(x, y - s, 0, x, y - s, s * 0.7);
-  const T = AMB.T || auraTint();
-  g.addColorStop(0, `rgba(${T.f0},${0.95 * f})`); g.addColorStop(0.45, `rgba(${T.f1},${0.5 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g; ctx.fillRect(x - s, y - s * 1.7, s * 2, s * 1.4);
+  const T = AMB.T || auraTint(), r = s * 0.7;
+  ctx.globalAlpha = 0.55 * f; ctx.drawImage(glowSprite(T.f1), x - r * 1.3, y - s - r * 1.3, r * 2.6, r * 2.6);
+  ctx.globalAlpha = 0.95 * f; ctx.drawImage(glowSprite(T.f0), x - r * 0.6, y - s - r * 0.6, r * 1.2, r * 1.2); ctx.globalAlpha = 1;
 }
 function drawLanes() {
   for (let l = 0; l < 3; l++) {
@@ -1982,6 +2004,15 @@ function drawLanes() {
   ctx.setLineDash([]);
 }
 
+// Pre-drawn soft glow (white core fading out), tinted per colour and reused every frame
+const GLOW = new Map();
+function glowSprite(rgb) {
+  let c = GLOW.get(rgb); if (c) return c;
+  c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(0.35, `rgba(${rgb},0.55)`); gr.addColorStop(1, `rgba(${rgb},0)`);
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); GLOW.set(rgb, c); return c;
+}
 // ---------------- Level auras: every level has its own look, and the dread grows as you go ----------------
 // tint: colour washed over the sky · fx: weather · bats / witches: how many haunt the background · flame: diya colours on the bridge
 const AURA = [
@@ -2040,7 +2071,8 @@ function updateAmbient(dt) {
   for (let i = AMB.trail.length - 1; i >= 0; i--) { const t = AMB.trail[i]; t.life -= dt * 1.4; t.y += dt * 12; if (t.life <= 0) AMB.trail.splice(i, 1); }
   if (A.witches && state === 'playing') { AMB.cackleT -= dt; if (AMB.cackleT <= 0) { AMB.cackleT = 9 + Math.random() * 10 - 5 * I; if (AMB.witches.some(w => w.wait <= 0)) sfx.cackle(); } }
   // weather particles (count grows with the level)
-  const max = 26 + Math.round(70 * I), L = AMB.list;
+  const max = Math.round((20 + 45 * I) * Q.weather), L = AMB.list;
+  if (L.length > max) L.length = max;
   if (L.length < max && Math.random() < 0.5 + I) L.push(spawnWeather(A.fx, A.fc));
   for (let i = L.length - 1; i >= 0; i--) {
     const p = L[i]; p.life -= dt / p.dur; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
@@ -2141,8 +2173,7 @@ function drawWeather() {
     else if (p.fx === 'ash') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = `rgba(${p.c},${0.6 * a})`; ctx.fillRect(-p.r, -p.r * 0.4, p.r * 2, p.r * 0.8); ctx.restore(); }
     else {
       const blink = p.fx === 'fireflies' ? (0.4 + 0.6 * Math.abs(Math.sin(time * 4 + p.rot * 3))) : 1;
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3); g.addColorStop(0, `rgba(${p.c},${0.9 * a * blink})`); g.addColorStop(1, `rgba(${p.c},0)`);
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.9 * a * blink; const r = p.r * 3; ctx.drawImage(glowSprite(p.c), p.x - r, p.y - r, r * 2, r * 2); ctx.globalAlpha = 1;
     }
   }
 }
@@ -3411,7 +3442,8 @@ function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
 // ---------------- Main loop ----------------
 let last = performance.now(), frozen = false;
 function loop(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  if (raw < 0.5) watchPerf(raw);
   cineStep(dt);
   if (!paused && !userPaused && !frozen && state === 'playing') update(dt * timeScale());
   else if (!paused && !userPaused && !frozen && state === 'bossintro') bossIntroUpdate(dt);
@@ -3424,7 +3456,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
