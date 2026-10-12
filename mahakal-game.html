@@ -748,6 +748,11 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .flash.gold { background: radial-gradient(circle, #FFF3C4, rgba(255,190,90,.55)); }
 .flash.red { background: radial-gradient(circle, rgba(255,80,60,.5), rgba(80,0,10,.7)); }
 @keyframes flashIn { 0% { opacity: .95; } 100% { opacity: 0; } }
+.bossclip { position: absolute; left: 50%; top: 64px; transform: translateX(-50%) scale(.92); z-index: 30; width: min(44vw, 340px); aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; border: 1px solid rgba(232,199,122,.7); box-shadow: 0 10px 40px rgba(0,0,0,.6), 0 0 30px rgba(192,16,30,.35); opacity: 0; pointer-events: none; transition: opacity .35s, transform .35s; background: #000; }
+.bossclip.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.bossclip video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bossclip span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 10px 6px; font: 600 11px Inter, sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFE7A8; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.8)); }
+@media (max-width: 600px) { .bossclip { top: 196px; width: 54vw; } }   /* below the HUD, above the boss, never over the player */
 </style>
 </head>
 <body>
@@ -896,6 +901,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
   <!-- Cut-scene video (skippable) -->
   <div class="cutscene" id="cutscene"><video id="cut-bg" class="cutscene__bg" muted playsinline preload="none" aria-hidden="true"></video><video id="cut-video" playsinline preload="none"></video><div class="cutscene__title" id="cut-title"><b></b><span></span></div><div class="cutscene__bar"><i id="cut-bar"></i></div><button class="cutscene__close" id="cut-close" type="button" hidden aria-label="Close the story">✕</button><button class="cutscene__skip" id="cut-skip" type="button">Skip ▸</button></div>
+  <div class="bossclip" id="bossclip" aria-hidden="true"><video id="bossclip-video" muted playsinline preload="none"></video><span></span></div>
   <div class="titlecard" id="titlecard" aria-live="polite"><small></small><b></b><span></span></div>
   <div class="flash" id="flash"></div>
 
@@ -1110,7 +1116,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = 0; shieldHits = 0; }
+function resetField() { DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1390,6 +1396,9 @@ function startBoss() {
   hud();
 }
 function bossDown() {
+  if (!boss || boss.dead) return;   // a boss can only be defeated once
+  DARK.target = 0; boss.darkOn = false;
+  bossClip(boss.kind + '-defeat');
   if (LV().final) return bossDefeated();
   const B = BOSSES[boss.kind], p = project(boss.z, boss.x);
   killCam(p);
@@ -1615,11 +1624,12 @@ function damage(d, dmg, color) {
   burst(p.x, p.y - 40 * p.scale * unit(), color, 5, 2.5);
 }
 function hitBoss(dmg) {
-  boss.hp -= dmg; boss.hitFlash = 1; sfx.hit();
-  const p = project(boss.z, boss.x); burst(p.x, p.y - 110 * p.scale * unit(), '#FFFFFF', 5, 3);
-  if (boss.kind === 'rakta' && Math.random() < 0.09 && danavs.length < 4) {   // a drop of his blood becomes a demon
-    const d = spawnDanav('raktaja', Math.floor(Math.random() * 3), { z: boss.z - 0.03, mini: true });
-    if (d) { burst(p.x, p.y - 60 * p.scale * unit(), '#B0101E', 12, 3); }
+  if (!boss || boss.dead) return;
+  const winded = boss.recover > 0;
+  boss.hp -= dmg * (winded ? 1.6 : 1); boss.hitFlash = 1; sfx.hit();
+  const p = project(boss.z, boss.x); burst(p.x, p.y - 110 * p.scale * unit(), winded ? '#FFE27A' : '#FFFFFF', winded ? 9 : 5, 3);
+  if (boss.kind === 'rakta' && Math.random() < 0.09) {   // a drop of his blood becomes a demon (same caps as the clones)
+    if (spawnClone(boss)) burst(p.x, p.y - 60 * p.scale * unit(), '#B0101E', 12, 3);
   }
   if (boss.hp <= 0) bossDown();
   hud();
@@ -1669,6 +1679,7 @@ function update(dt) {
     }
     if (t.hop && d.z < 0.8 && d.z > 0.3) { d.hopT -= dt; if (d.hopT <= 0) { d.hopT = (t.ghost ? 1.2 : 1.8) + Math.random() * 1.5; const opts = [d.lane - 1, d.lane + 1].filter(l => l >= 0 && l <= 2); d.lane = opts[Math.floor(Math.random() * opts.length)]; } }
     d.x += (d.lane - 1 - d.x) * Math.min(1, dt * 6);
+    if (d.life !== undefined) { d.life -= dt; if (d.life <= 0) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#8E0A18', 10, 2); danavs.splice(i, 1); continue; } }
     if (d.z <= 0.01) { danavs.splice(i, 1); if (lives > 0) hurtPlayer('breach'); }
   }
 
@@ -1718,8 +1729,49 @@ function update(dt) {
   if (!boss && !LV().boss) { const lv = LV(); $('hud-wave').textContent = `Wave ${lv.waveNo} of ${TOTAL_WAVES} · ${Math.min(kills, lv.kills)}/${lv.kills}`; $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%'; }
 }
 // Boss behaviour: each asura fights differently
+// ---------------- Boss encounters: phases and signature mechanics ----------------
+// Every boss: arrival (walk-in) → phase 1 → phase 2 at half health (once) → defeat → normal flow (blessing / celebration).
+// Mahishasura: telegraphed charge, then a recovery window where he is winded and takes extra damage.
+// Raktabija: in phase 2 he splits off blood clones (weak, short-lived; max 3 alive, 10 per fight).
+// Andhakasura: in phase 2 darkness falls in timed waves; hazards and their warnings stay bright.
+// The art clips play in a small framed window that never pauses the fight; if a clip fails, it simply hides.
+const BOSS_CLIP = { 'mahisha-rage': 'Mahishasura rages', 'mahisha-defeat': 'Mahishasura falls', 'rakta-split': 'Raktabija multiplies', 'rakta-defeat': 'Raktabija falls', 'andhaka-rise': 'The king of darkness rises', 'andhaka-defeat': 'Andhakasura falls' };
+let bossClipTok = 0;
+function bossClip(key) {
+  const box = $('bossclip'), v = $('bossclip-video'), tok = ++bossClipTok;
+  const hide = () => { if (tok !== bossClipTok) return; box.classList.remove('show'); setTimeout(() => { if (tok === bossClipTok) { v.removeAttribute('src'); v.load(); } }, 400); };
+  box.querySelector('span').textContent = BOSS_CLIP[key] || '';
+  v.onended = hide; v.onerror = hide;
+  v.src = 'videos/game/boss/' + key + '.mp4'; v.poster = 'videos/game/boss/' + key + '.jpg'; v.muted = true;
+  box.classList.add('show'); v.play().catch(hide);
+  clearTimeout(bossClip.t); bossClip.t = setTimeout(hide, 4500);   // safety: never stays up
+}
+function hideBossClip() { bossClipTok++; clearTimeout(bossClip.t); $('bossclip').classList.remove('show'); }
+function bossPhase2(b) {
+  b.phase = 2; shake = 0.5; screenFlash('red'); sfx.roar();
+  if (b.kind === 'mahisha') { banner('Mahishasura rages!', 'His charges come faster: wait for the red path, then step aside', 2400, 'boss'); bossClip('mahisha-rage'); }
+  else if (b.kind === 'rakta') { banner('Raktabija multiplies!', 'Blood clones are weak and fade fast: strike the real one', 2400, 'boss'); bossClip('rakta-split'); b.splitT = 0.6; }
+  else { banner('Andhakar: darkness falls!', 'Watch the glowing warnings: they still show where danger strikes', 2600, 'boss'); bossClip('andhaka-rise'); b.darkT = 1.2; }
+}
+function spawnClone(b) {   // a blood clone: weak, short-lived, capped
+  const alive = danavs.filter(d => d.clone).length;
+  if (alive >= 3 || (b.clones || 0) >= 10) return null;
+  const lanes = [0, 1, 2].filter(l => l !== b.lane), lane = lanes[Math.floor(Math.random() * lanes.length)];
+  const d = spawnDanav('raktaja', lane, { z: b.z - 0.04, mini: true });
+  if (d) { d.clone = true; d.life = 6; d.hp = d.max = 3; b.clones = (b.clones || 0) + 1; }
+  return d;
+}
 function updateBoss(dt) {
   const b = boss, B = BOSSES[b.kind];
+  if (!b.phase) b.phase = 1;
+  if (b.phase === 1 && b.hp <= b.max / 2) bossPhase2(b);
+  if (b.recover > 0) b.recover -= dt;
+  if (b.splitFx > 0) b.splitFx -= dt;
+  if (b.kind === 'rakta' && b.phase === 2) { b.splitT -= dt; if (b.splitT <= 0) { b.splitT = 7; b.splitFx = 0.9; let n = 0; if (spawnClone(b)) n++; if (spawnClone(b)) n++; if (n) { sfx.cast(); const p = project(b.z, b.x); burst(p.x, p.y - 80 * unit(), '#C0101E', 18, 4); } } }
+  if (b.kind === 'andhaka' && b.phase === 2) {   // 5 s of darkness every 14 s
+    b.darkT -= dt; if (b.darkT <= 0) { b.darkOn = !b.darkOn; b.darkT = b.darkOn ? 5 : 9; if (b.darkOn) sfx.thunder(); }
+  }
+  DARK.target = b.kind === 'andhaka' && b.darkOn ? 1 : 0;
   b.enter = Math.min(1, b.enter + dt * 0.45);
   b.hitFlash = Math.max(0, b.hitFlash - dt * 5);
   const rage = b.hp < b.max / 2;
@@ -1733,6 +1785,9 @@ function updateBoss(dt) {
     const c = b.charge;
     if (c.warn > 0) { c.warn -= dt; if (Math.random() < 0.3) { const p = project(b.z, b.x); parts.push({ x: p.x + (Math.random() - 0.5) * 40, y: p.y, vx: (Math.random() - 0.5) * 2, vy: -1, r: 3, life: 0.6, color: 'rgba(200,170,140,0.7)' }); } }
     else if (!c.back) { b.z -= (rage ? 1.7 : 1.4) * dt; if (Math.random() < 0.6) { const p = project(b.z, b.x); parts.push({ x: p.x + (Math.random() - 0.5) * 60, y: p.y, vx: (Math.random() - 0.5) * 3, vy: -1.5, r: 4, life: 0.7, color: 'rgba(210,180,150,0.7)' }); } if (b.z <= 0.06) { if (player.lane === c.lane && lives > 0) hurtPlayer('charge'); shake = 0.5; sfx.drum(); c.back = true; } }
+    else if (c.recover === undefined) { c.recover = b.phase === 2 ? 1.1 : 1.5; b.recover = c.recover; floatText(project(0.22, b.x).x, project(0.22, b.x).y - 120 * unit(), 'Winded! Strike now', '#FFE27A', 16); }
+    else if (b.z < 0.22 && c.recover > 0) b.z = Math.min(0.22, b.z + 1.2 * dt);   // stumbles back a little
+    else if (c.recover > 0) c.recover -= dt;   // winded: open to attack (extra damage)
     else { b.z += 0.55 * dt; if (b.z >= b.home) { b.z = b.home; b.charge = null; b.moveT = 1.2; } }
   }
   b.atkT -= dt;
@@ -1763,6 +1818,31 @@ function updateBoss(dt) {
   }
   const thresholds = [0.66, 0.33];
   if (b.summoned < 2 && b.hp < b.max * thresholds[b.summoned]) { b.summoned++; spawnDanav(B.minions[0], 0); spawnDanav(B.minions[1], 2); banner('He summons his danav!', '', 1400, 'boss'); }
+}
+
+const DARK = { a: 0, target: 0 };
+function drawDarkness() {   // Andhakasura's darkness: everything dims except a circle of light around the yoddha; warnings are redrawn on top
+  DARK.a += (DARK.target - DARK.a) * 0.04;
+  if (DARK.a < 0.02) return;
+  const p = WR.at || project(0, player.x), r = Math.min(W, H) * 0.42;
+  const g = ctx.createRadialGradient(p.x, p.y - 60 * unit(), r * 0.25, p.x, p.y - 60 * unit(), r);
+  g.addColorStop(0, 'rgba(6,2,16,0)'); g.addColorStop(1, `rgba(6,2,16,${0.82 * DARK.a})`);
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
+  for (const f of fires) if (f.warn > 0) drawWarn(f);
+  if (boss && !boss.dead) {   // his eyes still burn in the dark
+    const q = project(boss.z, boss.x), s = BOSSES[boss.kind].size * unit(), y = q.y - s * 1.68, rr = s * 0.12;
+    ctx.globalAlpha = DARK.a; for (const k of [-1, 1]) ctx.drawImage(glowSprite('255,40,30'), q.x + k * s * 0.09 - rr, y - rr, rr * 2, rr * 2); ctx.globalAlpha = 1;
+  }
+}
+function drawBossGhosts() {   // Raktabija splitting: two blood copies slide out and fade
+  const k = Math.max(0, boss.splitFx / 0.9), x0 = boss.x;
+  ctx.save(); ctx.globalAlpha = 0.45 * k;
+  for (const side of [-1, 1]) { boss.x = x0 + side * 0.65 * (1 - k); drawBoss(); }
+  boss.x = x0; ctx.restore();
+}
+function drawWinded() {   // Mahishasura winded: circling stars over his head
+  const q = project(boss.z, boss.x), s = BOSSES[boss.kind].size * unit() * 0.9, y = q.y - s * 2.05;
+  for (let k = 0; k < 4; k++) { const a = time * 5 + k * Math.PI / 2, x = q.x + Math.cos(a) * s * 0.35, yy = y + Math.sin(a) * s * 0.1; ctx.fillStyle = k % 2 ? '#FFE27A' : '#FFFFFF'; ctx.beginPath(); ctx.arc(x, yy, Math.max(2, s * 0.045), 0, Math.PI * 2); ctx.fill(); }
 }
 
 // ---------------- Render: the heavenly sky world ----------------
@@ -1810,9 +1890,10 @@ function render() {
   const all = danavs.map(d => ({ z: d.z, draw: () => drawDanav(d) }));
   for (const pk of pickups) all.push({ z: pk.z - 0.001, draw: () => drawPickup(pk) });
   for (const d of fallen) all.push({ z: d.z, draw: () => drawDanav(d) });
-  if (boss) all.push({ z: boss.z, draw: drawBoss });
+  if (boss) all.push({ z: boss.z, draw: () => { if (boss.splitFx > 0) drawBossGhosts(); drawBoss(); if (boss.recover > 0 && !boss.dead) drawWinded(); } });
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
+  drawDarkness();
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawWarrior(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
@@ -2717,6 +2798,7 @@ function drawDanav(d) {
   if (d.dead) { ctx.translate(0, -s * 0.25); ctx.rotate(d.lying * d.drop); }
   if (d.type === 'mayavi') ctx.globalAlpha = 0.75 + Math.sin(time * 8 + d.phase) * 0.2;
   if (t.ghost) ctx.globalAlpha = 0.62 + Math.sin(time * 5 + d.phase) * 0.15;
+  if (d.clone) { ctx.globalAlpha = 0.55 + 0.25 * Math.sin(time * 9 + d.phase) * Math.min(1, d.life); const cg = s * 1.1; ctx.drawImage(glowSprite('200,20,40'), -cg, -s - cg, cg * 2, cg * 2); }
   if (d.elite && !d.dead) {   // elite danav: a ring of golden fire
     const eg = ctx.createRadialGradient(0, -s * 0.95, s * 0.3, 0, -s * 0.95, s * 1.25); eg.addColorStop(0, 'rgba(255,210,90,0)'); eg.addColorStop(0.7, 'rgba(255,190,60,0.28)'); eg.addColorStop(1, 'rgba(255,150,40,0)');
     ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(0, -s * 0.95, s * 1.25, 0, Math.PI * 2); ctx.fill();
@@ -3689,7 +3771,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
