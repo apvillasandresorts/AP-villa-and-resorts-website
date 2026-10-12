@@ -716,6 +716,38 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .cutscene video { width: 100%; height: 100%; object-fit: contain; }
 @media (orientation: portrait) { .cutscene video { object-fit: cover; } }
 .cutscene__skip { position: absolute; right: 16px; bottom: 20px; background: rgba(15,18,30,.6); color: var(--gold-light); border: 1px solid rgba(201,162,79,.5); border-radius: 999px; padding: 10px 18px; font: 600 12px Inter, sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+.intro__row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.intro__row .intro__lb { margin: 0; }
+.cutscene { background: #000; }
+.cutscene.show { animation: cutIn .5s ease; }
+.cutscene.out { animation: cutOut .38s ease forwards; }
+@keyframes cutIn { from { opacity: 0; } }
+@keyframes cutOut { to { opacity: 0; } }
+.cutscene video { position: relative; z-index: 1; }
+.cutscene__bg { position: absolute !important; inset: -40px; width: calc(100% + 80px) !important; height: calc(100% + 80px) !important; object-fit: cover !important; filter: blur(28px) brightness(.55) saturate(1.2); z-index: 0 !important; }
+.cutscene__title { position: absolute; left: 0; right: 0; top: 9%; z-index: 3; text-align: center; pointer-events: none; opacity: 0; }
+.cutscene__title.show { animation: cutTitle 3.4s ease forwards; }
+.cutscene__title b { display: block; font: 600 clamp(30px, 8vw, 54px)/1.1 serif; color: #FFE7A8; text-shadow: 0 0 24px rgba(255,170,60,.9), 0 2px 10px #000; }
+.cutscene__title span { display: block; margin-top: 6px; font: 600 12px Inter, sans-serif; letter-spacing: 5px; text-transform: uppercase; color: #F4ECDB; text-shadow: 0 2px 8px #000; }
+@keyframes cutTitle { 0% { opacity: 0; transform: translateY(10px) scale(.96); letter-spacing: 0; } 15% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; } }
+.cutscene__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.12); z-index: 3; }
+.cutscene__bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #E8C77A, #FF9A3D); }
+.cutscene__skip { z-index: 4; }
+.cutscene__close { position: absolute; left: 16px; top: 16px; z-index: 4; width: 40px; height: 40px; border-radius: 50%; background: rgba(15,18,30,.6); color: #F4ECDB; border: 1px solid rgba(201,162,79,.5); font-size: 16px; cursor: pointer; }
+.titlecard { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); z-index: 33; text-align: center; pointer-events: none; opacity: 0; width: 92vw; }
+.titlecard.show { animation: tcIn 2.8s cubic-bezier(.2,.7,.2,1) forwards; }
+.titlecard small { display: block; font: 600 11px Inter, sans-serif; letter-spacing: 6px; text-transform: uppercase; color: #F4ECDB; opacity: .85; }
+.titlecard b { display: block; margin: 6px 0 4px; font: 700 clamp(44px, 12vw, 92px)/1 serif; color: #FFE7A8; text-shadow: 0 0 30px rgba(255,170,60,.85), 0 4px 18px rgba(0,0,0,.7); }
+.titlecard span { display: inline-block; font-family: 'Cormorant Garamond', serif; font-size: clamp(20px, 5vw, 30px); color: #F4D58D; padding: 2px 22px; border-top: 1px solid rgba(232,199,122,.7); border-bottom: 1px solid rgba(232,199,122,.7); }
+.titlecard.boss b { color: #FFB49A; text-shadow: 0 0 34px #C0101E, 0 4px 18px rgba(0,0,0,.8); }
+.titlecard.boss span { color: #FFD0C0; border-color: rgba(255,120,90,.7); }
+@keyframes tcIn { 0% { opacity: 0; transform: translateX(-50%) scale(1.25); filter: blur(8px); } 14% { opacity: 1; transform: translateX(-50%) scale(1); filter: none; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) scale(.98); } }
+.flash { position: absolute; inset: 0; z-index: 32; pointer-events: none; opacity: 0; }
+.flash.show { animation: flashIn .9s ease-out; }
+.flash.white { background: radial-gradient(circle, #fff, rgba(255,240,200,.6)); }
+.flash.gold { background: radial-gradient(circle, #FFF3C4, rgba(255,190,90,.55)); }
+.flash.red { background: radial-gradient(circle, rgba(255,80,60,.5), rgba(80,0,10,.7)); }
+@keyframes flashIn { 0% { opacity: .95; } 100% { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -738,7 +770,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="intro__title">Path to <em>Darshan</em></div>
       <div class="intro__sub">Danav block the path to the temple. Fight through 9 waves and 3 great asuras: Mahishasura, Raktabija and Andhakasura. Earn the Ashirvaad and divine weapons of the gods, gather boons on the bridge, grow from a little monk boy into a Siddha sadhu and ride Mahakal's fire-breathing lion. Win <b>5% to 30% off</b> your stay at AP Villas &amp; Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
-      <button class="intro__lb" id="lb-open" type="button">🏆 Top 10 Yoddhas</button>
+      <div class="intro__row"><button class="intro__lb" id="story-btn" type="button">🎬 Watch the story</button><button class="intro__lb" id="lb-open" type="button">🏆 Top 10 Yoddhas</button></div>
     </div>
     <div class="intro__diya"></div>
   </div>
@@ -863,7 +895,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   </div>
 
   <!-- Cut-scene video (skippable) -->
-  <div class="cutscene" id="cutscene"><video id="cut-video" playsinline preload="none"></video><button class="cutscene__skip" id="cut-skip" type="button">Skip ▸</button></div>
+  <div class="cutscene" id="cutscene"><video id="cut-bg" class="cutscene__bg" muted playsinline preload="none" aria-hidden="true"></video><video id="cut-video" playsinline preload="none"></video><div class="cutscene__title" id="cut-title"><b></b><span></span></div><div class="cutscene__bar"><i id="cut-bar"></i></div><button class="cutscene__close" id="cut-close" type="button" hidden aria-label="Close the story">✕</button><button class="cutscene__skip" id="cut-skip" type="button">Skip ▸</button></div>
+  <div class="titlecard" id="titlecard" aria-live="polite"><small></small><b></b><span></span></div>
+  <div class="flash" id="flash"></div>
 
   <!-- Leaderboard (from the intro) -->
   <div class="lbpanel" id="lbpanel" role="dialog" aria-label="Top 10 players">
@@ -1231,11 +1265,14 @@ function boardForm(root) {
   };
   fillBoard(list, null);
 }
+$('story-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); playStory.stop = false; playStory(0); });
 $('lb-open').addEventListener('click', e => { e.stopPropagation(); $('lbpanel').classList.add('show'); fillBoard($('lb-intro'), null); });
 $('lb-close').addEventListener('click', e => { e.stopPropagation(); $('lbpanel').classList.remove('show'); });
 
 // ---------------- Flow ----------------
 function startRun() {
+  music.start();
+  if (!startRun.tut) { startRun.tut = 1; setTimeout(() => $('tutorial').classList.add('show'), 2800); setTimeout(() => $('tutorial').classList.remove('show'), 6600); }   // after the act title card
   for (const k in triesAt) delete triesAt[k];
   slain = 0; score = 0; level = 0; weapon = 'bow'; bulk = 0; tej = 40; lakshmi = false; submitted = 0;
   retries = 0; hitsTaken = 0; runSecs = 0; bossesBeaten = 0; wavesCleared = 0; finalWon = false; C.won = false;
@@ -1244,6 +1281,7 @@ function startRun() {
 function startLevel(fresh) {
   const lv = LV();
   for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) { preloadBlessing(BLESS[LEVELS[i].bless]); break; }
+  prefetchAhead();
   if (lv.boss) { if (!triesAt[level]) playCutscene('boss-' + lv.boss, startBoss); else startBoss(); }
   else startWave(fresh);
 }
@@ -1256,7 +1294,9 @@ function startWave(fresh) {
   state = 'playing'; betweenWaves = 0;
   const firstOfAct = level === 0 || LEVELS[level - 1].act !== lv.act;
   const justBlessed = level > 0 && LEVELS[level - 1].bless;
-  banner('Wave ' + lv.waveNo, firstOfAct && level ? ACTS[lv.act] : lv.waveNo === 1 ? 'Stop the danav before they reach you!' : justBlessed ? 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc : AURA[level].name, 2400, firstOfAct && level ? 'act' : '');
+  if (firstOfAct) { titleCard(`Act ${lv.act + 1} of 3`, ACT_HI[lv.act], ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The '), 2800); CINE.barsT = 1; setTimeout(() => { CINE.barsT = 0; }, 2400); }
+  const showWave = () => banner('Wave ' + lv.waveNo, lv.waveNo === 1 ? 'Stop the danav before they reach you!' : justBlessed ? 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc : AURA[level].name, 2400);
+  if (firstOfAct) setTimeout(() => { if (state === 'playing' && LV() === lv) showWave(); }, 2700); else showWave();
   hud();
 }
 function waveCleared() {
@@ -1279,6 +1319,7 @@ function showAshirvaad(b) {
   state = 'blessing';
   const box = $('ashirvaad');
   box.classList.toggle('final', !!b.final);
+  screenFlash('gold');
   $('ash-img').src = b.src; $('ash-img').alt = b.name + ', ' + b.credit;
   $('ash-name').textContent = b.name;
   $('ash-title').textContent = b.title;
@@ -1319,15 +1360,16 @@ function startBoss() {
   state = 'playing'; betweenWaves = 0;
   $('boss-name').textContent = B.name;
   $('bossbar').classList.add('show');
-  banner(B.name + '!', tries ? "Mahakal's grace: he is weaker this time. " + B.intro : B.intro, 3400, 'boss');
+  CINE.introMsg = [B.name + '!', tries ? "Mahakal's grace: he is weaker this time. " + B.intro : B.intro];
   triesAt[level] = tries + 1;
-  sfx.roar(); shake = 0.6;
+  shake = 0.6; bossIntro();
   track('game_boss', { boss: B.name, tries: tries + 1 });
   hud();
 }
 function bossDown() {
   if (LV().final) return bossDefeated();
   const B = BOSSES[boss.kind], p = project(boss.z, boss.x);
+  killCam(p);
   for (let i = 0; i < 4; i++) setTimeout(() => { burst(p.x + (Math.random() - 0.5) * 120, p.y - 120 * Math.random(), i % 2 ? '#FFD27D' : '#FF6B3D', 34, 7); sfx.kill(); }, i * 170);
   addScore(800 * LV().bossNo); bossesBeaten++;
   boss.dead = true; boss.fall = 0; boss.charge = null; fires.length = 0; shots.length = 0; pickups.length = 0;
@@ -1343,6 +1385,7 @@ function bossDown() {
 }
 function bossDefeated() {   // the final battle: Andhakasura falls, then the grand celebration
   const p = project(boss.z, boss.x);
+  killCam(p);
   for (let i = 0; i < 5; i++) setTimeout(() => { burst(p.x + (Math.random() - 0.5) * 120, p.y - 120 * Math.random(), i % 2 ? '#FFD27D' : '#FF6B3D', 40, 7); sfx.kill(); }, i * 180);
   addScore(3000); bossesBeaten++; finalWon = true;
   boss.dead = true; boss.fall = 0; fires.length = 0; danavs.length = 0; shots.length = 0; pickups.length = 0;
@@ -1432,8 +1475,6 @@ $('enter-btn').addEventListener('click', () => {
   setTimeout(() => {
     $('intro').style.display = 'none';
     $('hud').classList.add('show');
-    $('tutorial').classList.add('show');
-    setTimeout(() => $('tutorial').classList.remove('show'), 3800);
     playCutscene('intro', startRun);
     track('game_start', {});
   }, 2200);
@@ -1734,6 +1775,7 @@ function render() {
   SKY.glory += ((state === 'celebrate' || state === 'victory' ? 1 : 0) - SKY.glory) * 0.03;
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
+  cineCamera();
   AMB.T = auraTint();
   drawSky(); drawAuraSky(); drawBridge(); drawLanes(); drawNearBats();
   for (const f of fires) if (f.warn > 0) drawWarn(f);
@@ -1759,6 +1801,7 @@ function render() {
   for (const r of rings) { fxCtx.strokeStyle = `rgba(${r.col},${Math.max(0, r.life)})`; fxCtx.lineWidth = (r.big ? 10 : 5) * r.life + 1; fxCtx.beginPath(); fxCtx.ellipse(r.x, r.y, r.r, r.r * 0.38, 0, 0, Math.PI * 2); fxCtx.stroke(); }
   for (const t of texts) { fxCtx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.5)); fxCtx.font = `600 ${t.size}px Inter, sans-serif`; fxCtx.textAlign = 'center'; fxCtx.fillStyle = '#000'; fxCtx.fillText(t.text, t.x + 1, t.y + 1); fxCtx.fillStyle = t.color; fxCtx.fillText(t.text, t.x, t.y); }
   fxCtx.globalAlpha = 1;
+  drawCineBars();
 }
 
 // Each act has its own sky: dawn, golden dusk, then the starry night of Mahakal.
@@ -2159,19 +2202,175 @@ function drawParade() {
 // Keys: intro, boss-mahisha, boss-rakta, boss-andhaka, bless-ganesh, bless-hanuman, bless-durga, bless-vishnu,
 // bless-lakshmi, bless-mahakal, finale. Prompts to make them: docs/game-video-prompts.md. Each plays once per device and can be skipped.
 const CUTSCENES = Object.fromEntries(["intro","boss-mahisha","boss-rakta","boss-andhaka","bless-ganesh","bless-hanuman","bless-durga","bless-vishnu","bless-lakshmi","bless-mahakal","finale"].map(k => [k, { portrait: 'videos/game/' + k + '.mp4' }]));   // 9:16 clips made in Google Flow (Veo 3.1)
-function playCutscene(key, done) {
+const CUT_TITLES = { intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], finale: ['हर हर महादेव', 'Victory'] };
+let cutTok = 0;
+function playCutscene(key, done, opts = {}) {
   const e = CUTSCENES[key], tall = innerHeight > innerWidth;
   const src = typeof e === 'string' ? e : e ? (tall ? e.portrait || e.landscape : e.landscape || e.portrait) : null;
-  if (!src || store.get('mahakal_seen_' + key, '')) { done(); return; }
-  store.set('mahakal_seen_' + key, '1');
-  const box = $('cutscene'), v = $('cut-video');
-  state = 'cutscene';
+  if (!src || (!opts.force && store.get('mahakal_seen_' + key, ''))) { done(); return; }
+  if (!opts.force) store.set('mahakal_seen_' + key, '1');
+  const box = $('cutscene'), v = $('cut-video'), bg = $('cut-bg'), tok = ++cutTok;
+  if (state !== 'intro') state = 'cutscene';
   let ended = false;
-  const end = () => { if (ended) return; ended = true; v.pause(); box.classList.remove('show'); v.removeAttribute('src'); v.load(); last = performance.now(); done(); };
-  v.onended = end; v.onerror = end; $('cut-skip').onclick = e => { e.stopPropagation(); end(); };
-  v.src = src; box.classList.add('show'); v.muted = muted;
+  const end = () => {
+    if (ended) return; ended = true; v.pause(); bg.pause();
+    box.classList.add('out');
+    setTimeout(() => { if (tok !== cutTok) return; box.classList.remove('show', 'out'); v.removeAttribute('src'); v.load(); bg.removeAttribute('src'); bg.load(); }, 380);
+    last = performance.now(); done();
+  };
+  v.onended = end; v.onerror = end;
+  v.ontimeupdate = () => { $('cut-bar').style.width = (100 * v.currentTime / (v.duration || 8)) + '%'; };
+  $('cut-skip').textContent = opts.story !== undefined && opts.story < STORY.length - 1 ? 'Next ▸' : 'Skip ▸';
+  $('cut-skip').onclick = ev => { ev.stopPropagation(); end(); };
+  $('cut-close').hidden = opts.story === undefined;
+  $('cut-close').onclick = ev => { ev.stopPropagation(); playStory.stop = true; end(); };
+  const T = CUT_TITLES[key] || ['', ''], ti = $('cut-title');
+  ti.querySelector('b').textContent = T[0]; ti.querySelector('span').textContent = T[1];
+  ti.className = 'cutscene__title'; void ti.offsetWidth; ti.className = 'cutscene__title show';
+  v.poster = src.replace(/\.mp4$/, '.jpg'); v.src = src; $('cut-bar').style.width = '0';
+  if (!tall) { bg.src = src; bg.play().catch(() => {}); }
+  box.classList.remove('out'); box.classList.add('show'); v.muted = muted;
   v.play().catch(() => { v.muted = true; v.play().catch(end); });
-  track('game_cutscene', { key });
+  track('game_cutscene', { key, story: opts.story !== undefined });
+}
+
+// ---------------- Cinema: letterbox, camera, title cards, slow-motion kill-cam ----------------
+const CINE = { bars: 0, barsT: 0, zoom: 1, zoomT: 1, fx: 0, fy: 0, slow: 0, flash: 0, introT: 0, introLen: 2.8 };
+const BOSS_HI = { mahisha: 'महिषासुर', rakta: 'रक्तबीज', andhaka: 'अंधकासुर' };
+const ACT_HI = ['प्रभात', 'संध्या', 'महानिशा'];
+function titleCard(small, big, sub, ms = 2600, cls = '') {
+  const t = $('titlecard');
+  t.querySelector('small').textContent = small; t.querySelector('b').textContent = big; t.querySelector('span').textContent = sub || '';
+  t.className = 'titlecard'; void t.offsetWidth; t.className = 'titlecard show ' + cls;
+  clearTimeout(titleCard.t); titleCard.t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function screenFlash(kind) { const f = $('flash'); f.className = 'flash'; void f.offsetWidth; f.className = 'flash show ' + (kind || ''); }
+// a boss walks out of the storm: black bars slide in, the camera pushes in on him and his name is carved across the screen
+function bossIntro() {
+  const B = BOSSES[boss.kind], lv = LV();
+  state = 'bossintro'; CINE.introT = 0; CINE.introLen = (triesAt[level] || 0) > 1 ? 1.6 : 2.8;
+  CINE.barsT = 1; CINE.zoomT = 1.32;
+  titleCard(`Boss ${lv.bossNo} of ${TOTAL_BOSSES}`, BOSS_HI[boss.kind], B.name, CINE.introLen * 1000, 'boss');
+  sfx.roar(); setTimeout(sfx.thunder, 250); screenFlash('red');
+  music.sting('boss');
+}
+function bossIntroUpdate(dt) {
+  time += dt; CINE.introT += dt;
+  boss.enter = Math.min(1, boss.enter + dt * 0.6);
+  const p = project(boss.z, boss.x); CINE.fx = p.x; CINE.fy = p.y - 100 * unit();
+  if (CINE.introT > CINE.introLen - 0.6) { CINE.zoomT = 1; CINE.barsT = 0; }
+  if (CINE.introT >= CINE.introLen) { state = 'playing'; last = performance.now(); banner(CINE.introMsg[0], CINE.introMsg[1], 3000, 'boss'); }
+  for (let i = parts.length - 1; i >= 0; i--) { const q = parts[i]; q.x += q.vx; q.y += q.vy; q.vy += 0.15; q.life -= dt * 1.6; if (q.life <= 0) parts.splice(i, 1); }
+}
+// slow motion and a push-in when a boss falls
+function killCam(p) {
+  CINE.slow = 1.5; CINE.zoomT = 1.28; CINE.barsT = 1; CINE.fx = p.x; CINE.fy = p.y - 90 * unit();
+  screenFlash('white'); music.sting('win');
+  setTimeout(() => { CINE.zoomT = 1; CINE.barsT = 0; }, 1700);
+}
+function cineStep(dt) {
+  CINE.bars += (CINE.barsT - CINE.bars) * Math.min(1, dt * 5);
+  CINE.zoom += (CINE.zoomT - CINE.zoom) * Math.min(1, dt * 3);
+  if (CINE.slow > 0) CINE.slow -= dt;
+}
+const timeScale = () => CINE.slow > 0 ? 0.28 : 1;
+function cineCamera() {
+  if (Math.abs(CINE.zoom - 1) < 0.002) return;
+  const fx = CINE.fx || W / 2, fy = CINE.fy || H / 2, k = (CINE.zoom - 1) / 0.32;   // keep the focus point but drift toward the centre
+  ctx.translate(fx, fy); ctx.scale(CINE.zoom, CINE.zoom); ctx.translate(-fx + (W / 2 - fx) * 0.15 * k, -fy + (H / 2 - fy) * 0.1 * k);
+}
+function drawCineBars() {
+  if (CINE.bars < 0.01) return;
+  const h = Math.round(H * 0.1 * CINE.bars);
+  fxCtx.fillStyle = '#000'; fxCtx.fillRect(0, 0, W, h); fxCtx.fillRect(0, H - h, W, h);
+  fxCtx.fillStyle = 'rgba(232,199,122,0.55)'; fxCtx.fillRect(0, h - 1, W, 1); fxCtx.fillRect(0, H - h, W, 1);
+}
+
+// ---------------- Music: a tanpura drone that grows into temple drums as the journey darkens (Web Audio, no files) ----------------
+const music = {
+  on: false, master: null, nextPluck: 0, nextBeat: 0, step: 0, beat: 0,
+  start() {
+    if (this.on || !audioCtx) return;
+    this.on = true;
+    this.master = audioCtx.createGain(); this.master.gain.value = 0; this.master.connect(audioCtx.destination);
+    this.nextPluck = this.nextBeat = audioCtx.currentTime + 0.2;
+    this.timer = setInterval(() => this.tick(), 120);
+  },
+  level() {   // 0 calm … 1 full battle
+    if (state === 'intro' || state === 'gameover') return 0;
+    if (state === 'won' || state === 'celebrate' || state === 'victory') return 0.55;
+    return Math.min(1, intensity() * 0.75 + (boss && !boss.dead ? 0.35 : 0));
+  },
+  tick() {
+    const a = audioCtx, t = a.currentTime;
+    const want = muted || paused || userPaused || state === 'cutscene' || state === 'blessing' ? 0 : 0.55;
+    this.master.gain.setTargetAtTime(want, t, 0.4);
+    if (want === 0) { this.nextPluck = Math.max(this.nextPluck, t + 0.1); this.nextBeat = Math.max(this.nextBeat, t + 0.1); return; }
+    const L = this.level(), SA = 138.59;   // Sa = C#3
+    // tanpura: Pa, Sa', Sa', Sa (low), a slow endless cycle
+    const notes = [SA * 1.5 / 2, SA, SA, SA / 2];
+    while (this.nextPluck < t + 0.3) { this.pluck(notes[this.step % 4], this.nextPluck); this.step++; this.nextPluck += 0.85; }
+    // drums join from the second act and quicken with every level and in boss fights
+    if (L > 0.2) {
+      const bpm = 72 + 60 * L, gap = 60 / bpm;
+      while (this.nextBeat < t + 0.3) {
+        const b = this.beat % 8;
+        if (b === 0 || b === 3 || b === 6) this.drum(this.nextBeat, 0.16 + 0.14 * L, 70);
+        if (L > 0.5 && (b === 2 || b === 5 || b === 7)) this.drum(this.nextBeat, 0.06 + 0.05 * L, 180);
+        if (L > 0.8 && b % 2 === 1) this.damru(this.nextBeat, 0.03);
+        this.beat++; this.nextBeat += gap / 2;
+      }
+    } else this.nextBeat = t + 0.1;
+  },
+  pluck(f, at) {
+    const a = audioCtx, g = a.createGain(), lp = a.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1600; lp.Q.value = 0.7;
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.05, at + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, at + 3.2);
+    for (const [m, type, v] of [[1, 'sawtooth', 0.6], [2.002, 'triangle', 0.3], [3.01, 'sine', 0.15]]) {
+      const o = a.createOscillator(), og = a.createGain(); o.type = type; o.frequency.value = f * m; og.gain.value = v;
+      o.connect(og); og.connect(lp); o.start(at); o.stop(at + 3.3);
+    }
+    lp.connect(g); g.connect(this.master);
+  },
+  drum(at, vol, f) {
+    const a = audioCtx, o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f * 1.8, at); o.frequency.exponentialRampToValueAtTime(f, at + 0.12);
+    g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.35);
+    o.connect(g); g.connect(this.master); o.start(at); o.stop(at + 0.4);
+  },
+  damru(at, vol) {
+    const a = audioCtx, b = a.createBuffer(1, a.sampleRate * 0.06, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = 'bandpass'; f.frequency.value = 2200; g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(at);
+  },
+  sting(kind) {   // a short musical accent for big moments
+    if (!this.on || muted) return;
+    const a = audioCtx, t = a.currentTime + 0.02, notes = kind === 'boss' ? [69.3, 65.4, 61.7] : [277.2, 349.2, 415.3, 554.4];
+    notes.forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.type = kind === 'boss' ? 'sawtooth' : 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t + i * 0.12); g.gain.exponentialRampToValueAtTime(kind === 'boss' ? 0.06 : 0.05, t + i * 0.12 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 1.4); o.connect(g); g.connect(a.destination); o.start(t + i * 0.12); o.stop(t + i * 0.12 + 1.5); });
+  },
+};
+
+// ---------------- Story mode: watch every cut-scene in order from the start screen ----------------
+const STORY = ['intro', 'bless-ganesh', 'bless-hanuman', 'boss-mahisha', 'bless-durga', 'bless-vishnu', 'boss-rakta', 'bless-lakshmi', 'bless-mahakal', 'boss-andhaka', 'finale'];
+function playStory(i = 0) {
+  if (i >= STORY.length) return;
+  playCutscene(STORY[i], () => { if (!playStory.stop) playStory(i + 1); }, { force: true, story: i });
+}
+// warm the cache for the next clip while the player is busy fighting, so it starts instantly
+const prefetched = new Set();
+function prefetchClip(key) {
+  const e = CUTSCENES[key]; if (!e || prefetched.has(key) || store.get('mahakal_seen_' + key, '')) return;
+  const src = innerHeight > innerWidth ? e.portrait || e.landscape : e.landscape || e.portrait;
+  prefetched.add(key); fetch(src).catch(() => {});
+}
+function prefetchAhead() {
+  for (let i = level; i < Math.min(LEVELS.length, level + 2); i++) {
+    const l = LEVELS[i];
+    if (l.boss) prefetchClip('boss-' + l.boss);
+    if (l.bless) prefetchClip('bless-' + l.bless);
+    if (l.final) prefetchClip('finale');
+  }
 }
 
 // ---------------- Grand celebration ----------------
@@ -3213,7 +3412,9 @@ function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
 let last = performance.now(), frozen = false;
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!paused && !userPaused && !frozen && state === 'playing') update(dt);
+  cineStep(dt);
+  if (!paused && !userPaused && !frozen && state === 'playing') update(dt * timeScale());
+  else if (!paused && !userPaused && !frozen && state === 'bossintro') bossIntroUpdate(dt);
   else if (!paused && !frozen && (state === 'won' || state === 'celebrate' || state === 'victory')) celebUpdate(dt);
   if (!paused && !userPaused && !frozen && state !== 'intro') updateAmbient(dt);
   if (W < 10 || H < 10) resize();
@@ -3223,7 +3424,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
