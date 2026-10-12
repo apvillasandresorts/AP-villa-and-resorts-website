@@ -1809,7 +1809,7 @@ function render() {
   for (const s of shots) drawShot(s);
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawPowerFx(false); drawWarrior(); drawPowerFx(true);
-  drawWeather();
+  drawWeather(); drawEnvFore();
   const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - 0.08 * intensity()), W / 2, H / 2, Math.max(W, H) * 0.8);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(${lerpRGB('40,10,50', AMB.T.tint, 0.25)},${0.28 + 0.22 * intensity() + 0.25 * SKY.mood})`);
   ctx.fillStyle = v; ctx.fillRect(-20, -20, W + 40, H + 40);
@@ -1909,7 +1909,7 @@ function drawSky() {
     SKY.bolt.t -= 1 / 60; ctx.strokeStyle = `rgba(255,240,255,${SKY.bolt.t * 4})`; ctx.lineWidth = 2.5; ctx.shadowColor = '#E8C8FF'; ctx.shadowBlur = 14;
     ctx.beginPath(); let x = SKY.bolt.x, y = 0; ctx.moveTo(x, y); while (y < hy - 40) { x += (Math.random() - 0.5) * 40; y += 25 + Math.random() * 25; ctx.lineTo(x, y); } ctx.stroke(); ctx.shadowBlur = 0;
   }
-  drawTemple();
+  drawEnvFar(); drawTemple(); drawEnvHaze();
 }
 function drawTemple() {
   // a glowing sandstone temple (shikhara, mandapa domes, amalaka, kalash, flag) standing on a cloud
@@ -1983,6 +1983,7 @@ function drawBridge() {
   // golden trims
   ctx.strokeStyle = 'rgba(240,205,120,0.9)'; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(d2.x, d2.y); ctx.moveTo(b.x, b.y); ctx.lineTo(c2.x, c2.y); ctx.stroke();
+  drawEnvMid();
 }
 function torch(x, y, s) {
   // a small golden pillar with a diya on top
@@ -2013,6 +2014,207 @@ function glowSprite(rgb) {
   gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(0.35, `rgba(${rgb},0.55)`); gr.addColorStop(1, `rgba(${rgb},0)`);
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64); GLOW.set(rgb, c); return c;
 }
+// ---------------- Environment: layered temple world ----------------
+// Visual themes follow the existing acts (no change to wave order):
+//   act 0 · waves 1–3 + Mahishasura  → the ancient temple approach
+//   act 1 · waves 4–6 + Raktabija    → the sacred arena / ruined courtyard
+//   act 2 · waves 7–9 + Andhakasura  → the final sanctum approach
+// Layers (back to front): sky + peaks (existing) → distant temple silhouettes + light rays → main temple (existing)
+// → horizon haze → mid-ground pillars and gateways beside the bridge → bridge (existing) → drifting mist
+// → [player, enemies, attacks, pickups] → top garland (decor only, outside the play area).
+// Everything static is pre-rendered once per act and screen size; nothing here touches lanes or hit detection.
+// ENV_ART: art slots linked to docs/game-assets/asset-manifest.json. The manifest has these environments only as
+// video, so src stays null and the procedural layers are used. Set src to a still image path to use real art.
+const ENV_ART = {
+  0: { manifest: 'env.bridge-temple-concept.b', src: null },
+  1: { manifest: 'env.temple-production.a', src: null },
+  2: { manifest: 'env.act-variations.a', src: null },
+};
+const ENV = { cache: new Map(), img: {}, key: '' };
+function envImage(act) {   // loads a still once, on demand; on error the procedural layer stays
+  const a = ENV_ART[act];
+  if (!a || !a.src || a.state) return a && a.state === 'ok' ? a.im : null;
+  a.state = 'loading'; a.im = new Image(); a.im.decoding = 'async';
+  a.im.onload = () => { a.state = 'ok'; }; a.im.onerror = () => { a.state = 'failed'; };
+  a.im.src = a.src; return null;
+}
+function envSprite(key, w, h, paint) {   // cached offscreen canvas at the current quality's pixel density
+  const k = key + '|' + Math.round(w) + 'x' + Math.round(h) + '|' + Q.dpr;
+  let c = ENV.cache.get(k);
+  if (c) return c;
+  if (ENV.cache.size > 40) ENV.cache.clear();
+  c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w * Q.dpr)); c.height = Math.max(1, Math.ceil(h * Q.dpr));
+  const g = c.getContext('2d'); g.setTransform(Q.dpr, 0, 0, Q.dpr, 0, 0); paint(g, w, h);
+  ENV.cache.set(k, c); return c;
+}
+const ENV_PAL = [
+  { far: '#9C8AC8', farB: '#B9A6DA', glow: '255,226,170', ray: '255,236,190', haze: '255,226,236', pillar: ['#D8A374', '#9E6A48', '#F2C98E'], flag: '#E2702A' },
+  { far: '#6E3A52', farB: '#8E4A5E', glow: '255,120,70', ray: '255,170,110', haze: '255,180,150', pillar: ['#9C6A58', '#5E3A34', '#C48A6A'], flag: '#B5121B' },
+  { far: '#26285A', farB: '#34336E', glow: '255,200,112', ray: '200,220,255', haze: '120,110,190', pillar: ['#4A4670', '#26233F', '#7A72A8'], flag: '#E8C77A' },
+];
+let envSeed = 1;
+const envRnd = () => ((envSeed = (envSeed * 9301 + 49297) % 233280) / 233280);
+// distant temple silhouettes on both sides of the horizon
+function paintFar(g, w, h, act) {
+  const P = ENV_PAL[act]; envSeed = 7 + act * 13;
+  for (const side of [-1, 1]) {
+    for (let k = 0; k < 6; k++) {
+      const t = k / 5, x = w / 2 + side * w * (0.2 + 0.3 * t + 0.03 * envRnd()), s = h * (0.2 + 0.2 * (1 - t)) * (0.85 + 0.3 * envRnd());
+      g.globalAlpha = 0.5 + 0.35 * (1 - t); g.fillStyle = k % 2 ? P.far : P.farB;
+      if (act === 0) {   // shikhara temples with flags
+        g.beginPath(); g.moveTo(x - s * 0.22, h); g.bezierCurveTo(x - s * 0.24, h - s * 0.55, x - s * 0.12, h - s * 0.9, x - s * 0.04, h - s);
+        g.lineTo(x + s * 0.04, h - s); g.bezierCurveTo(x + s * 0.12, h - s * 0.9, x + s * 0.24, h - s * 0.55, x + s * 0.22, h); g.fill();
+        g.fillRect(x - s * 0.42, h - s * 0.28, s * 0.84, s * 0.28);
+        g.beginPath(); g.ellipse(x, h - s * 1.02, s * 0.07, s * 0.04, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = P.flag; g.beginPath(); g.moveTo(x, h - s * 1.06); g.lineTo(x, h - s * 1.28); g.lineTo(x + side * s * 0.14, h - s * 1.22); g.lineTo(x, h - s * 1.17); g.fill();
+      } else if (act === 1) {   // ruined colonnade and broken arches
+        const n = 4 + Math.floor(envRnd() * 3), span = s * 0.9;
+        for (let q = 0; q < n; q++) { const px = x - span / 2 + q * span / (n - 1), ph = s * (0.45 + 0.55 * envRnd()) * (q % 3 === 2 ? 0.55 : 1); g.fillRect(px - s * 0.035, h - ph, s * 0.07, ph); g.fillRect(px - s * 0.06, h - ph, s * 0.12, s * 0.04); }
+        if (envRnd() > 0.35) { g.fillRect(x - span / 2, h - s * 0.98, span * (0.5 + 0.4 * envRnd()), s * 0.07); }
+        g.beginPath(); g.arc(x + side * span * 0.15, h - s * 0.45, s * 0.18, Math.PI, 0); g.lineWidth = s * 0.05; g.strokeStyle = g.fillStyle; g.stroke();
+      } else {   // gopuram towers with rows of lamps
+        const tiers = 5, bw = s * 0.5;
+        for (let q = 0; q < tiers; q++) { const tw = bw * (1 - q * 0.15), ty = h - s * 0.18 * (q + 1); g.fillRect(x - tw / 2, ty, tw, s * 0.18 + 1); }
+        g.beginPath(); g.moveTo(x - bw * 0.2, h - s * 0.9); g.quadraticCurveTo(x, h - s * 1.1, x + bw * 0.2, h - s * 0.9); g.fill();
+        g.globalAlpha = 0.9; g.fillStyle = `rgb(${P.glow})`;
+        for (let q = 0; q < tiers; q++) { const tw = bw * (1 - q * 0.15), ty = h - s * 0.18 * q - s * 0.09; for (let d = 0; d < 4; d++) g.fillRect(x - tw * 0.35 + d * tw * 0.23, ty, Math.max(1, s * 0.012), Math.max(1, s * 0.012)); }
+      }
+    }
+    // the cloud bank they stand on
+    g.globalAlpha = 1;
+    const cg = g.createLinearGradient(0, h - h * 0.12, 0, h); cg.addColorStop(0, `rgba(${P.haze},0)`); cg.addColorStop(1, `rgba(${P.haze},0.55)`);
+    g.fillStyle = cg; g.fillRect(side < 0 ? 0 : w / 2, h - h * 0.12, w / 2, h * 0.12);
+  }
+  g.globalAlpha = 1;
+}
+// a fan of soft light rays (pre-drawn once per act)
+function paintRays(g, w, h, act) {
+  const P = ENV_PAL[act], cx = w / 2, cy = h / 2;
+  for (let k = 0; k < 9; k++) {
+    const a = -Math.PI / 2 + (k - 4) * 0.28, len = h * 0.5;
+    const gr = g.createLinearGradient(cx, cy, cx + Math.cos(a) * len, cy + Math.sin(a) * len);
+    gr.addColorStop(0, `rgba(${P.ray},0.55)`); gr.addColorStop(1, `rgba(${P.ray},0)`);
+    g.fillStyle = gr; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a - 0.06) * len, cy + Math.sin(a - 0.06) * len); g.lineTo(cx + Math.cos(a + 0.06) * len, cy + Math.sin(a + 0.06) * len); g.closePath(); g.fill();
+  }
+}
+// a carved pillar for each act (intact sandstone · broken ruin · dark stone with a lamp)
+function paintPillar(g, w, h, act) {
+  const [base, dark, light] = ENV_PAL[act].pillar, cx = w / 2;
+  const gr = g.createLinearGradient(cx - w * 0.3, 0, cx + w * 0.3, 0); gr.addColorStop(0, dark); gr.addColorStop(0.45, light); gr.addColorStop(1, dark);
+  const top = act === 1 ? h * 0.28 : h * 0.12;
+  g.fillStyle = gr; g.fillRect(cx - w * 0.22, top + h * 0.06, w * 0.44, h - top - h * 0.12);   // shaft
+  g.fillStyle = dark; g.fillRect(cx - w * 0.36, h - h * 0.08, w * 0.72, h * 0.08); g.fillStyle = base; g.fillRect(cx - w * 0.3, h - h * 0.12, w * 0.6, h * 0.05);   // plinth
+  g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 1;
+  for (let q = 1; q < 6; q++) { const y = top + h * 0.06 + q * (h - top - h * 0.18) / 6; g.beginPath(); g.moveTo(cx - w * 0.22, y); g.lineTo(cx + w * 0.22, y); g.stroke(); }   // carved bands
+  g.beginPath(); g.moveTo(cx - w * 0.07, top + h * 0.08); g.lineTo(cx - w * 0.07, h - h * 0.12); g.moveTo(cx + w * 0.07, top + h * 0.08); g.lineTo(cx + w * 0.07, h - h * 0.12); g.stroke();   // flutes
+  if (act === 1) {   // broken top
+    g.fillStyle = gr; g.beginPath(); g.moveTo(cx - w * 0.22, top + h * 0.06); g.lineTo(cx - w * 0.1, top - h * 0.04); g.lineTo(cx + w * 0.02, top + h * 0.03); g.lineTo(cx + w * 0.12, top - h * 0.07); g.lineTo(cx + w * 0.22, top + h * 0.06); g.fill();
+  } else {   // capital + kalash
+    g.fillStyle = base; g.fillRect(cx - w * 0.34, top, w * 0.68, h * 0.06);
+    g.beginPath(); g.ellipse(cx, top - h * 0.02, w * 0.2, h * 0.03, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = act === 2 ? '#3A3460' : '#E8C77A'; g.beginPath(); g.ellipse(cx, top - h * 0.06, w * 0.1, h * 0.03, 0, 0, Math.PI * 2); g.fill();
+  }
+}
+// a toran gateway that the bridge passes through (intact · ruined · sanctum gate)
+function paintGate(g, w, h, act) {
+  const [base, dark, light] = ENV_PAL[act].pillar, pw = w * 0.06;
+  const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, dark); gr.addColorStop(0.5, light); gr.addColorStop(1, dark);
+  g.fillStyle = gr;
+  for (const x of [0, w - pw]) g.fillRect(x, h * 0.18, pw, h * 0.82);
+  if (act === 1) {   // a broken lintel, one end fallen
+    g.beginPath(); g.moveTo(0, h * 0.12); g.lineTo(w * 0.55, h * 0.1); g.lineTo(w * 0.5, h * 0.2); g.lineTo(0, h * 0.22); g.fill();
+    g.fillRect(w - pw * 1.6, h * 0.86, pw * 2, h * 0.14);
+  } else {
+    g.fillRect(-pw * 0.4, h * 0.08, w + pw * 0.8, h * 0.1);
+    g.fillStyle = base; g.fillRect(pw, h * 0.18, w - pw * 2, h * 0.025);
+    g.beginPath(); g.moveTo(w * 0.3, h * 0.08); g.quadraticCurveTo(w / 2, -h * 0.06, w * 0.7, h * 0.08); g.fill();
+    g.fillStyle = act === 2 ? '#E8C77A' : '#F2C98E';
+    for (const x of [0.06, 0.5, 0.94]) { g.beginPath(); g.ellipse(w * x, h * 0.06 - (x === 0.5 ? h * 0.06 : 0), w * 0.014, h * 0.025, 0, 0, Math.PI * 2); g.fill(); }   // kalash finials
+    g.strokeStyle = act === 2 ? 'rgba(255,200,112,0.85)' : 'rgba(226,112,42,0.85)'; g.lineWidth = Math.max(1, h * 0.008);   // hanging marigold strings
+    for (let q = 0; q < 9; q++) { const x = pw + (w - pw * 2) * (q + 0.5) / 9; g.beginPath(); g.moveTo(x, h * 0.205); g.lineTo(x, h * 0.205 + h * (0.05 + 0.03 * (q % 3))); g.stroke(); }
+  }
+}
+// marigold and mango-leaf toran along the top edge (decor, outside the play area)
+function paintToran(g, w, h) {
+  const n = Math.max(8, Math.round(w / 46));
+  for (let k = 0; k < n; k++) {
+    const x0 = k * w / n, x1 = (k + 1) * w / n;
+    for (let j = 0; j <= 8; j++) {
+      const t = j / 8, x = x0 + (x1 - x0) * t, y = h * 0.18 + Math.sin(Math.PI * t) * h * 0.38;
+      g.fillStyle = j % 2 ? '#FFB020' : '#FF7A1A'; g.beginPath(); g.arc(x, y, h * 0.09, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = '#2F7A3A'; g.beginPath(); g.ellipse(x0, h * 0.42, h * 0.07, h * 0.22, 0, 0, Math.PI * 2); g.fill();   // mango leaf
+    g.fillStyle = '#E8C77A'; g.beginPath(); g.arc(x0, h * 0.14, h * 0.06, 0, Math.PI * 2); g.fill();
+  }
+}
+const envAct = () => Math.max(0, Math.min(2, Math.round(SKY.act)));
+// called from drawSky, before the main temple
+function drawEnvFar() {
+  const hy = HORIZON_Y * H, m = SKY.mood, a0 = Math.floor(SKY.act), a1 = Math.min(2, a0 + 1), t = SKY.act - a0;
+  for (const [act, w] of [[a0, 1 - t], [a1, t]]) {
+    if (w < 0.02) continue;
+    const img = envImage(act);
+    ctx.globalAlpha = w * (1 - 0.35 * m);
+    if (img) {   // real environment art, cover-cropped into the sky band
+      const s = Math.max(W / img.naturalWidth, (hy + 40) / img.naturalHeight), iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+      ctx.drawImage(img, (W - iw) / 2, hy + 40 - ih, iw, ih);
+    } else ctx.drawImage(envSprite('far' + act, W, hy, (g, ww, hh) => paintFar(g, ww, hh, act)), 0, 0, W, hy);
+  }
+  ctx.globalAlpha = 1;
+  if (Q.level < 2) {   // slow divine rays behind the temple
+    const act = envAct(), u = unit(), r = Math.min(W, H) * 0.9, sp = envSprite('rays' + act, 512, 512, (g, ww, hh) => paintRays(g, ww, hh, act));
+    ctx.save(); ctx.translate(W / 2, hy - 70 * u); ctx.rotate(Math.sin(time * 0.15) * 0.08);
+    ctx.globalAlpha = (act === 1 ? 0.16 : 0.22) * (1 - 0.6 * m) * (state === 'intro' ? 0 : 1);
+    ctx.drawImage(sp, -r, -r, r * 2, r * 2); ctx.restore(); ctx.globalAlpha = 1;
+  }
+}
+// called from drawSky, after the main temple: haze where the world meets the clouds
+function drawEnvHaze() {
+  const hy = HORIZON_Y * H, u = unit(), P = ENV_PAL[envAct()];
+  const hg = ctx.createLinearGradient(0, hy - 46 * u, 0, hy + 30 * u);
+  hg.addColorStop(0, `rgba(${P.haze},0)`); hg.addColorStop(0.6, `rgba(${P.haze},${0.32 * (1 - 0.5 * SKY.mood)})`); hg.addColorStop(1, `rgba(${P.haze},0)`);
+  ctx.fillStyle = hg; ctx.fillRect(0, hy - 46 * u, W, 76 * u);
+}
+// called from drawBridge, after the bridge surface and before any gameplay object
+function drawEnvMid() {
+  const act = envAct(), u = unit(), m = SKY.mood;
+  // pillars beside the bridge, moving with the stone slabs
+  const pil = envSprite('pillar' + act, 40, 200, (g, ww, hh) => paintPillar(g, ww, hh, act)), NP = Q.level >= 2 ? 5 : 8;
+  for (let i = 0; i < NP; i++) {
+    const z = 1 - (((i / NP) + time * 0.12) % 1);
+    if (z < 0.12) continue;
+    const fade = Math.min(1, (z - 0.12) * 5) * Math.min(1, (1 - z) * 6);
+    for (const side of [-1, 1]) {
+      const p = project(z, side * 2.05), ph = 150 * p.scale * u, pw = ph * 0.2;
+      ctx.globalAlpha = fade * (1 - 0.3 * m); ctx.drawImage(pil, p.x - pw / 2, p.y - ph, pw, ph);
+      if (act === 2) { const r = ph * 0.12; ctx.globalAlpha = fade * (0.7 + 0.3 * Math.sin(time * 9 + i)); ctx.drawImage(glowSprite('255,200,112'), p.x - r, p.y - ph * 0.95 - r, r * 2, r * 2); }
+    }
+  }
+  // one gateway at a time passes overhead, fading before it reaches the player
+  const gz = 1 - ((time * 0.12 * 0.5 + 0.35) % 1);
+  if (gz > 0.3) {
+    const l = project(gz, -2.05), r = project(gz, 2.05), gw = r.x - l.x, gh = 240 * l.scale * u;
+    const gate = envSprite('gate' + act, 400, 260, (g, ww, hh) => paintGate(g, ww, hh, act));
+    ctx.globalAlpha = Math.min(1, (gz - 0.3) * 4) * Math.min(1, (1 - gz) * 6) * (1 - 0.3 * m);
+    ctx.drawImage(gate, l.x - gw * 0.03, l.y - gh, gw * 1.06, gh);
+  }
+  // drifting mist low over the far half of the bridge (under every gameplay object)
+  if (Q.level < 2) {
+    const hy = HORIZON_Y * H, P = ENV_PAL[act];
+    for (let k = 0; k < 3; k++) {
+      const sp = SKY.sprites[k], w = W * 0.7, h = w * 0.22, x = ((time * (0.012 + k * 0.006) + k * 0.37) % 1.4 - 0.2) * W - w / 2, y = hy + H * (0.04 + k * 0.06);
+      ctx.globalAlpha = (0.16 - k * 0.03) * (1 - 0.5 * m) * (act === 2 ? 0.7 : 1); ctx.drawImage(sp, x, y, w, h);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// called at the end of the scene, before the vignette: decor in the top strip only
+function drawEnvFore() {
+  if (state === 'intro') return;
+  const h = Math.max(18, Math.min(34, H * 0.045));
+  ctx.globalAlpha = 0.92; ctx.drawImage(envSprite('toran', W, h, paintToran), 0, Math.sin(time * 1.2) * 0.8, W, h); ctx.globalAlpha = 1;
+}
+
 // ---------------- Level auras: every level has its own look, and the dread grows as you go ----------------
 // tint: colour washed over the sky · fx: weather · bats / witches: how many haunt the background · flame: diya colours on the bridge
 const AURA = [
