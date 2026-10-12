@@ -753,6 +753,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .bossclip video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bossclip span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 10px 6px; font: 600 11px Inter, sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFE7A8; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.8)); }
 @media (max-width: 600px) { .bossclip { top: 196px; width: 54vw; } }   /* below the HUD, above the boss, never over the player */
+.intro__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .8; z-index: 0; pointer-events: none; }
+.intro__doors, .intro__content, .intro__diya { z-index: 1; }
+.intro__door { background: linear-gradient(180deg, rgba(42,29,15,.5) 0%, rgba(26,18,8,.62) 50%, rgba(13,8,5,.85) 100%); }
 </style>
 </head>
 <body>
@@ -764,6 +767,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
   <!-- Intro screen -->
   <div class="intro" id="intro">
+    <video class="intro__bg" id="intro-bg" muted loop playsinline autoplay preload="auto" poster="videos/game/art/intro-bg.jpg" aria-hidden="true"><source src="videos/game/art/intro-bg.mp4" type="video/mp4"></video>
     <div class="intro__doors">
       <div class="intro__door intro__door--left"></div>
       <div class="intro__door intro__door--right"></div>
@@ -1034,12 +1038,12 @@ const DANAV = {
   naag:    { name: 'Naag-asura', hp: 7, speed: 0.1, size: 1.1, skin: '#3E7A3A', dark: '#1E3E1C', horn: '#D8F0A0', eye: '#FF4040', pts: 50, mount: 'dragon', hop: true },
   kavach:  { name: 'Kavach-danav', hp: 8, speed: 0.08, size: 1.22, skin: '#6E5B3A', dark: '#3A2E1C', horn: '#F1E3C0', eye: '#FFB020', pts: 55, armor: 9 },
   maha:    { name: 'Maha-danav', hp: 14, speed: 0.062, size: 1.5, skin: '#4A4A66', dark: '#22222F', horn: '#FFD27D', eye: '#FF3B2F', pts: 60, crown: true },
-  chhaya:  { name: 'Chhaya Rakshasa', hp: 5, speed: 0.11, size: 1.05, skin: '#2A2140', dark: '#120C1E', horn: '#8E7AC8', eye: '#C69CFF', pts: 45, ai: 'dash', shadowy: true },
-  naga:    { name: 'Naga Rakshaka', hp: 6, speed: 0.15, size: 1.08, skin: '#2F7A4A', dark: '#163E26', horn: '#CDE8B0', eye: '#FFE14D', pts: 60, ai: 'sweep', tail: true, hood: true },
-  vajra:   { name: 'Vajra Danava', hp: 12, speed: 0.07, size: 1.32, skin: '#4A4E5E', dark: '#23262F', horn: '#D8DEE8', eye: '#7FC8FF', pts: 80, ai: 'guard' },
-  agni:    { name: 'Agni Vetala', hp: 7, speed: 0.1, size: 1.05, skin: '#4A1E12', dark: '#1E0A06', horn: '#FFD08A', eye: '#FFB020', pts: 65, ai: 'burn', float: true },
-  maya:    { name: 'Maya Mohini Asura', hp: 8, speed: 0.095, size: 1.05, skin: '#5A3A7A', dark: '#2A1A40', horn: '#E8D8FF', eye: '#FF8AD8', pts: 70, ai: 'illusion', hop: true },
-  kaal:    { name: 'Kaal Pishacha', hp: 18, speed: 0.08, size: 1.25, skin: '#3A3A4A', dark: '#16161E', horn: '#B9B2D8', eye: '#B07CFF', pts: 120, ai: 'kaal', shadowy: true },
+  chhaya:  { name: 'Chhaya Rakshasa', hp: 5, speed: 0.11, size: 1.05, skin: '#22202C', dark: '#0E0C14', horn: '#5E5878', eye: '#B9A4FF', pts: 45, ai: 'dash', shadowy: true, head: 'helm' },
+  naga:    { name: 'Naga Rakshaka', hp: 6, speed: 0.15, size: 1.08, skin: '#3E7A42', dark: '#1A3A20', horn: '#C9A24F', eye: '#FFE14D', pts: 60, ai: 'sweep', tail: true, hood: true, head: 'snake' },
+  vajra:   { name: 'Vajra Danava', hp: 12, speed: 0.07, size: 1.32, skin: '#4A4436', dark: '#221E18', horn: '#C9A24F', eye: '#7FC8FF', pts: 80, ai: 'guard', head: 'helm', glowLines: '#5FB4FF' },
+  agni:    { name: 'Agni Vetala', hp: 7, speed: 0.1, size: 1.05, skin: '#4A3222', dark: '#1E140C', horn: '#C98A4A', eye: '#FFB020', pts: 65, ai: 'burn', float: true, head: 'flamehelm', glowLines: '#FF8A2A' },
+  maya:    { name: 'Maya Mohini Asura', hp: 8, speed: 0.095, size: 1.05, skin: '#4A2E78', dark: '#24163E', horn: '#E8D8FF', eye: '#B07CFF', pts: 70, ai: 'illusion', hop: true, head: 'mask', robe: '#3A2464' },
+  kaal:    { name: 'Kaal Pishacha', hp: 18, speed: 0.08, size: 1.25, skin: '#A9A4BE', dark: '#3A3650', horn: '#B9B2D8', eye: '#C69CFF', pts: 120, ai: 'kaal', shadowy: true, head: 'ghoul', robe: '#1E1A2A' },
   tantrik: { name: 'Tantrik-asura', hp: 7, speed: 0.11, size: 1.05, skin: '#3B2A55', dark: '#1C1230', horn: '#C8B6FF', eye: '#C69CFF', pts: 70, caster: true },
 };
 const shade = (c, k) => '#' + hex(c).map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
@@ -1333,7 +1337,7 @@ function startWave(fresh) {
   state = 'playing'; betweenWaves = 0;
   const firstOfAct = level === 0 || LEVELS[level - 1].act !== lv.act;
   const justBlessed = level > 0 && LEVELS[level - 1].bless;
-  if (firstOfAct) { titleCard(`Act ${lv.act + 1} of 3`, ACT_HI[lv.act], ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The '), 2800); CINE.barsT = 1; setTimeout(() => { CINE.barsT = 0; }, 2400); }
+  if (firstOfAct) { titleCard(`Act ${lv.act + 1} of 3`, ACT_HI[lv.act], ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The '), 2800); CINE.barsT = 1; setTimeout(() => { CINE.barsT = 0; }, 2400); artClip('videos/game/art/act-' + (lv.act + 1), ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The ')); }
   const showWave = () => banner('Wave ' + lv.waveNo, lv.waveNo === 1 ? 'Stop the danav before they reach you!' : justBlessed ? 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc : AURA[level].name, 2400);
   if (firstOfAct) setTimeout(() => { if (state === 'playing' && LV() === lv) showWave(); }, 2700); else showWave();
   hud();
@@ -1439,6 +1443,7 @@ function bossDefeated() {   // the final battle: Andhakasura falls, then the gra
   $('bossbar').classList.remove('show');
   banner('Andhakasura is defeated!', 'Jai Mahakal! Tap Celebrate', 2600, 'boss');
   state = 'won'; C.t = 0; C.btn = false; C.landed = false;
+  setTimeout(() => { if (state === 'won' || state === 'celebrate') artClip('videos/game/art/victory', 'The path to Darshan is open'); }, 4700);   // after the defeat clip
   hud();
   saveBest();
 }
@@ -1522,6 +1527,7 @@ $('enter-btn').addEventListener('click', () => {
   $('intro').classList.add('opening');
   setTimeout(() => {
     $('intro').style.display = 'none';
+    const ib = $('intro-bg'); ib.pause(); ib.removeAttribute('autoplay'); ib.innerHTML = ''; ib.load();   // release the start-screen video
     $('hud').classList.add('show');
     playCutscene('intro', startRun);
     track('game_start', {});
@@ -1555,7 +1561,7 @@ function spawnDanav(type, lane, o = {}) {
   const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * LV().bossNo : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
   const d = { type, lane, x: lane - 1, z: o.z || 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2, elite, mini: !!o.mini, big: o.mini ? 0.72 : elite ? 1.12 : 1, spd: 1 + 0.045 * wn, castT: 1.2 + Math.random() };
   if (t.armor) d.armor = d.armorMax = Math.round(t.armor * (1 + 0.25 * wn));
-  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 2600); }; setTimeout(show, 50); }   // waits for the wave banner to clear
+  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 2600); artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
   danavs.push(d);
   return d;
 }
@@ -1609,8 +1615,8 @@ function collect(pk) {
   else if (pk.kind === 'kavach') { shieldT = P.t; shieldHits = 2; }
   else if (pk.kind === 'kalash') changeTej(25);
   else if (pk.kind === 'damru') tandav();
-  else if (pk.kind === 'token') tokenT = P.t;          // W07 Trishul, temporarily (reuses the existing weapon and projectile)
-  else if (pk.kind === 'celestial') celestT = P.t;
+  else if (pk.kind === 'token') { tokenT = P.t; artClip('videos/game/art/pickup-token', 'Divine Weapon Token: Trishul'); }          // W07 Trishul, temporarily (reuses the existing weapon and projectile)
+  else if (pk.kind === 'celestial') { celestT = P.t; artClip('videos/game/art/pickup-celestial', 'Celestial Bonus: double points'); }
   if (pk.kind !== 'kalash') changeTej(5);
   hud();
 }
@@ -1851,12 +1857,14 @@ function update(dt) {
 // The art clips play in a small framed window that never pauses the fight; if a clip fails, it simply hides.
 const BOSS_CLIP = { 'mahisha-rage': 'Mahishasura rages', 'mahisha-defeat': 'Mahishasura falls', 'rakta-split': 'Raktabija multiplies', 'rakta-defeat': 'Raktabija falls', 'andhaka-rise': 'The king of darkness rises', 'andhaka-defeat': 'Andhakasura falls' };
 let bossClipTok = 0;
-function bossClip(key) {
+function bossClip(key) { artClip('videos/game/boss/' + key, BOSS_CLIP[key] || ''); }
+function artClip(base, caption) {   // base = path without extension; .mp4 + .jpg poster
+  if (state === 'cutscene') return;
   const box = $('bossclip'), v = $('bossclip-video'), tok = ++bossClipTok;
   const hide = () => { if (tok !== bossClipTok) return; box.classList.remove('show'); setTimeout(() => { if (tok === bossClipTok) { v.removeAttribute('src'); v.load(); } }, 400); };
-  box.querySelector('span').textContent = BOSS_CLIP[key] || '';
+  box.querySelector('span').textContent = caption;
   v.onended = hide; v.onerror = hide;
-  v.src = 'videos/game/boss/' + key + '.mp4'; v.poster = 'videos/game/boss/' + key + '.jpg'; v.muted = true;
+  v.src = base + '.mp4'; v.poster = base + '.jpg'; v.muted = true;
   box.classList.add('show'); v.play().catch(hide);
   clearTimeout(bossClip.t); bossClip.t = setTimeout(hide, 4500);   // safety: never stays up
 }
@@ -2978,7 +2986,8 @@ function drawDanav(d) {
   ctx.save(); ctx.translate(-s * 0.18, -s * 0.45); ctx.rotate(step); ctx.fillRect(-s * 0.09, 0, s * 0.18, s * 0.45); ctx.restore();
   ctx.save(); ctx.translate(s * 0.18, -s * 0.45); ctx.rotate(-step); ctx.fillRect(-s * 0.09, 0, s * 0.18, s * 0.45); ctx.restore();
   // loincloth (a long robe for the tantrik)
-  ctx.fillStyle = t.caster ? '#2A1840' : '#2A160C'; ctx.beginPath(); ctx.moveTo(-s * 0.34, -s * 0.62); ctx.lineTo(s * 0.34, -s * 0.62); ctx.lineTo(s * (t.caster ? 0.36 : 0.26), -s * (t.caster ? 0.08 : 0.36)); ctx.lineTo(-s * (t.caster ? 0.36 : 0.26), -s * (t.caster ? 0.08 : 0.36)); ctx.fill();
+  const longRobe = t.caster || t.robe;
+  ctx.fillStyle = t.robe || (t.caster ? '#2A1840' : '#2A160C'); ctx.beginPath(); ctx.moveTo(-s * 0.34, -s * 0.62); ctx.lineTo(s * 0.34, -s * 0.62); ctx.lineTo(s * (longRobe ? 0.36 : 0.26), -s * (longRobe ? 0.08 : 0.36)); ctx.lineTo(-s * (longRobe ? 0.36 : 0.26), -s * (longRobe ? 0.08 : 0.36)); ctx.fill();
   }
   // body
   const bg = ctx.createLinearGradient(-s * 0.4, 0, s * 0.4, 0); bg.addColorStop(0, t.dark); bg.addColorStop(0.5, t.skin); bg.addColorStop(1, t.dark);
@@ -3006,16 +3015,39 @@ function drawDanav(d) {
   // head
   const hy = -s * 1.34;
   if (t.hood && !d.dead) { ctx.fillStyle = t.dark; ctx.beginPath(); ctx.ellipse(0, hy - s * 0.05, s * 0.42, s * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, hy - s * 0.05, s * 0.3, s * 0.27, 0, 0, Math.PI * 2); ctx.fill(); }
-  ctx.fillStyle = '#140A06'; for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.07, hy - s * 0.12); ctx.lineTo(k * s * 0.09, hy - s * 0.34 - Math.abs(k) * -s * 0.02); ctx.lineTo(k * s * 0.07 + s * 0.06, hy - s * 0.12); ctx.fill(); }
-  ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.24, s * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+  if (!t.head) { ctx.fillStyle = '#140A06'; for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.07, hy - s * 0.12); ctx.lineTo(k * s * 0.09, hy - s * 0.34 - Math.abs(k) * -s * 0.02); ctx.lineTo(k * s * 0.07 + s * 0.06, hy - s * 0.12); ctx.fill(); } }
+  if (t.head === 'mask' && !d.dead) {   // long dark hair behind the mask, and a golden halo ring
+    ctx.fillStyle = '#120A1E'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.18, s * 0.3, s * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(232,199,122,0.9)'; ctx.lineWidth = Math.max(1.5, s * 0.035); ctx.beginPath(); ctx.arc(0, hy - s * 0.05, s * 0.4, 0, Math.PI * 2); ctx.stroke();
+    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + time; ctx.fillStyle = '#E8C77A'; ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.4, hy - s * 0.05 + Math.sin(a) * s * 0.4, Math.max(1.5, s * 0.03), 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.fillStyle = t.head === 'mask' ? '#EDE6F2' : t.skin; ctx.beginPath();
+  if (t.head === 'snake') ctx.ellipse(0, hy + s * 0.02, s * 0.17, s * 0.3, 0, 0, Math.PI * 2);   // a cobra's narrow head
+  else if (t.head === 'ghoul') ctx.ellipse(0, hy, s * 0.2, s * 0.28, 0, 0, Math.PI * 2);        // gaunt skull
+  else ctx.ellipse(0, hy, s * 0.24, s * 0.26, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (t.head === 'helm' || t.head === 'flamehelm') {   // armoured helmet with a glowing visor slit (Vajra, Chhaya, Agni)
+    ctx.fillStyle = t.dark; ctx.beginPath(); ctx.arc(0, hy - s * 0.02, s * 0.26, Math.PI * 1.02, Math.PI * 1.98); ctx.lineTo(s * 0.26, hy + s * 0.18); ctx.lineTo(-s * 0.26, hy + s * 0.18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = t.horn; ctx.fillRect(-s * 0.03, hy - s * 0.3, s * 0.06, s * 0.2);   // crest
+    if (t.head === 'flamehelm' && !d.dead) { const r = s * 0.3; ctx.globalAlpha = 0.8 + 0.2 * Math.sin(time * 12 + d.phase); ctx.drawImage(glowSprite('255,140,40'), -r, hy - s * 0.32 - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+  } else if (t.head === 'ghoul' && !d.dead) {   // violet wisps rising from a bald head
+    ctx.strokeStyle = 'rgba(176,124,255,0.75)'; ctx.lineWidth = Math.max(1.5, s * 0.04);
+    for (const k of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(k * s * 0.1, hy - s * 0.24); ctx.quadraticCurveTo(k * s * 0.22 + Math.sin(time * 4 + k) * s * 0.06, hy - s * 0.42, k * s * 0.12, hy - s * 0.58); ctx.stroke(); }
+  } else if (t.head === 'mask') {   // gold ornament on the mask
+    ctx.fillStyle = '#C9A24F'; ctx.fillRect(-s * 0.12, hy - s * 0.24, s * 0.24, s * 0.05);
+  }
   ctx.fillStyle = t.horn;
-  for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.14, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.42, hy - s * 0.3, side * s * 0.34, hy - s * 0.58); ctx.quadraticCurveTo(side * s * 0.28, hy - s * 0.3, side * s * 0.05, hy - s * 0.2); ctx.fill(); }
+  if (!t.head) for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.14, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.42, hy - s * 0.3, side * s * 0.34, hy - s * 0.58); ctx.quadraticCurveTo(side * s * 0.28, hy - s * 0.3, side * s * 0.05, hy - s * 0.2); ctx.fill(); }
   if (t.crown) { ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.2, hy - s * 0.2); for (let k = 0; k <= 4; k++) { ctx.lineTo(-s * 0.2 + k * s * 0.1, hy - s * (k % 2 ? 0.3 : 0.44)); } ctx.lineTo(s * 0.2, hy - s * 0.2); ctx.fill(); }
   ctx.fillStyle = t.eye; ctx.shadowColor = t.eye; ctx.shadowBlur = 8 * p.scale;
-  ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.03, s * 0.05, s * 0.035, 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.03, s * 0.05, s * 0.035, -0.3, 0, Math.PI * 2); ctx.fill();
+  if (t.head === 'helm' || t.head === 'flamehelm') { ctx.beginPath(); ctx.rect(-s * 0.17, hy - s * 0.02, s * 0.34, s * 0.045); ctx.fill(); }
+  else if (t.head === 'snake') { ctx.beginPath(); ctx.ellipse(-s * 0.08, hy - s * 0.05, s * 0.035, s * 0.02, 0.5, 0, Math.PI * 2); ctx.ellipse(s * 0.08, hy - s * 0.05, s * 0.035, s * 0.02, -0.5, 0, Math.PI * 2); ctx.fill(); }
+  else { ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.03, s * 0.05, s * (t.head === 'mask' ? 0.018 : 0.035), 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.03, s * 0.05, s * (t.head === 'mask' ? 0.018 : 0.035), -0.3, 0, Math.PI * 2); ctx.fill(); }
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); }
+  if (!t.head || t.head === 'ghoul') { ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill(); }
+  if (t.head === 'snake' && !d.dead) { ctx.strokeStyle = '#E03050'; ctx.lineWidth = Math.max(1, s * 0.02); ctx.beginPath(); ctx.moveTo(0, hy + s * 0.3); ctx.lineTo(0, hy + s * 0.4 + Math.sin(time * 20) * s * 0.03); ctx.stroke(); }   // forked tongue
+  if (!t.head) { ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); } }
+  if (t.glowLines && !d.dead) { ctx.strokeStyle = t.glowLines; ctx.globalAlpha = 0.85; ctx.lineWidth = Math.max(1, s * 0.03); ctx.beginPath(); ctx.moveTo(-s * 0.28, -s * 1.02); ctx.lineTo(-s * 0.1, -s * 0.86); ctx.lineTo(-s * 0.2, -s * 0.72); ctx.moveTo(s * 0.28, -s * 1.02); ctx.lineTo(s * 0.1, -s * 0.86); ctx.lineTo(s * 0.2, -s * 0.72); ctx.stroke(); ctx.globalAlpha = 1; }   // glowing armour seams
   if (d.type === 'vajra' && !d.dead) {
     if (d.gs !== 'exposed') {   // blue energy shield (with a charge glow before the slam)
       const sh = d.gs === 'charge' ? 1 + 0.15 * Math.sin(time * 30) : 1, r = s * 0.5 * sh;
@@ -3051,9 +3083,9 @@ function drawDanav(d) {
 
 // ---------------- Bosses: Mahishasura, Raktabija, Andhakasura ----------------
 const BOSS_LOOK = {
-  andhaka: { aura: '120,20,40', leg: '#16122A', dhoti: '#5A0F1C', arm: '#2B2550', t0: '#120E26', t1: '#332B66', head: '#2B2550', horn: '#EADBB4', eye: '#FF2A1A', crown: 1 },
-  mahisha: { aura: '110,70,30', leg: '#1E1A18', dhoti: '#7A1E12', arm: '#3E3530', t0: '#1A1614', t1: '#4E433C', head: '#2E2622', horn: '#EDE2C6', eye: '#FF3B20', buffalo: 1 },
-  rakta:   { aura: '190,10,30', leg: '#3A0810', dhoti: '#1A0A0C', arm: '#8E1426', t0: '#4A0812', t1: '#B8202F', head: '#A3172A', horn: '#FFD0C0', eye: '#FFE14D', hair: 1, drip: 1 },
+  andhaka: { helm: 1, mace: 1, cracks: 1, aura: '120,20,40', leg: '#14121C', dhoti: '#3A0F18', arm: '#24222E', t0: '#0E0C14', t1: '#2E2A3A', head: '#22202C', horn: '#C9A24F', eye: '#FF2A1A', crown: 1 },
+  mahisha: { axe: 1, aura: '110,70,30', leg: '#1E1A18', dhoti: '#7A1E12', arm: '#3E3530', t0: '#1A1614', t1: '#4E433C', head: '#2E2622', horn: '#EDE2C6', eye: '#FF3B20', buffalo: 1 },
+  rakta:   { spear: 1, halo: 1, aura: '190,10,30', leg: '#3A0810', dhoti: '#1A0A0C', arm: '#8E1426', t0: '#4A0812', t1: '#B8202F', head: '#A3172A', horn: '#FFD0C0', eye: '#FFE14D', hair: 1, drip: 1 },
 };
 function drawBoss() {
   const b = boss, L = BOSS_LOOK[b.kind], p = project(b.z, b.x), u = unit();
@@ -3080,7 +3112,19 @@ function drawBoss() {
     ctx.fillStyle = L.arm; ctx.fillRect(-s * 0.07, -s * 0.5, s * 0.14, s * 0.52);
     ctx.fillStyle = '#C9A24F'; ctx.fillRect(-s * 0.08, -s * 0.2, s * 0.16, s * 0.04);
     if (k === 0) {
-      if (L.buffalo && side === 1) { ctx.fillStyle = '#5A3A1A'; ctx.fillRect(-s * 0.03, -s * 1.0, s * 0.06, s * 0.55); ctx.fillStyle = '#3A2410'; ctx.beginPath(); ctx.ellipse(0, -s * 1.02, s * 0.12, s * 0.18, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#9AA0B5'; for (const a of [-1, 1]) { ctx.beginPath(); ctx.moveTo(a * s * 0.1, -s * 1.08); ctx.lineTo(a * s * 0.2, -s * 1.12); ctx.lineTo(a * s * 0.1, -s * 0.98); ctx.fill(); } }   // spiked club
+      if (L.axe && side === 1) {   // Mahishasura's great battle-axe
+        ctx.fillStyle = '#4A3018'; ctx.fillRect(-s * 0.03, -s * 1.15, s * 0.06, s * 0.7);
+        const ag = ctx.createLinearGradient(0, -s * 1.2, s * 0.4, -s * 0.9); ag.addColorStop(0, '#E8ECF4'); ag.addColorStop(1, '#6E7488');
+        ctx.fillStyle = ag; ctx.beginPath(); ctx.moveTo(s * 0.03, -s * 1.12); ctx.quadraticCurveTo(s * 0.42, -s * 1.22, s * 0.36, -s * 0.84); ctx.quadraticCurveTo(s * 0.2, -s * 0.94, s * 0.03, -s * 0.9); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-s * 0.03, -s * 1.08); ctx.quadraticCurveTo(-s * 0.24, -s * 1.12, -s * 0.2, -s * 0.92); ctx.lineTo(-s * 0.03, -s * 0.94); ctx.fill();
+      } else if (L.spear && side === 1) {   // Raktabija's long spear
+        ctx.fillStyle = '#3A1A1A'; ctx.fillRect(-s * 0.025, -s * 1.5, s * 0.05, s * 1.25);
+        ctx.fillStyle = '#C8CCD8'; ctx.beginPath(); ctx.moveTo(0, -s * 1.78); ctx.lineTo(s * 0.07, -s * 1.5); ctx.lineTo(-s * 0.07, -s * 1.5); ctx.closePath(); ctx.fill();
+      } else if (L.mace && side === 1) {   // Andhakasura's iron mace
+        ctx.fillStyle = '#2A2630'; ctx.fillRect(-s * 0.035, -s * 1.1, s * 0.07, s * 0.65);
+        ctx.fillStyle = '#3A3644'; ctx.beginPath(); ctx.ellipse(0, -s * 1.15, s * 0.15, s * 0.19, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#C9A24F'; for (const a of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(a * s * 0.14, -s * 1.2); ctx.lineTo(a * s * 0.24, -s * 1.26); ctx.lineTo(a * s * 0.14, -s * 1.1); ctx.fill(); }
+      } else if (L.spear || L.mace) { /* the other hand stays empty, as in the art */ }
       else { const sg = ctx.createLinearGradient(-s * 0.03, 0, s * 0.03, 0); sg.addColorStop(0, '#7A8094'); sg.addColorStop(0.5, '#F4F6FF'); sg.addColorStop(1, '#7A8094'); ctx.fillStyle = sg; ctx.beginPath(); ctx.moveTo(-s * 0.025, -s * 0.5); ctx.lineTo(-s * 0.04, -s * 0.92); ctx.lineTo(0, -s * 1.02); ctx.lineTo(s * 0.04, -s * 0.92); ctx.lineTo(s * 0.025, -s * 0.5); ctx.fill(); }
     } else if (L.drip && side === -1) { ctx.fillStyle = '#5A0A12'; ctx.beginPath(); ctx.arc(0, -s * 0.56, s * 0.13, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#C9A24F'; ctx.lineWidth = 2; ctx.stroke(); }   // skull-cup of blood
     ctx.restore();
@@ -3089,6 +3133,7 @@ function drawBoss() {
   const tg = ctx.createLinearGradient(-s * 0.5, 0, s * 0.5, 0); tg.addColorStop(0, L.t0); tg.addColorStop(0.5, L.t1); tg.addColorStop(1, L.t0);
   ctx.fillStyle = tg; ctx.beginPath(); ctx.ellipse(0, -s * 1.12 + breathe, s * 0.5, s * 0.42, 0, 0, Math.PI * 2); ctx.fill();
   if (L.buffalo) { ctx.fillStyle = 'rgba(20,14,10,0.6)'; for (let k = 0; k < 9; k++) { const a = -2.6 + k * 0.33; ctx.beginPath(); ctx.ellipse(Math.cos(a) * s * 0.42, -s * 1.12 + breathe + Math.sin(a) * s * 0.36, s * 0.07, s * 0.04, a, 0, Math.PI * 2); ctx.fill(); } }   // shaggy fur
+  if (L.cracks && !b.dead) { ctx.strokeStyle = `rgba(255,50,30,${0.7 + 0.3 * Math.sin(time * 5)})`; ctx.lineWidth = Math.max(1.5, s * 0.025); ctx.beginPath(); ctx.moveTo(0, -s * 1.4); ctx.lineTo(-s * 0.08, -s * 1.22); ctx.lineTo(s * 0.04, -s * 1.08); ctx.lineTo(-s * 0.05, -s * 0.9); ctx.moveTo(-s * 0.08, -s * 1.22); ctx.lineTo(-s * 0.25, -s * 1.16); ctx.moveTo(s * 0.04, -s * 1.08); ctx.lineTo(s * 0.22, -s * 1.0); ctx.stroke(); }   // red glowing cracks
   if (L.drip) { ctx.fillStyle = '#5A0010'; for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.ellipse(Math.sin(k * 2.3) * s * 0.3, -s * 1.12 + breathe + Math.cos(k * 1.7) * s * 0.22, s * 0.03, s * 0.05, 0, 0, Math.PI * 2); ctx.fill(); } }
   ctx.strokeStyle = '#C9A24F'; ctx.lineWidth = 3 * u; ctx.beginPath(); ctx.arc(0, -s * 1.3 + breathe, s * 0.26, 0.2, Math.PI - 0.2); ctx.stroke();   // necklace
   if (L.drip) { ctx.fillStyle = '#EDE2C6'; for (let k = 0; k < 7; k++) { const a = 0.35 + k * 0.4; ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.26, -s * 1.3 + breathe + Math.sin(a) * s * 0.26, s * 0.035, 0, Math.PI * 2); ctx.fill(); } }   // garland of skulls
@@ -3107,9 +3152,11 @@ function drawBoss() {
     ctx.strokeStyle = '#D9AE45'; ctx.lineWidth = Math.max(2, s * 0.03); ctx.beginPath(); ctx.arc(0, hy + s * 0.33, s * 0.06, 0, Math.PI * 2); ctx.stroke();
     if (!b.dead && (charging || Math.random() < 0.05)) parts.push({ x: p.x + (Math.random() - 0.5) * s * 0.2, y: p.y + hy + s * 0.25, vx: (Math.random() - 0.5) * 1.5, vy: 0.8, r: 3, life: 0.5, color: 'rgba(235,235,235,0.6)' });
   } else {
+    if (L.halo && !b.dead) { ctx.strokeStyle = 'rgba(255,214,120,0.9)'; ctx.lineWidth = Math.max(2, s * 0.04); ctx.beginPath(); ctx.arc(0, hy - s * 0.06, s * 0.42, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); for (let k = 0; k < 7; k++) { const a = Math.PI * (1.12 + k * 0.127); ctx.beginPath(); ctx.moveTo(Math.cos(a) * s * 0.42, hy - s * 0.06 + Math.sin(a) * s * 0.42); ctx.lineTo(Math.cos(a) * s * 0.55, hy - s * 0.06 + Math.sin(a) * s * 0.55); ctx.stroke(); } }
     ctx.fillStyle = L.head; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.24, s * 0.27, 0, 0, Math.PI * 2); ctx.fill();
+    if (L.helm) { ctx.fillStyle = '#16141E'; ctx.beginPath(); ctx.arc(0, hy - s * 0.02, s * 0.28, Math.PI, 0); ctx.lineTo(s * 0.28, hy + s * 0.12); ctx.lineTo(-s * 0.28, hy + s * 0.12); ctx.closePath(); ctx.fill(); }
     ctx.fillStyle = L.horn;
-    for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.16, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.55, hy - s * 0.3, side * s * 0.46, hy - s * 0.72); ctx.quadraticCurveTo(side * s * 0.36, hy - s * 0.32, side * s * 0.06, hy - s * 0.22); ctx.fill(); }
+    if (!L.helm) for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.16, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.55, hy - s * 0.3, side * s * 0.46, hy - s * 0.72); ctx.quadraticCurveTo(side * s * 0.36, hy - s * 0.32, side * s * 0.06, hy - s * 0.22); ctx.fill(); }
     if (L.crown) { ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.24, hy - s * 0.18); for (let k = 0; k <= 6; k++) ctx.lineTo(-s * 0.24 + k * s * 0.08, hy - s * (k % 2 ? 0.32 : 0.5)); ctx.lineTo(s * 0.24, hy - s * 0.18); ctx.fill(); }
     ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.1, hy + s * 0.1); ctx.lineTo(side * s * 0.07, hy + s * 0.26); ctx.lineTo(side * s * 0.03, hy + s * 0.11); ctx.fill(); }
     if (L.drip) { ctx.fillStyle = '#3A0006'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.13, s * 0.09, s * 0.05, 0, 0, Math.PI); ctx.fill(); ctx.fillStyle = '#C0101E'; ctx.fillRect(-s * 0.02, hy + s * 0.15, s * 0.04, s * 0.12 + Math.sin(time * 3) * s * 0.03); }   // lolling tongue
@@ -3222,6 +3269,7 @@ const STAGE_HI = ['बाल ब्रह्मचारी', 'किशोर �
 const ASC = { t: -1, stage: 0 };
 function ascend(stage) {
   ASC.t = 0; ASC.stage = stage;
+  artClip('videos/game/art/stage-' + (stage + 1), 'Your yoddha grows: ' + STAGES[stage].name);
   const p = playerPos(); rings.push({ x: p.x, y: p.y + 40 * unit(), r: 0, life: 1, col: '255,226,150' });
   sfx.up(); setTimeout(sfx.bell, 180);
 }
@@ -3360,7 +3408,7 @@ const STAGES = [
 ];
 const HAIR_COL = ['#120A05', '#140B06', '#160C06', '#1E1109', '#5E5650', '#E9E5DC'];
 const BEARD_COL = ['#000', '#000', '#1A0E08', '#22140B', '#6E655E', '#F1EEE7'];
-const DHOTI_COL = [['#F7EFDC', '#D9CBAA'], ['#F7EFDC', '#D9CBAA'], ['#F08A3C', '#C45F1C'], ['#E8782A', '#B5501A'], ['#DE6A22', '#A84414'], ['#E06B1F', '#A83E10']];
+const DHOTI_COL = [['#F7EFDC', '#D9CBAA'], ['#F7EFDC', '#D9CBAA'], ['#F4E8CE', '#D6C49E'], ['#F2E4C6', '#D2BE94'], ['#DE6A22', '#A84414'], ['#E06B1F', '#A83E10']];
 
 // Back view of the head: skin or hair, beard showing around the jaw, hair hanging down the back, jata and crescent.
 function drawBackHead(hx, hy, s, ST, moving, ph, u) {

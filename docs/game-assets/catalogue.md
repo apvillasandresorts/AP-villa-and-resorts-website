@@ -151,3 +151,21 @@ Video only (no still) · baked background, no transparency · semi-realistic 3D 
 | 6 | Siddha Sadhu (सिद्ध साधु) | Mahakal blessing (after wave 9) | `new game videos/Create_character_sheet_for_prota…_20261012164826.mp4` ✓<br>`new game videos/Create_character_sheet_for_prota…_20261012164821.mp4` | reference-sheet video |
 
 Maa Lakshmi grants the Swarna Chakra but does not change the stage. Stages are not saved across a page reload (they never were); a retry restores the stage from the in-run checkpoint.
+
+## In-game art clips (`videos/game/art/`, cut from the owner's videos)
+
+Shown in the small art window during play; gameplay never waits for them (missing or failing clips simply hide).
+
+| File | Source take | When it plays |
+| --- | --- | --- |
+| `intro-bg.mp4` | 164924 environment concepts | Start screen background loop (released when the game starts) |
+| `act-1.mp4` | 164929 (0–2.3 s, golden bridge) | Act 1 begins: the dawn path |
+| `act-2.mp4` | 164943 (0–3 s, dusk temple bridge) | Act 2 begins: the golden dusk |
+| `act-3.mp4` | 164929 (2.9–7.3 s, storm to radiant temple) | Act 3 begins: the night of Mahakal |
+| `enemy-chhaya/naga/vajra/agni/maya/kaal.mp4` | enemy reference takes | First sighting of each new enemy (with its banner) |
+| `stage-1..6.mp4` | protagonist character sheets | Hero grows to a new stage |
+| `pickup-token.mp4` | 164616 (Trishul burst) | Divine Weapon Token collected |
+| `pickup-celestial.mp4` | 164605 (Celestial medallion) | Celestial Bonus collected |
+| `victory.mp4` | 164948 (temple above the clouds) | After Andhakasura's defeat clip |
+
+Not used in game: the hero action/animation references (plain studio turnarounds, partly off-model), the art-direction guides, the Kalantaka Trishula take with its title overlay, and the Chanakya film (excluded).
