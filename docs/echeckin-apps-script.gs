@@ -53,6 +53,7 @@ const COLUMNS = [
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
+    if (body.action === 'score' || body.action === 'coupon') return json_(gamePost_(body));   // Mahakal game (see the end of this file)
     if (body.website) return json_({ ok: true });                  // spam trap
     const f = body.fields || {};
     if (!f.guest_name || !f.phone || !f.checkin_date) return json_({ ok: false, error: 'Missing required details' });
@@ -171,7 +172,10 @@ function testGuestEmail() {
   guestEmail_({ guest_name: 'Test Guest', email: Session.getEffectiveUser().getEmail(), villa: 'Rudrangan Suites', checkin_date: '2026-11-14', checkout_date: '2026-11-16', nights: '2', adults: '4', children: '1', booking_source: 'Booking.com', booking_id: '4523119876', payment_status: 'Partly paid (advance)', amount_paid: '3000', balance_due: '7400' }, 'ECI-SAMPLE');
 }
 
-function doGet() { return json_({ ok: true, service: 'AP Villas e-check-in' }); }
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action === 'leaderboard') return json_({ ok: true, top: gameTop_() });
+  return json_({ ok: true, service: 'AP Villas e-check-in' });
+}
 
 function sheet_() {
   const ss = SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
@@ -188,3 +192,47 @@ function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).se
 
 /** Run once from the editor to grant permissions and create the sheet header + Drive folder. */
 function setup() { sheet_(); folder_(DriveApp.getRootFolder(), FOLDER_NAME); }
+
+// ---- Mahakal game (www.apvillasandresorts.in/mahakal-game.html): public top-10 leaderboard + coupon log ----
+// Everything goes to the "Game" tab of this Sheet. Only the top-10 names and scores are ever sent back to the website.
+// To check a guest's coupon: search the code in the Game tab (Type = Coupon). Delete a row to remove it from the board.
+const GAME_SHEET = 'Game';
+const GAME_COLS = ['Time', 'Type', 'Name', 'Player ID', 'Score', 'Discount %', 'Coupon', 'Waves cleared', 'Bosses beaten', 'Seconds played', 'Result'];
+const BAD_NAMES = /fuck|shit|bitch|cunt|dick|porn|nigg|chut|lund|lavde|madarc|bhosd|gaand|randi|behenc/i;
+function gameSheet_() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(GAME_SHEET) || ss.insertSheet(GAME_SHEET);
+  if (sh.getLastRow() === 0) { sh.appendRow(GAME_COLS); sh.setFrozenRows(1); sh.getRange(1, 1, 1, GAME_COLS.length).setFontWeight('bold').setBackground('#F3EEE3'); }
+  return sh;
+}
+function gamePost_(b) {
+  const num = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+  const score = num(b.score, 60000), secs = num(b.secs, 36000), waves = num(b.waves, 9), bosses = num(b.bosses, 3), pct = num(b.pct, 30);
+  const pid = String(b.pid || '').replace(/[^a-z0-9]/gi, '').slice(0, 16);
+  const result = clean_(String(b.result || '').slice(0, 60));
+  if (secs < 20 || score > secs * 160 + 3000) return { ok: false, error: 'Score not accepted' };   // a simple sanity check against made-up scores
+  const sh = gameSheet_();
+  if (b.action === 'coupon') {
+    const code = String(b.code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
+    if (!/^MAHAKAL([5-9]|[12][0-9]|30)-[A-Z0-9]{5}$/.test(code)) return { ok: false };
+    sh.appendRow([new Date(), 'Coupon', '', pid, score, pct, code, waves, bosses, secs, result]);
+    return { ok: true };
+  }
+  const name = String(b.name || '').replace(/[^\p{L}\p{M}\p{N} .'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+  if (name.length < 2) return { ok: false, error: 'Please enter your name (2–16 letters).' };
+  if (BAD_NAMES.test(name.replace(/[^a-z]/gi, ''))) return { ok: false, error: 'Please choose another name.' };
+  if (score < 100) return { ok: false, error: 'Score 100 or more to join the leaderboard.' };
+  sh.appendRow([new Date(), 'Leaderboard', clean_(name), pid, score, pct, '', waves, bosses, secs, result]);
+  return { ok: true, top: gameTop_() };
+}
+function gameTop_() {
+  const sh = gameSheet_(), n = sh.getLastRow() - 1;
+  if (n < 1) return [];
+  const rows = sh.getRange(2, 1, n, GAME_COLS.length).getValues(), best = {};
+  rows.forEach(r => {
+    if (r[1] !== 'Leaderboard') return;
+    const key = String(r[3] || r[2]), sc = Number(r[4]) || 0;   // one place per player (their best score)
+    if (!best[key] || sc > best[key].s) best[key] = { n: String(r[2]), s: sc, w: Number(r[7]) || 0, b: Number(r[8]) || 0, t: r[0] instanceof Date ? r[0].getTime() : 0 };
+  });
+  return Object.values(best).sort((a, c) => c.s - a.s || a.t - c.t).slice(0, 10).map(x => ({ n: x.n, s: x.s, w: x.w, b: x.b }));
+}
