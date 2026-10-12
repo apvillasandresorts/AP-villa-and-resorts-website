@@ -1034,6 +1034,12 @@ const DANAV = {
   naag:    { name: 'Naag-asura', hp: 7, speed: 0.1, size: 1.1, skin: '#3E7A3A', dark: '#1E3E1C', horn: '#D8F0A0', eye: '#FF4040', pts: 50, mount: 'dragon', hop: true },
   kavach:  { name: 'Kavach-danav', hp: 8, speed: 0.08, size: 1.22, skin: '#6E5B3A', dark: '#3A2E1C', horn: '#F1E3C0', eye: '#FFB020', pts: 55, armor: 9 },
   maha:    { name: 'Maha-danav', hp: 14, speed: 0.062, size: 1.5, skin: '#4A4A66', dark: '#22222F', horn: '#FFD27D', eye: '#FF3B2F', pts: 60, crown: true },
+  chhaya:  { name: 'Chhaya Rakshasa', hp: 5, speed: 0.11, size: 1.05, skin: '#2A2140', dark: '#120C1E', horn: '#8E7AC8', eye: '#C69CFF', pts: 45, ai: 'dash', shadowy: true },
+  naga:    { name: 'Naga Rakshaka', hp: 6, speed: 0.15, size: 1.08, skin: '#2F7A4A', dark: '#163E26', horn: '#CDE8B0', eye: '#FFE14D', pts: 60, ai: 'sweep', tail: true, hood: true },
+  vajra:   { name: 'Vajra Danava', hp: 12, speed: 0.07, size: 1.32, skin: '#4A4E5E', dark: '#23262F', horn: '#D8DEE8', eye: '#7FC8FF', pts: 80, ai: 'guard' },
+  agni:    { name: 'Agni Vetala', hp: 7, speed: 0.1, size: 1.05, skin: '#4A1E12', dark: '#1E0A06', horn: '#FFD08A', eye: '#FFB020', pts: 65, ai: 'burn', float: true },
+  maya:    { name: 'Maya Mohini Asura', hp: 8, speed: 0.095, size: 1.05, skin: '#5A3A7A', dark: '#2A1A40', horn: '#E8D8FF', eye: '#FF8AD8', pts: 70, ai: 'illusion', hop: true },
+  kaal:    { name: 'Kaal Pishacha', hp: 18, speed: 0.08, size: 1.25, skin: '#3A3A4A', dark: '#16161E', horn: '#B9B2D8', eye: '#B07CFF', pts: 120, ai: 'kaal', shadowy: true },
   tantrik: { name: 'Tantrik-asura', hp: 7, speed: 0.11, size: 1.05, skin: '#3B2A55', dark: '#1C1230', horn: '#C8B6FF', eye: '#C69CFF', pts: 70, caster: true },
 };
 const shade = (c, k) => '#' + hex(c).map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
@@ -1057,16 +1063,16 @@ const BOSSES = {
 const ACTS = ['Prabhat · the dawn path', 'Sandhya · the golden dusk', 'Mahanisha · the night of Mahakal'];
 const LEVELS = [
   { kills: 10, every: 1.6,  act: 0, mix: { rakshas: 1 }, bless: 'ganesh' },
-  { kills: 12, every: 1.5,  act: 0, mix: { rakshas: 0.55, pishach: 0.25, danav: 0.2 } },
-  { kills: 14, every: 1.42, act: 0, mix: { rakshas: 0.35, danav: 0.3, pishach: 0.15, vrishabh: 0.2 }, bless: 'hanuman' },
+  { kills: 12, every: 1.5,  act: 0, mix: { rakshas: 0.5, pishach: 0.22, danav: 0.18, chhaya: 0.1 }, intro: 'chhaya' },
+  { kills: 14, every: 1.42, act: 0, mix: { rakshas: 0.32, danav: 0.27, pishach: 0.12, vrishabh: 0.17, chhaya: 0.06, naga: 0.06 }, intro: 'naga', bless: 'hanuman' },
   { boss: 'mahisha', act: 0, bless: 'durga' },
-  { kills: 15, every: 1.35, act: 1, mix: { rakshas: 0.25, danav: 0.2, kavach: 0.2, vrishabh: 0.15, mayavi: 0.2 } },
-  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.2, kavach: 0.18, tantrik: 0.12, naag: 0.18, pishach: 0.17, rakshas: 0.15 }, bless: 'vishnu' },
-  { kills: 18, every: 1.25, act: 1, mix: { danav: 0.14, kavach: 0.15, tantrik: 0.12, naag: 0.15, maha: 0.13, raktaja: 0.16, mayavi: 0.15 } },
+  { kills: 15, every: 1.35, act: 1, mix: { rakshas: 0.22, danav: 0.18, kavach: 0.17, vrishabh: 0.13, mayavi: 0.16, naga: 0.06, vajra: 0.08 }, intro: 'vajra' },
+  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.17, kavach: 0.15, tantrik: 0.1, naag: 0.15, pishach: 0.13, rakshas: 0.12, vajra: 0.08, agni: 0.1 }, intro: 'agni', bless: 'vishnu' },
+  { kills: 18, every: 1.25, act: 1, mix: { danav: 0.12, kavach: 0.12, tantrik: 0.1, naag: 0.12, maha: 0.11, raktaja: 0.13, mayavi: 0.1, agni: 0.08, chhaya: 0.06, maya: 0.06 }, intro: 'maya' },
   { boss: 'rakta', act: 1, bless: 'lakshmi' },
-  { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.18, tantrik: 0.14, naag: 0.16, maha: 0.16, raktaja: 0.18, pishach: 0.18 } },
-  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.17, tantrik: 0.15, naag: 0.15, maha: 0.18, raktaja: 0.17, vrishabh: 0.18 } },
-  { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.17, tantrik: 0.16, naag: 0.15, maha: 0.2, raktaja: 0.16, pishach: 0.16 }, bless: 'mahakal' },
+  { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.14, tantrik: 0.11, naag: 0.12, maha: 0.13, raktaja: 0.14, pishach: 0.12, maya: 0.08, naga: 0.06, vajra: 0.05, kaal: 0.05 }, intro: 'kaal' },
+  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.13, tantrik: 0.11, naag: 0.11, maha: 0.13, raktaja: 0.12, vrishabh: 0.13, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08 } },
+  { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.12, tantrik: 0.11, naag: 0.1, maha: 0.14, raktaja: 0.11, pishach: 0.1, maya: 0.08, naga: 0.07, agni: 0.07, kaal: 0.1 }, bless: 'mahakal' },
   { boss: 'andhaka', act: 2, final: true },
 ];
 let nW = 0, nB = 0;
@@ -1116,7 +1122,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = 0; shieldHits = 0; }
+function resetField() { GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1298,7 +1304,7 @@ $('lb-close').addEventListener('click', e => { e.stopPropagation(); $('lbpanel')
 
 // ---------------- Flow ----------------
 function startRun() {
-  music.start();
+  music.start(); seenTypes.clear();
   if (!startRun.tut) { startRun.tut = 1; setTimeout(() => $('tutorial').classList.add('show'), 2800); setTimeout(() => $('tutorial').classList.remove('show'), 6600); }   // after the act title card
   for (const k in triesAt) delete triesAt[k];
   slain = 0; score = 0; level = 0; weapon = 'bow'; bulk = 0; tej = 40; lakshmi = false; submitted = 0;
@@ -1315,7 +1321,8 @@ function startLevel(fresh) {
 function startWave(fresh) {
   resetField();
   const lv = LV();
-  kills = 0; spawnT = -1.2; combo = 0; waveHits = 0; pickT = 7 + Math.random() * 4; $('combo').classList.remove('show'); lives = fresh ? MAX_LIVES : Math.max(lives, 3);
+  LV().introDone = false;
+  kills = 0; spawnT = level > 0 && LEVELS[level - 1].boss ? -3.2 : -1.2;   // a breather after a boss combo = 0; waveHits = 0; pickT = 7 + Math.random() * 4; $('combo').classList.remove('show'); lives = fresh ? MAX_LIVES : Math.max(lives, 3);
   player.lane = 1; player.x = 0; player.hurt = 0;
   saveCheckpoint();
   state = 'playing'; betweenWaves = 0;
@@ -1517,10 +1524,19 @@ $('enter-btn').addEventListener('click', () => {
 });
 
 // ---------------- Update ----------------
+// Combination limits keep the screen readable: at most 2 of the new archetypes alive in acts 1–2 (3 in the last act),
+// one Kaal Pishacha at a time, one Agni Vetala per act-1 wave. Over a limit, the pick falls back to the wave's basic types.
+const SPECIAL = new Set(['chhaya', 'naga', 'vajra', 'agni', 'maya', 'kaal']);
 function pickType() {
-  const mix = LV().mix; let r = Math.random();
-  for (const k in mix) { if ((r -= mix[k]) <= 0) return k; }
-  return Object.keys(mix)[0];
+  const mix = LV().mix; let r = Math.random(), k0 = Object.keys(mix)[0], pick = k0;
+  for (const k in mix) { if ((r -= mix[k]) <= 0) { pick = k; break; } }
+  if (SPECIAL.has(pick)) {
+    const alive = danavs.filter(d => SPECIAL.has(d.type) && !d.decoy), cap = LV().act >= 2 ? 3 : 2;
+    if (alive.length >= cap || (pick === 'kaal' && alive.some(d => d.type === 'kaal')) || (pick === 'agni' && LV().act < 2 && alive.some(d => d.type === 'agni'))) {
+      const basic = Object.keys(mix).filter(k => !SPECIAL.has(k)); pick = basic[Math.floor(Math.random() * basic.length)] || k0;
+    }
+  }
+  return pick;
 }
 function spawnDanav(type, lane, o = {}) {
   type = type || pickType();
@@ -1530,10 +1546,11 @@ function spawnDanav(type, lane, o = {}) {
     lane = free[Math.floor(Math.random() * free.length)];
   }
   const t = DANAV[type], wn = wavesBefore();
-  const elite = !boss && !o.mini && wn >= 3 && Math.random() < 0.06 + 0.02 * (wn - 3);
+  const elite = !boss && !o.mini && wn >= 3 && Math.random() < 0.06 + 0.02 * (wn - 3) && danavs.filter(x => x.elite).length < 2;
   const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * LV().bossNo : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
   const d = { type, lane, x: lane - 1, z: o.z || 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2, elite, mini: !!o.mini, big: o.mini ? 0.72 : elite ? 1.12 : 1, spd: 1 + 0.045 * wn, castT: 1.2 + Math.random() };
   if (t.armor) d.armor = d.armorMax = Math.round(t.armor * (1 + 0.25 * wn));
+  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 2600); }; setTimeout(show, 50); }   // waits for the wave banner to clear
   danavs.push(d);
   return d;
 }
@@ -1597,7 +1614,88 @@ function tandav() {   // Shiva's damru: a shockwave rolls up the bridge
   if (boss && !boss.dead) { boss.hp -= boss.max * 0.06; boss.hitFlash = 1; if (boss.hp <= 0) bossDown(); }
   fires.length = 0;
 }
+// ---------------- New enemy archetypes (fictional gameplay creations) ----------------
+// Each special move is telegraphed, has a cooldown, and is capped. Art for them exists only as reference videos, so
+// they are drawn by the existing code renderer with their own silhouettes and colours.
+const GROUND = [];   // short-lived ground hazards (Agni Vetala fire, Kaal Pishacha claw): max 3, one hit each
+const ENEMY_INFO = { chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
+const seenTypes = new Set();
+function addHazard(lane, kind) {
+  if (GROUND.length >= 3 || GROUND.some(g => g.lane === lane)) return false;
+  GROUND.push({ lane, kind, warn: kind === 'claw' ? 1.0 : 0.9, life: kind === 'claw' ? 0.35 : 2.4, hit: false }); return true;
+}
+const AI = {
+  dash(d, dt) {   // Chhaya Rakshasa: shimmer for 0.6 s, then a quick shadow-step to a neighbouring path
+    if (d.z > 0.85 || d.z < 0.3) return;
+    d.cd = (d.cd ?? 2 + Math.random()) - dt;
+    if (d.dashWarn > 0) { d.dashWarn -= dt; if (d.dashWarn <= 0) { const opts = [d.lane - 1, d.lane + 1].filter(l => l >= 0 && l <= 2); d.lane = opts[Math.floor(Math.random() * opts.length)]; d.z = Math.max(0.3, d.z - 0.06); d.cd = 3.2 + Math.random(); } }
+    else if (d.cd <= 0) d.dashWarn = 0.6;
+  },
+  sweep(d, dt) {   // Naga Rakshaka: one tail sweep across two paths, after a green warning
+    if (d.swept || d.z > 0.55 || d.z < 0.3) return;
+    d.swept = true; const other = d.lane === 1 ? (player.lane === 0 ? 0 : 2) : 1;
+    if (fires.length > 2) { d.swept = false; return; }   // wait until the bridge is clearer
+    for (const l of [d.lane, other]) fires.push({ lane: l, z: d.z - 0.02, warn: 0.75, col: 'venom', from: d.z });
+    sfx.cast();
+  },
+  guard(d, dt) {   // Vajra Danava: shield up → telegraphed slam (a shockwave down its path) → exposed, then repeat
+    d.gt = (d.gt ?? 2.5) - dt;
+    if (!d.gs) d.gs = 'shield';
+    if (d.gt > 0) return;
+    if (d.gs === 'shield') { d.gs = 'charge'; d.gt = 0.8; }
+    else if (d.gs === 'charge') { d.gs = 'exposed'; d.gt = 2.2; if (d.z < 0.9 && fires.length < 3) fires.push({ lane: d.lane, z: d.z - 0.02, warn: 0.5, col: 'bolt', from: d.z }); shake = Math.max(shake, 0.15); sfx.drum(); const p = project(d.z, d.x); floatText(p.x, p.y - 90 * p.scale * unit(), 'Exposed!', '#9FD8FF', 14); }
+    else { d.gs = 'shield'; d.gt = 2.6; }
+  },
+  burn(d, dt) {   // Agni Vetala: halts mid-bridge and sets a path near you on fire (warned, fades by itself)
+    if (d.z < 0.58) d.z = 0.58;
+    if (d.z > 0.62) return;
+    d.cd = (d.cd ?? 1.2) - dt;
+    if (d.cd <= 0) { d.cd = 4.5; if (addHazard(Math.random() < 0.7 ? player.lane : Math.floor(Math.random() * 3), 'fire')) sfx.cast(); }
+  },
+  illusion(d, dt) {   // Maya Mohini: once, conjures two decoys in the other paths (1 hit each, harmless)
+    if (d.decoy || d.cast || d.z > 0.8) return;
+    d.cast = true;
+    const lanes = [0, 1, 2].filter(l => l !== d.lane);
+    for (const l of lanes) {
+      if (danavs.filter(x => x.decoy).length >= 4) break;
+      const c = spawnDanav('maya', l, { z: d.z });
+      if (c) { c.decoy = true; c.hp = c.max = 1; c.cast = true; c.elite = false; c.big = d.big; }
+    }
+    const p = project(d.z, d.x); burst(p.x, p.y - 50 * p.scale * unit(), '#FF8AD8', 16, 3); sfx.cast();
+  },
+  kaal(d, dt) {   // Kaal Pishacha: a claw strike on your path every 6 s (1 s warning); a shadow shroud once below half health
+    d.cd = (d.cd ?? 2.5) - dt;
+    if (d.cd <= 0 && d.z < 0.9) { d.cd = 6; if (addHazard(player.lane, 'claw')) sfx.cast(); }
+    if (!d.shroud && d.hp < d.max / 2) { d.shroud = 2.2; const p = project(d.z, d.x); floatText(p.x, p.y - 100 * p.scale * unit(), 'Shadow shroud', '#C9B8FF', 14); }
+    if (d.shroud > 0) d.shroud = Math.max(0.0001, d.shroud - dt);
+  },
+};
+function updateGround(dt) {
+  for (let i = GROUND.length - 1; i >= 0; i--) {
+    const g = GROUND[i];
+    if (g.warn > 0) { g.warn -= dt; continue; }
+    g.life -= dt;
+    if (!g.hit && player.lane === g.lane && lives > 0) { g.hit = true; hurtPlayer('fire'); }
+    if (g.life <= 0) GROUND.splice(i, 1);
+  }
+}
+function drawGround() {   // under every gameplay object: warning outline, then the hazard itself
+  for (const g of GROUND) {
+    const fire = g.kind === 'fire', col = fire ? '255,140,40' : '170,110,255';
+    const a = project(0.2, g.lane - 1.45), b = project(0.02, g.lane - 1.45), c = project(0.02, g.lane - 0.55), d = project(0.2, g.lane - 0.55);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 10); ctx.lineTo(c.x, c.y + 10); ctx.lineTo(d.x, d.y); ctx.closePath();
+    if (g.warn > 0) { ctx.strokeStyle = `rgba(${col},${0.5 + 0.4 * Math.abs(Math.sin(time * 14))})`; ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = `rgba(${col},0.12)`; ctx.fill(); continue; }
+    ctx.fillStyle = `rgba(${col},${fire ? 0.28 : 0.35})`; ctx.fill();
+    const n = fire ? 6 : 3;
+    for (let k = 0; k < n; k++) { const q = project(0.02 + 0.17 * (k + 0.5) / n, g.lane - 1 + Math.sin(time * 3 + k) * 0.25), r = (fire ? 34 : 46) * q.scale * unit() * (0.8 + 0.3 * Math.sin(time * 12 + k)); ctx.globalAlpha = Math.min(1, g.life * 2); ctx.drawImage(glowSprite(fire ? '255,150,40' : '150,90,255'), q.x - r, q.y - r * 1.4, r * 2, r * 2); }
+    ctx.globalAlpha = 1;
+  }
+}
 function slay(d, i) {
+  if (d.decoy) {   // an illusion pops: no points, no kill count
+    const q = project(d.z, d.x); burst(q.x, q.y - 40 * q.scale * unit(), '#FF8AD8', 12, 3);
+    floatText(q.x, q.y - 80 * q.scale * unit(), 'Illusion!', '#FFB8E8', 14); danavs.splice(i, 1); return;
+  }
   const t = DANAV[d.type], p = project(d.z, d.x);
   burst(p.x, p.y - 40 * p.scale * unit(), t.skin, 18, 5); burst(p.x, p.y - 40 * p.scale * unit(), '#FFD27D', 8, 3);
   combo++; comboT = 2.2;
@@ -1618,6 +1716,9 @@ function slay(d, i) {
 }
 function damage(d, dmg, color) {
   let taken = dmg;
+  if (d.gs === 'shield' || d.gs === 'charge') { taken *= 0.15; if (Math.random() < 0.3) sfx.block(); }
+  else if (d.gs === 'exposed') taken *= 1.5;
+  if (d.shroud > 0.0001) taken *= 0.5;
   if (d.armor > 0) { d.armor -= dmg; taken = dmg * 0.3; if (d.armor <= 0) { const p = project(d.z, d.x); burst(p.x, p.y - 45 * p.scale * unit(), '#D9A35A', 16, 4); floatText(p.x, p.y - 90 * p.scale * unit(), 'Kavach broken!', '#FFD27D', 14); sfx.block(); } }
   d.hp -= taken; d.flash = 1;
   const p = project(d.z, d.x);
@@ -1661,7 +1762,7 @@ function update(dt) {
     if (!boss) {
       spawnT += dt;
       const alive = danavs.length;
-      if (spawnT > lv.every && kills + alive < lv.kills + 2 && alive < (lv.act >= 2 ? 7 : 6)) { spawnT = 0; spawnDanav(); }
+      if (spawnT > lv.every && kills + alive < lv.kills + 2 && alive < (lv.act >= 2 ? 7 : 6)) { spawnT = 0; const intro = lv.intro && !lv.introDone && kills >= 2 && !danavs.some(d => SPECIAL.has(d.type) && !d.decoy) ? lv.intro : undefined; if (intro) lv.introDone = true; spawnDanav(intro); }
     }
     pickT -= dt;
     if (pickT <= 0) { pickT = (lakshmi ? 6 : 10) + Math.random() * 4; spawnPickup(); }
@@ -1677,12 +1778,14 @@ function update(dt) {
       d.z = 0.6; d.castT -= dt;
       if (d.castT <= 0) { d.castT = 2.9 + Math.random() * 1.2; fires.push({ lane: Math.random() < 0.65 ? player.lane : Math.floor(Math.random() * 3), z: d.z - 0.02, warn: 0.95, col: 'maya', from: d.z }); sfx.cast(); }
     }
+    if (t.ai) AI[t.ai](d, dt, t);
     if (t.hop && d.z < 0.8 && d.z > 0.3) { d.hopT -= dt; if (d.hopT <= 0) { d.hopT = (t.ghost ? 1.2 : 1.8) + Math.random() * 1.5; const opts = [d.lane - 1, d.lane + 1].filter(l => l >= 0 && l <= 2); d.lane = opts[Math.floor(Math.random() * opts.length)]; } }
     d.x += (d.lane - 1 - d.x) * Math.min(1, dt * 6);
     if (d.life !== undefined) { d.life -= dt; if (d.life <= 0) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#8E0A18', 10, 2); danavs.splice(i, 1); continue; } }
-    if (d.z <= 0.01) { danavs.splice(i, 1); if (lives > 0) hurtPlayer('breach'); }
+    if (d.z <= 0.01) { danavs.splice(i, 1); if (lives > 0 && !d.decoy) hurtPlayer('breach'); }
   }
 
+  updateGround(dt);
   // shots
   for (let i = shots.length - 1; i >= 0; i--) {
     const s = shots[i];
@@ -1884,7 +1987,7 @@ function render() {
   if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
   cineCamera();
   AMB.T = auraTint();
-  drawSky(); drawAuraSky(); drawBridge(); drawLanes(); drawNearBats();
+  drawSky(); drawAuraSky(); drawBridge(); drawLanes(); drawGround(); drawNearBats();
   for (const f of fires) if (f.warn > 0) drawWarn(f);
   if (boss && boss.charge && boss.charge.warn > 0) drawWarn({ lane: boss.charge.lane, from: boss.z }, true);
   const all = danavs.map(d => ({ z: d.z, draw: () => drawDanav(d) }));
@@ -2804,13 +2907,29 @@ function drawDanav(d) {
     ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(0, -s * 0.95, s * 1.25, 0, Math.PI * 2); ctx.fill();
     if (Math.random() < 0.3) parts.push({ x: p.x + (Math.random() - 0.5) * s, y: p.y - Math.random() * s * 1.6, vx: 0, vy: -1.5, r: 1.5 + Math.random() * 2, life: 0.5, color: '#FFD27D' });
   }
-  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  if (!d.decoy) { ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.55, s * 0.13, 0, 0, Math.PI * 2); ctx.fill(); }
   ctx.translate(0, -bob);
   // mounts: the rider sits on a charging bull or a flying dragon
   ctx.save();
   if (t.mount === 'bull') { drawBull(s, d, 'body'); ctx.translate(0, -s * 0.72); ctx.scale(0.74, 0.74); }
   if (t.mount === 'dragon') { const fly = d.dead ? s * 0.2 : s * 1.15 + Math.sin(time * 3 + d.phase) * s * 0.12; ctx.translate(0, -fly); drawDragon(s, d); ctx.translate(0, -s * 0.12); ctx.scale(0.7, 0.7); }
-  if (t.ghost) {   // the pishach has no legs, only a trailing wisp of mist
+  if (t.shadowy && !d.dead) { const r = s * 1.3; ctx.globalAlpha = 0.7; ctx.drawImage(glowSprite(d.type === 'kaal' ? '90,50,160' : '60,30,100'), -r, -s - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+  if (d.dashWarn > 0) { ctx.strokeStyle = `rgba(200,160,255,${0.5 + 0.5 * Math.sin(time * 30)})`; ctx.lineWidth = Math.max(2, s * 0.06); ctx.beginPath(); ctx.ellipse(0, 0, s * 0.7, s * 0.18, 0, 0, Math.PI * 2); ctx.stroke(); }
+  if (d.type === 'agni' && !d.dead) { const r = s * 1.2; ctx.globalAlpha = 0.6 + 0.2 * Math.sin(time * 10 + d.phase); ctx.drawImage(glowSprite('255,120,30'), -r, -s - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+  if (d.decoy) ctx.globalAlpha = 0.5 + 0.12 * Math.sin(time * 16 + d.phase);   // illusions flicker
+  if (d.shroud > 0.0001) { const r = s * 1.5; ctx.drawImage(glowSprite('40,20,70'), -r, -s - r, r * 2, r * 2); }
+  if (t.float && !d.dead) {   // Agni Vetala floats on a column of flame
+    ctx.translate(0, -s * 0.3 - Math.sin(time * 3 + d.phase) * s * 0.06);
+    const fg = ctx.createLinearGradient(0, -s * 0.7, 0, s * 0.3); fg.addColorStop(0, '#FF7A1A'); fg.addColorStop(0.6, 'rgba(255,190,60,0.7)'); fg.addColorStop(1, 'rgba(255,200,80,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(-s * 0.34, -s * 0.7);
+    for (let k = 0; k <= 6; k++) ctx.lineTo(-s * 0.34 + k * s * 0.113 + Math.sin(time * 14 + k) * s * 0.05, (k % 2 ? s * 0.08 : s * 0.3) - Math.abs(k - 3) * s * 0.07);
+    ctx.lineTo(s * 0.34, -s * 0.7); ctx.fill();
+  } else if (t.tail && !d.dead) {   // Naga Rakshaka: a coiled serpent tail instead of legs
+    ctx.fillStyle = t.dark; ctx.beginPath(); ctx.ellipse(0, -s * 0.2, s * 0.42, s * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, -s * 0.28, s * 0.3, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = t.skin; ctx.lineWidth = s * 0.12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(s * 0.3, -s * 0.18); ctx.quadraticCurveTo(s * 0.7, -s * 0.05 + Math.sin(time * 6 + d.phase) * s * 0.1, s * 0.62, -s * 0.4); ctx.stroke();
+    ctx.fillStyle = '#C9A24F'; ctx.fillRect(-s * 0.3, -s * 0.66, s * 0.6, s * 0.06);
+  } else if (t.ghost) {   // the pishach has no legs, only a trailing wisp of mist
     ctx.translate(0, -s * 0.35 - Math.sin(time * 3 + d.phase) * s * 0.08);
     const wg = ctx.createLinearGradient(0, -s * 0.7, 0, s * 0.3); wg.addColorStop(0, t.skin); wg.addColorStop(1, 'rgba(169,188,208,0)');
     ctx.fillStyle = wg; ctx.beginPath(); ctx.moveTo(-s * 0.36, -s * 0.7);
@@ -2849,6 +2968,7 @@ function drawDanav(d) {
   }
   // head
   const hy = -s * 1.34;
+  if (t.hood && !d.dead) { ctx.fillStyle = t.dark; ctx.beginPath(); ctx.ellipse(0, hy - s * 0.05, s * 0.42, s * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, hy - s * 0.05, s * 0.3, s * 0.27, 0, 0, Math.PI * 2); ctx.fill(); }
   ctx.fillStyle = '#140A06'; for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.07, hy - s * 0.12); ctx.lineTo(k * s * 0.09, hy - s * 0.34 - Math.abs(k) * -s * 0.02); ctx.lineTo(k * s * 0.07 + s * 0.06, hy - s * 0.12); ctx.fill(); }
   ctx.fillStyle = t.skin; ctx.beginPath(); ctx.ellipse(0, hy, s * 0.24, s * 0.26, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = t.horn;
@@ -2859,6 +2979,14 @@ function drawDanav(d) {
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(0, hy + s * 0.12, s * 0.12, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); }
+  if (d.type === 'vajra' && !d.dead) {
+    if (d.gs !== 'exposed') {   // blue energy shield (with a charge glow before the slam)
+      const sh = d.gs === 'charge' ? 1 + 0.15 * Math.sin(time * 30) : 1, r = s * 0.5 * sh;
+      ctx.fillStyle = 'rgba(80,160,255,0.28)'; ctx.strokeStyle = d.gs === 'charge' ? '#E6F4FF' : 'rgba(150,210,255,0.9)'; ctx.lineWidth = Math.max(2, s * 0.06);
+      ctx.beginPath(); ctx.arc(0, -s * 0.9, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (Math.random() < 0.25) { const q = project(d.z, d.x); parts.push({ x: q.x + (Math.random() - 0.5) * s, y: q.y - s * (0.6 + Math.random() * 0.6), vx: (Math.random() - 0.5) * 2, vy: -1, r: 1.5, life: 0.4, color: '#9FD8FF' }); }
+  }
+  if (d.type === 'maya' && !d.decoy && !d.dead) { const r = s * 0.22; ctx.drawImage(glowSprite('255,214,120'), -r, -s * 1.42 - r, r * 2, r * 2); ctx.fillStyle = '#FFE27A'; ctx.beginPath(); ctx.arc(0, -s * 1.42, Math.max(2, s * 0.05), 0, Math.PI * 2); ctx.fill(); }
   if (d.armor > 0) {   // the kavach-danav's bronze shield cracks as you strike it
     const sx = -s * 0.1, sy = -s * 0.9, sr = s * 0.38, k = d.armor / d.armorMax;
     const shg = ctx.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, 0, sx, sy, sr); shg.addColorStop(0, '#F2C98A'); shg.addColorStop(0.6, '#B07A3A'); shg.addColorStop(1, '#5A3A18');
@@ -2875,7 +3003,7 @@ function drawDanav(d) {
   // health bar
   if (d.dead) return;
   const ride = t.mount === 'dragon' ? s * 1.45 : t.mount === 'bull' ? s * 0.4 : 0;
-  if (d.hp < d.max && d.z < 0.95) {
+  if (d.hp < d.max && d.z < 0.95 && !d.decoy) {
     const bw = Math.max(22, s * 0.9), bx = p.x - bw / 2, by = p.y - bob - s * 1.95 - ride;
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, 6);
     ctx.fillStyle = d.hp / d.max > 0.5 ? '#7BD88F' : d.hp / d.max > 0.25 ? '#F4C152' : '#FF5A36'; ctx.fillRect(bx, by, bw * Math.max(0, d.hp / d.max), 4);
@@ -2958,7 +3086,7 @@ function drawBoss() {
   if (b.hitFlash > 0) { const fg = ctx.createRadialGradient(0, -s * 1.2, 0, 0, -s * 1.2, s * 1.1); fg.addColorStop(0, `rgba(255,255,240,${b.hitFlash * 0.6})`); fg.addColorStop(1, 'rgba(255,255,240,0)'); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, -s * 1.2, s * 1.1, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
 }
-const FIRECOL = { fire: ['#FFF3C4', '#FF8A3D', 'rgba(200,30,20,0.6)'], blood: ['#FFD6D6', '#E0202A', 'rgba(110,0,10,0.65)'], rock: ['#F2E2C8', '#A07850', 'rgba(70,50,30,0.5)'], maya: ['#F4E6FF', '#A860FF', 'rgba(60,0,120,0.6)'], dark: ['#E8D8FF', '#6A3AB0', 'rgba(10,0,30,0.8)'] };
+const FIRECOL = { venom: ['#E8FFD0', '#4CC870', 'rgba(20,90,40,0.6)'], bolt: ['#E6F4FF', '#4FA8FF', 'rgba(20,60,160,0.6)'], fire: ['#FFF3C4', '#FF8A3D', 'rgba(200,30,20,0.6)'], blood: ['#FFD6D6', '#E0202A', 'rgba(110,0,10,0.65)'], rock: ['#F2E2C8', '#A07850', 'rgba(70,50,30,0.5)'], maya: ['#F4E6FF', '#A860FF', 'rgba(60,0,120,0.6)'], dark: ['#E8D8FF', '#6A3AB0', 'rgba(10,0,30,0.8)'] };
 function drawFireball(f) {
   const p = project(f.z, f.lane - 1), r = (10 + 22 * p.scale) * unit(), c = FIRECOL[f.col || 'fire'];
   if (f.col === 'rock') {   // a boulder kicked up by Mahishasura's hooves
@@ -2974,7 +3102,7 @@ function drawFireball(f) {
   if (f.col === 'dark' || f.col === 'maya') { ctx.strokeStyle = `rgba(230,210,255,${0.5 + 0.3 * Math.sin(time * 20)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y - r, r * (0.9 + 0.2 * Math.sin(time * 12)), 0, Math.PI * 2); ctx.stroke(); }
 }
 function drawWarn(f, strong) {
-  const zf = Math.min(0.66, (f.from || (boss ? boss.z : 0.64)) + 0.02), col = f.col === 'maya' ? '170,90,255' : f.col === 'dark' ? '120,60,200' : '255,60,30';
+  const zf = Math.min(0.66, (f.from || (boss ? boss.z : 0.64)) + 0.02), col = f.col === 'maya' ? '170,90,255' : f.col === 'dark' ? '120,60,200' : f.col === 'venom' ? '80,220,120' : f.col === 'bolt' ? '90,170,255' : '255,60,30';
   const a = project(zf, f.lane - 1.5), b = project(0, f.lane - 1.5), c = project(0, f.lane - 0.5), d = project(zf, f.lane - 0.5);
   ctx.fillStyle = `rgba(${col},${(strong ? 0.22 : 0.12) + (strong ? 0.25 : 0.18) * Math.abs(Math.sin(time * 14))})`;
   ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 30); ctx.lineTo(c.x, c.y + 30); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
@@ -3771,7 +3899,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
