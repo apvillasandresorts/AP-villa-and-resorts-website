@@ -1359,7 +1359,9 @@ function acceptAshirvaad() {
   if (state !== 'blessing') return;
   const b = BLESS[LV().bless];
   $('ashirvaad').classList.remove('show');
+  const prevStage = bulk;
   weapon = b.weapon; bulk = Math.min(5, bulk + (b.grow ? 1 : 0));
+  if (bulk > prevStage) ascend(bulk);
   if (b.weapon === 'swarna') lakshmi = true;
   player.flash = 1.2;
   lives = b.full ? MAX_LIVES : Math.min(MAX_LIVES, lives + 1);
@@ -1463,7 +1465,11 @@ $('celebrate-again-btn').addEventListener('click', e => { e.stopPropagation(); e
 function move(dir) {
   if (state !== 'playing') return;
   const n = Math.max(0, Math.min(2, player.lane + dir));
-  if (n !== player.lane) { player.lane = n; sfx.move(); }
+  if (n !== player.lane) {
+    const p = playerPos();
+    for (let i = 0; i < 6; i++) parts.push({ x: p.x + (Math.random() - 0.5) * 20, y: p.y + (Math.random() - 0.2) * 50 * unit(), vx: -dir * (2 + Math.random() * 2), vy: -0.4, r: 1.5 + Math.random() * 1.5, life: 0.45, color: 'rgba(255,236,190,0.9)' });
+    player.lane = n; sfx.move();
+  }
 }
 addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, textarea')) return;
@@ -1808,7 +1814,7 @@ function render() {
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
-  drawPowerFx(false); drawWarrior(); drawPowerFx(true);
+  drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawWarrior(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
   const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - 0.08 * intensity()), W / 2, H / 2, Math.max(W, H) * 0.8);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(${lerpRGB('40,10,50', AMB.T.tint, 0.25)},${0.28 + 0.22 * intensity() + 0.25 * SKY.mood})`);
@@ -2952,6 +2958,31 @@ function drawBoonIcon(c, kind, r, t) {
   }
 }
 
+// ---------------- Stage ascension (protagonist progression, visual only) ----------------
+// Stage art in docs/game-assets/asset-manifest.json exists only as reference-sheet videos (no isolated or transparent
+// stills), so the in-game yoddha stays code-drawn; this marks each new stage with a short, readable effect.
+const STAGE_HI = ['बाल ब्रह्मचारी', 'किशोर साधक', 'युवा साधु', 'तपस्वी', 'महायोगी', 'सिद्ध साधु'];
+const ASC = { t: -1, stage: 0 };
+function ascend(stage) {
+  ASC.t = 0; ASC.stage = stage;
+  const p = playerPos(); rings.push({ x: p.x, y: p.y + 40 * unit(), r: 0, life: 1, col: '255,226,150' });
+  sfx.up(); setTimeout(sfx.bell, 180);
+}
+function beamSprite() { return envSprite('ascbeam', 64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(255,230,160,0)'); gr.addColorStop(0.5, 'rgba(255,248,220,0.9)'); gr.addColorStop(1, 'rgba(255,230,160,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const v = g.createLinearGradient(0, 0, 0, h); v.addColorStop(0, 'rgba(0,0,0,1)'); v.addColorStop(0.35, 'rgba(0,0,0,0)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = v; g.fillRect(0, 0, w, h); }); }
+function drawAscension(dt) {   // behind the yoddha: light column; on the effects layer: the stage name
+  if (ASC.t < 0) return;
+  ASC.t += dt; if (ASC.t > 2.4) { ASC.t = -1; return; }
+  const u = unit(), p = WR.at || project(0, player.x), k = ASC.t < 0.3 ? ASC.t / 0.3 : Math.max(0, 1 - (ASC.t - 1.6) / 0.8);
+  const bw = 90 * u * (0.6 + 0.4 * k), bh = H * 0.75;
+  ctx.globalAlpha = 0.75 * k; ctx.drawImage(beamSprite(), p.x - bw / 2, p.y - bh, bw, bh); ctx.globalAlpha = 1;
+  if (Math.random() < 0.6) parts.push({ x: p.x + (Math.random() - 0.5) * bw * 0.6, y: p.y - Math.random() * 40 * u, vx: 0, vy: -3 - Math.random() * 2, r: 1.5 + Math.random() * 2, life: 0.8, color: '#FFE9A8' });
+  const ty = p.y - 150 * u - ASC.t * 18 * u;
+  fxCtx.save(); fxCtx.globalAlpha = k; fxCtx.textAlign = 'center';
+  fxCtx.font = `600 ${Math.round(11 * Math.max(1, u))}px Inter, sans-serif`; fxCtx.fillStyle = '#F4ECDB'; fxCtx.fillText(`STAGE ${ASC.stage + 1} OF 6`, p.x, ty - 26 * u);
+  fxCtx.font = `700 ${Math.round(26 * Math.max(1, u))}px serif`; fxCtx.fillStyle = '#FFE7A8'; fxCtx.shadowColor = '#FF9A3D'; fxCtx.shadowBlur = 14; fxCtx.fillText(STAGE_HI[ASC.stage], p.x, ty);
+  fxCtx.shadowColor = 'rgba(40,10,0,0.9)'; fxCtx.shadowBlur = 6; fxCtx.font = `italic 700 ${Math.round(16 * Math.max(1, u))}px 'Cormorant Garamond', serif`; fxCtx.fillStyle = '#FFF3D0'; fxCtx.fillText(STAGES[ASC.stage].name, p.x, ty + 20 * u);
+  fxCtx.restore();
+}
 // ---------------- Shakti aura: the yoddha powers up and down with your play ----------------
 function drawPowerFx(front) {
   const u = unit(), p = WR.at || project(0, player.x), s = 48 * u * (0.76 + 0.075 * WR.bulkVis) * (weapon === 'simha' ? 1.35 : 1);
@@ -3658,7 +3689,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>

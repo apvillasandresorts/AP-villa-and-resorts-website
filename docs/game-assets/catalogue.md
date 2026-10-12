@@ -138,3 +138,16 @@ Video only (no still) · baked background, no transparency · semi-realistic 3D 
 | `live.cutscene.bless-mahakal` | `videos/game/bless-mahakal.mp4` | 0.9 MB | 576×1024 |
 | `live.cutscene.finale` | `videos/game/finale.mp4` | 1.3 MB | 576×1024 |
 | `live.brand.emblem` | `assets/brand/logo-emblem-96.webp` | 0.0 MB | 96×96 |
+
+## Protagonist stage mapping
+
+| Stage | Name | Unlocked by | Source asset (recommended first) | Asset type |
+|---|---|---|---|---|
+| 1 | Bal Brahmachari (बाल ब्रह्मचारी) | start of every run | `new game videos/Create_character_sheet_for_prota…_20261012164919.mp4` ✓ | reference-sheet video |
+| 2 | Kishor Sadhak (किशोर साधक) | Shri Ganesh blessing (after wave 1) | `new game videos/Create_character_sheet_for_adole…_20261012164907.mp4` ✓<br>`new game videos/Create_character_sheet_for_adole…_20261012164915.mp4` | reference-sheet video |
+| 3 | Yuva Sadhu (युवा साधु) | Hanuman ji blessing (after wave 3) | `new game videos/Character_sheet_for_Yuva_Sadhu_20261012164850.mp4` ✓<br>`new game videos/Character_sheet_for_Yuva_Sadhu_20261012164858.mp4` | reference-sheet video |
+| 4 | Tapasvi (तपस्वी) | Maa Durga blessing (after Mahishasura) | `new game videos/Character_sheet_for_protagonist_…_20261012164844.mp4` ✓<br>`new game videos/Character_sheet_for_protagonist_…_20261012164840.mp4` | reference-sheet video |
+| 5 | Maha Yogi (महायोगी) | Shri Vishnu blessing (after wave 5) | `new game videos/Create_character_sheet_maha_yogi_20261012164836.mp4` ✓<br>`new game videos/Create_character_sheet_maha_yogi_20261012164832.mp4` | reference-sheet video |
+| 6 | Siddha Sadhu (सिद्ध साधु) | Mahakal blessing (after wave 9) | `new game videos/Create_character_sheet_for_prota…_20261012164826.mp4` ✓<br>`new game videos/Create_character_sheet_for_prota…_20261012164821.mp4` | reference-sheet video |
+
+Maa Lakshmi grants the Swarna Chakra but does not change the stage. Stages are not saved across a page reload (they never were); a retry restores the stage from the in-run checkpoint.

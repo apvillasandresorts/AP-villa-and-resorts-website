@@ -1598,5 +1598,149 @@
       "status": "MISSING",
       "note": "None exist in the project; every new asset is an 8 s video."
     }
-  ]
+  ],
+  "protagonistStages": [
+    {
+      "stage": 1,
+      "gameValue": "bulk = 0",
+      "name": "Bal Brahmachari",
+      "nameHi": "बाल ब्रह्मचारी",
+      "unlockedBy": "start of every run",
+      "assets": [
+        {
+          "id": "hero.stage1-bal-brahmachari",
+          "path": "new game videos/Create_character_sheet_for_prota…_20261012164919.mp4",
+          "recommended": true
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": []
+    },
+    {
+      "stage": 2,
+      "gameValue": "bulk = 1",
+      "name": "Kishor Sadhak",
+      "nameHi": "किशोर साधक",
+      "unlockedBy": "Shri Ganesh blessing (after wave 1)",
+      "assets": [
+        {
+          "id": "hero.stage2-kishor-sadhak.a",
+          "path": "new game videos/Create_character_sheet_for_adole…_20261012164907.mp4",
+          "recommended": true
+        },
+        {
+          "id": "hero.stage2-kishor-sadhak.b",
+          "path": "new game videos/Create_character_sheet_for_adole…_20261012164915.mp4",
+          "recommended": false
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": [
+        "on-screen labels"
+      ]
+    },
+    {
+      "stage": 3,
+      "gameValue": "bulk = 2",
+      "name": "Yuva Sadhu",
+      "nameHi": "युवा साधु",
+      "unlockedBy": "Hanuman ji blessing (after wave 3)",
+      "assets": [
+        {
+          "id": "hero.stage3-yuva-sadhu.a",
+          "path": "new game videos/Character_sheet_for_Yuva_Sadhu_20261012164850.mp4",
+          "recommended": true
+        },
+        {
+          "id": "hero.stage3-yuva-sadhu.b",
+          "path": "new game videos/Character_sheet_for_Yuva_Sadhu_20261012164858.mp4",
+          "recommended": false
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": [
+        "labelled \"Stage 2\" in the video; the game calls Yuva Sadhu stage 3"
+      ]
+    },
+    {
+      "stage": 4,
+      "gameValue": "bulk = 3",
+      "name": "Tapasvi",
+      "nameHi": "तपस्वी",
+      "unlockedBy": "Maa Durga blessing (after Mahishasura)",
+      "assets": [
+        {
+          "id": "hero.stage4-tapasvi.a",
+          "path": "new game videos/Character_sheet_for_protagonist_…_20261012164844.mp4",
+          "recommended": true
+        },
+        {
+          "id": "hero.stage4-tapasvi.b",
+          "path": "new game videos/Character_sheet_for_protagonist_…_20261012164840.mp4",
+          "recommended": false
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": [
+        "on-screen labels"
+      ]
+    },
+    {
+      "stage": 5,
+      "gameValue": "bulk = 4",
+      "name": "Maha Yogi",
+      "nameHi": "महायोगी",
+      "unlockedBy": "Shri Vishnu blessing (after wave 5)",
+      "assets": [
+        {
+          "id": "hero.stage5-maha-yogi.a",
+          "path": "new game videos/Create_character_sheet_maha_yogi_20261012164836.mp4",
+          "recommended": true
+        },
+        {
+          "id": "hero.stage5-maha-yogi.b",
+          "path": "new game videos/Create_character_sheet_maha_yogi_20261012164832.mp4",
+          "recommended": false
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": []
+    },
+    {
+      "stage": 6,
+      "gameValue": "bulk = 5",
+      "name": "Siddha Sadhu",
+      "nameHi": "सिद्ध साधु",
+      "unlockedBy": "Mahakal blessing (after wave 9)",
+      "assets": [
+        {
+          "id": "hero.stage6-siddha-sadhu.a",
+          "path": "new game videos/Create_character_sheet_for_prota…_20261012164826.mp4",
+          "recommended": true
+        },
+        {
+          "id": "hero.stage6-siddha-sadhu.b",
+          "path": "new game videos/Create_character_sheet_for_prota…_20261012164821.mp4",
+          "recommended": false
+        }
+      ],
+      "assetType": "reference-sheet video (turnaround + poses on a studio background); not a sprite sheet, not an isolated or transparent character",
+      "gameReady": false,
+      "inGameRendering": "code-drawn yoddha (drawWarrior) + card portrait (drawSadhuPortrait); stage ascension effect (ascend/drawAscension)",
+      "notes": [
+        "labelled \"Stage 5 Siddha Sadhu\""
+      ]
+    }
+  ],
+  "protagonistStagesNote": "Maa Lakshmi grants the Swarna Chakra but does not change the stage. Stages are not saved across a page reload (they never were); a retry restores the stage from the in-run checkpoint."
 }
