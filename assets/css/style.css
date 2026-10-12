@@ -75,7 +75,7 @@ h1, h2, h3, h4 {
 
 a { color: inherit; text-decoration: none; transition: opacity 0.3s var(--ease); }
 a:hover { opacity: 0.75; }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }   /* height:auto so the width/height attributes never stretch a photo to its full portrait height */
 button { font-family: inherit; cursor: none; border: none; background: none; }
 
 .container { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
@@ -429,6 +429,18 @@ section { padding: 130px 0; position: relative; }
   border: 2px solid var(--gold); border-radius: var(--r-lg); z-index: -1;
   background: linear-gradient(135deg, transparent, rgba(184,138,44,0.06));
 }
+/* Home "about" collage: three real villa photos instead of one tall photo */
+.about-media--collage { display: grid; grid-template-columns: 1.5fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 14px; aspect-ratio: 6/5; min-height: 0; overflow: visible; }
+.about-media--collage img, .post-figure--trio .trio img { min-height: 0; }
+.about-media--collage img { width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; transition: transform .8s var(--ease); }
+.about-media--collage .collage__a { grid-column: 1; grid-row: 1 / span 2; order: -1; }
+.about-media--collage .collage__b, .about-media--collage .collage__c { grid-column: 2; box-shadow: var(--shadow-md); }
+.about-media--collage img:hover { transform: scale(1.02); }
+/* Post photo trio (Where to stay) */
+.post-figure--trio .trio { display: grid; grid-template-columns: 1.6fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; aspect-ratio: 16/10; overflow: hidden; border-radius: var(--r-md); }
+.post-figure--trio .trio img { width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; border-radius: var(--r-md); box-shadow: var(--shadow-md); }
+.post-figure--trio .trio img:first-child { grid-row: 1 / span 2; }
+@media (max-width: 600px) { .post-figure--trio .trio { aspect-ratio: 4/3; gap: 6px; } .about-media--collage { gap: 8px; } }
 .about-copy h2 { font-size: clamp(36px, 4.5vw, 56px); margin-bottom: 28px; }
 .about-copy h2 em { font-style: italic; color: var(--saffron); }
 .about-copy p { font-size: 17px; color: var(--ink); margin-bottom: 18px; line-height: 1.8; }
@@ -1635,3 +1647,18 @@ body:has(.hero) .nav:not(.scrolled) .nav__menu a.nav__checkin { border-color: #E
 }
 @keyframes navDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 @media (max-width: 380px) { .nav .btn { padding: 9px 10px; font-size: 11.5px; } .nav__logo-full { height: 32px !important; } }
+
+/* Listen to a journal post (English / Hindi narration) */
+.post-listen { margin: 18px 0 26px; padding: 14px 16px; border-radius: var(--r-md); background: linear-gradient(135deg, rgba(184,138,44,.10), rgba(192,83,26,.06)); border: 1px solid rgba(184,138,44,.28); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.post-listen__label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--ink); }
+.post-listen__btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.post-listen button, .post-listen select { font: 600 13px Inter, sans-serif; border-radius: 999px; padding: 8px 14px; border: 1px solid rgba(184,138,44,.45); background: #fff; color: var(--ink); cursor: pointer; transition: all .25s var(--ease); }
+.post-listen button:hover { border-color: var(--gold); transform: translateY(-1px); }
+.post-listen button.is-active { background: var(--saffron); color: #fff; border-color: var(--saffron); }
+.post-listen select { padding: 8px 10px; }
+.post-listen__bar { flex-basis: 100%; height: 3px; border-radius: 3px; background: rgba(184,138,44,.18); overflow: hidden; }
+.post-listen__bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--saffron)); transition: width .4s ease; }
+.post-listen__note { flex-basis: 100%; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.post-listen.is-playing .post-listen__label svg { animation: listenPulse 1.2s ease-in-out infinite; color: var(--saffron); }
+@keyframes listenPulse { 50% { transform: scale(1.18); } }
+.article .is-reading { background: linear-gradient(90deg, rgba(232,199,122,.28), rgba(232,199,122,.06)); border-radius: 8px; box-shadow: -4px 0 0 var(--gold); transition: background .4s; }

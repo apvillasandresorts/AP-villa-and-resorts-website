@@ -88,7 +88,10 @@ jobs:
 
             Hard rules: property claims only from content/business-facts.json; only photos from
             content/photo-library.json; every timing/price/date sourced; no git commands; edit only
-            blog/<slug>.html, blog.html, sitemap.xml, content/published.json, content/topics.json.
+            blog/<slug>.html, blog/narration/<slug>.hi.json, blog.html, sitemap.xml, content/published.json, content/topics.json.
+            After the post is final, write blog/narration/<slug>.hi.json for the Hindi "Listen" button: {"lang":"hi","blocks":[...]}
+            with one natural spoken-Hindi (Devanagari) translation per block printed by `node scripts/narration-blocks.mjs <slug>`,
+            same order and same count (check with `node scripts/narration-blocks.mjs <slug> --check`). Keep names, numbers and prices exact.
             Before finishing, `node scripts/validate-post.mjs <slug>` must pass.
           claude_args: >-
             --model ${{ env.BLOG_MODEL }}
@@ -105,11 +108,12 @@ jobs:
           if [ "$count" != "1" ]; then echo "::error::Expected exactly one new file in blog/, found: '$new'"; exit 1; fi
           slug=$(basename "$new" .html)
           # Only the allowed files may change.
-          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json|content/photo-library\.json|images/blog/$slug/[^/]+\.(jpg|jpeg|png|webp)|scripts/node_modules/.*)$" || true)
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -vE "^(blog/$slug\.html|blog/narration/$slug\.hi\.json|blog\.html|sitemap\.xml|content/published\.json|content/topics\.json|content/photo-library\.json|images/blog/$slug/[^/]+\.(jpg|jpeg|png|webp)|scripts/node_modules/.*)$" || true)
           if [ -n "$bad" ]; then echo "::warning::Reverting unexpected changes: $bad"; for f in $bad; do git checkout -- "$f" 2>/dev/null || rm -f "$f"; done; fi
           # Responsive WebP copies + srcset for the new post's photos (free, open-source sharp)
           npm --prefix scripts ci --silent || npm --prefix scripts install --silent
           node scripts/responsive-images.mjs
+          node scripts/photo-trio.mjs
           node scripts/build-sitemap.mjs
           branch="blog/$slug"
           git config user.name "github-actions[bot]"
@@ -184,7 +188,8 @@ jobs:
             major Indian news) and link it inline and in the Sources list, or soften/remove the detail.
             For a villa claim not in content/business-facts.json: remove it or reword it to what the file supports.
             Keep the FAQ JSON-LD identical to the visible FAQ. Keep the post 1,400-2,200 words.
-            Only edit blog/${{ needs.write.outputs.slug }}.html (and content/published.json "sources" if you add sources;
+            If you change the post text, update blog/narration/${{ needs.write.outputs.slug }}.hi.json to match (same block count).
+            Only edit blog/${{ needs.write.outputs.slug }}.html, its narration file (and content/published.json "sources" if you add sources;
             new photos only via node scripts/commons-photo.mjs).
             Do not run git. Finish only when `node scripts/validate-post.mjs ${{ needs.write.outputs.slug }}` passes.
 

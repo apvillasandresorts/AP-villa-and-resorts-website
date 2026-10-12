@@ -182,6 +182,16 @@ if (!sitemap.includes(`<loc>${SITE}/blog/${slug}.html</loc>`)) fail('sitemap.xml
 const summary = { slug, title: title.replace(/ — AP Villas Journal$/, ''), keyword: same[0]?.keyword ?? '', words, h2: h2s, sources: externalSources, related, errors, warnings };
 if (summaryPath) writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 for (const w of warnings) console.log(`⚠ ${w}`);
+// Hindi narration (Listen button): optional, but if present it must line up with the page blocks
+{
+  const nf = `blog/narration/${slug}.hi.json`;
+  if (existsSync(nf)) {
+    const { blocks } = await import("./narration-blocks.mjs");
+    let n = -1; try { n = JSON.parse(readFileSync(nf, "utf8")).blocks.length; } catch {}
+    const want = blocks(html).length;
+    if (n !== want) fail(`${nf} has ${n} blocks but the post has ${want} (run node scripts/narration-blocks.mjs ${slug} --check)`);
+  }
+}
 if (errors.length) {
   for (const e of errors) console.log(`✗ ${e}`);
   console.log(`\n${errors.length} check(s) failed for ${file}`);

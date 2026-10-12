@@ -82,6 +82,92 @@
   const article = document.querySelector('article.article');
   if (!article || !location.pathname.includes('/blog/')) return;
 
+  // ---------- Listen: narration in English or Hindi (the browser's own free voices) ----------
+  // Blocks are picked the same way as scripts/narration-blocks.mjs, so blog/narration/<slug>.hi.json lines up with them.
+  const SKIP = 'figure, .article__meta, .post-toc, .post-share, .post-book, .post-related, .post-listen';
+  const blockEls = [...article.querySelectorAll('h1, h2, h3, p, li')].filter(el => !el.closest(SKIP) && !(el.tagName === 'P' && /text-align:\s*center/.test(el.getAttribute('style') || '')) && el.textContent.trim());
+  const synth = window.speechSynthesis;
+  if (synth && blockEls.length) {
+    const slugHere = location.pathname.split('/').pop().replace(/\.html$/, '');
+    const texts = { en: blockEls.map(el => el.textContent.replace(/\s+/g, ' ').trim()) };
+    const ui = document.createElement('div');
+    ui.className = 'post-listen';
+    ui.innerHTML = `<span class="post-listen__label"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2" y="14" width="5" height="7" rx="2"/><rect x="17" y="14" width="5" height="7" rx="2"/></svg> Listen to this guide</span>
+      <div class="post-listen__btns">
+        <button type="button" data-lang="en">▶ English</button>
+        <button type="button" data-lang="hi" hidden>▶ हिंदी में सुनें</button>
+        <button type="button" data-act="toggle" hidden>❚❚ Pause</button>
+        <button type="button" data-act="stop" hidden>■ Stop</button>
+        <select aria-label="Reading speed"><option value="0.85">0.85×</option><option value="1" selected>1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option></select>
+      </div>
+      <div class="post-listen__bar"><i></i></div><small class="post-listen__note" hidden></small>`;
+    (article.querySelector('.article__meta') || article.querySelector('h1')).after(ui);
+    const $q = s => ui.querySelector(s), barI = $q('.post-listen__bar i'), note = $q('.post-listen__note');
+    fetch(`narration/${slugHere}.hi.json`).then(r => r.ok ? r.json() : null).then(j => { if (j && Array.isArray(j.blocks) && j.blocks.length) { texts.hi = j.blocks; $q('[data-lang="hi"]').hidden = false; } }).catch(() => {});
+    let voices = [];
+    const loadVoices = () => { voices = synth.getVoices(); };
+    loadVoices(); synth.addEventListener?.('voiceschanged', loadVoices);
+    const pickVoice = lang => {
+      const want = lang === 'hi' ? ['hi-IN', 'hi'] : ['en-IN', 'en-GB', 'en-US', 'en'];
+      const good = v => /google|natural|online|neural|premium|enhanced/i.test(v.name);
+      for (const w of want) {
+        const list = voices.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(w.toLowerCase()));
+        if (list.length) return list.find(good) || list[0];
+      }
+      return null;
+    };
+    // split long paragraphs into sentences: some browsers stop speaking after ~15 seconds of one utterance
+    const chunks = t => (t.match(/[^.!?।]+[.!?।]+["')\]]*\s*|[^.!?।]+$/g) || [t]).reduce((a, s) => { s = s.trim(); if (!s) return a; if (a.length && (a[a.length - 1] + ' ' + s).length < 200) a[a.length - 1] += ' ' + s; else a.push(s); return a; }, []);
+    let lang = null, idx = 0, playing = false, runId = 0;
+    const setState = () => {
+      ui.classList.toggle('is-playing', playing);
+      $q('[data-act="toggle"]').hidden = lang === null; $q('[data-act="stop"]').hidden = lang === null;
+      $q('[data-act="toggle"]').textContent = playing ? '❚❚ Pause' : '▶ Resume';
+      ui.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('is-active', b.dataset.lang === lang));
+    };
+    const mark = i => {
+      blockEls.forEach(el => el.classList.remove('is-reading'));
+      const aligned = lang === 'en' || (texts[lang] && texts[lang].length === blockEls.length);
+      const el = aligned ? blockEls[i] : null;
+      if (el) { el.classList.add('is-reading'); const r = el.getBoundingClientRect(); if (r.top < 80 || r.bottom > innerHeight - 80) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      const list = texts[lang] || []; barI.style.width = (100 * i / Math.max(1, list.length)) + '%';
+    };
+    const speakFrom = i => {
+      const my = ++runId, list = texts[lang];
+      synth.cancel();
+      if (i >= list.length) { stop(); return; }
+      idx = i; mark(i); playing = true; setState();
+      const parts = chunks(list[i]), voice = pickVoice(lang);
+      parts.forEach((p, k) => {
+        const u = new SpeechSynthesisUtterance(p);
+        u.lang = lang === 'hi' ? 'hi-IN' : (voice?.lang || 'en-IN'); if (voice) u.voice = voice;
+        u.rate = parseFloat($q('select').value) * (lang === 'hi' ? 0.95 : 1);
+        if (k === parts.length - 1) u.onend = () => { if (my === runId && playing) speakFrom(i + 1); };
+        u.onerror = e => { if (my === runId && e.error !== 'interrupted' && e.error !== 'canceled') { playing = false; setState(); } };
+        synth.speak(u);
+      });
+    };
+    const stop = () => { runId++; synth.cancel(); playing = false; lang = null; blockEls.forEach(el => el.classList.remove('is-reading')); barI.style.width = '0'; setState(); };
+    ui.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.lang) {
+        lang = b.dataset.lang;
+        if (!voices.length) loadVoices();
+        note.hidden = true;
+        if (lang === 'hi' && !pickVoice('hi')) { note.hidden = false; note.textContent = 'Your device has no Hindi voice installed, so it may sound unusual. On Android: Settings → Text-to-speech → Google → install Hindi. On iPhone: Settings → Accessibility → Spoken Content → Voices → Hindi.'; }
+        speakFrom(0);
+        if (typeof gtag === 'function') gtag('event', 'post_listen', { lang, post: slugHere });
+      } else if (b.dataset.act === 'toggle') {
+        if (playing) { runId++; synth.cancel(); playing = false; setState(); }   // pause = stop at this paragraph (pause() is unreliable on phones)
+        else speakFrom(idx);
+      } else if (b.dataset.act === 'stop') stop();
+    });
+    $q('select').addEventListener('change', () => { if (playing) speakFrom(idx); });
+    blockEls.forEach((el, i) => el.addEventListener('dblclick', () => { if (lang) speakFrom(i); }));   // double-click a paragraph to jump there
+    addEventListener('pagehide', () => synth.cancel());
+  }
+
+
   // Reading progress
   const bar = document.createElement('div');
   bar.className = 'read-progress';

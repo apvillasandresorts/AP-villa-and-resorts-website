@@ -711,6 +711,10 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .lbpanel__card .go-btn { width: 100%; }
 @media (max-width: 600px) { .bossbar.show { display: none; } }
 @media (max-width: 480px) { .hud__tej { width: 90px; } .lb__list li { font-size: 12.5px; grid-template-columns: 26px 1fr auto; padding: 6px 8px; } .lb__meta { display: none; } }
+.cutscene { position: absolute; inset: 0; z-index: 85; background: #000; display: none; align-items: center; justify-content: center; }
+.cutscene.show { display: flex; animation: gameOverIn .4s ease; }
+.cutscene video { width: 100%; height: 100%; object-fit: contain; }
+.cutscene__skip { position: absolute; right: 16px; bottom: 20px; background: rgba(15,18,30,.6); color: var(--gold-light); border: 1px solid rgba(201,162,79,.5); border-radius: 999px; padding: 10px 18px; font: 600 12px Inter, sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -857,6 +861,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     </div>
   </div>
 
+  <!-- Cut-scene video (skippable) -->
+  <div class="cutscene" id="cutscene"><video id="cut-video" playsinline preload="none"></video><button class="cutscene__skip" id="cut-skip" type="button">Skip ▸</button></div>
+
   <!-- Leaderboard (from the intro) -->
   <div class="lbpanel" id="lbpanel" role="dialog" aria-label="Top 10 players">
     <div class="lbpanel__card">
@@ -924,6 +931,10 @@ const sfx = {
   down() { tone(330, 0.35, 'sawtooth', 0.035, 150); },
   block() { tone(1400, 0.18, 'square', 0.025, 700); noise(0.15, 0.08, 3000); },
   cast() { tone(180, 0.45, 'sawtooth', 0.03, 520); },
+  cackle() {   // a witch's shrill laugh, far away
+    if (muted || !audioCtx) return;
+    for (let k = 0; k < 5; k++) setTimeout(() => tone(900 - k * 70 + Math.random() * 60, 0.11, 'sawtooth', 0.012, 700 - k * 60), k * 120);
+  },
   pop() { noise(0.35, 0.08, 2600); tone(1200 + Math.random() * 600, 0.25, 'sine', 0.03, 600); },
   drum() { noise(0.12, 0.22, 200); tone(95, 0.18, 'sine', 0.14, 55); },
   shankh() {   // conch: a swelling, buzzing horn
@@ -1165,6 +1176,7 @@ if (!/^[a-z0-9]{12}$/.test(pid)) { pid = Array.from({ length: 12 }, () => 'abcde
 let lbCache = null, submitted = 0;
 function runStats() { return { pid, score: Math.floor(score), secs: Math.round(runSecs), waves: wavesCleared, bosses: bossesBeaten, pct: rewardPct() }; }
 async function gamePost(body) {
+  if (window.__game) return null;   // local test runs never write to the live sheet
   try {
     const r = await fetch(LB_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...runStats(), ...body }), keepalive: body.action === 'coupon' });
     return await r.json();
@@ -1231,7 +1243,8 @@ function startRun() {
 function startLevel(fresh) {
   const lv = LV();
   for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) { preloadBlessing(BLESS[LEVELS[i].bless]); break; }
-  if (lv.boss) startBoss(); else startWave(fresh);
+  if (lv.boss) { if (!triesAt[level]) playCutscene('boss-' + lv.boss, startBoss); else startBoss(); }
+  else startWave(fresh);
 }
 function startWave(fresh) {
   resetField();
@@ -1241,7 +1254,8 @@ function startWave(fresh) {
   saveCheckpoint();
   state = 'playing'; betweenWaves = 0;
   const firstOfAct = level === 0 || LEVELS[level - 1].act !== lv.act;
-  banner('Wave ' + lv.waveNo, firstOfAct && level ? ACTS[lv.act] : lv.waveNo === 1 ? 'Stop the danav before they reach you!' : 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc, 2400, firstOfAct && level ? 'act' : '');
+  const justBlessed = level > 0 && LEVELS[level - 1].bless;
+  banner('Wave ' + lv.waveNo, firstOfAct && level ? ACTS[lv.act] : lv.waveNo === 1 ? 'Stop the danav before they reach you!' : justBlessed ? 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc : AURA[level].name, 2400, firstOfAct && level ? 'act' : '');
   hud();
 }
 function waveCleared() {
@@ -1257,7 +1271,7 @@ function waveCleared() {
 }
 function afterLevel() {
   const lv = LV();
-  if (lv.bless) showAshirvaad(BLESS[lv.bless]);
+  if (lv.bless) playCutscene('bless-' + lv.bless, () => showAshirvaad(BLESS[lv.bless]));
   else { level++; startLevel(false); }
 }
 function showAshirvaad(b) {
@@ -1419,7 +1433,7 @@ $('enter-btn').addEventListener('click', () => {
     $('hud').classList.add('show');
     $('tutorial').classList.add('show');
     setTimeout(() => $('tutorial').classList.remove('show'), 3800);
-    startRun();
+    playCutscene('intro', startRun);
     track('game_start', {});
   }, 2200);
 });
@@ -1719,7 +1733,8 @@ function render() {
   SKY.glory += ((state === 'celebrate' || state === 'victory' ? 1 : 0) - SKY.glory) * 0.03;
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
-  drawSky(); drawBridge(); drawLanes();
+  AMB.T = auraTint();
+  drawSky(); drawAuraSky(); drawBridge(); drawLanes(); drawNearBats();
   for (const f of fires) if (f.warn > 0) drawWarn(f);
   if (boss && boss.charge && boss.charge.warn > 0) drawWarn({ lane: boss.charge.lane, from: boss.z }, true);
   const all = danavs.map(d => ({ z: d.z, draw: () => drawDanav(d) }));
@@ -1730,8 +1745,9 @@ function render() {
   for (const s of shots) drawShot(s);
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawPowerFx(false); drawWarrior(); drawPowerFx(true);
-  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.8);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(40,10,50,${0.28 + 0.25 * SKY.mood})`);
+  drawWeather();
+  const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - 0.08 * intensity()), W / 2, H / 2, Math.max(W, H) * 0.8);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(${lerpRGB('40,10,50', AMB.T.tint, 0.25)},${0.28 + 0.22 * intensity() + 0.25 * SKY.mood})`);
   ctx.fillStyle = v; ctx.fillRect(-20, -20, W + 40, H + 40);
   if (SKY.flash > 0) { ctx.fillStyle = `rgba(255,240,255,${SKY.flash})`; ctx.fillRect(-20, -20, W + 40, H + 40); }
   if (rudraT > 0 && state === "playing") { const rg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75); rg.addColorStop(0, "rgba(120,180,255,0)"); rg.addColorStop(1, `rgba(140,200,255,${0.22 + 0.08 * Math.sin(time * 8)})`); ctx.fillStyle = rg; ctx.fillRect(-20, -20, W + 40, H + 40); }
@@ -1764,15 +1780,17 @@ function drawSky() {
   g.addColorStop(1, mix(actCol('s', 3), '#963326', m));
   ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, hy + 22);
   // stars and the crescent moon of Mahakal at night
-  if (night > 0.02) {
-    for (const st of SKY.stars) { ctx.globalAlpha = night * (0.45 + 0.55 * Math.abs(Math.sin(time * st.tw + st.ph))) * (1 - 0.5 * m); ctx.fillStyle = '#FFF8E8'; ctx.fillRect(st.x * W, st.y * hy, st.r, st.r); }
+  const blood = aura().moon === 'blood' && state !== 'intro', moonA = Math.max(night, blood ? 0.95 : 0);
+  if (moonA > 0.02) {
+    for (const st of SKY.stars) { ctx.globalAlpha = moonA * (0.45 + 0.55 * Math.abs(Math.sin(time * st.tw + st.ph))) * (1 - 0.5 * m); ctx.fillStyle = '#FFF8E8'; ctx.fillRect(st.x * W, st.y * hy, st.r, st.r); }
     const mx = W * 0.8, my = H * 0.09, mr = 18 * u;
-    ctx.globalAlpha = night * (1 - 0.6 * m);
-    const mg = ctx.createRadialGradient(mx, my, mr * 0.5, mx, my, mr * 4); mg.addColorStop(0, 'rgba(220,230,255,0.45)'); mg.addColorStop(1, 'rgba(220,230,255,0)');
+    ctx.globalAlpha = moonA * (1 - 0.4 * m);
+    const mg = ctx.createRadialGradient(mx, my, mr * 0.5, mx, my, mr * (blood ? 6 : 4)); mg.addColorStop(0, blood ? 'rgba(255,40,40,0.55)' : 'rgba(220,230,255,0.45)'); mg.addColorStop(1, 'rgba(220,230,255,0)');
     ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(mx, my, mr * 4, 0, Math.PI * 2); ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = '#F4F1E4'; ctx.fillRect(mx - mr, my - mr, mr * 2, mr * 2);
-    ctx.fillStyle = mix(actCol('s', 0), '#10061A', m); ctx.beginPath(); ctx.arc(mx + mr * 0.45, my - mr * 0.25, mr * 0.88, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = blood ? '#D8282E' : '#F4F1E4'; ctx.fillRect(mx - mr, my - mr, mr * 2, mr * 2);
+    if (!blood) { ctx.fillStyle = mix(actCol('s', 0), '#10061A', m); ctx.beginPath(); ctx.arc(mx + mr * 0.45, my - mr * 0.25, mr * 0.88, 0, Math.PI * 2); ctx.fill(); }
+    else { ctx.fillStyle = 'rgba(90,0,10,0.45)'; ctx.beginPath(); ctx.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.3, 0, Math.PI * 2); ctx.arc(mx + mr * 0.35, my + mr * 0.3, mr * 0.22, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     ctx.globalAlpha = 1;
   }
@@ -1904,7 +1922,8 @@ function torch(x, y, s) {
   ctx.fillStyle = 'rgba(214,170,80,0.9)'; ctx.fillRect(x - s * 0.08, y - s * 0.9, s * 0.16, s * 0.9);
   const f = 0.85 + Math.sin(time * 18 + x) * 0.15;
   const g = ctx.createRadialGradient(x, y - s, 0, x, y - s, s * 0.7);
-  g.addColorStop(0, `rgba(255,236,150,${0.95 * f})`); g.addColorStop(0.45, `rgba(255,140,60,${0.5 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  const T = AMB.T || auraTint();
+  g.addColorStop(0, `rgba(${T.f0},${0.95 * f})`); g.addColorStop(0.45, `rgba(${T.f1},${0.5 * f})`); g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g; ctx.fillRect(x - s, y - s * 1.7, s * 2, s * 1.4);
 }
 function drawLanes() {
@@ -1919,12 +1938,247 @@ function drawLanes() {
   ctx.setLineDash([]);
 }
 
+// ---------------- Level auras: every level has its own look, and the dread grows as you go ----------------
+// tint: colour washed over the sky · fx: weather · bats / witches: how many haunt the background · flame: diya colours on the bridge
+const AURA = [
+  { name: 'Dawn of devotion',           tint: '255,214,150', ta: 0.05, fx: 'motes',     fc: '255,230,160', bats: 0,  witches: 0, flame: ['255,236,150', '255,140,60'] },
+  { name: 'Lotus morning',              tint: '255,170,200', ta: 0.07, fx: 'petals',    fc: '255,170,205', bats: 1,  witches: 0, flame: ['255,236,170', '255,120,140'] },
+  { name: 'Amber haze',                 tint: '255,165,80',  ta: 0.1,  fx: 'motes',     fc: '255,200,120', bats: 3,  witches: 0, flame: ['255,220,130', '255,120,40'] },
+  { name: 'Dust storm of Mahishasura',  tint: '150,90,50',   ta: 0.2,  fx: 'dust',      fc: '205,165,120', bats: 4,  witches: 1, flame: ['255,200,120', '220,90,30'] },
+  { name: 'Golden dusk',                tint: '255,150,60',  ta: 0.1,  fx: 'fireflies', fc: '235,255,130', bats: 4,  witches: 1, flame: ['255,236,150', '255,150,40'] },
+  { name: 'Crimson sky',                tint: '220,60,50',   ta: 0.15, fx: 'embers',    fc: '255,130,50',  bats: 5,  witches: 1, flame: ['255,200,140', '230,40,30'] },
+  { name: 'Violet twilight',            tint: '140,80,200',  ta: 0.17, fx: 'wisps',     fc: '180,150,255', bats: 6,  witches: 2, flame: ['230,210,255', '150,80,255'] },
+  { name: 'Blood moon of Raktabija',    tint: '170,0,20',    ta: 0.24, fx: 'bloodrain', fc: '170,15,25',   bats: 7,  witches: 2, flame: ['255,170,170', '200,0,20'], moon: 'blood' },
+  { name: 'Ashen night',                tint: '60,70,120',   ta: 0.16, fx: 'ash',       fc: '200,200,210', bats: 7,  witches: 2, flame: ['200,230,255', '70,130,255'] },
+  { name: 'Aurora of the Rudras',       tint: '60,200,160',  ta: 0.1,  fx: 'aurora',    fc: '130,255,210', bats: 8,  witches: 3, flame: ['210,255,230', '40,220,150'] },
+  { name: 'Cosmic night',               tint: '80,60,180',   ta: 0.15, fx: 'comets',    fc: '210,225,255', bats: 9,  witches: 3, flame: ['235,240,255', '120,150,255'] },
+  { name: 'Andhakar · the great darkness', tint: '70,0,90',  ta: 0.26, fx: 'vortex',    fc: '200,130,255', bats: 12, witches: 4, flame: ['240,200,255', '160,40,220'], moon: 'blood' },
+];
+const AMB = { key: -1, prev: AURA[0], blend: 1, list: [], bats: [], witches: [], trail: [], cackleT: 6, comet: null };
+const lerpRGB = (a, b, t) => { const A = a.split(',').map(Number), B = b.split(',').map(Number); return A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(','); };
+const darknessLifted = () => state === 'won' || state === 'celebrate' || state === 'victory' || (state === 'cutscene' && finalWon);
+function auraIdx() { return state === 'intro' ? 0 : darknessLifted() ? 0 : Math.min(level, AURA.length - 1); }
+function aura() { return AURA[auraIdx()]; }
+function intensity() { return auraIdx() / (AURA.length - 1); }   // 0 at the first wave, 1 at Andhakasura
+function auraTint() { const A = aura(), P = AMB.prev, t = AMB.blend; return { tint: lerpRGB(P.tint, A.tint, t), ta: P.ta + (A.ta - P.ta) * t, f0: lerpRGB(P.flame[0], A.flame[0], t), f1: lerpRGB(P.flame[1], A.flame[1], t) }; }
+function newBat(near) {
+  return { x: Math.random() < 0.5 ? -0.1 : 1.1, y: near ? 0.32 + Math.random() * 0.25 : 0.04 + Math.random() * 0.26, sp: (near ? 0.18 : 0.05 + Math.random() * 0.06), sc: near ? 1.5 + Math.random() * 0.6 : 0.45 + Math.random() * 0.6, ph: Math.random() * 6, near, wait: Math.random() * (near ? 6 : 2) };
+}
+function syncAura(dt) {
+  const k = auraIdx();
+  if (AMB.key !== k) {
+    if (AMB.key >= 0) { AMB.prev = AURA[AMB.key]; AMB.blend = 0; }
+    AMB.key = k;
+    const A = AURA[k], I = intensity();
+    while (AMB.bats.length < A.bats) AMB.bats.push(newBat(I > 0.35 && AMB.bats.length % 3 === 2));
+    AMB.bats.length = A.bats;
+    while (AMB.witches.length < A.witches) AMB.witches.push({ x: -0.2, y: 0.06 + Math.random() * 0.18, sp: 0.07 + Math.random() * 0.05, dir: 1, ph: Math.random() * 6, wait: 1 + Math.random() * 6, sc: 0.8 + Math.random() * 0.5 });
+    AMB.witches.length = A.witches;
+  }
+  AMB.blend = Math.min(1, AMB.blend + dt * 0.5);
+}
+// bats and witches move in screen fractions; they are only scenery, never in your way
+function updateAmbient(dt) {
+  syncAura(dt);
+  const A = aura(), I = intensity();
+  for (const b of AMB.bats) {
+    if (b.wait > 0) { b.wait -= dt; continue; }
+    if (b.dir === undefined) b.dir = b.x < 0.5 ? 1 : -1;
+    b.x += b.dir * b.sp * dt * (1 + 0.8 * I); b.ph += dt;
+    if (b.x < -0.15 || b.x > 1.15) Object.assign(b, newBat(b.near), { dir: undefined });
+  }
+  for (const w of AMB.witches) {
+    if (w.wait > 0) { w.wait -= dt; if (w.wait <= 0) { w.dir = Math.random() < 0.5 ? 1 : -1; w.x = w.dir > 0 ? -0.15 : 1.15; w.y = 0.05 + Math.random() * 0.2; AMB.cackleT = Math.min(AMB.cackleT, 0.6); } continue; }
+    w.x += w.dir * w.sp * dt * (1 + 0.6 * I); w.ph += dt;
+    if (Math.random() < 0.6) AMB.trail.push({ x: w.x * W - w.dir * 20 * unit() * w.sc, y: w.y * H + Math.sin(w.ph * 2) * 8 + 6 * unit(), life: 1, r: 1 + Math.random() * 2.2 });
+    if (w.x < -0.2 || w.x > 1.2) w.wait = 3 + Math.random() * (9 - 5 * I);
+  }
+  for (let i = AMB.trail.length - 1; i >= 0; i--) { const t = AMB.trail[i]; t.life -= dt * 1.4; t.y += dt * 12; if (t.life <= 0) AMB.trail.splice(i, 1); }
+  if (A.witches && state === 'playing') { AMB.cackleT -= dt; if (AMB.cackleT <= 0) { AMB.cackleT = 9 + Math.random() * 10 - 5 * I; if (AMB.witches.some(w => w.wait <= 0)) sfx.cackle(); } }
+  // weather particles (count grows with the level)
+  const max = 26 + Math.round(70 * I), L = AMB.list;
+  if (L.length < max && Math.random() < 0.5 + I) L.push(spawnWeather(A.fx, A.fc));
+  for (let i = L.length - 1; i >= 0; i--) {
+    const p = L[i]; p.life -= dt / p.dur; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+    if (p.fx === 'wisps' || p.fx === 'fireflies') { p.vx += (Math.random() - 0.5) * 40 * dt; p.vy += (Math.random() - 0.5) * 40 * dt; }
+    if (p.fx === 'vortex') { const cx = W / 2, cy = HORIZON_Y * H - 60 * unit(), dx = p.x - cx, dy = p.y - cy, r = Math.hypot(dx, dy) || 1; p.vx = -dy / r * 120 - dx * 0.25; p.vy = dx / r * 60 - dy * 0.25; }
+    if (p.life <= 0 || p.y > H + 20 || p.x < -40 || p.x > W + 40) L.splice(i, 1);
+  }
+  if (A.fx === 'comets' && !AMB.comet && Math.random() < dt * 0.5) AMB.comet = { x: Math.random() * W * 0.7, y: Math.random() * H * 0.12, t: 0 };
+  if (AMB.comet) { AMB.comet.t += dt; if (AMB.comet.t > 1.1) AMB.comet = null; }
+}
+function spawnWeather(fx, fc) {
+  const r = Math.random, u = unit();
+  const p = { fx, c: fc, x: r() * W, y: r() * H, vx: 0, vy: 0, rot: r() * 6, vr: 0, r: 2, life: 1, dur: 4 + r() * 3 };
+  if (fx === 'motes') Object.assign(p, { y: H * (0.3 + r() * 0.7), vx: (r() - 0.5) * 10, vy: -8 - r() * 12, r: 1 + r() * 2 * u });
+  else if (fx === 'petals') Object.assign(p, { y: -10, vx: 10 + r() * 20, vy: 30 + r() * 30, vr: (r() - 0.5) * 3, r: (3 + r() * 3) * u, dur: 8 });
+  else if (fx === 'dust') Object.assign(p, { x: -30, y: H * (0.2 + r() * 0.8), vx: 220 + r() * 220, vy: (r() - 0.5) * 20, r: (8 + r() * 26) * u, dur: 3 });
+  else if (fx === 'fireflies') Object.assign(p, { y: H * (0.35 + r() * 0.6), r: (1.5 + r() * 1.5) * u, dur: 5 + r() * 4 });
+  else if (fx === 'embers') Object.assign(p, { y: H + 5, vx: (r() - 0.5) * 30, vy: -40 - r() * 60, r: (1 + r() * 2) * u, dur: 5 });
+  else if (fx === 'wisps') Object.assign(p, { y: H * (0.3 + r() * 0.5), r: (3 + r() * 4) * u, dur: 6 });
+  else if (fx === 'bloodrain') Object.assign(p, { y: -20, vx: -60, vy: 520 + r() * 260, r: (8 + r() * 10) * u, dur: 2 });
+  else if (fx === 'ash') Object.assign(p, { y: -10, vx: (r() - 0.5) * 30, vy: 25 + r() * 30, vr: (r() - 0.5) * 2, r: (1.5 + r() * 2.5) * u, dur: 12 });
+  else if (fx === 'aurora' || fx === 'comets') Object.assign(p, { y: H * (0.3 + r() * 0.7), vx: (r() - 0.5) * 8, vy: -5 - r() * 8, r: (1 + r() * 1.5) * u });
+  else if (fx === 'vortex') Object.assign(p, { y: H * r() * 0.6, r: (1.5 + r() * 2.5) * u, dur: 3 + r() * 2 });
+  return p;
+}
+// sky pass: tint, aurora ribbons, shooting stars, the vortex of darkness, far bats and witches
+function drawAuraSky() {
+  const A = aura(), T = auraTint(), I = intensity(), hy = HORIZON_Y * H, u = unit();
+  ctx.fillStyle = `rgba(${T.tint},${T.ta})`; ctx.fillRect(-20, -20, W + 40, hy + 40);
+  if (A.fx === 'aurora') {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 3; k++) {
+      const g = ctx.createLinearGradient(0, 0, 0, hy * 0.7); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, k === 1 ? 'rgba(160,90,255,0.18)' : 'rgba(80,255,180,0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, hy * 0.1);
+      for (let x = 0; x <= W; x += W / 24) ctx.lineTo(x, hy * (0.18 + 0.1 * k) + Math.sin(x / W * 6 + time * 0.6 + k * 2) * hy * 0.08);
+      ctx.lineTo(W, hy * 0.75); for (let x = W; x >= 0; x -= W / 24) ctx.lineTo(x, hy * (0.45 + 0.1 * k) + Math.sin(x / W * 5 + time * 0.5 + k) * hy * 0.1);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  if (AMB.comet) { const c = AMB.comet, x = c.x + c.t * W * 0.35, y = c.y + c.t * H * 0.12, g = ctx.createLinearGradient(x - 90 * u, y - 30 * u, x, y); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, `rgba(230,240,255,${1 - c.t})`); ctx.strokeStyle = g; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - 90 * u, y - 30 * u); ctx.lineTo(x, y); ctx.stroke(); }
+  if (A.fx === 'vortex') {
+    const cx = W / 2, cy = hy - 80 * u;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(time * 0.4);
+    for (let k = 0; k < 5; k++) { ctx.rotate(Math.PI * 2 / 5); const g = ctx.createRadialGradient(0, 0, 0, 0, 0, W * 0.5); g.addColorStop(0, 'rgba(120,40,180,0.25)'); g.addColorStop(1, 'rgba(40,0,60,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(W * 0.2, -H * 0.05, W * 0.5, H * 0.08); ctx.quadraticCurveTo(W * 0.2, H * 0.04, 0, 0); ctx.fill(); }
+    ctx.restore();
+  }
+  for (const b of AMB.bats) if (!b.near && b.wait <= 0) drawBat(b, I);
+  for (const t of AMB.trail) { ctx.fillStyle = `rgba(150,255,120,${t.life * 0.6})`; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill(); }
+  for (const w of AMB.witches) if (w.wait <= 0) drawWitch(w, I);
+}
+function drawBat(b, I) {
+  const u = unit(), s = 9 * u * b.sc * (1 + 0.35 * I), x = b.x * W, y = b.y * H + Math.sin(b.ph * 3) * s * 1.2, f = Math.sin(time * (16 + 6 * I) + b.ph * 7);
+  ctx.save(); ctx.translate(x, y); ctx.scale(b.dir < 0 ? -1 : 1, 1);
+  ctx.fillStyle = b.near ? '#0E0410' : 'rgba(20,6,24,0.92)';
+  for (const sd of [-1, 1]) {   // leathery wings with scalloped edges
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(sd * s * 1.2, -s * (0.9 + f * 0.9), sd * s * 2.6, -s * (0.2 + f * 1.1));
+    ctx.quadraticCurveTo(sd * s * 2.1, s * 0.15, sd * s * 1.8, s * 0.35); ctx.quadraticCurveTo(sd * s * 1.4, s * 0.05, sd * s * 1.05, s * 0.4); ctx.quadraticCurveTo(sd * s * 0.7, s * 0.1, 0, s * 0.35);
+    ctx.fill();
+  }
+  ctx.beginPath(); ctx.ellipse(0, 0, s * 0.42, s * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.4); ctx.lineTo(-s * 0.22, -s * 0.85); ctx.lineTo(-s * 0.05, -s * 0.5); ctx.lineTo(s * 0.05, -s * 0.5); ctx.lineTo(s * 0.22, -s * 0.85); ctx.lineTo(s * 0.3, -s * 0.4); ctx.fill();   // ears
+  ctx.fillStyle = '#FF2A2A'; ctx.shadowColor = '#FF0000'; ctx.shadowBlur = 6 + 8 * I;   // devilish red eyes
+  ctx.beginPath(); ctx.arc(-s * 0.15, -s * 0.22, Math.max(1, s * 0.11), 0, Math.PI * 2); ctx.arc(s * 0.15, -s * 0.22, Math.max(1, s * 0.11), 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function drawWitch(w, I) {   // a hag on her broom: tattered cloak, wild hair streaming back, burning green eyes
+  const u = unit(), s = 22 * u * w.sc * (1 + 0.3 * I), x = w.x * W, y = w.y * H + Math.sin(w.ph * 2) * 8;
+  ctx.save(); ctx.translate(x, y); ctx.scale(w.dir, 1); ctx.rotate(-0.08 + Math.sin(w.ph * 2) * 0.05);
+  ctx.strokeStyle = '#2A1608'; ctx.lineWidth = Math.max(1.5, s * 0.07); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-s * 1.1, s * 0.25); ctx.lineTo(s * 1.0, -s * 0.05); ctx.stroke();   // broom handle
+  ctx.fillStyle = '#3A2410'; ctx.beginPath(); ctx.moveTo(-s * 1.05, s * 0.24); ctx.lineTo(-s * 1.7, s * 0.02 + Math.sin(time * 20) * s * 0.05); ctx.lineTo(-s * 1.75, s * 0.32); ctx.lineTo(-s * 1.65, s * 0.55 + Math.sin(time * 18) * s * 0.05); ctx.closePath(); ctx.fill();   // bristles
+  ctx.fillStyle = '#120614';
+  ctx.beginPath(); ctx.moveTo(s * 0.35, -s * 0.55); ctx.lineTo(-s * 0.35, s * 0.15);   // cloak, tattered at the trailing edge
+  for (let k = 0; k < 5; k++) ctx.lineTo(-s * (0.45 + k * 0.17), s * (0.2 + (k % 2) * 0.28) + Math.sin(time * 12 + k) * s * 0.06);
+  ctx.lineTo(-s * 0.2, s * 0.45); ctx.lineTo(s * 0.25, s * 0.08); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(s * 0.32, -s * 0.62, s * 0.2, s * 0.22, 0, 0, Math.PI * 2); ctx.fill();   // head
+  ctx.beginPath(); ctx.moveTo(s * 0.18, -s * 0.72); ctx.lineTo(s * 0.62, -s * 0.5); ctx.lineTo(s * 0.48, -s * 0.66); ctx.fill();   // hooked nose
+  ctx.strokeStyle = '#1A0A16'; ctx.lineWidth = Math.max(1, s * 0.05);
+  for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.moveTo(s * 0.25, -s * (0.75 - k * 0.04)); ctx.quadraticCurveTo(-s * 0.2, -s * (0.9 - k * 0.1) + Math.sin(time * 10 + k) * s * 0.1, -s * (0.7 + k * 0.06), -s * (0.7 - k * 0.12) + Math.sin(time * 9 + k) * s * 0.12); ctx.stroke(); }   // wild hair
+  ctx.beginPath(); ctx.moveTo(s * 0.3, -s * 0.4); ctx.lineTo(s * 0.75, -s * 0.15); ctx.lineTo(s * 0.9, -s * 0.2); ctx.stroke();   // clawed arm reaching forward
+  ctx.fillStyle = '#9CFF5A'; ctx.shadowColor = '#7CFF3A'; ctx.shadowBlur = 8 + 8 * I;
+  ctx.beginPath(); ctx.arc(s * 0.4, -s * 0.66, Math.max(1.2, s * 0.05), 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+// near bats swoop across the middle of the screen at higher levels
+function drawNearBats() { const I = intensity(); for (const b of AMB.bats) if (b.near && b.wait <= 0) drawBat(b, I); }
+// foreground weather, drawn over the scene
+function drawWeather() {
+  const T = auraTint();
+  ctx.fillStyle = `rgba(${T.tint},${T.ta * 0.45})`; ctx.fillRect(-20, -20, W + 40, H + 40);
+  for (const p of AMB.list) {
+    const a = Math.max(0, Math.min(1, p.life * 2, (1 - p.life) * 6));
+    if (p.fx === 'petals') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = `rgba(${p.c},${0.85 * a})`; ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r * 0.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    else if (p.fx === 'dust') { ctx.fillStyle = `rgba(${p.c},${0.12 * a})`; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 2.5, p.r * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }
+    else if (p.fx === 'bloodrain') { ctx.strokeStyle = `rgba(${p.c},${0.55 * a})`; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.vx * 0.03, p.y - p.r); ctx.stroke(); }
+    else if (p.fx === 'ash') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = `rgba(${p.c},${0.6 * a})`; ctx.fillRect(-p.r, -p.r * 0.4, p.r * 2, p.r * 0.8); ctx.restore(); }
+    else {
+      const blink = p.fx === 'fireflies' ? (0.4 + 0.6 * Math.abs(Math.sin(time * 4 + p.rot * 3))) : 1;
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3); g.addColorStop(0, `rgba(${p.c},${0.9 * a * blink})`); g.addColorStop(1, `rgba(${p.c},0)`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+// ---------------- The gods who blessed you descend for the final Ashirvaad ----------------
+function godsForParade() { return LEVELS.slice(0, LEVELS.length).filter((l, i) => l.bless && i < level).map(l => BLESS[l.bless]).filter(b => b.pre); }
+function paradeLen() { return C.gods.length ? 0.75 * C.gods.length + 2.6 : 0; }
+function updateParade(dt) {
+  const n = C.gods.length;
+  C.bt += dt;
+  C.gods.forEach((g, i) => { if (!C.rung[i] && C.bt >= 0.75 * i + 0.2) { C.rung[i] = true; sfx.bell(); player.flash = 0.8; } });
+  if (!C.blessDone && C.bt >= 0.75 * n + 1.2) { C.blessDone = true; banner('Ashirvaad!', 'The gods bless their yoddha', 2000); sfx.shankh(); player.flash = 1.6; const p = project(0, player.x); burst(p.x, p.y - 60 * unit(), '#FFE9A8', 50, 7); }
+}
+function godPos(i, n) {
+  const t = n > 1 ? i / (n - 1) : 0.5, k = t * 2 - 1;
+  return { x: W * (0.1 + 0.8 * t), y: H * 0.33 - H * 0.08 * (1 - k * k) };
+}
+function drawParade() {
+  const n = C.gods.length; if (!n || !(state === 'celebrate' || state === 'victory')) return;
+  const R = Math.min(W * 0.065, H * 0.075), u = unit(), pp = WR.at || project(0, player.x), px = pp.x, py = pp.y - 70 * u;
+  const fade = state === 'celebrate' ? 1 : 0.85;
+  C.gods.forEach((g, i) => {
+    const a = Math.max(0, Math.min(1, (C.bt - 0.75 * i) / 0.7)); if (a <= 0) return;
+    const e = a * a * (3 - 2 * a), P = godPos(i, n), x = P.x, y = P.y - (1 - e) * H * 0.2, r = R * (0.6 + 0.4 * e);
+    fxCtx.save(); fxCtx.globalAlpha = e * fade;
+    // beam of blessing down to the yoddha
+    if (C.bt - 0.75 * i > 0.5) {
+      fxCtx.globalCompositeOperation = 'lighter';
+      const bg = fxCtx.createLinearGradient(x, y, px, py); bg.addColorStop(0, 'rgba(255,225,140,0.55)'); bg.addColorStop(1, 'rgba(255,240,200,0.15)');
+      fxCtx.strokeStyle = bg; fxCtx.lineWidth = Math.max(3, r * 0.22) * (0.8 + 0.2 * Math.sin(time * 6 + i)); fxCtx.lineCap = 'round';
+      fxCtx.beginPath(); fxCtx.moveTo(x, y + r * 0.8); fxCtx.lineTo(px, py); fxCtx.stroke();
+      for (let k = 0; k < 4; k++) { const t = (time * 0.7 + k / 4 + i * 0.13) % 1; fxCtx.fillStyle = 'rgba(255,250,220,0.9)'; fxCtx.beginPath(); fxCtx.arc(x + (px - x) * t, y + r * 0.8 + (py - y - r * 0.8) * t, Math.max(1.5, r * 0.06), 0, Math.PI * 2); fxCtx.fill(); }
+      fxCtx.globalCompositeOperation = 'source-over';
+    }
+    // halo and rays
+    const hg = fxCtx.createRadialGradient(x, y, r * 0.6, x, y, r * 2); hg.addColorStop(0, 'rgba(255,220,130,0.7)'); hg.addColorStop(1, 'rgba(255,200,100,0)');
+    fxCtx.fillStyle = hg; fxCtx.beginPath(); fxCtx.arc(x, y, r * 2, 0, Math.PI * 2); fxCtx.fill();
+    fxCtx.save(); fxCtx.translate(x, y); fxCtx.rotate(time * 0.5 + i); fxCtx.fillStyle = 'rgba(255,235,170,0.35)';
+    for (let k = 0; k < 12; k++) { fxCtx.rotate(Math.PI / 6); fxCtx.beginPath(); fxCtx.moveTo(-r * 0.08, -r * 1.05); fxCtx.lineTo(0, -r * 1.65); fxCtx.lineTo(r * 0.08, -r * 1.05); fxCtx.fill(); }
+    fxCtx.restore();
+    // the painting of the deity in a golden medallion
+    const img = g.pre;
+    fxCtx.save(); fxCtx.beginPath(); fxCtx.arc(x, y, r, 0, Math.PI * 2); fxCtx.clip();
+    fxCtx.fillStyle = '#3A2410'; fxCtx.fillRect(x - r, y - r, r * 2, r * 2);
+    if (img && img.complete && img.naturalWidth) { const iw = img.naturalWidth, ih = img.naturalHeight, side = Math.min(iw, ih) * 0.82, sx = (iw - side) / 2, sy = Math.max(0, Math.min(ih - side, ih * 0.38 - side / 2)); fxCtx.drawImage(img, sx, sy, side, side, x - r, y - r, r * 2, r * 2); }
+    fxCtx.restore();
+    fxCtx.strokeStyle = '#F4D58D'; fxCtx.lineWidth = Math.max(2, r * 0.08); fxCtx.beginPath(); fxCtx.arc(x, y, r, 0, Math.PI * 2); fxCtx.stroke();
+    fxCtx.strokeStyle = 'rgba(255,240,200,0.6)'; fxCtx.lineWidth = 1; fxCtx.beginPath(); fxCtx.arc(x, y, r * 1.12, 0, Math.PI * 2); fxCtx.stroke();
+    fxCtx.font = `600 ${Math.round(Math.max(10, r * 0.3))}px Inter, sans-serif`; fxCtx.textAlign = 'center'; fxCtx.fillStyle = '#FFF3C4'; fxCtx.shadowColor = '#000'; fxCtx.shadowBlur = 6;
+    fxCtx.fillText(g.name.replace('Shri Vishnu & Maa Lakshmi', 'Shri Vishnu'), x, y + r * 1.45);
+    fxCtx.restore();
+  });
+}
+
+// ---------------- Cut-scenes (short video clips, added when the owner's videos are ready) ----------------
+// key → { portrait: 9:16 file for phones, landscape: 16:9 file for desktops } (either may be missing).
+// Keys: intro, boss-mahisha, boss-rakta, boss-andhaka, bless-ganesh, bless-hanuman, bless-durga, bless-vishnu,
+// bless-lakshmi, bless-mahakal, finale. Prompts to make them: docs/game-video-prompts.md. Each plays once per device and can be skipped.
+const CUTSCENES = {};
+function playCutscene(key, done) {
+  const e = CUTSCENES[key], tall = innerHeight > innerWidth;
+  const src = typeof e === 'string' ? e : e ? (tall ? e.portrait || e.landscape : e.landscape || e.portrait) : null;
+  if (!src || store.get('mahakal_seen_' + key, '')) { done(); return; }
+  store.set('mahakal_seen_' + key, '1');
+  const box = $('cutscene'), v = $('cut-video');
+  state = 'cutscene';
+  let ended = false;
+  const end = () => { if (ended) return; ended = true; v.pause(); box.classList.remove('show'); v.removeAttribute('src'); v.load(); last = performance.now(); done(); };
+  v.onended = end; v.onerror = end; $('cut-skip').onclick = e => { e.stopPropagation(); end(); };
+  v.src = src; box.classList.add('show'); v.muted = muted;
+  v.play().catch(() => { v.muted = true; v.play().catch(end); });
+  track('game_cutscene', { key });
+}
+
 // ---------------- Grand celebration ----------------
 // Andhakasura falls onto a pile of the danav defeated during the game. The yoddha gets a Celebrate button,
 // leaps onto the fallen asura on his lion, while the gods shower flowers, fireworks burst,
 // golden rays fill the sky and the conch, bells and drums play.
 const fallen = [];
-const C = { t: 0, ct: 0, fwT: 0, drumT: 0, bellT: 0, petals: [], btn: false, start: null, won: false };
+const C = { gods: [], bt: 0, rung: [], t: 0, ct: 0, fwT: 0, drumT: 0, bellT: 0, petals: [], btn: false, start: null, won: false };
 function buildPile() {
   fallen.length = 0;
   const types = Object.keys(DANAV), n = Math.min(18, Math.max(10, slain));
@@ -1943,6 +2197,8 @@ function startCelebration() {
   if (!(state === 'won' || state === 'victory')) return;
   $('celebrate-btn').classList.remove('show'); $('victory').classList.remove('show');
   state = 'celebrate'; C.ct = 0; C.fwT = 0; C.drumT = 0; C.bellT = 0; C.landed = false;
+  Object.values(BLESS).forEach(preloadBlessing);
+  C.gods = godsForParade(); C.bt = 0; C.rung = []; C.blessDone = false;
   const p = project(0, player.x); C.start = { x: p.x, y: p.y };
   WR.pose = 'victory';
   sfx.shankh(); setTimeout(sfx.bell, 900);
@@ -1968,8 +2224,10 @@ function celebUpdate(dt) {
   for (const d of fallen) d.drop = Math.min(1, d.drop + dt * 1.5);
   if (state === 'won' && !C.btn && C.t > 1.5) { C.btn = true; $('celebrate-btn').classList.add('show'); }
   if (state === 'celebrate' || state === 'victory') {
-    C.ct += dt;
     const strong = state === 'celebrate' ? 1 : 0.45;
+    if (state === 'celebrate' && C.bt < paradeLen()) { updateParade(dt); WR.at = { x: C.start.x, y: C.start.y, scale: 1, air: false }; }
+    else {
+    C.ct += dt;
     // the leap onto the fallen asura, then joyful victory hops
     const target = celebPos();
     const j = Math.min(1, C.ct / 1.1), e = j * j * (3 - 2 * j);
@@ -1977,6 +2235,7 @@ function celebUpdate(dt) {
     if (j >= 1) { const hop = (C.ct - 1.1) % 1.1; y -= Math.max(0, Math.sin(hop / 0.55 * Math.PI)) * H * 0.05 * (hop < 0.55 ? 1 : 0); }
     WR.at = { x, y, scale: 1 - 0.32 * e, air: j < 1 };
     if (j >= 1 && !C.landed) { C.landed = true; shake = 0.35; const p = target; burst(p.x, p.y, '#FFE9A8', 30, 5); sfx.drum(); }
+    }
     // flower shower (pushpa vrishti)
     const rate = 7 * strong;
     for (let i = 0; i < rate; i++) if (C.petals.length < 260) C.petals.push({ x: Math.random() * W, y: -10 - Math.random() * 40, vx: (Math.random() - 0.5) * 0.8, vy: 1.2 + Math.random() * 1.6, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.15, size: (3 + Math.random() * 4) * unit(), c: ['#FF9A1F', '#FFC93C', '#FF6FA3', '#FFFFFF', '#E0303A', '#FFB3CF'][Math.floor(Math.random() * 6)] });
@@ -1984,7 +2243,7 @@ function celebUpdate(dt) {
     C.drumT -= dt; if (C.drumT <= 0) { C.drumT = 0.42; if (strong > 0.5) sfx.drum(); }
     C.bellT -= dt; if (C.bellT <= 0) { C.bellT = 2.4; sfx.bell(); }
     C.roarT = (C.roarT || 0) - dt; if (C.landed && C.roarT <= 0) { C.roarT = 1.8; C.roar = 1; sfx.lionRoar(); }
-    if (state === 'celebrate' && C.ct > 7) victory();
+    if (state === 'celebrate' && C.ct > 6.5) playCutscene('finale', victory);
   }
   C.roar = Math.max(0, (C.roar || 0) - dt * 1.1);
   for (let i = C.petals.length - 1; i >= 0; i--) { const p = C.petals[i]; p.x += p.vx + Math.sin(time * 2 + p.rot) * 0.4; p.y += p.vy; p.rot += p.vr; if (p.y > H + 20) C.petals.splice(i, 1); }
@@ -1993,6 +2252,7 @@ function celebUpdate(dt) {
   if (shake > 0) shake -= dt;
 }
 function drawCelebrationFx() {
+  drawParade();
   if (SKY.glory > 0.02) {
     const a = SKY.glory, cx = W / 2, cy = H * 0.14;
     fxCtx.save(); fxCtx.textAlign = 'center'; fxCtx.globalAlpha = a;
@@ -2954,6 +3214,7 @@ function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused && !userPaused && !frozen && state === 'playing') update(dt);
   else if (!paused && !frozen && (state === 'won' || state === 'celebrate' || state === 'victory')) celebUpdate(dt);
+  if (!paused && !userPaused && !frozen && state !== 'intro') updateAmbient(dt);
   if (W < 10 || H < 10) resize();
   if (state !== 'intro' && W >= 10 && H >= 10) render();
   requestAnimationFrame(loop);
@@ -2961,7 +3222,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) celebUpdate(1 / 60); render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) update(1 / 60); render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>

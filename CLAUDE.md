@@ -28,6 +28,9 @@ This repo is the whole public website. Claude Code in this folder is the permane
 | `scripts/build-sitemap.mjs` | Regenerates `sitemap.xml` (run after adding/removing pages) |
 | `scripts/commons-photo.mjs` | Search/download free, commercially-licensed real photos from Wikimedia Commons (adds credit + licence to photo-library.json) |
 | `scripts/validate-post.mjs <slug>` | Checks a new post (word count, links, images, JSON-LD, logs) |
+| `blog/narration/<slug>.hi.json`, `scripts/narration-blocks.mjs` | Hindi text for the post's "Listen" button (journal.js reads English from the page, Hindi from this file; same block count, check with `node scripts/narration-blocks.mjs <slug> --check`). Update it when a post's text changes |
+| `scripts/photo-trio.mjs` | Turns the single Rudrangan photo in "Where to stay" into a 3-photo collage (runs in the blog workflow) |
+| `docs/game-video-prompts.md`, `docs/game-video-refs/` | Google Flow prompt pack + game reference frames for the game cut-scenes (register clips in `CUTSCENES` in mahakal-game.html) |
 | `.github/workflows/blog.yml` | Daily/one-click AI blog pipeline (Claude subscription token) |
 | `robots.txt`, `sitemap.xml` | SEO |
 | `assets/brand/` | Owner's logo (gold AP emblem with home/lotus/diya + green "AP VILLAS and Resorts" wordmark, transparent PNG): `logo-full.png` (master, 1954px), `logo-full-720.webp` (nav/footer), `logo-full-1200.png` (JSON-LD/press), `logo-emblem.png` / `logo-emblem-512.webp` (emblem only), `logo-icon-1024.png` (WhatsApp/Instagram DP), `logo-social-1200.png`, favicons. Use these files; never redraw, recolour or replace the logo |
