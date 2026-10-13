@@ -128,17 +128,28 @@
     if (i === 0 && syncDates() <= 0) { err.textContent = 'Check-out must be after check-in.'; return false; }
     return true;
   }
-  function go(i) {
+  function go(i, quiet) {
     step = i;
     steps.forEach((s, k) => s.classList.toggle('is-active', k === i));
     dots.forEach((d, k) => { d.classList.toggle('is-active', k === i); d.classList.toggle('is-done', k < i); });
     document.getElementById('ci-back').hidden = i === 0;
     document.getElementById('ci-next').hidden = i === steps.length - 1;
     document.getElementById('ci-submit').hidden = i !== steps.length - 1;
+    const names = dots.map(d => d.textContent.replace(/^\s*\d+\s*/, '').trim());
+    document.getElementById('ci-progress').textContent = `Step ${i + 1} of ${steps.length}${names[i] ? ' · ' + names[i] : ''}`;
+    err.textContent = '';
     if (i === 1) renderMembers();
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!quiet) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  document.getElementById('ci-next').addEventListener('click', () => { if (validate(step)) go(step + 1); });
+  document.getElementById('ci-next').addEventListener('click', () => { if (validate(step)) { go(step + 1); saveDraft(); } });
+  form.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+    e.preventDefault();
+    const fields = [...steps[step].querySelectorAll('input, select, textarea')].filter(el => !el.disabled && el.type !== 'hidden' && el.type !== 'file' && el.type !== 'checkbox' && !el.classList.contains('ci-hp') && el.offsetParent);
+    const nextEl = fields[fields.indexOf(e.target) + 1];
+    if (nextEl) nextEl.focus();
+    else { e.target.blur(); document.getElementById(step === steps.length - 1 ? 'ci-submit' : 'ci-next').click(); }
+  });
   document.getElementById('ci-back').addEventListener('click', () => go(step - 1));
   dots.forEach((d, k) => d.addEventListener('click', () => { if (k < step) go(k); }));
 
@@ -184,6 +195,7 @@
   // ---- submit ----
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (step < steps.length - 1) { if (validate(step)) go(step + 1); return; }   // never submit from an earlier step
     if (!validate(step)) return;
     if (q('website').value) return;   // bots fill the hidden field
     const btn = document.getElementById('ci-submit');
@@ -222,7 +234,7 @@
     }
   });
   function done(f, r, waText, uploaded) {
-    form.hidden = true;
+    form.hidden = true; clearDraft();
     const box = document.getElementById('ci-done'); box.hidden = false;
     document.getElementById('ci-done-name').textContent = f.guest_name.split(' ')[0];
     document.getElementById('ci-done-ref').textContent = r;
@@ -233,10 +245,36 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+  // ---- draft: keep what the guest typed if the page reloads (phones often reload the tab after taking an ID photo) ----
+  const DRAFT = 'ap-echeckin-draft';
+  function saveDraft() {
+    try {
+      const d = { step, at: Date.now(), f: {}, m: $$('.ci-member').map(r => ['name', 'age', 'gender', 'relation'].map(k => r.querySelector(`[data-k="${k}"]`).value)) };
+      for (const el of form.elements) if (el.name && el.type !== 'file' && el.name !== 'website') d.f[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+      localStorage.setItem(DRAFT, JSON.stringify(d));
+    } catch (x) {}
+  }
+  let saveT; form.addEventListener('input', () => { clearTimeout(saveT); saveT = setTimeout(saveDraft, 600); });
+  form.addEventListener('change', () => { clearTimeout(saveT); saveT = setTimeout(saveDraft, 300); });
+  function restoreDraft() {
+    let d; try { d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); } catch (x) { return; }
+    if (!d || Date.now() - d.at > 3 * 864e5) return;
+    for (const [n, v] of Object.entries(d.f || {})) { const el = q(n); if (!el || el.type === 'file' || el instanceof RadioNodeList) continue; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }
+    applyShow(); syncDates(); renderMembers();
+    $$('.ci-member').forEach((r, i) => (d.m || [])[i] && ['name', 'age', 'gender', 'relation'].forEach((k, j) => { r.querySelector(`[data-k="${k}"]`).value = d.m[i][j]; }));
+    const note = document.getElementById('ci-draft'); note.hidden = false; form.insertBefore(note, form.firstElementChild);
+    note.innerHTML = 'We kept what you had typed on this phone. ID photos need to be chosen again. <button type="button" id="ci-clear">Start over</button>';
+    document.getElementById('ci-clear').onclick = () => { try { localStorage.removeItem(DRAFT); } catch (x) {} location.reload(); };
+    return Math.min(d.step || 0, steps.length - 1);
+  }
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT); } catch (x) {} };
+
   // prefill from a link like checkin.html?villa=Rudrangan%20Suites&source=Booking.com&id=12345
   const p = new URLSearchParams(location.search);
   if (p.get('villa')) q('villa').value = p.get('villa');
   if (p.get('source')) [...q('booking_source').options].forEach(o => { if (o.text.toLowerCase().startsWith(p.get('source').toLowerCase())) q('booking_source').value = o.text; });
   if (p.get('id')) q('booking_id').value = p.get('id');
-  applyShow(); syncDates(); go(0);
+  applyShow(); syncDates();
+  const back = p.toString() ? 0 : restoreDraft();   // a booking link starts fresh
+  go(back || 0, true);
 })();

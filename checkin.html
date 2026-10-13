@@ -85,6 +85,15 @@
 .ci-nav .btn { min-height: 50px; justify-content: center; }
 .ci-nav #ci-next, .ci-nav #ci-submit { margin-left: auto; min-width: 200px; }
 .ci-nav [hidden] { display: none; }
+#ci-form { scroll-margin-top: 92px; }
+body.ci-page .m-bar { display: none !important; }   /* the site's bottom bar covered the form buttons */
+body.ci-page.has-m-bar { padding-bottom: 0 !important; }
+.ci-step legend, .ci-member, .ci label { scroll-margin-top: 100px; scroll-margin-bottom: 150px; }
+.ci-progress { display: none; }
+.ci-draft { font-size: 13px; color: var(--navy); text-align: center; margin: 0 0 16px; padding: 10px 12px; background: #F3EEE3; border-radius: 10px; }
+.ci-draft button { background: none; border: 0; color: var(--navy); text-decoration: underline; font: inherit; cursor: pointer; padding: 4px; }
+.ci .is-bad { animation: ciShake .35s; }
+@keyframes ciShake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .ci-privacy { font-size: 12.5px; color: var(--muted); text-align: center; margin: 16px 0 0; }
 .ci-done { text-align: center; padding: 44px 28px; }
 .ci-done__icon { font-size: 46px; }
@@ -99,11 +108,21 @@
   .ci-member { grid-template-columns: 26px 1fr 1fr; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
   .ci-member [data-k="name"], .ci-member [data-k="relation"] { grid-column: 2 / 4; }
   .ci-nav .btn { flex: 1; min-width: 0 !important; }
+  /* phones: inputs at 16px so iPhone does not zoom in (zoom pushed the Next button off-screen) */
+  .ci input:not([type=checkbox]):not([type=file]), .ci select, .ci textarea { font-size: 16px; min-height: 50px; }
+  /* phones: Back / Next always visible at the bottom of the screen while filling the form */
+  .ci-bar { position: sticky; bottom: 0; z-index: 30; margin: 14px -16px -22px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.97); box-shadow: 0 -6px 20px rgba(31,77,58,.12); border-radius: 16px 16px 18px 18px; }
+  .ci-bar .ci-error { margin: 0 0 8px; min-height: 0; font-size: 13.5px; }
+  .ci-bar .ci-error:empty { display: none; }
+  .ci-progress { display: block; margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; letter-spacing: .3px; }
+  .ci-nav { margin-top: 0; gap: 10px; }
+  .ci-nav #ci-back { flex: 0 0 34%; }
+  body.ci-page { padding-bottom: 0 !important; overflow-x: clip !important; overflow-y: visible !important; }   /* hidden made body a scroll box and broke the sticky bar */
   .page-hero--compact { padding: 120px 0 28px; }
 }
 </style>
 </head>
-<body>
+<body class="ci-page">
 <!-- Animated multicolor frame border -->
 <div class="frame"></div>
 <div class="frame__side-left"></div>
@@ -151,26 +170,26 @@
               <option>MakeMyTrip</option><option>Goibibo</option><option>Booking.com</option><option>Airbnb</option><option>Agoda</option><option>Other</option>
             </select></label>
           <label class="ci-wide" data-show="ota"><span class="ci-l">Booking ID / confirmation number <b>*</b></span>
-            <input name="booking_id" type="text" maxlength="60" placeholder="e.g. NH7012345678 or 4523119876"></label>
+            <input enterkeyhint="next" name="booking_id" type="text" maxlength="60" placeholder="e.g. NH7012345678 or 4523119876"></label>
           <label class="ci-wide"><span class="ci-l">Villa <b>*</b></span>
             <select name="villa" required>
               <option value="">Choose your villa</option>
               <option>Divinestay</option><option>AP Suite</option><option>Om Shanti Stay</option><option>Villa Aranya</option><option>Rudrangan Suites</option><option>Not sure</option>
             </select></label>
           <label><span class="ci-l">Check-in date <b>*</b></span>
-            <input name="checkin_date" type="date" required></label>
+            <input enterkeyhint="next" name="checkin_date" type="date" required></label>
           <label><span class="ci-l">Expected arrival time</span>
-            <input name="arrival_time" type="time" value="10:30"></label>
+            <input enterkeyhint="next" name="arrival_time" type="time" value="10:30"></label>
           <label><span class="ci-l">Check-out date <b>*</b></span>
-            <input name="checkout_date" type="date" required></label>
+            <input enterkeyhint="next" name="checkout_date" type="date" required></label>
           <label><span class="ci-l">Adults (18+) <b>*</b></span>
-            <input name="adults" type="number" min="1" max="40" value="2" required inputmode="numeric"></label>
+            <input enterkeyhint="next" name="adults" type="number" min="1" max="40" value="2" required inputmode="numeric"></label>
           <label><span class="ci-l">Children (under 18)</span>
-            <input name="children" type="number" min="0" max="30" value="0" inputmode="numeric"></label>
+            <input enterkeyhint="next" name="children" type="number" min="0" max="30" value="0" inputmode="numeric"></label>
           <label><span class="ci-l">Coming by</span>
             <select name="arrival_mode"><option value="">Choose</option><option>Own car</option><option>Taxi</option><option>Train</option><option>Flight (Indore)</option><option>Bus</option><option>Other</option></select></label>
           <label><span class="ci-l">Vehicle number <small>(for parking)</small></span>
-            <input name="vehicle_number" type="text" maxlength="15" placeholder="MP 13 AB 1234" autocapitalize="characters"></label>
+            <input enterkeyhint="next" name="vehicle_number" type="text" maxlength="15" placeholder="MP 13 AB 1234" autocapitalize="characters"></label>
         </div>
         <p class="ci-hint" id="ci-nights"></p>
       </fieldset>
@@ -180,23 +199,23 @@
         <legend>Main guest</legend>
         <div class="ci-grid">
           <label class="ci-wide"><span class="ci-l">Full name (as on ID) <b>*</b></span>
-            <input name="guest_name" type="text" maxlength="80" autocomplete="name" required></label>
+            <input enterkeyhint="next" name="guest_name" type="text" maxlength="80" autocomplete="name" required></label>
           <label><span class="ci-l">Mobile number <b>*</b></span>
-            <input name="phone" type="tel" maxlength="15" autocomplete="tel" placeholder="98XXXXXXXX" required inputmode="tel"></label>
+            <input enterkeyhint="next" name="phone" type="tel" maxlength="15" autocomplete="tel" placeholder="98XXXXXXXX" required inputmode="tel"></label>
           <label><span class="ci-l">Email <b>*</b></span>
-            <input name="email" type="email" maxlength="80" autocomplete="email" required placeholder="We email your stay details, menu &amp; Wi-Fi"></label>
+            <input enterkeyhint="next" name="email" type="email" maxlength="80" autocomplete="email" required placeholder="We email your stay details, menu &amp; Wi-Fi"></label>
           <label><span class="ci-l">Age <b>*</b></span>
-            <input name="age" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="e.g. 35" required data-age="adult"></label>
+            <input enterkeyhint="next" name="age" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="e.g. 35" required data-age="adult"></label>
           <label><span class="ci-l">Gender <b>*</b></span>
             <select name="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
           <label class="ci-wide"><span class="ci-l">Home address <b>*</b></span>
-            <input name="address" type="text" maxlength="160" autocomplete="street-address" required></label>
+            <input enterkeyhint="next" name="address" type="text" maxlength="160" autocomplete="street-address" required></label>
           <label><span class="ci-l">City <b>*</b></span>
-            <input name="city" type="text" maxlength="60" autocomplete="address-level2" required></label>
+            <input enterkeyhint="next" name="city" type="text" maxlength="60" autocomplete="address-level2" required></label>
           <label><span class="ci-l">State <b>*</b></span>
-            <input name="state" type="text" maxlength="60" autocomplete="address-level1" required></label>
+            <input enterkeyhint="next" name="state" type="text" maxlength="60" autocomplete="address-level1" required></label>
           <label><span class="ci-l">PIN code</span>
-            <input name="pincode" type="text" maxlength="10" autocomplete="postal-code" inputmode="numeric"></label>
+            <input enterkeyhint="next" name="pincode" type="text" maxlength="10" autocomplete="postal-code" inputmode="numeric"></label>
           <label><span class="ci-l">Nationality <b>*</b></span>
             <select name="nationality" required><option>Indian</option><option>Other (foreign national)</option></select></label>
         </div>
@@ -204,19 +223,19 @@
           <p class="ci-note">Foreign nationals: we must submit Form C to the authorities within 24 hours of arrival, so these details are required.</p>
           <div class="ci-grid">
             <label><span class="ci-l">Country of passport <b>*</b></span>
-            <input name="country" type="text" maxlength="60"></label>
+            <input enterkeyhint="next" name="country" type="text" maxlength="60"></label>
             <label><span class="ci-l">Passport number <b>*</b></span>
-            <input name="passport_no" type="text" maxlength="20" autocapitalize="characters"></label>
+            <input enterkeyhint="next" name="passport_no" type="text" maxlength="20" autocapitalize="characters"></label>
             <label><span class="ci-l">Visa number <b>*</b></span>
-            <input name="visa_no" type="text" maxlength="30"></label>
+            <input enterkeyhint="next" name="visa_no" type="text" maxlength="30"></label>
             <label><span class="ci-l">Visa valid until <b>*</b></span>
-            <input name="visa_expiry" type="date"></label>
+            <input enterkeyhint="next" name="visa_expiry" type="date"></label>
             <label><span class="ci-l">Arrived in India on</span>
-            <input name="india_arrival" type="date"></label>
+            <input enterkeyhint="next" name="india_arrival" type="date"></label>
             <label><span class="ci-l">Coming from (city, country)</span>
-            <input name="coming_from" type="text" maxlength="80"></label>
+            <input enterkeyhint="next" name="coming_from" type="text" maxlength="80"></label>
             <label class="ci-wide"><span class="ci-l">Next destination after Ujjain</span>
-            <input name="next_destination" type="text" maxlength="80"></label>
+            <input enterkeyhint="next" name="next_destination" type="text" maxlength="80"></label>
           </div>
         </div>
         <h3 class="ci-sub">Everyone else staying <small id="ci-members-count"></small></h3>
@@ -231,7 +250,7 @@
           <label><span class="ci-l">ID type (main guest) <b>*</b></span>
             <select name="id_type" required><option value="">Choose</option><option>Aadhaar (masked)</option><option>Aadhaar</option><option>Passport</option><option>Driving licence</option><option>Voter ID</option></select></label>
           <label><span class="ci-l">Last 4 digits of the ID number <b>*</b></span>
-            <input name="id_last4" type="text" maxlength="4" pattern="[A-Za-z0-9]{4}" placeholder="e.g. 4821" required inputmode="numeric"></label>
+            <input enterkeyhint="next" name="id_last4" type="text" maxlength="4" pattern="[A-Za-z0-9]{4}" placeholder="e.g. 4821" required inputmode="numeric"></label>
         </div>
         <div class="ci-files">
           <label class="ci-drop"><span class="ci-l">ID front <b>*</b></span><input type="file" name="id_front" accept="image/*,application/pdf" required><span class="ci-drop__ui">Take photo or upload</span><span class="ci-drop__name"></span></label>
@@ -250,17 +269,17 @@
           <label class="ci-wide"><span class="ci-l">Payment status <b>*</b></span>
             <select name="payment_status" required><option value="">Choose</option><option>Fully paid</option><option>Partly paid (advance)</option><option>Pay on arrival (nothing paid yet)</option></select></label>
           <label><span class="ci-l">Total amount for the stay (₹)</span>
-            <input name="total_amount" type="number" min="0" inputmode="numeric" placeholder="e.g. 11000"></label>
+            <input enterkeyhint="next" name="total_amount" type="number" min="0" inputmode="numeric" placeholder="e.g. 11000"></label>
           <label data-show="paid"><span class="ci-l">Amount paid so far (₹) <b>*</b></span>
-            <input name="amount_paid" type="number" min="1" inputmode="numeric" placeholder="e.g. 3000"></label>
+            <input enterkeyhint="next" name="amount_paid" type="number" min="1" inputmode="numeric" placeholder="e.g. 3000"></label>
           <label data-show="paid"><span class="ci-l">When was it paid? <b>*</b></span>
             <select name="payment_timing"><option value="">Choose</option><option>At the time of booking (pre-booking)</option><option>Before arrival</option><option>On arrival</option></select></label>
           <label data-show="paid"><span class="ci-l">Paid through <b>*</b></span>
             <select name="payment_mode"><option value="">Choose</option><option>On the booking site (MakeMyTrip, Booking.com…)</option><option>UPI</option><option>Bank transfer</option><option>Cash</option><option>Card</option><option>Other</option></select></label>
           <label data-show="paid"><span class="ci-l">UPI / transaction reference</span>
-            <input name="payment_ref" type="text" maxlength="40" placeholder="UTR or transaction ID"></label>
+            <input enterkeyhint="next" name="payment_ref" type="text" maxlength="40" placeholder="UTR or transaction ID"></label>
           <label data-show="paid"><span class="ci-l">Paid on</span>
-            <input name="payment_date" type="date"></label>
+            <input enterkeyhint="next" name="payment_date" type="date"></label>
         </div>
         <p class="ci-balance" id="ci-balance" aria-live="polite"></p>
         <div class="ci-files">
@@ -287,17 +306,21 @@
         <label class="ci-check"><input type="checkbox" name="consent_offers"> Send me occasional offers on WhatsApp (optional).</label>
         <div class="ci-grid">
           <label class="ci-wide"><span class="ci-l">Type your full name as your signature <b>*</b></span>
-            <input name="signature" type="text" maxlength="80" required></label>
+            <input enterkeyhint="next" name="signature" type="text" maxlength="80" required></label>
         </div>
         <input type="text" name="website" class="ci-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
       </fieldset>
 
-      <p class="ci-error" id="ci-error" role="alert"></p>
-      <div class="ci-nav">
-        <button type="button" class="btn btn--ghost" id="ci-back">← Back</button>
-        <button type="button" class="btn btn--primary" id="ci-next">Next →</button>
-        <button type="submit" class="btn btn--primary" id="ci-submit">Submit e-check-in</button>
+      <div class="ci-bar">
+        <p class="ci-error" id="ci-error" role="alert" aria-live="assertive"></p>
+        <p class="ci-progress" id="ci-progress" aria-live="polite"></p>
+        <div class="ci-nav">
+          <button type="button" class="btn btn--ghost" id="ci-back">← Back</button>
+          <button type="button" class="btn btn--primary" id="ci-next">Next →</button>
+          <button type="submit" class="btn btn--primary" id="ci-submit">Submit e-check-in</button>
+        </div>
       </div>
+      <p class="ci-draft" id="ci-draft" hidden></p>
       <p class="ci-privacy">Your details are sent securely to AP Villas &amp; Resorts only and are never shown on this website. Read our <a href="policies.html#privacy">privacy notice</a>.</p>
     </form>
 
@@ -364,5 +387,5 @@
 </div>
 <script src="assets/js/main.js?v=38bde6f9"></script>
 <script>window.ECHECKIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';   // Google Apps Script web app URL (docs/echeckin-setup.md)</script>
-<script src="assets/js/checkin.js?v=54de7fb0"></script>
+<script src="assets/js/checkin.js?v=3558ac63"></script>
 </body></html>
