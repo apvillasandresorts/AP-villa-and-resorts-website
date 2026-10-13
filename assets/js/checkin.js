@@ -77,7 +77,7 @@
       const o = old[i] || {}, kid = i >= adults - 1;
       return `<div class="ci-member"><span class="ci-member__n">${i + 2}</span>
         <input data-k="name" type="text" maxlength="80" placeholder="Full name${kid ? ' (child)' : ''}" value="${(o.name || '').replace(/"/g, '&quot;')}" required aria-label="Guest ${i + 2} name">
-        <input data-k="age" type="number" min="0" max="110" placeholder="Age" value="${o.age || ''}" required inputmode="numeric" aria-label="Guest ${i + 2} age">
+        <input data-k="age" type="text" inputmode="decimal" maxlength="8" autocomplete="off" placeholder="Age" value="${(o.age || '').replace(/"/g, '&quot;')}" required data-age="any" aria-label="Guest ${i + 2} age">
         <select data-k="gender" required aria-label="Guest ${i + 2} gender"><option value="">Gender</option>${['Male', 'Female', 'Other'].map(g => `<option${o.gender === g ? ' selected' : ''}>${g}</option>`).join('')}</select>
         <input data-k="relation" type="text" maxlength="30" placeholder="Relation (e.g. wife, son)" value="${(o.relation || '').replace(/"/g, '&quot;')}" aria-label="Guest ${i + 2} relation"></div>`;
     }).join('') || '<p class="ci-hint">Just you. Change the number of adults or children in step 1 if more people are coming.</p>';
@@ -95,20 +95,33 @@
     e.target.closest('.ci-drop').classList.toggle('has-file', files.length > 0);
   });
 
-  // ---- step navigation with validation ----
+  // ---- age: accept Hindi/Indian-script digits, "25 yrs", "1.5" (a plain number box silently dropped these and the guest got stuck) ----
+  const ZEROS = [0x660, 0x6F0, 0x966, 0x9E6, 0xA66, 0xAE6, 0xB66, 0xBE6, 0xC66, 0xCE6, 0xD66, 0xFF10];
+  const toAscii = str => str.replace(/[^\x00-\x7F]/g, ch => { const c = ch.codePointAt(0), z = ZEROS.find(z => c >= z && c <= z + 9); return z !== undefined ? String(c - z) : ch; });
+  const readAge = el => (toAscii(el.value).replace(/,/g, '.').match(/\d+(\.\d+)?/) || [''])[0];
+  function checkAge(el) {   // returns an error message, or '' when fine (and writes the clean number back)
+    const a = readAge(el), n = parseFloat(a), adult = el.dataset.age === 'adult';
+    if (!a) return el.value.trim() ? 'Please type the age in numbers, e.g. 35.' : '';
+    el.value = a;
+    if (n > 110) return 'Please check the age: it looks too high.';
+    if (adult && n < 18) return 'The main guest must be 18 or older. If you are under 18, please ask an adult in your group to fill in this form as the main guest.';
+    return '';
+  }
   function validate(i) {
     err.textContent = '';
     const fields = [...steps[i].querySelectorAll('input, select, textarea')].filter(el => !el.disabled && el.type !== 'hidden' && !el.classList.contains('ci-hp'));
     for (const el of fields) {
       el.classList.remove('is-bad');
-      let ok = el.checkValidity();
+      if ((el.type === 'tel' || el.inputMode === 'numeric') && !el.dataset.age && /[^\x00-\x7F]/.test(el.value)) el.value = toAscii(el.value);   // Hindi digits in phone / PIN
+      let ok = el.checkValidity(), ageMsg = '';
+      if (el.dataset.age && el.value.trim()) { ageMsg = checkAge(el); ok = !ageMsg; }
       if (ok && el.name === 'phone') ok = /^\+?\d[\d\s-]{8,14}$/.test(el.value.trim());
       if (ok && el.name === 'id_last4') ok = /^[A-Za-z0-9]{4}$/.test(el.value.trim());
       if (!ok) {
         el.classList.add('is-bad'); el.focus({ preventScroll: true });
         el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         const label = (el.closest('label')?.childNodes[0]?.textContent || el.getAttribute('aria-label') || el.placeholder || 'This field').trim().replace(/\s+\*$/, '');
-        err.textContent = el.type === 'checkbox' ? 'Please tick the required declarations.' : el.name === 'phone' ? 'Please enter a valid mobile number.' : el.type === 'file' ? `Please upload: ${label}.` : `Please fill: ${label}.`;
+        err.textContent = ageMsg ? (el.dataset.age === 'any' ? `${label}: ${ageMsg}` : ageMsg) : el.name === 'phone' ? 'Please enter a valid mobile number.' : el.value && el.type !== 'file' && el.type !== 'checkbox' && el.tagName !== 'SELECT' ? `Please check: ${label}.` : el.type === 'checkbox' ? 'Please tick the required declarations.' : el.name === 'phone' ? 'Please enter a valid mobile number.' : el.type === 'file' ? `Please upload: ${label}.` : `Please fill: ${label}.`;
         return false;
       }
     }

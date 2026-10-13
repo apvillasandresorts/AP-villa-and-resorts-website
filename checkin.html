@@ -186,7 +186,7 @@
           <label><span class="ci-l">Email <b>*</b></span>
             <input name="email" type="email" maxlength="80" autocomplete="email" required placeholder="We email your stay details, menu &amp; Wi-Fi"></label>
           <label><span class="ci-l">Age <b>*</b></span>
-            <input name="age" type="number" min="18" max="110" required inputmode="numeric"></label>
+            <input name="age" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="e.g. 35" required data-age="adult"></label>
           <label><span class="ci-l">Gender <b>*</b></span>
             <select name="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
           <label class="ci-wide"><span class="ci-l">Home address <b>*</b></span>
@@ -364,5 +364,5 @@
 </div>
 <script src="assets/js/main.js?v=38bde6f9"></script>
 <script>window.ECHECKIN_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';   // Google Apps Script web app URL (docs/echeckin-setup.md)</script>
-<script src="assets/js/checkin.js"></script>
+<script src="assets/js/checkin.js?v=54de7fb0"></script>
 </body></html>
