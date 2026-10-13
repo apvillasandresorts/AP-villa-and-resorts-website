@@ -995,6 +995,12 @@ const sfx = {
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.45, 'triangle', 0.08), i * 110)); },
   roar() { noise(1.0, 0.25, 300); tone(90, 1.0, 'sawtooth', 0.06, 50); },
   thunder() { noise(1.4, 0.2, 260); },
+  bigThunder() { noise(0.25, 0.3, 2400); setTimeout(() => noise(2.2, 0.28, 180), 90); tone(48, 1.8, 'sawtooth', 0.05, 30); },
+  growl() { tone(62, 1.6, 'sawtooth', 0.045, 38); tone(66, 1.6, 'square', 0.02, 41); noise(1.4, 0.07, 220); },
+  whisper() { for (let k = 0; k < 3; k++) setTimeout(() => noise(0.5 + Math.random() * 0.4, 0.05, 2600 + Math.random() * 1500), k * 260); },
+  heartbeat() { tone(58, 0.16, 'sine', 0.2, 40); setTimeout(() => tone(52, 0.2, 'sine', 0.16, 36), 230); },
+  dread() { tone(110, 2.4, 'sawtooth', 0.025, 104); tone(116.5, 2.4, 'sawtooth', 0.025, 98); },   // a dissonant swell
+  surge() { this.dread(); this.growl(); this.bigThunder(); },
   lionRoar() { noise(0.9, 0.22, 420); tone(150, 0.9, 'sawtooth', 0.05, 80); },
   up() { [523, 659, 880].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.05), i * 55)); },
   down() { tone(330, 0.35, 'sawtooth', 0.035, 150); },
@@ -1878,11 +1884,32 @@ function bossPhase2(b) {
   else if (b.kind === 'rakta') { banner('Raktabija multiplies!', 'Blood clones are weak and fade fast: strike the real one', 2400, 'boss'); bossClip('rakta-split'); b.splitT = 0.6; }
   else { banner('Andhakar: darkness falls!', 'Watch the glowing warnings: they still show where danger strikes', 2600, 'boss'); bossClip('andhaka-rise'); b.darkT = 1.2; }
 }
-function spawnClone(b) {   // a blood clone: weak, short-lived, capped
-  const alive = danavs.filter(d => d.clone).length;
-  if (alive >= 3 || (b.clones || 0) >= 10) return null;
-  const lanes = [0, 1, 2].filter(l => l !== b.lane), lane = lanes[Math.floor(Math.random() * lanes.length)];
-  const d = spawnDanav('raktaja', lane, { z: b.z - 0.04, mini: true });
+const SURGE_AT = [0.7, 0.4, 0.1];
+function bossSurge(b, n) {   // n = 1, 2, 3: each surge is stronger than the last; one path always stays safe
+  shake = 0.6 + 0.2 * n; screenFlash('red'); sfx.surge(); SKY.flash = 0.6; SKY.strikeT = 2.5;
+  const p = project(b.z, b.x); burst(p.x, p.y - 100 * unit(), b.kind === 'andhaka' ? '#7A3CFF' : '#FF3A2A', 20 + n * 6, 6);
+  const tag = ['', 'I', 'II', 'III'][n];
+  if (b.kind === 'mahisha') {
+    b.power = n;   // stronger, faster charges and heavier rock storms from here on
+    const safe = [0, 1, 2].filter(l => l !== player.lane)[Math.floor(Math.random() * 2)];
+    b.charge = { lane: player.lane, warn: 1.0 - n * 0.08 }; b.lane = player.lane; b.atkT = 2;
+    for (let l = 0; l < 3; l++) if (l !== safe && l !== player.lane) fires.push({ lane: l, z: b.z - 0.02, warn: 1.0, col: 'rock', speed: 0.8 + 0.15 * n });
+    banner('Mahishasura\'s fury ' + tag, n === 3 ? 'His last, mightiest charge: dodge, then strike while he is winded' : 'His strikes grow stronger: step out of the red path', 2200, 'boss');
+  } else if (b.kind === 'rakta') {
+    b.power = n; b.splitFx = 0.9;
+    let made = 0; const want = n + 1;   // 2, 3, 4 blood clones across the lanes
+    for (let k = 0; k < want; k++) if (spawnClone(b, true, k)) made++;
+    banner('Raktabija multiplies ' + tag, made + ' blood clones rise across the paths: strike the real one', 2200, 'boss');
+  } else {
+    b.power = n; b.darkOn = true; b.darkT = 5 + n; sfx.whisper();   // darkness falls at once, deeper each time
+    banner('Andhakar deepens ' + tag, n === 3 ? 'Near-total darkness: trust the glowing warnings' : 'The light around you shrinks', 2200, 'boss');
+  }
+}
+function spawnClone(b, surge, k = 0) {   // a blood clone: weak, short-lived, capped (surges allow a few more)
+  const alive = danavs.filter(d => d.clone).length, pw = b.power || 0;
+  if (alive >= 3 + pw || (b.clones || 0) >= 10 + pw * 4) return null;
+  const lanes = [0, 1, 2].filter(l => l !== b.lane), lane = surge ? [0, 1, 2][k % 3] : lanes[Math.floor(Math.random() * lanes.length)];
+  const d = spawnDanav('raktaja', lane, { z: b.z - 0.04 - (surge ? Math.floor(k / 3) * 0.12 : 0), mini: true });
   if (d) { d.clone = true; d.life = 6; d.hp = d.max = 3; b.clones = (b.clones || 0) + 1; }
   return d;
 }
@@ -1890,13 +1917,17 @@ function updateBoss(dt) {
   const b = boss, B = BOSSES[b.kind];
   if (!b.phase) b.phase = 1;
   if (b.phase === 1 && b.hp <= b.max / 2) bossPhase2(b);
+  b.surges = b.surges || 0;
+  if (b.surges < 3 && b.hp > 0 && b.hp <= b.max * SURGE_AT[b.surges]) { b.surges++; bossSurge(b, b.surges); }
+  b.horrorT = (b.horrorT === undefined ? 4 : b.horrorT) - dt;   // eerie sounds through the fight; a heartbeat near the end
+  if (b.horrorT <= 0) { b.horrorT = 5 + Math.random() * 5 - (b.surges || 0); const r = Math.random(); if (b.hp < b.max * 0.3) sfx.heartbeat(); else if (r < 0.4) sfx.growl(); else if (r < 0.7) sfx.whisper(); else sfx.dread(); }
   if (b.recover > 0) b.recover -= dt;
   if (b.splitFx > 0) b.splitFx -= dt;
-  if (b.kind === 'rakta' && b.phase === 2) { b.splitT -= dt; if (b.splitT <= 0) { b.splitT = 7; b.splitFx = 0.9; let n = 0; if (spawnClone(b)) n++; if (spawnClone(b)) n++; if (n) { sfx.cast(); const p = project(b.z, b.x); burst(p.x, p.y - 80 * unit(), '#C0101E', 18, 4); } } }
+  if (b.kind === 'rakta' && b.phase === 2) { b.splitT -= dt; if (b.splitT <= 0) { b.splitT = 7 - 1.2 * (b.power || 0); b.splitFx = 0.9; let n = 0; if (spawnClone(b)) n++; if (spawnClone(b)) n++; if (n) { sfx.cast(); const p = project(b.z, b.x); burst(p.x, p.y - 80 * unit(), '#C0101E', 18, 4); } } }
   if (b.kind === 'andhaka' && b.phase === 2) {   // 5 s of darkness every 14 s
-    b.darkT -= dt; if (b.darkT <= 0) { b.darkOn = !b.darkOn; b.darkT = b.darkOn ? 5 : 9; if (b.darkOn) sfx.thunder(); }
+    b.darkT -= dt; if (b.darkT <= 0) { b.darkOn = !b.darkOn; const pw = b.power || 0; b.darkT = b.darkOn ? 5 + pw : Math.max(3.5, 9 - pw * 1.8); if (b.darkOn) sfx.thunder(); }
   }
-  DARK.target = b.kind === 'andhaka' && b.darkOn ? 1 : 0;
+  DARK.target = b.kind === 'andhaka' && b.darkOn ? 1 : 0; DARK.level = b.kind === 'andhaka' ? (b.power || 0) : 0;
   b.enter = Math.min(1, b.enter + dt * 0.45);
   b.hitFlash = Math.max(0, b.hitFlash - dt * 5);
   const rage = b.hp < b.max / 2;
@@ -1909,7 +1940,7 @@ function updateBoss(dt) {
   if (b.charge) {
     const c = b.charge;
     if (c.warn > 0) { c.warn -= dt; if (Math.random() < 0.3) { const p = project(b.z, b.x); parts.push({ x: p.x + (Math.random() - 0.5) * 40, y: p.y, vx: (Math.random() - 0.5) * 2, vy: -1, r: 3, life: 0.6, color: 'rgba(200,170,140,0.7)' }); } }
-    else if (!c.back) { b.z -= (rage ? 1.7 : 1.4) * dt; if (Math.random() < 0.6) { const p = project(b.z, b.x); parts.push({ x: p.x + (Math.random() - 0.5) * 60, y: p.y, vx: (Math.random() - 0.5) * 3, vy: -1.5, r: 4, life: 0.7, color: 'rgba(210,180,150,0.7)' }); } if (b.z <= 0.06) { if (player.lane === c.lane && lives > 0) hurtPlayer('charge'); shake = 0.5; sfx.drum(); c.back = true; } }
+    else if (!c.back) { b.z -= ((rage ? 1.7 : 1.4) + 0.2 * (b.power || 0)) * dt; if (Math.random() < 0.6) { const p = project(b.z, b.x); parts.push({ x: p.x + (Math.random() - 0.5) * 60, y: p.y, vx: (Math.random() - 0.5) * 3, vy: -1.5, r: 4, life: 0.7, color: 'rgba(210,180,150,0.7)' }); } if (b.z <= 0.06) { if (player.lane === c.lane && lives > 0) hurtPlayer('charge'); shake = 0.5; sfx.drum(); c.back = true; } }
     else if (c.recover === undefined) { c.recover = b.phase === 2 ? 1.1 : 1.5; b.recover = c.recover; floatText(project(0.22, b.x).x, project(0.22, b.x).y - 120 * unit(), 'Winded! Strike now', '#FFE27A', 16); }
     else if (b.z < 0.22 && c.recover > 0) b.z = Math.min(0.22, b.z + 1.2 * dt);   // stumbles back a little
     else if (c.recover > 0) c.recover -= dt;   // winded: open to attack (extra damage)
@@ -1919,9 +1950,9 @@ function updateBoss(dt) {
   if (b.atkT <= 0 && b.enter >= 1 && !b.charge) {
     b.n++;
     if (b.kind === 'mahisha') {
-      b.atkT = (rage ? 2.2 : 2.9) + b.slow;
+      b.atkT = (rage ? 2.2 : 2.9) - 0.15 * (b.power || 0) + b.slow;
       if (b.n % 2 === 0) { b.charge = { lane: player.lane, warn: rage ? 0.8 : 1.05 }; b.lane = player.lane; sfx.roar(); }
-      else { const l = player.lane; fires.push({ lane: l, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 }); if (rage) fires.push({ lane: (l + 1 + Math.floor(Math.random() * 2)) % 3, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 }); sfx.drum(); }
+      else { const l = player.lane; fires.push({ lane: l, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 }); if (rage) fires.push({ lane: (l + 1 + Math.floor(Math.random() * 2)) % 3, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 + 0.12 * (b.power || 0) }); if ((b.power || 0) >= 2) shake = Math.max(shake, 0.35); sfx.drum(); }
     } else if (b.kind === 'rakta') {
       b.atkT = (rage ? 1.5 : 2.0) + b.slow;
       const l = Math.random() < 0.6 ? player.lane : Math.floor(Math.random() * 3);
@@ -1945,13 +1976,13 @@ function updateBoss(dt) {
   if (b.summoned < 2 && b.hp < b.max * thresholds[b.summoned]) { b.summoned++; spawnDanav(B.minions[0], 0); spawnDanav(B.minions[1], 2); banner('He summons his danav!', '', 1400, 'boss'); }
 }
 
-const DARK = { a: 0, target: 0 };
+const DARK = { a: 0, target: 0, level: 0 };
 function drawDarkness() {   // Andhakasura's darkness: everything dims except a circle of light around the yoddha; warnings are redrawn on top
   DARK.a += (DARK.target - DARK.a) * 0.04;
   if (DARK.a < 0.02) return;
-  const p = WR.at || project(0, player.x), r = Math.min(W, H) * 0.42;
+  const lv = DARK.level || 0, p = WR.at || project(0, player.x), r = Math.min(W, H) * (0.42 - 0.06 * lv);   // the light shrinks with each surge
   const g = ctx.createRadialGradient(p.x, p.y - 60 * unit(), r * 0.25, p.x, p.y - 60 * unit(), r);
-  g.addColorStop(0, 'rgba(6,2,16,0)'); g.addColorStop(1, `rgba(6,2,16,${0.82 * DARK.a})`);
+  g.addColorStop(0, 'rgba(6,2,16,0)'); g.addColorStop(1, `rgba(6,2,16,${Math.min(0.97, 0.82 + 0.05 * lv) * DARK.a})`);
   ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
   for (const f of fires) if (f.warn > 0) drawWarn(f);
   if (boss && !boss.dead) {   // his eyes still burn in the dark
@@ -1974,7 +2005,7 @@ function drawWinded() {   // Mahishasura winded: circling stars over his head
 // Dawn sky (indigo → rose → gold), drifting white/pink clouds, Kailash in the distance,
 // a violet-stone bridge with golden trim floating over a sea of clouds, and a glowing temple.
 // mood 0 = divine dawn, 1 = Andhakasura's storm. glory rises during the victory celebration.
-const SKY = { act: 0, stars: Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random() * 0.85, r: Math.random() < 0.15 ? 2 : 1, tw: 1 + Math.random() * 3, ph: Math.random() * 6 })), mood: 0, glory: 0, flash: 0, bolt: null, sprites: [], clouds: [], birds: [] };
+const SKY = { bolts: [], strikeT: 0, act: 0, stars: Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random() * 0.85, r: Math.random() < 0.15 ? 2 : 1, tw: 1 + Math.random() * 3, ph: Math.random() * 6 })), mood: 0, glory: 0, flash: 0, bolt: null, sprites: [], clouds: [], birds: [] };
 function hex(c) { return [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); }
 function mix(a, b, t) { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
 function makeCloudSprite(seed) {
@@ -2115,11 +2146,26 @@ function drawSky() {
     }
   }
   // lightning while Andhakasura lives
-  if (m > 0.6 && Math.random() < 0.004) { SKY.flash = 0.35; SKY.bolt = { x: W * (0.15 + Math.random() * 0.7), t: 0.25 }; sfx.thunder(); }
+  // lightning in every boss fight: more often as the boss weakens, bigger during a surge
+  const pw = boss && !boss.dead ? (boss.surges || 0) : 0;
+  if (SKY.strikeT > 0) SKY.strikeT -= 1 / 60;
+  if (m > 0.6 && SKY.bolts.length < 3 && Math.random() < 0.007 + 0.004 * pw + (SKY.strikeT > 0 ? 0.05 : 0)) {
+    const big = SKY.strikeT > 0 || Math.random() < 0.25, x0 = W * (0.08 + Math.random() * 0.84), y1 = big ? hy + 30 : hy - 40, pts = [[x0, 0]];
+    let x = x0, y = 0; while (y < y1) { x += (Math.random() - 0.5) * 46; y += 22 + Math.random() * 26; pts.push([x, y]); }
+    const br = []; for (let k = 0; k < 2; k++) { const i = 1 + Math.floor(Math.random() * (pts.length - 2)); let [bx, by] = pts[i]; const q = [[bx, by]], dir = Math.random() < 0.5 ? -1 : 1; for (let j = 0; j < 4; j++) { bx += dir * (10 + Math.random() * 22); by += 14 + Math.random() * 18; q.push([bx, by]); } br.push(q); }
+    SKY.bolts.push({ pts, br, t: big ? 0.35 : 0.25, big });
+    SKY.flash = Math.max(SKY.flash, big ? 0.5 : 0.3); if (big) { sfx.bigThunder(); shake = Math.max(shake, 0.25); } else sfx.thunder();
+  }
   if (SKY.flash > 0) SKY.flash = Math.max(0, SKY.flash - 0.02);
-  if (SKY.bolt && SKY.bolt.t > 0) {
-    SKY.bolt.t -= 1 / 60; ctx.strokeStyle = `rgba(255,240,255,${SKY.bolt.t * 4})`; ctx.lineWidth = 2.5; ctx.shadowColor = '#E8C8FF'; ctx.shadowBlur = 14;
-    ctx.beginPath(); let x = SKY.bolt.x, y = 0; ctx.moveTo(x, y); while (y < hy - 40) { x += (Math.random() - 0.5) * 40; y += 25 + Math.random() * 25; ctx.lineTo(x, y); } ctx.stroke(); ctx.shadowBlur = 0;
+  for (let i = SKY.bolts.length - 1; i >= 0; i--) {
+    const bo = SKY.bolts[i]; bo.t -= 1 / 60; if (bo.t <= 0) { SKY.bolts.splice(i, 1); continue; }
+    const a = Math.min(1, bo.t * 4) * (Math.random() < 0.15 ? 0.4 : 1);   // flicker
+    ctx.lineCap = 'round'; ctx.shadowColor = '#E8C8FF'; ctx.shadowBlur = Q.shadows ? 16 : 0;
+    for (const [lw, col] of [[bo.big ? 7 : 5, `rgba(190,160,255,${a * 0.35})`], [bo.big ? 3 : 2.2, `rgba(255,248,255,${a})`]]) {
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); bo.pts.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      for (const q of bo.br) q.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
   }
   drawEnvFar(); drawTemple(); drawEnvHaze();
 }
@@ -4003,7 +4049,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
