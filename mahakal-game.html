@@ -1047,6 +1047,7 @@ const sfx = {
   win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.45, 'triangle', 0.08), i * 110)); },
   roar() { noise(1.0, 0.25, 300); tone(90, 1.0, 'sawtooth', 0.06, 50); },
   thunder() { noise(1.4, 0.2, 260); },
+  screech() { tone(1700 + Math.random() * 300, 0.16, 'sawtooth', 0.035, 2700); tone(2400, 0.1, 'square', 0.014, 1400); noise(0.1, 0.05, 4200); },
   bigThunder() { noise(0.25, 0.3, 2400); setTimeout(() => noise(2.2, 0.28, 180), 90); tone(48, 1.8, 'sawtooth', 0.05, 30); },
   growl() { tone(62, 1.6, 'sawtooth', 0.045, 38); tone(66, 1.6, 'square', 0.02, 41); noise(1.4, 0.07, 220); },
   whisper() { for (let k = 0; k < 3; k++) setTimeout(() => noise(0.5 + Math.random() * 0.4, 0.05, 2600 + Math.random() * 1500), k * 260); },
@@ -1709,17 +1710,24 @@ const LEECHES = [], FALLING = [];
 function leechTip() {}
 function leechUpdate(dt) {
   for (const L of LEECHES) {
-    L.t += dt; L.drainT -= dt;
+    L.t += dt; L.drainT -= dt; if (L.hit > 0) L.hit -= dt;
     if (L.drainT <= 0 && state === 'playing') { L.drainT = 2.6; changeTej(-5); if (lives > 0) hurtPlayer('leech'); const pp = playerPos(); floatText(pp.x + L.side * 22 * unit(), pp.y - 30 * unit(), 'Slurp! −prana', '#FF6060', 14); }
   }
   for (let i = FALLING.length - 1; i >= 0; i--) { const F = FALLING[i]; F.t += dt; F.x += F.vx * dt; F.y += F.vy * dt; F.vy += 900 * unit() * dt; F.rot += F.vr * dt; if (F.t > 0.9) { burst(F.x, F.y, '#8A1018', 10, 3); FALLING.splice(i, 1); } }
 }
-function shakeOffLeeches() {
+function shakeOffLeeches() {   // each tap tears at the first leech: vibration, a screech, one less health; at zero it falls and dies
   if (!LEECHES.length || state !== 'playing') return false;
-  const pp = playerPos();
-  for (const L of LEECHES) { FALLING.push({ x: pp.x + L.side * 18 * unit(), y: pp.y - 10 * unit(), vx: L.side * (160 + Math.random() * 120) * unit(), vy: -260 * unit(), rot: 0, vr: L.side * 9, t: 0 }); addScore(DANAV.jonk.pts); }
-  floatText(pp.x, pp.y - 110 * unit(), LEECHES.length > 1 ? 'Shaken off! Both leeches fall' : 'Shaken off!', '#9BF0B0', 17);
-  LEECHES.length = 0; player.shakeT = 0.45; sfx.pop(); sfx.hit();
+  const pp = playerPos(), u = unit(), L = LEECHES[0];
+  L.hp--; L.hit = 0.25; player.shakeT = Math.max(player.shakeT || 0, 0.18);
+  try { navigator.vibrate && navigator.vibrate(L.hp > 0 ? 35 : [60, 40, 110]); } catch (e) {}
+  sfx.screech();
+  const lx = pp.x + L.side * 22 * u;
+  burst(lx, pp.y, '#C01020', 6, 3);
+  if (L.hp <= 0) {
+    FALLING.push({ x: lx, y: pp.y, vx: (L.side || (Math.random() < 0.5 ? -1 : 1)) * (160 + Math.random() * 120) * u, vy: -260 * u, rot: 0, vr: (L.side || 1) * 9, t: 0 });
+    addScore(DANAV.jonk.pts); LEECHES.shift(); player.shakeT = 0.45; sfx.pop();
+    floatText(pp.x, pp.y - 110 * u, LEECHES.length ? 'Ripped off! One more…' : 'Ripped off!', '#9BF0B0', 17);
+  } else floatText(lx, pp.y - 40 * u, L.hp + ' more!', '#FFD0C0', 15);
   return true;
 }
 function drawLeeches() {
@@ -1732,12 +1740,14 @@ function drawLeeches() {
     ctx.strokeStyle = 'rgba(255,210,210,0.35)'; ctx.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.ellipse(0, k * 9 * u, 13 * u * pulse, 3 * u, 0, 0, Math.PI); ctx.stroke(); }
     ctx.fillStyle = '#FFD24D'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(sx * 5 * u, -18 * u, 2.6 * u, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = '#C01020'; ctx.beginPath(); ctx.arc(0, -24 * u * pulse, 5 * u, 0, Math.PI * 2); ctx.fill();   // sucker
+    if (L.hit > 0) { ctx.globalAlpha = L.hit * 2.4; ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.ellipse(0, 0, 15 * u, 25 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
     ctx.restore();
+    for (let k = 0; k < L.max; k++) { ctx.fillStyle = k < L.hp ? '#FF3A3A' : 'rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.arc(x + (k - (L.max - 1) / 2) * 7 * u, y - 34 * u, 2.6 * u, 0, Math.PI * 2); ctx.fill(); }   // its health
     if (Math.random() < 0.15) parts.push({ x, y: y + 10 * u, vx: (Math.random() - 0.5), vy: 1, r: 2, life: 0.7, color: '#C01020' });   // blood drops
   }
   if (LEECHES.length && state === 'playing') {   // the prompt
     ctx.save(); ctx.font = `800 ${Math.round(13 * Math.max(1, u))}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,240,200,${0.7 + 0.3 * Math.sin(time * 10)})`; ctx.strokeStyle = 'rgba(80,0,0,0.85)'; ctx.lineWidth = 4;
-    ctx.strokeText('TAP YODDHA TO SHAKE IT OFF!', pp.x, pp.y - 92 * u); ctx.fillText('TAP YODDHA TO SHAKE IT OFF!', pp.x, pp.y - 92 * u); ctx.restore();
+    ctx.strokeText('TAP YODDHA FAST TO RIP IT OFF!', pp.x, pp.y - 92 * u); ctx.fillText('TAP YODDHA FAST TO RIP IT OFF!', pp.x, pp.y - 92 * u); ctx.restore();
   }
   for (const F of FALLING) { ctx.save(); ctx.translate(F.x, F.y); ctx.rotate(F.rot); ctx.fillStyle = '#5A1418'; ctx.beginPath(); ctx.ellipse(0, 0, 8 * u, 13 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
 }
@@ -1804,7 +1814,7 @@ function tandav() {   // Shiva's damru: a shockwave rolls up the bridge
 // Each special move is telegraphed, has a cooldown, and is capped. Art for them exists only as reference videos, so
 // they are drawn by the existing code renderer with their own silhouettes and colours.
 const GROUND = [];   // short-lived ground hazards (Agni Vetala fire, Kaal Pishacha claw): max 3, one hit each
-const ENEMY_INFO = { jonk: 'A blood-sucking leech! If it latches on, TAP your yoddha (or press Space) to shake it off', lankaguard: "Ravana's golden guard: its shield blocks your strikes. Hit it after its slam", nishachar: 'A sneaky thief that steals your boons! Catch it before it escapes to win the boon back', chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
+const ENEMY_INFO = { jonk: 'A blood-sucking leech! If it latches on, TAP your yoddha again and again (or press Space) to rip it off', lankaguard: "Ravana's golden guard: its shield blocks your strikes. Hit it after its slam", nishachar: 'A sneaky thief that steals your boons! Catch it before it escapes to win the boon back', chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
 const seenTypes = new Set();
 function addHazard(lane, kind) {
   if (GROUND.length >= 3 || GROUND.some(g => g.lane === lane)) return false;
@@ -1817,8 +1827,8 @@ const AI = {
     else { if (d.lane !== player.lane) d.lane = player.lane; d.z -= 0.6 * dt; }   // …then lunges in to latch on
     if (d.z < 0.07 && d.lane === player.lane && state === 'playing') {
       if (LEECHES.length < 3) {
-        LEECHES.push({ t: 0, drainT: 1.6, side: [-1, 1, 0][LEECHES.length], ph: Math.random() * 6 });
-        if (!leechTip.shown) { leechTip.shown = true; banner('A leech latched on!', 'Tap your yoddha (or press Space) to shake it off', 2600, 'boss'); }
+        const lhp = LV().act >= 3 ? 5 : 4; LEECHES.push({ t: 0, drainT: 1.6, side: [-1, 1, 0][LEECHES.length], ph: Math.random() * 6, hp: lhp, max: lhp, hit: 0 });
+        if (!leechTip.shown) { leechTip.shown = true; banner('A leech latched on!', 'Tap your yoddha again and again (or press Space) to rip it off', 2600, 'boss'); }
         sfx.cast();
       }
       d.gone = true;
