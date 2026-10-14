@@ -169,3 +169,9 @@ Shown in the small art window during play; gameplay never waits for them (missin
 | `victory.mp4` | 164948 (temple above the clouds) | After Andhakasura's defeat clip |
 
 Not used in game: the hero action/animation references (plain studio turnarounds, partly off-model), the art-direction guides, the Kalantaka Trishula take with its title overlay, and the Chanakya film (excluded).
+
+## Trailer (new game intro)
+
+| File | Source | Where it plays |
+| --- | --- | --- |
+| `videos/game/trailer.mp4` (+ `.jpg` poster) | Owner's Gemini video `gemini_generated_video_c275422a.mp4` (30 s, 16:9, with sound), cropped to remove the watermark, 960×540 | Plays once when a player first taps Enter the Temple (registry key `trailer`), and as chapter 1 of Watch the story. On phones held upright it shows whole over a blurred copy with a "turn sideways" hint. The older portrait `intro.mp4` remains as story chapter 2. |
