@@ -1370,7 +1370,7 @@ function waveCleared() {
 }
 function afterLevel() {
   const lv = LV();
-  if (lv.bless) playCutscene('bless-' + lv.bless, () => showAshirvaad(BLESS[lv.bless]));
+  if (lv.bless) playCutscene('bless-' + lv.bless, () => showAshirvaad(BLESS[lv.bless]), { force: true });   // every time the Ashirvaad is received
   else { level++; startLevel(false); }
 }
 function showAshirvaad(b) {
@@ -1539,13 +1539,13 @@ addEventListener('blur', () => setPause(true));
 setTimeout(() => $('intro').classList.add('show-content'), 150);
 $('enter-btn').addEventListener('click', () => {
   ensureAudio(); sfx.bell();
-  if (CUTSCENES.trailer && !store.get('mahakal_seen_trailer', '') && isTouchPortrait()) cutFullscreen(null, false);
+  if (CUTSCENES.trailer && isTouchPortrait()) cutFullscreen(null, false);
   $('intro').classList.add('opening');
   setTimeout(() => {
     $('intro').style.display = 'none';
     const ib = $('intro-bg'); ib.pause(); ib.removeAttribute('autoplay'); ib.innerHTML = ''; ib.load();   // release the start-screen video
     $('hud').classList.add('show');
-    playCutscene('trailer', startRun);
+    playCutscene('trailer', startRun, { force: true });   // the trailer plays on every Enter (skippable)
     track('game_start', {});
   }, 2200);
 });
@@ -2899,7 +2899,7 @@ const music = {
 };
 
 // ---------------- Story mode: watch every cut-scene in order from the start screen ----------------
-const STORY = ['trailer', 'intro', 'bless-ganesh', 'bless-hanuman', 'boss-mahisha', 'bless-durga', 'bless-vishnu', 'boss-rakta', 'bless-lakshmi', 'bless-mahakal', 'boss-andhaka', 'finale'];
+const STORY = ['trailer'];   // the story is the owner's trailer; the blessing clips play when each Ashirvaad is received
 function playStory(i = 0) {
   if (i >= STORY.length) return;
   playCutscene(STORY[i], () => { if (!playStory.stop) playStory(i + 1); }, { force: true, story: i });
@@ -2907,7 +2907,7 @@ function playStory(i = 0) {
 // warm the cache for the next clip while the player is busy fighting, so it starts instantly
 const prefetched = new Set();
 function prefetchClip(key) {
-  const e = CUTSCENES[key]; if (!e || prefetched.has(key) || store.get('mahakal_seen_' + key, '')) return;
+  const e = CUTSCENES[key]; if (!e || prefetched.has(key) || (!key.startsWith('bless-') && store.get('mahakal_seen_' + key, ''))) return;   // blessing clips play every time
   const src = innerHeight > innerWidth ? e.portrait || e.landscape : e.landscape || e.portrait;
   prefetched.add(key); fetch(src).catch(() => {});
 }
