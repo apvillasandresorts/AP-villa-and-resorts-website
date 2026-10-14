@@ -1204,6 +1204,7 @@ const triesAt = {};
 const player = { lane: 1, x: 0, fireT: 0, hurt: 0, flash: 0, recoil: 0 };
 const danavs = [], shots = [], fires = [], parts = [], texts = [], pickups = [], rings = [];
 let checkpoint = null;
+let deathAt = 0, attemptTok = 0;   // the fatal hit of the current attempt (0 = alive); every level start is a new attempt
 const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
@@ -1413,6 +1414,7 @@ function startRun() {
   startLevel(true);
 }
 function startLevel(fresh) {
+  attemptTok++; deathAt = 0;
   const lv = LV();
   for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) { preloadBlessing(BLESS[LEVELS[i].bless]); break; }
   prefetchAhead();
@@ -1569,7 +1571,15 @@ function victory() {
   if (!C.won) { C.won = true; track('game_win_coupon', { score: Math.floor(score), pct }); }
 }
 function gameOver() {
-  state = 'gameover';
+  if (state === 'gameover' || state === 'intro') return;
+  state = 'gameover'; deathAt = deathAt || performance.now();
+  if ($('cutscene').classList.contains('show')) { cutTok++; $('cutscene').classList.remove('show', 'out'); }
+  for (const id of ['ashirvaad', 'victory', 'pausebox']) $(id).classList.remove('show');
+  userPaused = false; $('brahma-btn').hidden = true;
+  $('gameover').classList.add('show');   // first, so the player always gets the buttons
+  try { gameOverDetails(); } catch (err) { console.error(err); }
+}
+function gameOverDetails() {
   saveBest();
   const lv = LV();
   $('go-sub').textContent = boss ? BOSSES[boss.kind].name + ' was too strong this time' : 'The danav broke through on wave ' + lv.waveNo;
@@ -1586,7 +1596,7 @@ function saveBest() { if (score > best) { best = Math.floor(score); store.set('m
 function addScore(n) { score += n * (lakshmi ? 1.5 : 1) * (celestT > 0 ? 2 : 1); }
 $('retry-btn').addEventListener('click', e => {
   e.stopPropagation(); ensureAudio();
-  if (state !== 'gameover') return;
+  if (!$('gameover').classList.contains('show')) return;
   $('gameover').classList.remove('show');
   for (const id of ['ashirvaad', 'victory']) $(id).classList.remove('show');
   if ($('cutscene').classList.contains('show')) { cutTok++; $('cutscene').classList.remove('show', 'out'); }
@@ -1599,9 +1609,11 @@ $('retry-btn').addEventListener('click', e => {
     if (LV().boss) { try { startBoss(); } catch (e2) { console.error(e2); } }
     else startWave(true);
   }
+  if (lives <= 0) lives = MAX_LIVES;
+  deathAt = 0;
   if (state === 'gameover') state = 'playing';
 });
-$('restart-btn').addEventListener('click', () => { $('gameover').classList.remove('show'); startRun(); });
+$('restart-btn').addEventListener('click', e => { e.stopPropagation(); $('gameover').classList.remove('show'); if ($('cutscene').classList.contains('show')) { cutTok++; $('cutscene').classList.remove('show', 'out'); } try { startRun(); } catch (err) { console.error(err); level = 0; startWave(true); } if (lives <= 0) lives = MAX_LIVES; deathAt = 0; if (state === 'gameover') state = 'playing'; });
 $('again-btn').addEventListener('click', () => { $('victory').classList.remove('show'); startRun(); });
 $('celebrate-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); startCelebration(); });
 $('celebrate-again-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); startCelebration(); });
@@ -1661,6 +1673,7 @@ $('enter-btn').addEventListener('click', () => {
 // Combination limits keep the screen readable: at most 2 of the new archetypes alive in acts 1–2 (3 in the last act),
 // one Kaal Pishacha at a time, one Agni Vetala per act-1 wave. Over a limit, the pick falls back to the wave's basic types.
 const SPECIAL = new Set(['chhaya', 'naga', 'vajra', 'agni', 'maya', 'kaal']);
+const ENEMY_CLIPS = new Set(['chhaya', 'naga', 'vajra', 'agni', 'maya', 'kaal']);   // enemies that have an intro clip in videos/game/art/
 function pickType() {
   const mix = LV().mix; let r = Math.random(), k0 = Object.keys(mix)[0], pick = k0;
   for (const k in mix) { if ((r -= mix[k]) <= 0) { pick = k; break; } }
@@ -1684,7 +1697,7 @@ function spawnDanav(type, lane, o = {}) {
   const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * (LV().bossNo || 4) : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
   const d = { type, lane, x: lane - 1, z: o.z || 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2, elite, mini: !!o.mini, big: o.mini ? 0.72 : elite ? 1.12 : 1, spd: 1 + 0.045 * wn, castT: 1.2 + Math.random() };
   if (t.armor) d.armor = d.armorMax = Math.round(t.armor * (1 + 0.25 * wn));
-  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 3200, 'enemy'); artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
+  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 3200, 'enemy'); if (ENEMY_CLIPS.has(type)) artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
   danavs.push(d);
   return d;
 }
@@ -1768,12 +1781,12 @@ function hurtPlayer(reason) {
     player.hurt = 0.5; sfx.block(); rings.push({ x: pp.x, y: pp.y, r: 0, life: 1, col: '127,209,255' });
     floatText(pp.x, pp.y - 80 * unit(), 'Kavach blocked it!', '#9FE0FF', 16); tejHud(); return;
   }
-  lives--; hitsTaken++; waveHits++; player.hurt = 1.1; shake = 0.45; sfx.hurt(); combo = 0; $('combo').classList.remove('show');
+  lives = Math.max(0, lives - 1); hitsTaken++; waveHits++; player.hurt = 1.1; shake = 0.45; sfx.hurt(); combo = 0; $('combo').classList.remove('show');
   try { navigator.vibrate && navigator.vibrate(120); } catch (e) {}
   floatText(pp.x, pp.y - 60 * unit(), reason === 'fire' ? 'Ouch! −1 prana' : reason === 'charge' ? 'Trampled! −1 prana' : 'A danav broke through! −1 prana', '#FF8A65', 16);
   changeTej(-22);
   hud();
-  if (lives <= 0) setTimeout(gameOver, 500);
+  if (lives <= 0 && !deathAt) { deathAt = performance.now(); const tok = attemptTok; setTimeout(() => { if (tok === attemptTok && lives <= 0) gameOver(); }, 500); }
 }
 function pickKind() {
   let r = Math.random() * Object.values(PICKUPS).reduce((a, p) => a + p.w, 0);
@@ -5084,6 +5097,7 @@ function loop(now) {
   else if (!paused && !userPaused && !frozen && state === 'bossintro') bossIntroUpdate(dt);
   else if (!paused && !frozen && (state === 'won' || state === 'celebrate' || state === 'victory')) celebUpdate(dt);
   if (!paused && !userPaused && !frozen && state !== 'intro') updateAmbient(dt);
+  if (deathAt && lives <= 0 && state !== 'gameover' && state !== 'intro' && now - deathAt > 1600) gameOver();   // safety net: never stuck at zero prana
   if (W < 10 || H < 10) resize();
   const p1 = PERF.on ? performance.now() : 0;
   if (state !== 'intro' && W >= 10 && H >= 10) render();
