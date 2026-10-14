@@ -795,6 +795,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 @media (min-width: 601px) and (max-width: 900px) { .hudbar { grid-template-columns: 1fr; gap: 4px; } }
 .banner.enemy.pet::before { content: 'NEW COMPANION'; color: #9BF0B0; }
 .banner.enemy.pet { border-color: rgba(155,240,176,.85); }
+.go-btn small { display: block; font: 600 10.5px Inter, sans-serif; letter-spacing: .3px; text-transform: none; opacity: .8; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -958,7 +959,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div class="lbpanel__card">
       <div class="lb__title">🏆 Top 10 Yoddhas</div>
       <div class="lb__board" id="lb-intro"></div>
-      <div class="lb__ladder">Rewards: clear 2 waves 5% · Mahishasura 10% · Raktabija 15% · Andhakasura 20% · Kumbhakarna 22% · Ravana 25%, up to 30% for a strong run</div>
+      <div class="lb__ladder">Rewards: clear 2 waves 5% · Mahishasura 10% · Raktabija 15% · Andhakasura 20% · Kumbhakarna 22% · Ravana 25%, up to 30% for a strong run · each retry lowers it by 5%</div>
       <button class="go-btn go-btn--ghost" id="lb-close" type="button">Close</button>
     </div>
   </div>
@@ -1142,17 +1143,17 @@ const LEVELS = [
   { kills: 14, every: 1.42, act: 0, mix: { rakshas: 0.32, danav: 0.27, pishach: 0.12, vrishabh: 0.17, chhaya: 0.06, naga: 0.06 }, intro: 'naga', bless: 'hanuman' },
   { boss: 'mahisha', act: 0, bless: 'durga' },
   { kills: 15, every: 1.35, act: 1, mix: { rakshas: 0.22, danav: 0.18, kavach: 0.17, vrishabh: 0.13, mayavi: 0.16, naga: 0.06, vajra: 0.08 }, intro: 'vajra' },
-  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.16, kavach: 0.14, tantrik: 0.1, naag: 0.14, pishach: 0.12, rakshas: 0.11, vajra: 0.08, agni: 0.09, jonk: 0.06 }, intro: 'agni', bless: 'vishnu' },
-  { kills: 18, every: 1.25, act: 1, mix: { danav: 0.12, kavach: 0.12, tantrik: 0.1, naag: 0.12, maha: 0.11, raktaja: 0.13, mayavi: 0.1, agni: 0.08, chhaya: 0.06, maya: 0.06 }, intro: 'maya' },
+  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.16, kavach: 0.14, tantrik: 0.1, naag: 0.14, pishach: 0.12, rakshas: 0.11, vajra: 0.08, agni: 0.09, jonk: 0.12 }, intro: 'agni', bless: 'vishnu' },
+  { kills: 18, every: 1.25, act: 1, mix: { danav: 0.12, kavach: 0.12, tantrik: 0.1, naag: 0.12, maha: 0.11, raktaja: 0.13, mayavi: 0.1, agni: 0.08, chhaya: 0.06, maya: 0.06, jonk: 0.1 }, intro: 'maya' },
   { boss: 'rakta', act: 1, bless: 'lakshmi' },
-  { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.14, tantrik: 0.11, naag: 0.12, maha: 0.13, raktaja: 0.14, pishach: 0.12, maya: 0.08, naga: 0.06, vajra: 0.05, kaal: 0.05 }, intro: 'kaal' },
-  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.12, tantrik: 0.1, naag: 0.1, maha: 0.13, raktaja: 0.12, vrishabh: 0.12, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08, jonk: 0.04 } },
-  { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.12, tantrik: 0.11, naag: 0.1, maha: 0.14, raktaja: 0.11, pishach: 0.1, maya: 0.08, naga: 0.07, agni: 0.07, kaal: 0.1 }, bless: 'mahakal' },
+  { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.14, tantrik: 0.11, naag: 0.12, maha: 0.13, raktaja: 0.14, pishach: 0.12, maya: 0.08, naga: 0.06, vajra: 0.05, kaal: 0.05, jonk: 0.1 }, intro: 'kaal' },
+  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.12, tantrik: 0.1, naag: 0.1, maha: 0.13, raktaja: 0.12, vrishabh: 0.12, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08, jonk: 0.1 } },
+  { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.12, tantrik: 0.11, naag: 0.1, maha: 0.14, raktaja: 0.11, pishach: 0.1, maya: 0.08, naga: 0.07, agni: 0.07, kaal: 0.1, jonk: 0.1 }, bless: 'mahakal' },
   { boss: 'andhaka', act: 2 },
   // act 4 · Swarna Lanka
-  { kills: 20, every: 1.1,  act: 3, mix: { lankaguard: 0.2, nishachar: 0.12, kavach: 0.1, maha: 0.12, tantrik: 0.1, mayavi: 0.1, raktaja: 0.08, vajra: 0.06, maya: 0.06, agni: 0.06 }, intro: 'lankaguard' },
+  { kills: 20, every: 1.1,  act: 3, mix: { lankaguard: 0.2, nishachar: 0.12, kavach: 0.1, maha: 0.12, tantrik: 0.1, mayavi: 0.1, raktaja: 0.08, vajra: 0.06, maya: 0.06, agni: 0.06, jonk: 0.12 }, intro: 'lankaguard' },
   { boss: 'kumbha', act: 3 },
-  { kills: 22, every: 1.05, act: 3, mix: { lankaguard: 0.17, nishachar: 0.13, maha: 0.11, kavach: 0.1, tantrik: 0.1, kaal: 0.08, maya: 0.08, naga: 0.07, agni: 0.06, vajra: 0.05, jonk: 0.05 }, intro: 'nishachar' },
+  { kills: 22, every: 1.05, act: 3, mix: { lankaguard: 0.17, nishachar: 0.13, maha: 0.11, kavach: 0.1, tantrik: 0.1, kaal: 0.08, maya: 0.08, naga: 0.07, agni: 0.06, vajra: 0.05, jonk: 0.12 }, intro: 'nishachar' },
   { boss: 'vibhi', act: 3, trial: true, bless: 'sarva' },
   { boss: 'ravana', act: 3, final: true },
 ];
@@ -1300,19 +1301,16 @@ function rudra() {
 function rewardPct() {
   if (finalWon) {   // Ravana defeated
     let p = 25;
-    p += retries === 0 ? 2 : retries <= 3 ? 1 : 0;
+    p += retries === 0 ? 2 : 0;
     p += hitsTaken <= 8 ? 2 : hitsTaken <= 16 ? 1 : 0;
     p += score >= 32000 ? 1 : 0;
-    return Math.min(30, p);
+    return Math.max(0, Math.min(30, p) - 5 * retries);
   }
-  if (bossesBeaten >= 4) return 22;
-  if (bossesBeaten >= 3) return 20;
-  if (bossesBeaten >= 2) return 15;
-  if (bossesBeaten >= 1) return 10;
-  if (wavesCleared >= 2) return 5;
-  return 0;
+  const base = bossesBeaten >= 4 ? 22 : bossesBeaten >= 3 ? 20 : bossesBeaten >= 2 ? 15 : bossesBeaten >= 1 ? 10 : wavesCleared >= 2 ? 5 : 0;
+  const p = base - 5 * retries;   // each retry lowers the discount by 5%
+  return p >= 5 ? p : 0;
 }
-const REWARD_LADDER = 'Clear 2 waves: 5% · Mahishasura: 10% · Raktabija: 15% · Andhakasura: 20% · Kumbhakarna: 22% · Ravana: 25%, up to 30% for a strong run';
+const REWARD_LADDER = 'Clear 2 waves: 5% · Mahishasura: 10% · Raktabija: 15% · Andhakasura: 20% · Kumbhakarna: 22% · Ravana: 25%, up to 30% for a strong run · each retry lowers it by 5%';
 function issueCoupon(pct, result) {
   let c = null; try { c = JSON.parse(store.get('mahakal_coupon_v2', 'null')); } catch (e) {}
   if (c && !/^MAHAKAL\d{1,2}-[A-Z0-9]{5}$/.test(c.code || '')) c = null;
@@ -1574,7 +1572,7 @@ function gameOver() {
   saveBest();
   const lv = LV();
   $('go-sub').textContent = boss ? BOSSES[boss.kind].name + ' was too strong this time' : 'The danav broke through on wave ' + lv.waveNo;
-  $('retry-btn').textContent = boss ? '↻ Fight ' + BOSSES[boss.kind].name + ' again' : '↻ Try wave ' + lv.waveNo + ' again';
+  $('retry-btn').innerHTML = (boss ? '↻ Fight ' + BOSSES[boss.kind].name + ' again' : '↻ Try wave ' + lv.waveNo + ' again') + '<small>Each retry lowers your discount by 5%' + (retries ? ` (−${5 * retries}% so far)` : '') + '</small>';
   $('final-score').textContent = Math.floor(score).toLocaleString('en-IN');
   $('best-line').innerHTML = 'Best: <span id="final-best">' + best.toLocaleString('en-IN') + '</span>';
   const pct = rewardPct(), c = issueCoupon(pct, boss ? 'Fell to ' + BOSSES[boss.kind].name : 'Fell on wave ' + lv.waveNo);
@@ -1585,11 +1583,22 @@ function gameOver() {
 }
 function saveBest() { if (score > best) { best = Math.floor(score); store.set('mahakal_best', String(best)); } }
 function addScore(n) { score += n * (lakshmi ? 1.5 : 1) * (celestT > 0 ? 2 : 1); }
-$('retry-btn').addEventListener('click', () => {
+$('retry-btn').addEventListener('click', e => {
+  e.stopPropagation(); ensureAudio();
+  if (state !== 'gameover') return;
   $('gameover').classList.remove('show');
-  const c = checkpoint; weapon = c.weapon; bulk = c.bulk; score = c.score; level = c.level; lakshmi = c.lakshmi; tej = c.tej; wavesCleared = c.wavesCleared; bossesBeaten = c.bossesBeaten;
-  retries++;
-  startLevel(true);
+  for (const id of ['ashirvaad', 'victory']) $(id).classList.remove('show');
+  if ($('cutscene').classList.contains('show')) { cutTok++; $('cutscene').classList.remove('show', 'out'); }
+  const c = checkpoint || { level, weapon, bulk, score, lakshmi, tej: 40, wavesCleared, bossesBeaten };
+  weapon = c.weapon; bulk = c.bulk; score = c.score; level = c.level; lakshmi = c.lakshmi; tej = c.tej; wavesCleared = c.wavesCleared; bossesBeaten = c.bossesBeaten;
+  retries++; userPaused = false; CINE.slow = 0; CINE.zoomT = 1; CINE.barsT = 0; tokenT = celestT = 0;
+  try { startLevel(true); }
+  catch (err) {   // never leave the player on a frozen screen
+    console.error(err); boss = null;
+    if (LV().boss) { try { startBoss(); } catch (e2) { console.error(e2); } }
+    else startWave(true);
+  }
+  if (state === 'gameover') state = 'playing';
 });
 $('restart-btn').addEventListener('click', () => { $('gameover').classList.remove('show'); startRun(); });
 $('again-btn').addEventListener('click', () => { $('victory').classList.remove('show'); startRun(); });
@@ -1807,8 +1816,8 @@ const AI = {
     if (d.z > 0.15) { if (d.lane === player.lane && !(d.cd > 0)) { const opts = [0, 1, 2].filter(l => l !== player.lane); d.lane = opts[Math.floor(Math.random() * opts.length)]; d.cd = 0.5; } }   // slithers beside you, out of your line of fire…
     else { if (d.lane !== player.lane) d.lane = player.lane; d.z -= 0.6 * dt; }   // …then lunges in to latch on
     if (d.z < 0.07 && d.lane === player.lane && state === 'playing') {
-      if (LEECHES.length < 2) {
-        LEECHES.push({ t: 0, drainT: 1.6, side: LEECHES.length ? 1 : -1, ph: Math.random() * 6 });
+      if (LEECHES.length < 3) {
+        LEECHES.push({ t: 0, drainT: 1.6, side: [-1, 1, 0][LEECHES.length], ph: Math.random() * 6 });
         if (!leechTip.shown) { leechTip.shown = true; banner('A leech latched on!', 'Tap your yoddha (or press Space) to shake it off', 2600, 'boss'); }
         sfx.cast();
       }
@@ -1971,6 +1980,8 @@ function update(dt) {
       spawnT += dt;
       const alive = danavs.length;
       if (spawnT > lv.every && kills + alive < lv.kills + 2 && alive < (lv.act >= 2 ? 7 : 6)) { spawnT = 0; const intro = lv.intro && !lv.introDone && kills >= 2 && !danavs.some(d => SPECIAL.has(d.type) && !d.decoy) ? lv.intro : undefined; if (intro) lv.introDone = true; spawnDanav(intro); }
+      // watchdog: a wave must never stall (only decoys, fled or stuck danav left): clear them and send danav again
+      if (spawnT > lv.every * 5 && kills < lv.kills && !danavs.some(d => !d.decoy && d.z < 0.97)) { spawnT = 0; danavs.length = 0; spawnDanav(); }
     }
     pickT -= dt;
     if (pickT <= 0) { pickT = (lakshmi ? 6 : 10) + Math.random() * 4; spawnPickup(); }
