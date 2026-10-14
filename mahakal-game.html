@@ -793,6 +793,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   .hudbar__journey { margin-top: 0; }
 }
 @media (min-width: 601px) and (max-width: 900px) { .hudbar { grid-template-columns: 1fr; gap: 4px; } }
+.banner.enemy.pet::before { content: 'NEW COMPANION'; color: #9BF0B0; }
+.banner.enemy.pet { border-color: rgba(155,240,176,.85); }
 </style>
 </head>
 <body>
@@ -2247,13 +2249,13 @@ const BOSS_AI = {
 // ---- Ravana's ravens: black, thick-furred, purple-eyed; they pour from his shoulders ----
 // ---- companions: the vahana of each Ashirvaad's deity runs beside the yoddha ----
 const PETS = {
-  mushak:   { name: 'Mushak', from: 'Shri Ganesh', hp: 3, dmg: 3, rate: 1.3, col: '#D8D2E8' },
-  vanar:    { name: 'Vanar', from: 'Hanuman ji', hp: 4, dmg: 4, rate: 1.2, col: '#E0A060' },
-  bagh:     { name: 'Bagh', from: 'Maa Durga', hp: 5, dmg: 5, rate: 1.1, col: '#FFA040' },
-  garuda:   { name: 'Garuda', from: 'Shri Vishnu', hp: 5, dmg: 6, rate: 1.0, col: '#FFD27D' },
-  uluka:    { name: 'Uluka', from: 'Maa Lakshmi', hp: 5, dmg: 6, rate: 1.0, col: '#FFF0C0' },
-  nandi:    { name: 'Nandi', from: 'Mahakal', hp: 6, dmg: 7, rate: 0.95, col: '#FFFFFF' },
-  airavata: { name: 'Airavata', from: 'all the gods', hp: 8, dmg: 10, rate: 0.8, col: '#E8F4FF' },
+  mushak:   { name: 'Mushak', line: "Ganesh ji's mouse scurries beside you, throwing laddoo bombs", from: 'Shri Ganesh', hp: 3, dmg: 3, rate: 1.3, col: '#D8D2E8' },
+  vanar:    { name: 'Vanar', line: "Hanuman ji's little vanar swings his gada for you", from: 'Hanuman ji', hp: 4, dmg: 4, rate: 1.2, col: '#E0A060' },
+  bagh:     { name: 'Bagh', line: "Maa Durga's tiger cub claws the danav beside you", from: 'Maa Durga', hp: 5, dmg: 5, rate: 1.1, col: '#FFA040' },
+  garuda:   { name: 'Garuda', line: "Shri Vishnu's crowned Garuda flies with you, raining golden feathers", from: 'Shri Vishnu', hp: 5, dmg: 6, rate: 1.0, col: '#FFD27D' },
+  uluka:    { name: 'Uluka', line: "Maa Lakshmi's owl hoots waves of sound at the danav", from: 'Maa Lakshmi', hp: 5, dmg: 6, rate: 1.0, col: '#FFF0C0' },
+  nandi:    { name: 'Nandi', line: "Mahakal's Nandi charges the danav with his horns", from: 'Mahakal', hp: 6, dmg: 7, rate: 0.95, col: '#FFFFFF' },
+  airavata: { name: 'Airavata', line: 'Indra\'s four-tusked white elephant, the mightiest companion, marches with you to Ravana', from: 'all the gods', hp: 8, dmg: 10, rate: 0.8, col: '#E8F4FF' },
 };
 const PET_OF = { ganesh: 'mushak', hanuman: 'vanar', durga: 'bagh', vishnu: 'garuda', lakshmi: 'uluka', mahakal: 'nandi', sarva: 'airavata' };
 const pet = { kind: null, hp: 0, max: 0, x: -1, lane: 0, fireT: 1, hurt: 0, down: false, t: 0 };
@@ -2262,7 +2264,7 @@ function petLevelStart() {   // every level: the latest companion, back on its f
   const k = petForLevel(), isNew = k && k !== pet.kind;
   pet.kind = k; if (!k) return;
   const P = PETS[k]; pet.max = P.hp; pet.hp = P.hp; pet.down = false; pet.hurt = 0; pet.fireT = 1.2;
-  if (isNew) setTimeout(() => { if (pet.kind === k && state === 'playing') { const q = petPos(); floatText(q.x, q.y - 70 * unit(), P.name + ' joins you!', '#FFE7A8', 17); } }, 1800);
+  if (isNew) { let tries = 0; const show = () => { if (pet.kind !== k) return; if ((state !== 'playing' || $('banner').classList.contains('show')) && ++tries < 8) { setTimeout(show, 800); return; } if (state !== 'playing') return; banner(P.name + ' joins you!', P.line + '. Keep it safe: if it faints you lose 500 points', 3800, 'enemy pet'); sfx.up(); const q = petPos(); burst(q.x, q.y - 20 * unit(), '#FFE7A8', 24, 4); }; setTimeout(show, 3000); }
 }
 const petAt = lane => pet.kind && !pet.down && pet.lane === lane && lane !== player.lane;
 function petPos() { const p = project(0.1, pet.x); return { x: p.x, y: p.y, scale: p.scale }; }   // just ahead of the yoddha, always in view
@@ -2272,7 +2274,8 @@ function petHurt(n) {
   if (pet.hp <= 0) {
     pet.hp = 0; pet.down = true; score = Math.max(0, score - 500);
     banner(PETS[pet.kind].name + ' has fainted!', '−500 points. Protect your companion: it recovers next level', 2200, 'boss'); sfx.down();
-  } else floatText(q.x, q.y - 60 * unit(), PETS[pet.kind].name + ' is hurt!', '#FFB0A0', 14);
+  } else if (pet.hp === 1) { floatText(q.x, q.y - 70 * unit(), 'Protect ' + PETS[pet.kind].name + '!', '#FF6A5A', 18); sfx.down(); }
+  else floatText(q.x, q.y - 60 * unit(), PETS[pet.kind].name + ' is hurt!', '#FFB0A0', 14);
 }
 function petUpdate(dt) {
   if (!pet.kind) return;
@@ -2285,7 +2288,7 @@ function petUpdate(dt) {
     const P = PETS[pet.kind], foe = danavs.some(d => !d.dead && d.lane === pet.lane && d.z < 0.75) || (boss && !boss.dead && boss.lane === pet.lane);
     if (foe) {
       const q = petPos();
-      shots.push({ lane: pet.lane, z: 0.05, range: boss && !boss.dead ? boss.z + 0.06 : 0.8, dmg: P.dmg * (1 + 0.12 * bulk), pierce: 0, kind: 'pet', speed: 1.8, color: P.col, hit: new Set(), spin: 0, side: true, sx: q.x, sy: q.y - 24 * unit() });
+      shots.push({ lane: pet.lane, z: 0.05, range: boss && !boss.dead ? boss.z + 0.06 : 0.8, dmg: P.dmg * (1 + 0.12 * bulk), pierce: 0, kind: 'pet', petKind: pet.kind, speed: 1.8, color: P.col, hit: new Set(), spin: 0, side: true, sx: q.x, sy: q.y - 24 * unit() });
       pet.fireT = P.rate; pet.atk = 0.25;
     } else pet.fireT = 0.2;
   }
@@ -2307,80 +2310,148 @@ function drawPet() {
   // name + health
   ctx.save(); const w = 38 * u, hy = q.y - (fly ? 2.0 : 1.35) * s - 10 * u;
   ctx.fillStyle = 'rgba(15,18,30,0.75)'; ctx.fillRect(q.x - w / 2 - 1, hy - 1, w + 2, 6);
-  ctx.fillStyle = pet.down ? '#666' : pet.hp / pet.max > 0.5 ? '#7CE08A' : pet.hp / pet.max > 0.25 ? '#FFC24A' : '#FF5A4A'; ctx.fillRect(q.x - w / 2, hy, w * pet.hp / pet.max, 4);
+  ctx.fillStyle = pet.down ? '#666' : pet.hp / pet.max > 0.5 ? '#7CE08A' : pet.hp / pet.max > 0.25 ? '#FFC24A' : '#FF5A4A'; if (!pet.down && pet.hp === 1 && Math.floor(time * 6) % 2) ctx.fillStyle = '#FFFFFF'; ctx.fillRect(q.x - w / 2, hy, w * pet.hp / pet.max, 4);
   ctx.font = `700 ${Math.round(10 * Math.max(1, u))}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = pet.down ? '#BBB' : '#FFF0C8';
   ctx.fillText(pet.down ? PETS[k].name + ' · fainted' : PETS[k].name, q.x, hy - 4); ctx.restore();
 }
-function petEyes(x, y, r, col) {   // big cute eyes with fierce brows
+function drawPetShot(kind, k, spin) {
+  if (kind === 'mushak') { const g = ctx.createRadialGradient(-k * 0.1, -k * 0.1, 0, 0, 0, k * 0.4); g.addColorStop(0, '#FFE08A'); g.addColorStop(1, '#D9861E'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, k * 0.36, 0, Math.PI * 2); ctx.fill(); }   // a laddoo bomb
+  else if (kind === 'vanar') { ctx.rotate(spin); ctx.fillStyle = '#E8B84A'; ctx.fillRect(-k * 0.05, -k * 0.5, k * 0.1, k * 0.7); ctx.beginPath(); ctx.arc(0, -k * 0.5, k * 0.24, 0, Math.PI * 2); ctx.fill(); }   // a spinning mini gada
+  else if (kind === 'bagh') { ctx.strokeStyle = '#FFB060'; ctx.lineWidth = Math.max(2, k * 0.12); for (const o of [-0.25, 0, 0.25]) { ctx.beginPath(); ctx.arc(k * o, 0, k * 0.4, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); } }   // claw slash
+  else if (kind === 'garuda') { ctx.rotate(0.6); ctx.fillStyle = '#FFD27D'; ctx.beginPath(); ctx.ellipse(0, 0, k * 0.14, k * 0.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#B87A18'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -k * 0.5); ctx.lineTo(0, k * 0.55); ctx.stroke(); }   // a golden feather
+  else if (kind === 'uluka') { ctx.strokeStyle = 'rgba(255,240,200,0.9)'; ctx.lineWidth = Math.max(1.5, k * 0.08); for (const r of [0.22, 0.42]) { ctx.beginPath(); ctx.arc(0, 0, k * r, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); } }   // a hoot of sound
+  else if (kind === 'nandi') { ctx.strokeStyle = '#FFF6E0'; ctx.lineWidth = Math.max(2, k * 0.14); ctx.beginPath(); ctx.arc(0, k * 0.1, k * 0.38, Math.PI * 1.2, Math.PI * 1.8); ctx.stroke(); }   // a horn charge
+  else { ctx.fillStyle = 'rgba(200,235,255,0.95)'; for (const [x, y] of [[0, 0], [-k * 0.3, k * 0.3], [k * 0.28, k * 0.34]]) { ctx.beginPath(); ctx.moveTo(x, y - k * 0.3); ctx.quadraticCurveTo(x + k * 0.18, y, x, y + k * 0.1); ctx.quadraticCurveTo(x - k * 0.18, y, x, y - k * 0.3); ctx.fill(); } }   // Airavata's water spray
+}
+function petEyes(x, y, r, col) {   // big cute eyes under fierce, angled brows
   for (const dx of [-1, 1]) {
-    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = col || '#1A0E08'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1 + r * 0.2, y + r * 0.1, r * 0.62, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1 + r * 0.35, y - r * 0.2, r * 0.22, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, r * 0.35); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x + dx * r * 1.1 - r * 0.8, y - r * 1.25 - dx * r * 0.3); ctx.lineTo(x + dx * r * 1.1 + r * 0.8, y - r * 1.05 + dx * r * 0.3); ctx.stroke();
+    const ex = x + dx * r * 1.1;
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(ex, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = col || '#1A0E08'; ctx.beginPath(); ctx.arc(ex + r * 0.22, y + r * 0.1, r * 0.64, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(ex + r * 0.38, y - r * 0.22, r * 0.24, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, r * 0.38); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(ex - dx * r * 0.85, y - r * 1.05); ctx.lineTo(ex + dx * r * 0.75, y - r * 1.55); ctx.stroke();   // inner end low, outer end high: fierce
   }
 }
+const tintHex = (c, k) => '#' + hex(c).map(v => Math.min(255, Math.round(v * k)).toString(16).padStart(2, '0')).join('');
+function fur(x, y, rx, ry, base, rot = 0) {   // a softly shaded body part
+  const g = ctx.createRadialGradient(x - rx * 0.35, y - ry * 0.45, 0, x, y, Math.max(rx, ry) * 1.15);
+  g.addColorStop(0, tintHex(base, 1.16)); g.addColorStop(1, tintHex(base, 0.8));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fill();
+}
+function legs4(s, xs, top, w, col, run, hoof) {   // two pairs of legs with a running gait (far pair darker)
+  xs.forEach((x, i) => {
+    const far = i % 2 === 1, ph = (i < 2 ? 1 : -1) * run, lift = Math.max(0, ph) * s * 0.06;
+    ctx.fillStyle = far ? tintHex(col, 0.72) : col;
+    ctx.save(); ctx.translate(s * x + (far ? -s * 0.05 : 0), -s * top); ctx.rotate(ph * 0.35);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-s * w / 2, 0, s * w, s * top - lift, s * w * 0.4) : ctx.rect(-s * w / 2, 0, s * w, s * top - lift); ctx.fill();
+    if (hoof) { ctx.fillStyle = hoof; ctx.fillRect(-s * w / 2, s * top - lift - s * 0.05, s * w, s * 0.05); }
+    ctx.restore();
+  });
+}
 function petBody(k, s, run) {
-  const leg = (x, c) => { ctx.fillStyle = c; ctx.fillRect(x - s * 0.06, -s * 0.28, s * 0.12, s * 0.28 + run * s * 0.04 * (x > 0 ? 1 : -1)); };
-  if (k === 'mushak') {   // Ganesh ji's mouse
-    ctx.strokeStyle = '#B8A8C8'; ctx.lineWidth = Math.max(1.5, s * 0.05); ctx.beginPath(); ctx.moveTo(-s * 0.4, -s * 0.2); ctx.quadraticCurveTo(-s * 0.85, -s * 0.1 + run * s * 0.1, -s * 0.7, -s * 0.5); ctx.stroke();
-    ctx.fillStyle = '#A89AB8'; ctx.beginPath(); ctx.ellipse(0, -s * 0.3, s * 0.45, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(s * 0.42, -s * 0.42, s * 0.24, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#F4B8C8'; for (const ex of [0.28, 0.55]) { ctx.beginPath(); ctx.arc(s * ex, -s * 0.66, s * 0.13, 0, Math.PI * 2); ctx.fill(); }
-    petEyes(s * 0.45, -s * 0.45, s * 0.07); ctx.fillStyle = '#FF7090'; ctx.beginPath(); ctx.arc(s * 0.66, -s * 0.38, s * 0.05, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#FFF'; ctx.fillRect(s * 0.56, -s * 0.3, s * 0.04, s * 0.07);
-  } else if (k === 'vanar') {   // Hanuman ji's monkey, with a tiny gada
-    ctx.strokeStyle = '#8A5428'; ctx.lineWidth = Math.max(1.5, s * 0.07); ctx.beginPath(); ctx.moveTo(-s * 0.25, -s * 0.35); ctx.quadraticCurveTo(-s * 0.8, -s * 0.5, -s * 0.55, -s * 0.95 + run * s * 0.05); ctx.stroke();
-    leg(-s * 0.15, '#8A5428'); leg(s * 0.15, '#8A5428');
-    ctx.fillStyle = '#9A6030'; ctx.beginPath(); ctx.ellipse(0, -s * 0.5, s * 0.3, s * 0.32, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(s * 0.08, -s * 0.95, s * 0.26, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#E8B888'; ctx.beginPath(); ctx.ellipse(s * 0.14, -s * 0.9, s * 0.18, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
-    for (const ex of [-0.18, 0.32]) { ctx.fillStyle = '#9A6030'; ctx.beginPath(); ctx.arc(s * ex, -s * 0.98, s * 0.09, 0, Math.PI * 2); ctx.fill(); }
-    petEyes(s * 0.12, -s * 0.98, s * 0.06); ctx.fillStyle = '#C04040'; ctx.fillRect(s * 0.06, -s * 0.84, s * 0.14, s * 0.03);
-    ctx.fillStyle = '#E8B84A'; ctx.fillRect(s * 0.3, -s * 0.8, s * 0.05, s * 0.4); ctx.beginPath(); ctx.arc(s * 0.325, -s * 0.85, s * 0.1, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'bagh') {   // Maa Durga's tiger cub
-    leg(-s * 0.3, '#E07A20'); leg(s * 0.3, '#E07A20');
-    ctx.strokeStyle = '#E07A20'; ctx.lineWidth = Math.max(1.5, s * 0.08); ctx.beginPath(); ctx.moveTo(-s * 0.45, -s * 0.4); ctx.quadraticCurveTo(-s * 0.8, -s * 0.6, -s * 0.7, -s * 0.85 + run * s * 0.06); ctx.stroke();
-    ctx.fillStyle = '#F08A2A'; ctx.beginPath(); ctx.ellipse(0, -s * 0.42, s * 0.48, s * 0.24, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, s * 0.05); for (const sx of [-0.25, -0.05, 0.15]) { ctx.beginPath(); ctx.moveTo(s * sx, -s * 0.62); ctx.lineTo(s * (sx + 0.05), -s * 0.42); ctx.stroke(); }
-    ctx.fillStyle = '#F08A2A'; ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.6, s * 0.27, 0, Math.PI * 2); ctx.fill();
-    for (const ex of [0.28, 0.62]) { ctx.beginPath(); ctx.arc(s * ex, -s * 0.84, s * 0.09, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = '#FFF4E0'; ctx.beginPath(); ctx.ellipse(s * 0.52, -s * 0.5, s * 0.15, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
-    petEyes(s * 0.45, -s * 0.66, s * 0.065, '#3A6A10'); ctx.fillStyle = '#FFF'; for (const fx of [0.46, 0.58]) { ctx.beginPath(); ctx.moveTo(s * fx, -s * 0.46); ctx.lineTo(s * (fx + 0.02), -s * 0.38); ctx.lineTo(s * (fx + 0.04), -s * 0.46); ctx.fill(); }
-  } else if (k === 'garuda') {   // Shri Vishnu's Garuda (a fierce golden eaglet)
-    const fl = Math.sin(pet.t * 16) * 0.6;
-    ctx.fillStyle = '#C8901E'; for (const side of [-1, 1]) { ctx.save(); ctx.rotate(side * (0.6 + fl * 0.5)); ctx.beginPath(); ctx.moveTo(0, -s * 0.4); ctx.lineTo(side * s * 0.75, -s * 0.75); ctx.lineTo(side * s * 0.62, -s * 0.45); ctx.lineTo(side * s * 0.5, -s * 0.5); ctx.lineTo(side * s * 0.4, -s * 0.3); ctx.closePath(); ctx.fill(); ctx.restore(); }
-    ctx.fillStyle = '#E8B84A'; ctx.beginPath(); ctx.ellipse(0, -s * 0.38, s * 0.26, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(s * 0.12, -s * 0.72, s * 0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#D02020'; for (let c = 0; c < 3; c++) { ctx.beginPath(); ctx.moveTo(s * (0.02 + c * 0.06), -s * 0.88); ctx.lineTo(s * (0.0 + c * 0.06), -s * 1.05); ctx.lineTo(s * (0.07 + c * 0.06), -s * 0.88); ctx.fill(); }
-    ctx.fillStyle = '#F8D040'; ctx.beginPath(); ctx.moveTo(s * 0.28, -s * 0.74); ctx.quadraticCurveTo(s * 0.46, -s * 0.72, s * 0.36, -s * 0.6); ctx.lineTo(s * 0.26, -s * 0.66); ctx.fill();
-    petEyes(s * 0.12, -s * 0.74, s * 0.055);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (k === 'mushak') {   // Ganesh ji's mouse, clutching a laddoo
+    ctx.strokeStyle = '#C9A8C0'; ctx.lineWidth = Math.max(1.5, s * 0.05); ctx.beginPath(); ctx.moveTo(-s * 0.42, -s * 0.24); ctx.bezierCurveTo(-s * 0.85, -s * 0.2 + run * s * 0.08, -s * 0.9, -s * 0.6, -s * 0.6, -s * 0.62); ctx.stroke();
+    legs4(s, [-0.25, -0.18, 0.2, 0.27], 0.14, 0.09, '#E8A8B8', run);
+    fur(0, -s * 0.3, s * 0.46, s * 0.28, '#9C8FB0');
+    fur(s * 0.05, -s * 0.22, s * 0.3, s * 0.14, '#D8D0E4');   // belly
+    fur(s * 0.44, -s * 0.44, s * 0.25, s * 0.23, '#9C8FB0');
+    ctx.fillStyle = '#9C8FB0'; ctx.beginPath(); ctx.moveTo(s * 0.6, -s * 0.52); ctx.lineTo(s * 0.8, -s * 0.4); ctx.lineTo(s * 0.6, -s * 0.32); ctx.fill();   // snout
+    for (const [ex, ey, er] of [[0.3, -0.7, 0.16], [0.54, -0.72, 0.15]]) { fur(s * ex, s * ey, s * er, s * er, '#9C8FB0'); ctx.fillStyle = '#F4B0C4'; ctx.beginPath(); ctx.arc(s * ex, s * ey, s * er * 0.6, 0, Math.PI * 2); ctx.fill(); }
+    petEyes(s * 0.46, -s * 0.47, s * 0.065);
+    ctx.fillStyle = '#FF6088'; ctx.beginPath(); ctx.arc(s * 0.8, -s * 0.41, s * 0.045, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(40,30,50,0.7)'; ctx.lineWidth = Math.max(1, s * 0.012); for (const w of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(s * 0.72, -s * 0.4); ctx.lineTo(s * 0.98, -s * (0.4 + w * 0.07)); ctx.stroke(); }   // whiskers
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(s * 0.66, -s * 0.33, s * 0.035, s * 0.06); ctx.fillRect(s * 0.7, -s * 0.33, s * 0.035, s * 0.06);   // buck teeth
+    const lg = ctx.createRadialGradient(s * 0.55, -s * 0.24, 0, s * 0.58, -s * 0.2, s * 0.11); lg.addColorStop(0, '#FFE08A'); lg.addColorStop(1, '#D9861E');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(s * 0.58, -s * 0.2, s * 0.1, 0, Math.PI * 2); ctx.fill();   // laddoo
+  } else if (k === 'vanar') {   // Hanuman ji's little vanar, red tilak, swinging a gada
+    ctx.strokeStyle = '#7A4620'; ctx.lineWidth = Math.max(1.5, s * 0.07); ctx.beginPath(); ctx.moveTo(-s * 0.22, -s * 0.3); ctx.bezierCurveTo(-s * 0.75, -s * 0.3, -s * 0.75, -s * 0.95, -s * 0.45 + run * s * 0.05, -s * 0.95); ctx.stroke();
+    legs4(s, [-0.13, -0.06, 0.1, 0.17], 0.26, 0.11, '#8A5226', run);
+    fur(0, -s * 0.5, s * 0.3, s * 0.33, '#9A5C2A');
+    fur(s * 0.04, -s * 0.46, s * 0.17, s * 0.22, '#E0B080');   // belly
+    ctx.save(); ctx.translate(s * 0.22, -s * 0.66); ctx.rotate(-0.9 + Math.sin(pet.t * 6) * 0.35);   // arm with the gada
+    ctx.fillStyle = '#8A5226'; ctx.fillRect(-s * 0.05, -s * 0.3, s * 0.1, s * 0.32);
+    ctx.fillStyle = goldFill(-s * 0.04, s * 0.04); ctx.fillRect(-s * 0.025, -s * 0.62, s * 0.05, s * 0.36); ctx.beginPath(); ctx.arc(0, -s * 0.66, s * 0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    fur(s * 0.06, -s * 0.98, s * 0.27, s * 0.26, '#9A5C2A');
+    for (const ex of [-0.18, 0.31]) { fur(s * ex, -s * 1.0, s * 0.09, s * 0.1, '#9A5C2A'); ctx.fillStyle = '#E0B080'; ctx.beginPath(); ctx.arc(s * ex, -s * 1.0, s * 0.05, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#ECC294'; ctx.beginPath(); ctx.moveTo(s * 0.12, -s * 1.12); ctx.bezierCurveTo(s * 0.32, -s * 1.12, s * 0.34, -s * 0.78, s * 0.12, -s * 0.78); ctx.bezierCurveTo(-s * 0.1, -s * 0.78, -s * 0.08, -s * 1.12, s * 0.12, -s * 1.12); ctx.fill();   // face
+    ctx.fillStyle = goldFill(-s * 0.1, s * 0.34); ctx.fillRect(-s * 0.12, -s * 1.2, s * 0.44, s * 0.05);   // gold band
+    petEyes(s * 0.13, -s * 0.98, s * 0.058);
+    ctx.strokeStyle = '#D0101E'; ctx.lineWidth = Math.max(1.2, s * 0.03); ctx.beginPath(); ctx.moveTo(s * 0.13, -s * 1.12); ctx.lineTo(s * 0.13, -s * 1.06); ctx.stroke();   // tilak
+    ctx.fillStyle = '#7A2A20'; ctx.beginPath(); ctx.ellipse(s * 0.14, -s * 0.85, s * 0.07, s * 0.035, 0, 0, Math.PI); ctx.fill();
+  } else if (k === 'bagh') {   // Maa Durga's tiger cub, roaring
+    ctx.strokeStyle = '#E8862A'; ctx.lineWidth = Math.max(2, s * 0.08); ctx.beginPath(); ctx.moveTo(-s * 0.45, -s * 0.42); ctx.bezierCurveTo(-s * 0.8, -s * 0.5, -s * 0.85, -s * 0.85, -s * 0.66, -s * 0.9 + run * s * 0.05); ctx.stroke();
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, s * 0.03); for (const t of [0.35, 0.65]) { ctx.beginPath(); ctx.arc(-s * (0.5 + t * 0.3), -s * (0.5 + t * 0.35), s * 0.04, 0, Math.PI); ctx.stroke(); }
+    legs4(s, [-0.3, -0.22, 0.26, 0.34], 0.26, 0.13, '#E8862A', run, '#FFF4E0');
+    fur(0, -s * 0.42, s * 0.5, s * 0.25, '#F08A2A');
+    fur(s * 0.05, -s * 0.32, s * 0.3, s * 0.11, '#FFEAD0');
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.5, s * 0.05); for (const sx of [-0.32, -0.12, 0.08]) { ctx.beginPath(); ctx.moveTo(s * sx, -s * 0.66); ctx.quadraticCurveTo(s * (sx + 0.06), -s * 0.52, s * (sx + 0.02), -s * 0.44); ctx.stroke(); }
+    fur(s * 0.48, -s * 0.62, s * 0.29, s * 0.27, '#F08A2A');
+    for (const ex of [0.3, 0.64]) { fur(s * ex, -s * 0.86, s * 0.1, s * 0.1, '#F08A2A'); ctx.fillStyle = '#F4C8B0'; ctx.beginPath(); ctx.arc(s * ex, -s * 0.85, s * 0.045, 0, Math.PI * 2); ctx.fill(); }
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, s * 0.03); for (const sx of [0.42, 0.48, 0.54]) { ctx.beginPath(); ctx.moveTo(s * sx, -s * 0.82); ctx.lineTo(s * sx, -s * 0.75); ctx.stroke(); }   // forehead stripes
+    fur(s * 0.56, -s * 0.5, s * 0.17, s * 0.12, '#FFF4E0');   // muzzle
+    ctx.fillStyle = '#5A1010'; ctx.beginPath(); ctx.ellipse(s * 0.6, -s * 0.44, s * 0.09, s * (0.05 + 0.03 * Math.abs(Math.sin(pet.t * 5))), 0, 0, Math.PI * 2); ctx.fill();   // roaring mouth
+    ctx.fillStyle = '#FFFFFF'; for (const fx of [0.53, 0.65]) { ctx.beginPath(); ctx.moveTo(s * fx, -s * 0.49); ctx.lineTo(s * (fx + 0.02), -s * 0.41); ctx.lineTo(s * (fx + 0.04), -s * 0.49); ctx.fill(); }
+    ctx.fillStyle = '#2A1408'; ctx.beginPath(); ctx.ellipse(s * 0.6, -s * 0.56, s * 0.045, s * 0.03, 0, 0, Math.PI * 2); ctx.fill();
+    petEyes(s * 0.47, -s * 0.68, s * 0.068, '#3A7A10');
+  } else if (k === 'garuda') {   // Shri Vishnu's Garuda: a crowned golden eaglet
+    const fl = Math.sin(pet.t * 14);
+    for (const side of [-1, 1]) {   // feathered wings, attached at the shoulders
+      ctx.save(); ctx.translate(side * s * 0.12, -s * 0.52); ctx.rotate(side * (0.25 + fl * 0.45));
+      for (let f = 0; f < 4; f++) { ctx.fillStyle = f % 2 ? '#B87A18' : '#D89A28'; ctx.beginPath(); ctx.ellipse(side * s * (0.22 + f * 0.11), -s * (0.08 + f * 0.05), s * 0.2, s * 0.07, side * (0.4 + f * 0.12), 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+    ctx.fillStyle = '#B87A18'; for (const tx of [-0.07, 0, 0.07]) { ctx.beginPath(); ctx.ellipse(s * tx, -s * 0.12, s * 0.05, s * 0.16, tx * 2, 0, Math.PI * 2); ctx.fill(); }   // tail
+    fur(0, -s * 0.42, s * 0.25, s * 0.3, '#D89A28');
+    fur(s * 0.04, -s * 0.36, s * 0.15, s * 0.2, '#FFF2D0');   // chest
+    ctx.strokeStyle = '#E8B020'; ctx.lineWidth = Math.max(1.2, s * 0.03); for (const tx of [-0.07, 0.07]) { ctx.beginPath(); ctx.moveTo(s * tx, -s * 0.14); ctx.lineTo(s * tx, -s * 0.04); ctx.lineTo(s * (tx + 0.05), -s * 0.02); ctx.stroke(); }   // talons
+    fur(s * 0.12, -s * 0.78, s * 0.2, s * 0.19, '#D89A28');
+    ctx.fillStyle = '#F8D040'; ctx.beginPath(); ctx.moveTo(s * 0.28, -s * 0.82); ctx.bezierCurveTo(s * 0.48, -s * 0.84, s * 0.48, -s * 0.66, s * 0.36, -s * 0.66); ctx.lineTo(s * 0.28, -s * 0.72); ctx.fill();   // hooked beak
+    ctx.fillStyle = goldFill(-s * 0.04, s * 0.26); ctx.beginPath(); ctx.moveTo(-s * 0.02, -s * 0.9); for (let c = 0; c < 3; c++) { ctx.lineTo(s * (0.03 + c * 0.08), -s * 1.08); ctx.lineTo(s * (0.07 + c * 0.08), -s * 0.95); } ctx.lineTo(s * 0.24, -s * 0.9); ctx.closePath(); ctx.fill();   // crown
+    ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(s * 0.11, -s * 0.95, s * 0.025, 0, Math.PI * 2); ctx.fill();
+    petEyes(s * 0.13, -s * 0.8, s * 0.055);
   } else if (k === 'uluka') {   // Maa Lakshmi's owl
     const fl = Math.sin(pet.t * 10) * 0.3;
-    ctx.fillStyle = '#E8DCC0'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.ellipse(side * s * 0.3, -s * 0.4, s * 0.16, s * 0.3, side * (0.4 + fl), 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = '#F6EED8'; ctx.beginPath(); ctx.ellipse(0, -s * 0.45, s * 0.32, s * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+    for (const side of [-1, 1]) fur(side * s * 0.3, -s * 0.4, s * 0.16, s * 0.3, '#DDD0B0', side * (0.4 + fl));
+    fur(0, -s * 0.45, s * 0.32, s * 0.38, '#F6EED8');
+    ctx.strokeStyle = 'rgba(160,130,90,0.55)'; ctx.lineWidth = Math.max(1, s * 0.02); for (let r = 0; r < 3; r++) for (const dx of [-0.1, 0, 0.1]) { ctx.beginPath(); ctx.moveTo(s * (dx - 0.03), -s * (0.32 - r * 0.07)); ctx.lineTo(s * dx, -s * (0.29 - r * 0.07)); ctx.lineTo(s * (dx + 0.03), -s * (0.32 - r * 0.07)); ctx.stroke(); }   // chest feathers
     ctx.fillStyle = '#E8DCC0'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.12, -s * 0.78); ctx.lineTo(side * s * 0.26, -s * 0.98); ctx.lineTo(side * s * 0.28, -s * 0.72); ctx.fill(); }
     for (const dx of [-1, 1]) { ctx.fillStyle = '#FFB020'; ctx.beginPath(); ctx.arc(dx * s * 0.13, -s * 0.6, s * 0.12, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.arc(dx * s * 0.13, -s * 0.6, s * 0.065, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.arc(dx * s * 0.13 + s * 0.03, -s * 0.63, s * 0.025, 0, Math.PI * 2); ctx.fill(); }
-    ctx.strokeStyle = '#3A2410'; ctx.lineWidth = Math.max(1.2, s * 0.04); for (const dx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(dx * s * 0.25, -s * 0.78); ctx.lineTo(dx * s * 0.04, -s * 0.72); ctx.stroke(); }
+    ctx.strokeStyle = '#3A2410'; ctx.lineWidth = Math.max(1.2, s * 0.045); for (const dx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(dx * s * 0.27, -s * 0.8); ctx.lineTo(dx * s * 0.05, -s * 0.72); ctx.stroke(); }
     ctx.fillStyle = '#C08A20'; ctx.beginPath(); ctx.moveTo(-s * 0.04, -s * 0.5); ctx.lineTo(0, -s * 0.4); ctx.lineTo(s * 0.04, -s * 0.5); ctx.fill();
-  } else if (k === 'nandi') {   // Mahakal's Nandi calf
-    leg(-s * 0.32, '#E8E2D8'); leg(s * 0.3, '#E8E2D8');
-    ctx.fillStyle = '#F6F2EA'; ctx.beginPath(); ctx.ellipse(0, -s * 0.45, s * 0.5, s * 0.25, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(-s * 0.05, -s * 0.66, s * 0.14, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();   // hump
-    ctx.fillStyle = '#B01828'; ctx.fillRect(-s * 0.3, -s * 0.62, s * 0.5, s * 0.2); ctx.fillStyle = '#E8B84A'; ctx.fillRect(-s * 0.3, -s * 0.44, s * 0.5, s * 0.04);   // red cloth
-    ctx.fillStyle = '#F6F2EA'; ctx.beginPath(); ctx.ellipse(s * 0.5, -s * 0.55, s * 0.2, s * 0.22, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#E8B84A'; for (const hx of [0.4, 0.6]) { ctx.beginPath(); ctx.moveTo(s * hx, -s * 0.72); ctx.quadraticCurveTo(s * (hx - 0.04), -s * 0.92, s * (hx + 0.06), -s * 0.95); ctx.lineTo(s * (hx + 0.04), -s * 0.72); ctx.fill(); }
-    ctx.fillStyle = '#F4C0B0'; ctx.beginPath(); ctx.ellipse(s * 0.6, -s * 0.44, s * 0.1, s * 0.07, 0, 0, Math.PI * 2); ctx.fill();
-    petEyes(s * 0.48, -s * 0.6, s * 0.06); ctx.fillStyle = '#E8B84A'; ctx.beginPath(); ctx.arc(s * 0.42, -s * 0.32, s * 0.06, 0, Math.PI * 2); ctx.fill();   // bell
-  } else {   // Airavata: a young white elephant with four tusks and a gold headdress
-    leg(-s * 0.32, '#E4E8F0'); leg(s * 0.3, '#E4E8F0');
-    ctx.fillStyle = '#F2F6FC'; ctx.beginPath(); ctx.ellipse(-s * 0.05, -s * 0.5, s * 0.52, s * 0.32, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.62, s * 0.3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#DCE4F0'; ctx.beginPath(); ctx.ellipse(s * 0.24, -s * 0.6, s * 0.18, s * 0.24, -0.2, 0, Math.PI * 2); ctx.fill();   // ear
-    ctx.strokeStyle = '#F2F6FC'; ctx.lineWidth = Math.max(3, s * 0.13); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(s * 0.68, -s * 0.55); ctx.quadraticCurveTo(s * 0.85, -s * 0.3 + run * s * 0.05, s * 0.72 + Math.sin(pet.t * 3) * s * 0.06, -s * 0.12); ctx.stroke();   // trunk
-    ctx.strokeStyle = '#FFFBEA'; ctx.lineWidth = Math.max(1.5, s * 0.05); for (const t of [0, 1]) { ctx.beginPath(); ctx.moveTo(s * (0.6 + t * 0.06), -s * 0.46); ctx.quadraticCurveTo(s * (0.72 + t * 0.06), -s * 0.4, s * (0.78 + t * 0.06), -s * 0.5); ctx.stroke(); }   // four tusks (two on this side)
-    ctx.fillStyle = goldFill(s * 0.2, s * 0.7); ctx.beginPath(); ctx.moveTo(s * 0.25, -s * 0.84); ctx.lineTo(s * 0.45, -s * 1.02); ctx.lineTo(s * 0.65, -s * 0.84); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.88, s * 0.04, 0, Math.PI * 2); ctx.fill();
-    petEyes(s * 0.5, -s * 0.68, s * 0.055);
+    ctx.strokeStyle = '#E8A020'; ctx.lineWidth = Math.max(1.2, s * 0.03); for (const dx of [-0.08, 0.08]) { ctx.beginPath(); ctx.moveTo(s * dx, -s * 0.09); ctx.lineTo(s * dx, -s * 0.02); ctx.stroke(); }
+  } else if (k === 'nandi') {   // Mahakal's Nandi calf, with a bell and a red-gold jhool
+    ctx.strokeStyle = '#E4DED2'; ctx.lineWidth = Math.max(1.5, s * 0.04); ctx.beginPath(); ctx.moveTo(-s * 0.48, -s * 0.5); ctx.quadraticCurveTo(-s * 0.62, -s * 0.3 + run * s * 0.05, -s * 0.58, -s * 0.18); ctx.stroke();
+    ctx.fillStyle = '#4A4038'; ctx.beginPath(); ctx.ellipse(-s * 0.58, -s * 0.16, s * 0.035, s * 0.06, 0, 0, Math.PI * 2); ctx.fill();   // tail tuft
+    legs4(s, [-0.33, -0.25, 0.25, 0.33], 0.28, 0.12, '#EEE8DE', run, '#4A4038');
+    fur(0, -s * 0.46, s * 0.5, s * 0.26, '#F6F2EA');
+    fur(-s * 0.05, -s * 0.68, s * 0.15, s * 0.11, '#F6F2EA');   // hump
+    ctx.fillStyle = '#B01828'; ctx.beginPath(); ctx.moveTo(-s * 0.32, -s * 0.66); ctx.lineTo(s * 0.22, -s * 0.66); ctx.lineTo(s * 0.26, -s * 0.36); ctx.lineTo(-s * 0.36, -s * 0.36); ctx.closePath(); ctx.fill();   // jhool
+    ctx.fillStyle = goldFill(-s * 0.36, s * 0.26); ctx.fillRect(-s * 0.36, -s * 0.4, s * 0.62, s * 0.045); for (let t = 0; t < 5; t++) { ctx.beginPath(); ctx.arc(-s * 0.3 + t * s * 0.13, -s * 0.33, s * 0.02, 0, Math.PI * 2); ctx.fill(); }
+    fur(s * 0.5, -s * 0.58, s * 0.2, s * 0.22, '#F6F2EA');
+    ctx.fillStyle = '#F6F2EA'; for (const ex of [0.36, 0.62]) { ctx.beginPath(); ctx.ellipse(s * ex, -s * 0.7, s * 0.08, s * 0.04, ex > 0.5 ? 0.5 : -0.5, 0, Math.PI * 2); ctx.fill(); }   // ears
+    ctx.fillStyle = goldFill(s * 0.38, s * 0.62); for (const hx of [0.42, 0.56]) { ctx.beginPath(); ctx.moveTo(s * hx, -s * 0.76); ctx.quadraticCurveTo(s * (hx - 0.05), -s * 0.98, s * (hx + 0.05), -s * 1.0); ctx.lineTo(s * (hx + 0.04), -s * 0.76); ctx.fill(); }   // horns
+    fur(s * 0.6, -s * 0.46, s * 0.11, s * 0.08, '#F4C0B0');
+    ctx.fillStyle = '#8A4040'; for (const nx of [0.57, 0.64]) { ctx.beginPath(); ctx.arc(s * nx, -s * 0.46, s * 0.015, 0, Math.PI * 2); ctx.fill(); }
+    petEyes(s * 0.48, -s * 0.63, s * 0.06);
+    ctx.strokeStyle = '#8A2A1A'; ctx.lineWidth = Math.max(1, s * 0.02); ctx.beginPath(); ctx.moveTo(s * 0.34, -s * 0.5); ctx.lineTo(s * 0.4, -s * 0.36); ctx.stroke();
+    ctx.fillStyle = goldFill(s * 0.34, s * 0.46); ctx.beginPath(); ctx.arc(s * 0.4, -s * 0.31, s * 0.06, 0, Math.PI * 2); ctx.fill();   // bell
+  } else {   // Airavata: Indra's white elephant, four tusks, trumpeting, gold headdress
+    legs4(s, [-0.34, -0.25, 0.22, 0.31], 0.32, 0.17, '#E2E8F2', run, '#E8B84A');
+    fur(-s * 0.05, -s * 0.52, s * 0.52, s * 0.34, '#F0F4FA');
+    ctx.fillStyle = '#B01828'; ctx.beginPath(); ctx.moveTo(-s * 0.36, -s * 0.8); ctx.lineTo(s * 0.18, -s * 0.8); ctx.lineTo(s * 0.22, -s * 0.42); ctx.lineTo(-s * 0.4, -s * 0.42); ctx.closePath(); ctx.fill();   // blanket
+    ctx.fillStyle = goldFill(-s * 0.4, s * 0.22); ctx.fillRect(-s * 0.4, -s * 0.46, s * 0.62, s * 0.05); ctx.fillRect(-s * 0.36, -s * 0.82, s * 0.54, s * 0.04);
+    for (let t = 0; t < 6; t++) { ctx.beginPath(); ctx.moveTo(-s * 0.36 + t * s * 0.11, -s * 0.41); ctx.lineTo(-s * 0.34 + t * s * 0.11, -s * 0.34); ctx.lineTo(-s * 0.32 + t * s * 0.11, -s * 0.41); ctx.fill(); }   // tassels
+    fur(s * 0.45, -s * 0.66, s * 0.3, s * 0.29, '#F0F4FA');
+    fur(s * 0.24, -s * 0.64, s * 0.19, s * 0.25, '#DCE4F0', -0.2); ctx.fillStyle = '#F4C8D0'; ctx.beginPath(); ctx.ellipse(s * 0.24, -s * 0.64, s * 0.1, s * 0.16, -0.2, 0, Math.PI * 2); ctx.fill();   // ear
+    const tr = Math.sin(pet.t * 3);
+    ctx.strokeStyle = '#EEF2F8'; ctx.lineWidth = Math.max(3, s * 0.12); ctx.beginPath(); ctx.moveTo(s * 0.68, -s * 0.58); ctx.bezierCurveTo(s * 0.86, -s * 0.5, s * 0.92, -s * 0.8, s * 0.82 + tr * s * 0.04, -s * 0.98); ctx.stroke();   // trumpeting trunk
+    ctx.strokeStyle = '#FFFBEA'; for (const [x0, len, w] of [[0.6, 0.22, 0.05], [0.66, 0.16, 0.035]]) { ctx.lineWidth = Math.max(1.5, s * w); ctx.beginPath(); ctx.moveTo(s * x0, -s * 0.5); ctx.quadraticCurveTo(s * (x0 + len * 0.7), -s * 0.44, s * (x0 + len), -s * 0.56); ctx.stroke(); }   // tusks (two pairs)
+    ctx.fillStyle = goldFill(s * 0.25, s * 0.7); ctx.beginPath(); ctx.moveTo(s * 0.26, -s * 0.88); ctx.lineTo(s * 0.46, -s * 1.08); ctx.lineTo(s * 0.68, -s * 0.88); ctx.lineTo(s * 0.6, -s * 0.8); ctx.lineTo(s * 0.32, -s * 0.8); ctx.closePath(); ctx.fill();   // headdress
+    ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(s * 0.46, -s * 0.9, s * 0.04, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#7FD8FF'; for (const jx of [0.36, 0.56]) { ctx.beginPath(); ctx.arc(s * jx, -s * 0.85, s * 0.022, 0, Math.PI * 2); ctx.fill(); }
+    petEyes(s * 0.5, -s * 0.7, s * 0.055);
   }
 }
 const RAVENS = [];
@@ -4359,7 +4430,7 @@ function drawShot(s) {
   if (s.kind === 'arrow' || s.kind === 'blade' || s.kind === 'trishul' || s.kind === 'flame') ctx.rotate(ang);
   ctx.globalAlpha = fade;
   { const gr = k * 2.4; ctx.drawImage(glowSprite(rgbOf(s.color)), -gr, -gr, gr * 2, gr * 2); }   // glow (sprite: much cheaper than shadowBlur)
-  if (s.kind === 'pet') { ctx.fillStyle = '#FFFBEA'; ctx.beginPath(); ctx.arc(0, 0, k * 0.32, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return; }   // a companion's spark
+  if (s.kind === 'pet') { drawPetShot(s.petKind, k, s.spin); ctx.restore(); return; }   // each companion attacks in its own style
   if (s.kind === 'arrow') {
     ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, k * 1.2); ctx.lineTo(0, -k); ctx.stroke();
     ctx.fillStyle = s.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.5); ctx.lineTo(-k * 0.3, -k * 0.9); ctx.lineTo(k * 0.3, -k * 0.9); ctx.fill();
