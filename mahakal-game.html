@@ -6,11 +6,11 @@
 <!-- Google Analytics 4 (loaded after the page so it never slows it down) -->
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV';document.head.appendChild(s);},1500);});</script>
 <title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
-<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, battle Mahishasura, Raktabija and Andhakasura across 9 waves, climb the top-10 leaderboard and win 5% to 30% off your stay or food bill. By AP Villas &amp; Resorts, Ujjain.">
+<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, battle Mahishasura, Raktabija, Andhakasura, Kumbhakarna and ten-headed Ravana in golden Lanka across 11 waves, climb the top-10 leaderboard and win 5% to 30% off your stay or food bill. By AP Villas &amp; Resorts, Ujjain.">
 <meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="Path to Darshan — A Mahakal Mini Game by AP Villas, Ujjain">
-<meta property="og:description" content="Stop the danav across 9 waves, defeat Mahishasura, Raktabija and Andhakasura, earn divine weapons and win up to 30% off your stay or food bill. A mini game by AP Villas & Resorts, Ujjain.">
+<meta property="og:description" content="Stop the danav across 11 waves, defeat Mahishasura, Raktabija, Andhakasura, Kumbhakarna and ten-headed Ravana, earn divine weapons and win up to 30% off your stay or food bill. A mini game by AP Villas & Resorts, Ujjain.">
 <meta property="og:type" content="game">
 <link rel="canonical" href="https://www.apvillasandresorts.in/mahakal-game.html">
 <meta property="og:url" content="https://www.apvillasandresorts.in/mahakal-game.html">
@@ -202,9 +202,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
 .hud__brand {
   display: flex; align-items: center; gap: 10px;
-  background: rgba(15, 18, 30, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(15, 18, 30, 0.8);
   border: 1px solid rgba(201, 162, 79, 0.18);
   border-radius: 16px;
   padding: 8px 14px;
@@ -221,9 +219,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 }
 
 .hud__score-card {
-  background: rgba(15, 18, 30, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(15, 18, 30, 0.8);
   border: 1px solid rgba(201, 162, 79, 0.18);
   border-radius: 16px;
   padding: 10px 18px;
@@ -265,8 +261,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .hud__mute {
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: rgba(15, 18, 30, 0.6);
-  backdrop-filter: blur(20px);
+  background: rgba(15, 18, 30, 0.8);
   border: 1px solid rgba(201, 162, 79, 0.18);
   color: var(--gold-light);
   cursor: pointer;
@@ -309,7 +304,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 
 /* ========== ASHIRVAAD (deity blessing) ========== */
 .ashirvaad { position: absolute; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 20px;
-  background: radial-gradient(ellipse at center, rgba(60,30,6,0.88) 0%, rgba(8,6,4,0.97) 75%); backdrop-filter: blur(6px); }
+  background: radial-gradient(ellipse at center, rgba(60,30,6,0.88) 0%, rgba(8,6,4,0.97) 75%); }
 .ashirvaad.show { display: flex; animation: ritualIn 0.6s ease; }
 .ashirvaad__card { max-width: 420px; width: 100%; text-align: center; color: #FFF6E0; }
 .ashirvaad__halo { position: relative; width: min(62vw, 260px); margin: 0 auto 16px; }
@@ -332,7 +327,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   background: radial-gradient(ellipse at center, rgba(10, 14, 26, 0.85) 0%, rgba(0,0,0,0.95) 100%);
   display: none; align-items: center; justify-content: center;
   flex-direction: column;
-  backdrop-filter: blur(8px);
 }
 .ritual.show { display: flex; animation: ritualIn 0.5s ease; }
 @keyframes ritualIn { from {opacity: 0;} to {opacity: 1;} }
@@ -421,7 +415,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   background: radial-gradient(ellipse at center, rgba(20, 14, 8, 0.92) 0%, rgba(0,0,0,0.98) 80%);
   display: none; align-items: center; justify-content: center;
   padding: 24px;
-  backdrop-filter: blur(12px);
 }
 .gameover.show { display: flex; animation: gameOverIn 0.6s ease; }
 @keyframes gameOverIn { from {opacity: 0;} to {opacity: 1;} }
@@ -570,7 +563,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   transition: opacity 0.6s ease;
 }
 .tutorial.show { opacity: 1; }
-.tutorial { background: rgba(30,14,40,.55); border-radius: 18px; padding: 16px 22px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.tutorial { background: rgba(30,14,40,.78); border-radius: 18px; padding: 16px 22px; }
 .tutorial__sub { color: rgba(255,246,224,.85) !important; }
 .banner b, .banner span, .combo { text-shadow: 0 2px 14px rgba(40,10,40,.85), 0 0 30px rgba(192,83,26,.6); }
 .tutorial__icon { font-size: 48px; margin-bottom: 16px; opacity: 0.7; }
@@ -613,13 +606,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   transition: opacity .4s, transform .5s cubic-bezier(.34,1.56,.64,1); }
 .celebrate-btn.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); animation: celebPulse 1.4s ease-in-out infinite .5s; }
 @keyframes celebPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(255,236,170,.35), 0 12px 40px rgba(255,160,40,.6); } 50% { box-shadow: 0 0 0 14px rgba(255,236,170,0), 0 12px 60px rgba(255,160,40,.9); } }
-.pausebox { position: absolute; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); text-align: center; }
+.pausebox { position: absolute; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); text-align: center; }
 .pausebox.show { display: flex; }
 .pausebox b { display: block; font-family: 'Cormorant Garamond', serif; font-size: 44px; color: var(--gold-light); }
 .pausebox span { display: block; margin: 4px 0 18px; color: #FFF6E0; font-size: 15px; }
 .combo { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); z-index: 24; pointer-events: none; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 30px; color: #F4D58D; text-shadow: 0 0 18px rgba(255,140,40,.8); opacity: 0; transition: opacity .25s; }
 .combo.show { opacity: 1; }
-.hud__panel { background: rgba(15,18,30,.62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(201,162,79,.2); border-radius: 14px; padding: 8px 12px; margin-top: 6px; min-width: 190px; max-width: 240px; }
+.hud__panel { background: rgba(15,18,30,.8); border: 1px solid rgba(201,162,79,.2); border-radius: 14px; padding: 8px 12px; margin-top: 6px; min-width: 190px; max-width: 240px; }
 .hud__wave { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--gold-light); font-weight: 600; line-height: 1.1; }
 .hud__bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.12); margin: 6px 0 5px; overflow: hidden; }
 .hud__bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #E8C77A, #C0531A); border-radius: 6px; transition: width .25s ease; }
@@ -709,7 +702,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .lb__score { font-weight: 700; color: #F4D58D; font-variant-numeric: tabular-nums; }
 .lb__empty { text-align: center; font-size: 12.5px; color: rgba(244,236,219,.6); padding: 10px 0; }
 .lb__ladder { font-size: 11.5px; color: rgba(244,236,219,.65); text-align: center; margin: 12px 0; line-height: 1.5; }
-.lbpanel { position: absolute; inset: 0; z-index: 90; display: none; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; background: rgba(0,0,0,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.lbpanel { position: absolute; inset: 0; z-index: 90; display: none; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; background: rgba(0,0,0,.72); }
 .lbpanel.show { display: flex; animation: gameOverIn .4s ease; }
 .lbpanel__card { margin: auto; max-width: 440px; width: 100%; background: linear-gradient(180deg, rgba(31,36,51,.97), rgba(15,18,30,.97)); border: 1px solid rgba(232,199,122,.45); border-radius: 24px; padding: 22px 18px; box-shadow: 0 0 80px rgba(255,190,90,.2); text-align: center; }
 .lbpanel__card .go-btn { width: 100%; }
@@ -765,6 +758,35 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .intro__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .8; z-index: 0; pointer-events: none; }
 .intro__doors, .intro__content, .intro__diya { z-index: 1; }
 .intro__door { background: linear-gradient(180deg, rgba(42,29,15,.5) 0%, rgba(26,18,8,.62) 50%, rgba(13,8,5,.85) 100%); }
+.brahma-btn { position: absolute; left: 50%; bottom: calc(26% + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; border: 0; border-radius: 999px; padding: 15px 26px; font: 800 16px Inter, sans-serif; letter-spacing: .4px; color: #2A1406; background: linear-gradient(135deg, #FFF1B8, #F4C24A 55%, #C98A1E); box-shadow: 0 0 0 3px rgba(255,240,190,.55), 0 0 34px rgba(255,200,80,.9); cursor: pointer; animation: brahmaPulse .8s ease-in-out infinite alternate; }
+.brahma-btn[hidden] { display: none; }
+@keyframes brahmaPulse { to { transform: translateX(-50%) scale(1.07); } }
+.ash-all { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin: 10px 0 2px; }
+.ash-all[hidden] { display: none; }
+.ash-all img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #E8C77A; box-shadow: 0 0 14px rgba(255,214,120,.7); }
+.banner.enemy { top: calc(64px + min(44vw, 340px) * 0.5625 + 12px); transform: translate(-50%, 0) scale(.86); width: min(540px, 92vw); padding: 12px 18px 15px; box-sizing: border-box; border-radius: 18px; background: linear-gradient(180deg, rgba(44,16,6,.9), rgba(18,8,4,.9)); border: 1.5px solid rgba(255,214,120,.9); box-shadow: 0 0 0 3px rgba(255,190,80,.18), 0 0 28px rgba(255,170,60,.55), inset 0 0 22px rgba(255,190,80,.16); }
+.banner.enemy::after { content: ''; position: absolute; inset: -3px; border-radius: 20px; box-shadow: 0 0 0 4px rgba(255,190,80,.3), 0 0 48px rgba(255,170,60,.9); opacity: .25; pointer-events: none; animation: enemyGlow 1.1s ease-in-out infinite alternate; will-change: opacity; }
+.banner.enemy.show { transform: translate(-50%, 0) scale(1); }
+.banner.enemy::before { content: 'NEW ENEMY'; display: block; font: 800 11px Inter, sans-serif; letter-spacing: 3.5px; color: #FFD27D; margin-bottom: 4px; }
+.banner.enemy b { font-size: clamp(30px, 6.6vw, 48px); }
+.banner.enemy span { font-size: clamp(14.5px, 3.9vw, 18px); font-weight: 600; line-height: 1.4; margin-top: 6px; }
+@keyframes enemyGlow { to { opacity: 1; } }
+@media (max-width: 600px) { .banner.enemy { top: calc(196px + 54vw * 0.5625 + 10px); padding: 10px 14px 12px; } }
+.hudbar { position: absolute; left: 50%; bottom: calc(6px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 22; width: min(640px, calc(100% - 16px)); box-sizing: border-box; padding: 7px 10px 8px; border-radius: 14px; background: rgba(15,18,30,.82); border: 1px solid rgba(201,162,79,.35); pointer-events: none; opacity: 0; transition: opacity .4s; font-family: Inter, sans-serif; }
+.hud.show ~ .hudbar, .hudbar.show { opacity: 1; }
+.hudbar__row { display: grid; grid-template-columns: 1fr 1.25fr 1fr 1.15fr; gap: 8px; }
+.hudbar__cell { min-width: 0; }
+.hudbar__cell small { display: block; font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(244,236,219,.6); }
+.hudbar__cell b { display: block; font-size: 12.5px; font-weight: 700; color: #F4D58D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hudbar__mini { display: block; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); margin-top: 3px; overflow: hidden; }
+.hudbar__mini i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #E8C77A, #C0531A); transition: width .25s; }
+.hudbar__journey { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.hudbar__track { position: relative; flex: 1; height: 7px; border-radius: 7px; background: rgba(255,255,255,.12); }
+.hudbar__track > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 7px; background: linear-gradient(90deg, #FFE08A, #E8A33A 60%, #C0531A); transition: width .4s; }
+#hud-marks i { position: absolute; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; transform: rotate(45deg); background: #3A2A12; border: 1px solid #E8C77A; }
+#hud-marks i.done { background: #FFE08A; }
+.hudbar__journey em { font-style: normal; font-size: 11px; font-weight: 700; color: #FFE7A8; min-width: 34px; text-align: right; }
+@media (max-width: 600px) { .hudbar { padding: 6px 8px 7px; } .hudbar__row { grid-template-columns: 1fr 1fr; gap: 3px 10px; } .hudbar__cell b { font-size: 11.5px; } .hudbar__cell small { font-size: 8.5px; } }
 </style>
 </head>
 <body>
@@ -786,7 +808,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="intro__small">— HAR HAR MAHADEV —</div>
       <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Mahakal Game: Path to Darshan by AP Villas &amp; Resorts</h1>
       <div class="intro__title">Path to <em>Darshan</em></div>
-      <div class="intro__sub">Danav block the path to the temple. Fight through 9 waves and 3 great asuras: Mahishasura, Raktabija and Andhakasura. Earn the Ashirvaad and divine weapons of the gods, gather boons on the bridge, grow from a little monk boy into a Siddha sadhu and ride Mahakal's fire-breathing lion. Win <b>5% to 30% off</b> your stay or food bill at AP Villas &amp; Resorts, Ujjain.</div>
+      <div class="intro__sub">Danav block the path to the temple. Fight through 11 waves and the great asuras Mahishasura, Raktabija and Andhakasura, then ride into Ravana's golden Lanka to face Kumbhakarna, the trial of Vibhishana and ten-headed Ravana himself. Earn the Ashirvaad and divine weapons of the gods, gather boons on the bridge, grow from a little monk boy into a Siddha sadhu and ride Mahakal's fire-breathing lion. Win <b>5% to 30% off</b> your stay or food bill at AP Villas &amp; Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
       <div class="intro__row"><button class="intro__lb" id="story-btn" type="button">🎬 Watch the story</button><button class="intro__lb" id="lb-open" type="button">🏆 Top 10 Yoddhas</button></div>
     </div>
@@ -794,18 +816,21 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   </div>
 
   <!-- HUD -->
+  <div class="hudbar" id="hudbar" aria-live="polite">
+    <div class="hudbar__row">
+      <div class="hudbar__cell"><small>Weapon</small><b id="hud-weapon"></b></div>
+      <div class="hudbar__cell hudbar__cell--wave"><small id="hud-wave-label">Wave</small><b id="hud-wave">Wave 1</b><span class="hudbar__mini"><i id="hud-bar"></i></span></div>
+      <div class="hudbar__cell"><small>Yoddha</small><b id="hud-stage"></b></div>
+      <div class="hudbar__cell"><small>Next</small><b id="hud-next"></b></div>
+    </div>
+    <div class="hudbar__journey"><span class="hudbar__track"><i id="hud-journey"></i><span id="hud-marks"></span></span><em id="hud-journey-pct">0%</em></div>
+  </div>
   <div class="hud" id="hud">
     <div class="hud__group">
       <a href="index.html" class="hud__brand" style="pointer-events:auto">
         <img src="assets/brand/logo-emblem-96.webp" width="28" height="28" alt="AP Villas &amp; Resorts emblem">
         <strong>AP Villas &amp; Resorts</strong>
       </a>
-      <div class="hud__panel">
-        <div class="hud__wave" id="hud-wave">Wave 1 of 9</div>
-        <div class="hud__bar"><i id="hud-bar"></i></div>
-        <div class="hud__weapon" id="hud-weapon"></div>
-        <div class="hud__next" id="hud-next"></div>
-      </div>
     </div>
     <div class="hud__group hud__group--right">
       <div class="hud__score-card">
@@ -830,6 +855,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   </div>
 
   <!-- Boss health -->
+  <button class="brahma-btn" id="brahma-btn" type="button" hidden>🏹 Fire the Brahmastra</button>
   <div class="bossbar" id="bossbar"><span id="boss-name">Andhakasura</span><div><i id="boss-hp"></i></div></div>
 
   <div class="combo" id="combo"></div>
@@ -848,6 +874,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="ashirvaad" id="ashirvaad" role="dialog" aria-live="polite">
     <div class="ashirvaad__card">
       <div class="ashirvaad__halo"><img class="ashirvaad__img" id="ash-img" src="" alt=""></div>
+      <div class="ash-all" id="ash-all" hidden></div>
       <div class="ashirvaad__name" id="ash-name"></div>
       <div class="ashirvaad__title" id="ash-title"></div>
       <div class="ashirvaad__weapon" id="ash-weapon"></div>
@@ -894,7 +921,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="victory" id="victory" role="dialog" aria-labelledby="victory-title">
     <div class="victory__inner">
       <div class="victory__namo">🙏 Jai Mahakal 🙏</div>
-      <div class="victory__title" id="victory-title">Andhakasura is defeated and the path to darshan is clear!<br>Mahakal's blessing for your family:</div>
+      <div class="victory__title" id="victory-title">Ravana is defeated and the path to darshan is clear!<br>Mahakal's blessing for your family:</div>
       <div class="coupon" id="win-coupon"></div>
       <div class="gameover__best" style="margin-top:12px">Score <span id="win-score">0</span> · Best <span id="win-best">0</span></div>
       <div class="win-perf" id="win-perf"></div>
@@ -923,7 +950,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div class="lbpanel__card">
       <div class="lb__title">🏆 Top 10 Yoddhas</div>
       <div class="lb__board" id="lb-intro"></div>
-      <div class="lb__ladder">Rewards: clear 2 waves 5% · beat Mahishasura 10% · beat Raktabija 15% · beat Andhakasura 20%, up to 30% for a strong run</div>
+      <div class="lb__ladder">Rewards: clear 2 waves 5% · Mahishasura 10% · Raktabija 15% · Andhakasura 20% · Kumbhakarna 22% · Ravana 25%, up to 30% for a strong run</div>
       <button class="go-btn go-btn--ghost" id="lb-close" type="button">Close</button>
     </div>
   </div>
@@ -942,6 +969,8 @@ const ctx = game.getContext('2d'), fxCtx = fx.getContext('2d');
 let W = 0, H = 0;
 // Quality: phones draw at most 1.5x pixel density; if a device still drops frames the game steps its effects down by itself.
 const Q = { level: 0, dpr: Math.min(window.devicePixelRatio || 1, Math.min(screen.width, screen.height) < 820 ? 1.5 : 2), weather: 1, clouds: 1, shadows: true };
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+if (TOUCH) { Q.shadows = false; if ((navigator.deviceMemory || 4) <= 4 || (navigator.hardwareConcurrency || 8) <= 4) Q.dpr = Math.min(Q.dpr, 1.25); }
 let DPR = Q.dpr;
 function setQuality(lv) {
   Q.level = lv;
@@ -958,9 +987,9 @@ const perf = { acc: 0, n: 0, slow: 0 };
 function watchPerf(dt) {   // average frame time over ~2 s; two slow windows in a row lower the quality one step
   if (state !== 'playing' || document.hidden) return;
   perf.acc += dt; perf.n++;
-  if (perf.acc < 2) return;
+  if (perf.acc < 1.2) return;
   const fps = perf.n / perf.acc; perf.acc = 0; perf.n = 0;
-  if (fps < 45) { if (++perf.slow >= 2 && Q.level < 2) { setQuality(Q.level + 1); perf.slow = 0; } } else perf.slow = 0;
+  if (fps < 50) { if (++perf.slow >= 2 && Q.level < 2) { setQuality(Q.level + 1); perf.slow = 0; } } else perf.slow = 0;
 }
 function resize() {
   W = stage.clientWidth; H = stage.clientHeight;
@@ -968,12 +997,13 @@ function resize() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0); fxCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 addEventListener('resize', resize); resize();
+if (!Q.shadows) for (const c of [ctx, fxCtx]) Object.defineProperty(c, 'shadowBlur', { set() {}, get() { return 0; }, configurable: true });   // phones: blurred shadows cost a frame
 const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 const track = (n, p) => { if (typeof gtag === 'function') gtag('event', n, p || {}); };
 
 // ---------------- Audio (synthesised, no files) ----------------
 let audioCtx = null, muted = false;
-function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) {} }
+function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); warmNoise(); } catch (e) {} }
 function tone(freq, dur, type = 'sine', vol = 0.12, end = null) {
   if (muted || !audioCtx) return;
   const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime;
@@ -981,10 +1011,17 @@ function tone(freq, dur, type = 'sine', vol = 0.12, end = null) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
   o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(t + dur);
 }
+const NOISE = new Map();
+function noiseBuf(key) {   // key = length in tenths of a second
+  let b = NOISE.get(key); if (b) return b;
+  b = audioCtx.createBuffer(1, Math.round(audioCtx.sampleRate * key / 10), audioCtx.sampleRate); const d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) { const k = 1 - i / d.length; d[i] = (Math.random() * 2 - 1) * k * k; }
+  NOISE.set(key, b); return b;
+}
+function warmNoise() { if (!audioCtx || warmNoise.done) return; warmNoise.done = true; [1, 2, 3, 4, 5, 9, 10, 14, 22].forEach((k, i) => setTimeout(() => noiseBuf(k), 300 + i * 120)); }
 function noise(dur, vol = 0.18, freq = 900) {
   if (muted || !audioCtx) return;
-  const b = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate), d = b.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const b = noiseBuf(Math.max(1, Math.round(dur * 10)));
   const s = audioCtx.createBufferSource(); s.buffer = b;
   const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq;
   const g = audioCtx.createGain(); g.gain.value = vol;
@@ -1059,6 +1096,8 @@ const DANAV = {
   agni:    { name: 'Agni Vetala', hp: 7, speed: 0.1, size: 1.05, skin: '#4A3222', dark: '#1E140C', horn: '#C98A4A', eye: '#FFB020', pts: 65, ai: 'burn', float: true, head: 'flamehelm', glowLines: '#FF8A2A' },
   maya:    { name: 'Maya Mohini Asura', hp: 8, speed: 0.095, size: 1.05, skin: '#4A2E78', dark: '#24163E', horn: '#E8D8FF', eye: '#B07CFF', pts: 70, ai: 'illusion', hop: true, head: 'mask', robe: '#3A2464' },
   kaal:    { name: 'Kaal Pishacha', hp: 18, speed: 0.08, size: 1.25, skin: '#A9A4BE', dark: '#3A3650', horn: '#B9B2D8', eye: '#C69CFF', pts: 120, ai: 'kaal', shadowy: true, head: 'ghoul', robe: '#1E1A2A' },
+  lankaguard: { name: 'Lanka Rakshak', hp: 10, speed: 0.085, size: 1.22, skin: '#6A4426', dark: '#2E1C0E', horn: '#F4D58D', eye: '#FFD24D', pts: 95, ai: 'guard', head: 'helm', glowLines: '#FFD24D' },
+  nishachar: { name: 'Nishachar Chor', hp: 5, speed: 0.13, size: 0.95, skin: '#3A2E4A', dark: '#1A1424', horn: '#C9A24F', eye: '#FFE14D', pts: 75, ai: 'thief', shadowy: true },
   tantrik: { name: 'Tantrik-asura', hp: 7, speed: 0.11, size: 1.05, skin: '#3B2A55', dark: '#1C1230', horn: '#C8B6FF', eye: '#C69CFF', pts: 70, caster: true },
 };
 const shade = (c, k) => '#' + hex(c).map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
@@ -1069,17 +1108,25 @@ const BLESS = {
   durga:   { name: 'Maa Durga', title: 'Mahishasura Mardini rides with you', weapon: 'khadga', grow: 1, gift: 'The sword that slew Mahishasura: lightning-fast strikes. All prana restored.', img: 'mahishasura-mardini', credit: 'Ravi Varma Press, c.1910 (public domain)', full: 1 },
   vishnu:  { name: 'Shri Vishnu & Maa Lakshmi', title: 'The protector of the worlds blesses you', weapon: 'chakra', grow: 1, gift: 'The Chakra slices through every danav in its path. All prana restored.', img: 'vishnu-laxmi-and-serpent-anant', credit: 'Ravi Varma Press (public domain)', full: 1 },
   lakshmi: { name: 'Maa Lakshmi', title: 'The goddess of fortune smiles on you', weapon: 'swarna', grow: 0, gift: 'The golden Swarna Chakra. Power-ups now fall twice as often and every point counts one and a half times. All prana restored.', img: 'raja-ravi-varma-goddess-lakshmi-1896', credit: 'Raja Ravi Varma, 1896 (public domain)', full: 1 },
-  mahakal: { name: 'Mahakal', title: 'Har Har Mahadev! The final battle begins', weapon: 'simha', grow: 1, gift: 'Mahakal sends you his divine lion. Ride it into battle: its sacred fire is the only power that can burn Andhakasura, king of darkness. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: 1, full: 1 },
+  mahakal: { name: 'Mahakal', title: 'Har Har Mahadev! Ride into the great darkness', weapon: 'simha', grow: 1, gift: 'Mahakal sends you his divine lion. Ride it into battle: its sacred fire is the only power that can burn Andhakasura, king of darkness. All prana restored.', img: 'a-version-from-the-ravi-varma-press-shankar-c-1910-s', credit: '"Shankar", Ravi Varma Press, 1910s (public domain)', final: 1, full: 1 },
 };
 Object.values(BLESS).forEach(b => { b.src = IMG + b.img + '-960.webp'; });
+// before Ravana every god blesses the yoddha together (shown as all six blessing paintings)
+BLESS.sarva = { name: 'Sarva Devta Ashirvaad', title: 'All the gods bless you for the battle with Ravana', weapon: 'simha', grow: 0, full: 1, final: 1,
+  all: ['ganesh', 'hanuman', 'durga', 'vishnu', 'lakshmi', 'mahakal'], src: BLESS.mahakal.src, credit: 'Paintings: Kota school and Ravi Varma Press (public domain)',
+  gift: 'Shri Ganesh, Hanuman ji, Maa Durga, Shri Vishnu, Maa Lakshmi and Mahakal bless you together: all prana restored, the Sarva Kavach (3 hits) and the Brahmastra, the only weapon that can end Ravana. Fire it when his secret is revealed.' };
 function preloadBlessing(b) { if (b && !b.pre) { b.pre = new Image(); b.pre.decoding = 'async'; b.pre.src = b.src; } }
 const BOSSES = {
   mahisha: { name: 'Mahishasura', hp: 320, z: 0.5, size: 80, intro: 'The buffalo demon charges down your path. Watch for the red warning and step aside!', minions: ['rakshas', 'vrishabh'] },
   rakta:   { name: 'Raktabija', hp: 820, z: 0.6, size: 82, intro: 'Every drop of his blood becomes a new demon. Strike fast and dodge the blood fire!', minions: ['raktaja', 'pishach'] },
+  kumbha:  { name: 'Kumbhakarna', hp: 2300, z: 0.62, size: 102, intro: 'The giant wakes hungry. Dodge his slams and boulders, kill his soldiers before he eats them, and strike when he yawns!', minions: ['lankaguard', 'rakshas'] },
+  vibhi:   { name: 'Vibhishana', hp: 1300, z: 0.6, size: 84, intro: "Ravana's wise brother tests your dharma. Break his resolve, not his life", minions: ['lankaguard', 'kavach'], trial: true },
+  ravana:  { name: 'Ravana', hp: 3600, z: 0.68, size: 104, intro: 'Dashanana, king of Lanka. Ten heads, ten attacks: watch every glowing mouth!', minions: ['lankaguard', 'nishachar'] },
   andhaka: { name: 'Andhakasura', hp: 1700, z: 0.66, size: 84, intro: "King of darkness. Stand in his path so your lion's sacred fire burns him, and dodge his fireballs", minions: ['vrishabh', 'naag'] },
 };
 // three acts (dawn, golden dusk, the night of Mahakal): 9 waves and 3 boss battles
-const ACTS = ['Prabhat · the dawn path', 'Sandhya · the golden dusk', 'Mahanisha · the night of Mahakal'];
+const ACTS = ['Prabhat · the dawn path', 'Sandhya · the golden dusk', 'Mahanisha · the night of Mahakal', 'Swarna Lanka · the golden city of Ravana'];
+const FINAL_BOSS = 'ravana';
 const LEVELS = [
   { kills: 10, every: 1.6,  act: 0, mix: { rakshas: 1 }, bless: 'ganesh' },
   { kills: 12, every: 1.5,  act: 0, mix: { rakshas: 0.5, pishach: 0.22, danav: 0.18, chhaya: 0.1 }, intro: 'chhaya' },
@@ -1092,10 +1139,16 @@ const LEVELS = [
   { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.14, tantrik: 0.11, naag: 0.12, maha: 0.13, raktaja: 0.14, pishach: 0.12, maya: 0.08, naga: 0.06, vajra: 0.05, kaal: 0.05 }, intro: 'kaal' },
   { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.13, tantrik: 0.11, naag: 0.11, maha: 0.13, raktaja: 0.12, vrishabh: 0.13, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08 } },
   { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.12, tantrik: 0.11, naag: 0.1, maha: 0.14, raktaja: 0.11, pishach: 0.1, maya: 0.08, naga: 0.07, agni: 0.07, kaal: 0.1 }, bless: 'mahakal' },
-  { boss: 'andhaka', act: 2, final: true },
+  { boss: 'andhaka', act: 2 },
+  // act 4 · Swarna Lanka
+  { kills: 20, every: 1.1,  act: 3, mix: { lankaguard: 0.2, nishachar: 0.12, kavach: 0.1, maha: 0.12, tantrik: 0.1, mayavi: 0.1, raktaja: 0.08, vajra: 0.06, maya: 0.06, agni: 0.06 }, intro: 'lankaguard' },
+  { boss: 'kumbha', act: 3 },
+  { kills: 22, every: 1.05, act: 3, mix: { lankaguard: 0.18, nishachar: 0.14, maha: 0.12, kavach: 0.1, tantrik: 0.1, kaal: 0.08, maya: 0.08, naga: 0.07, agni: 0.07, vajra: 0.06 }, intro: 'nishachar' },
+  { boss: 'vibhi', act: 3, trial: true, bless: 'sarva' },
+  { boss: 'ravana', act: 3, final: true },
 ];
 let nW = 0, nB = 0;
-LEVELS.forEach(l => { if (l.boss) l.bossNo = ++nB; else l.waveNo = ++nW; });
+LEVELS.forEach(l => { if (l.boss) { if (!l.trial) l.bossNo = ++nB; } else l.waveNo = ++nW; });
 const TOTAL_WAVES = nW, TOTAL_BOSSES = nB;
 // Shakti: rises as you slay danav and gather boons, falls when you are hurt. 100 = Rudra form.
 const TEJ = [
@@ -1144,7 +1197,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
+function resetField() { BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1153,21 +1206,35 @@ function hud() {
   $('best-score').textContent = best.toLocaleString('en-IN');
   $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
   const w = WEAPONS[weapon];
-  $('hud-weapon').innerHTML = `${STAGES[Math.min(5, bulk)].name} · <b>${w.name}</b>`;
+  $('hud-weapon').textContent = tokenT > 0 ? 'Trishul (token)' : w.name;
+  $('hud-stage').textContent = STAGES[Math.min(5, bulk)].name;
   const lv = LV();
   if (boss) {
     const B = BOSSES[boss.kind];
-    $('hud-wave').textContent = boss.dead ? B.name + ' falls!' : `Boss ${lv.bossNo} of ${TOTAL_BOSSES} · ${B.name}`;
+    $('hud-wave-label').textContent = lv.trial ? 'Trial of dharma' : `Boss ${lv.bossNo} of ${TOTAL_BOSSES}`;
+    $('hud-wave').textContent = boss.dead ? B.name + (lv.trial ? ' chooses dharma!' : ' falls!') : B.name;
     $('hud-bar').style.width = (boss.dead ? 100 : 100 * Math.max(0, boss.hp) / boss.max) + '%';
-    $('hud-next').textContent = boss.dead ? 'Jai Mahakal!' : 'Stand in his path to strike';
+    const nb2 = nextBlessing(); $('hud-next').textContent = boss.dead ? 'Jai Mahakal!' : lv.bless ? 'Ashirvaad: ' + BLESS[lv.bless].name : nb2 ? 'Ashirvaad: ' + nb2.name : 'Darshan!';
     $('boss-hp').style.width = Math.max(0, 100 * boss.hp / boss.max) + '%';
   } else {
-    $('hud-wave').textContent = `Wave ${lv.waveNo} of ${TOTAL_WAVES} · ${Math.min(kills, lv.kills)}/${lv.kills}`;
+    $('hud-wave-label').textContent = `Wave ${lv.waveNo} of ${TOTAL_WAVES}`;
+    $('hud-wave').textContent = `${Math.min(kills, lv.kills)} / ${lv.kills} danav`;
     $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%';
     const nb = nextBlessing(), nboss = LEVELS.slice(level).find(l => l.boss);
     $('hud-next').textContent = LEVELS[level + 1] && LEVELS[level + 1].boss && !lv.bless ? 'Next: ' + BOSSES[LEVELS[level + 1].boss].name + '!' : nb ? 'Next Ashirvaad: ' + nb.name : nboss ? 'Next: ' + BOSSES[nboss.boss].name : '';
   }
+  journeyHud();
   tejHud(true);
+}
+function journeyHud() {   // the whole game as one bar: each level is an equal step, bosses are gold diamonds
+  const lv = LV(), n = LEVELS.length;
+  const frac = boss ? (boss.dead ? 1 : 1 - Math.max(0, boss.hp) / boss.max) : lv.kills ? Math.min(1, kills / lv.kills) : 0;
+  const p = Math.min(1, (level + frac) / n), pct = Math.round(p * 100);
+  if (journeyHud.p !== pct) { journeyHud.p = pct; $('hud-journey').style.width = pct + '%'; $('hud-journey-pct').textContent = pct + '%'; }
+  if (journeyHud.lv !== level) {
+    journeyHud.lv = level;
+    $('hud-marks').innerHTML = LEVELS.map((l, i) => l.boss ? `<i class="${i < level ? 'done' : ''}" style="left:${((i + 1) / n * 100).toFixed(2)}%" title="${BOSSES[l.boss].name}"></i>` : '').join('');
+  }
 }
 let buffKey = '', tejKey = '';
 function tejHud(force) {
@@ -1222,19 +1289,21 @@ function rudra() {
 
 // ---------------- Rewards: 5% to 30% off, by how far and how well you play ----------------
 function rewardPct() {
-  if (finalWon) {
-    let p = 20;
-    p += retries === 0 ? 4 : retries <= 2 ? 2 : retries <= 4 ? 1 : 0;
-    p += hitsTaken <= 4 ? 3 : hitsTaken <= 9 ? 2 : hitsTaken <= 15 ? 1 : 0;
-    p += score >= 22000 ? 3 : score >= 20000 ? 2 : score >= 17000 ? 1 : 0;
+  if (finalWon) {   // Ravana defeated
+    let p = 25;
+    p += retries === 0 ? 2 : retries <= 3 ? 1 : 0;
+    p += hitsTaken <= 8 ? 2 : hitsTaken <= 16 ? 1 : 0;
+    p += score >= 32000 ? 1 : 0;
     return Math.min(30, p);
   }
+  if (bossesBeaten >= 4) return 22;
+  if (bossesBeaten >= 3) return 20;
   if (bossesBeaten >= 2) return 15;
   if (bossesBeaten >= 1) return 10;
   if (wavesCleared >= 2) return 5;
   return 0;
 }
-const REWARD_LADDER = 'Clear 2 waves: 5% · Beat Mahishasura: 10% · Beat Raktabija: 15% · Beat Andhakasura: 20%, up to 30% for a strong run';
+const REWARD_LADDER = 'Clear 2 waves: 5% · Mahishasura: 10% · Raktabija: 15% · Andhakasura: 20% · Kumbhakarna: 22% · Ravana: 25%, up to 30% for a strong run';
 function issueCoupon(pct, result) {
   let c = null; try { c = JSON.parse(store.get('mahakal_coupon_v2', 'null')); } catch (e) {}
   if (c && !/^MAHAKAL\d{1,2}-[A-Z0-9]{5}$/.test(c.code || '')) c = null;
@@ -1352,7 +1421,7 @@ function startWave(fresh) {
   state = 'playing'; betweenWaves = 0;
   const firstOfAct = level === 0 || LEVELS[level - 1].act !== lv.act;
   const justBlessed = level > 0 && LEVELS[level - 1].bless;
-  if (firstOfAct) { titleCard(`Act ${lv.act + 1} of 3`, ACT_HI[lv.act], ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The '), 2800); CINE.barsT = 1; setTimeout(() => { CINE.barsT = 0; }, 2400); artClip('videos/game/art/act-' + (lv.act + 1), ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The ')); }
+  if (firstOfAct) { titleCard(`Act ${lv.act + 1} of ${ACTS.length}`, ACT_HI[lv.act], ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The '), 2800); CINE.barsT = 1; setTimeout(() => { CINE.barsT = 0; }, 2400); if (lv.act < 3) artClip('videos/game/art/act-' + (lv.act + 1), ACTS[lv.act].split(' · ')[1].replace(/^the /, 'The ')); }
   const showWave = () => banner('Wave ' + lv.waveNo, lv.waveNo === 1 ? 'Stop the danav before they reach you!' : justBlessed ? 'Weapon: ' + WEAPONS[weapon].name + ' · ' + WEAPONS[weapon].desc : AURA[level].name, 2400);
   if (firstOfAct) setTimeout(() => { if (state === 'playing' && LV() === lv) showWave(); }, 2700); else showWave();
   hud();
@@ -1381,7 +1450,9 @@ function showAshirvaad(b) {
   $('ash-img').src = b.src; $('ash-img').alt = b.name + ', ' + b.credit;
   $('ash-name').textContent = b.name;
   $('ash-title').textContent = b.title;
-  $('ash-weapon').textContent = 'You receive: ' + WEAPONS[b.weapon].name;
+  $('ash-weapon').textContent = b.all ? 'You receive: the Brahmastra and the Sarva Kavach' : 'You receive: ' + WEAPONS[b.weapon].name;
+  const all = $('ash-all'); all.hidden = !b.all;
+  all.innerHTML = b.all ? b.all.map(k => `<img src="${BLESS[k].src}" alt="${BLESS[k].name}">`).join('') : '';
   $('ash-gift').textContent = b.gift;
   $('ash-credit').textContent = b.credit;
   const nst = Math.min(5, bulk + (b.grow ? 1 : 0));
@@ -1400,6 +1471,7 @@ function acceptAshirvaad() {
   weapon = b.weapon; bulk = Math.min(5, bulk + (b.grow ? 1 : 0));
   if (bulk > prevStage) ascend(bulk);
   if (b.weapon === 'swarna') lakshmi = true;
+  if (b.all) { brahma = 1; shieldT = 45; shieldHits = 3; }
   player.flash = 1.2;
   lives = b.full ? MAX_LIVES : Math.min(MAX_LIVES, lives + 1);
   changeTej(12);
@@ -1408,13 +1480,17 @@ function acceptAshirvaad() {
   startLevel(false);
 }
 $('ash-btn').addEventListener('click', e => { e.stopPropagation(); ensureAudio(); acceptAshirvaad(); });
+['pointerdown', 'touchstart', 'mousedown'].forEach(ev => $('brahma-btn').addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+$('brahma-btn').addEventListener('click', e => { e.stopPropagation(); fireBrahmastra(); });
 
 function startBoss() {
   resetField();
   const lv = LV(), B = BOSSES[lv.boss];
+  if (!B) return;
   saveCheckpoint();
   const tries = triesAt[level] || 0;
   const grace = Math.max(0.55, 1 - 0.15 * tries);   // Mahakal's grace: each retry makes him weaker
+  if (lv.boss === 'ravana') brahma = 1;
   boss = { kind: lv.boss, hp: Math.round(B.hp * grace), max: Math.round(B.hp * grace), slow: (1 - grace) * 1.6, lane: 1, x: 0, z: B.z, home: B.z, moveT: 2.5, atkT: 2.4, hitFlash: 0, summoned: 0, enter: 0, charge: null, n: 0 };
   lives = MAX_LIVES; player.lane = 1; player.x = 0; pickT = 8;
   state = 'playing'; betweenWaves = 0;
@@ -1428,13 +1504,22 @@ function startBoss() {
 }
 function bossDown() {
   if (!boss || boss.dead) return;   // a boss can only be defeated once
+  if (boss.kind === 'ravana' && !boss.mortal) { boss.hp = boss.max * 0.12; return; }
   DARK.target = 0; boss.darkOn = false;
+  if (BOSSES[boss.kind].trial) {   // Vibhishana lays down his mace and chooses dharma
+    boss.dead = true; boss.kneel = true; boss.fall = 0; fires.length = 0; GROUND.length = 0; shots.length = 0; pickups.length = 0;
+    for (const d of danavs) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#FFD27D', 10, 3); addScore(DANAV[d.type].pts); }
+    danavs.length = 0; addScore(2000); changeTej(15);
+    $('bossbar').classList.remove('show'); screenFlash('gold'); sfx.bell(); setTimeout(sfx.win, 400);
+    banner('Vibhishana chooses dharma!', 'He lays down his mace and will reveal Ravana\'s secret in the final battle', 3200, 'boss');
+    betweenWaves = 3.4; pendingBlessing = true; hud(); return;
+  }
   bossClip(boss.kind + '-defeat');
   if (LV().final) return bossDefeated();
   const B = BOSSES[boss.kind], p = project(boss.z, boss.x);
   killCam(p);
   for (let i = 0; i < 4; i++) setTimeout(() => { burst(p.x + (Math.random() - 0.5) * 120, p.y - 120 * Math.random(), i % 2 ? '#FFD27D' : '#FF6B3D', 34, 7); sfx.kill(); }, i * 170);
-  addScore(800 * LV().bossNo); bossesBeaten++;
+  addScore(800 * (LV().bossNo || 4)); bossesBeaten++;
   boss.dead = true; boss.fall = 0; boss.charge = null; fires.length = 0; shots.length = 0; pickups.length = 0;
   for (const d of danavs) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#FFD27D', 10, 3); addScore(DANAV[d.type].pts); }
   danavs.length = 0;
@@ -1442,7 +1527,7 @@ function bossDown() {
   try { navigator.vibrate && navigator.vibrate([80, 60, 160]); } catch (e) {}
   shake = 0.7; sfx.roar();
   $('bossbar').classList.remove('show');
-  banner(B.name + ' is defeated!', `+${800 * LV().bossNo} · Jai Mahakal! You have earned ${rewardPct()}% off`, 2600, 'boss');
+  banner(B.name + ' is defeated!', `+${800 * (LV().bossNo || 4)} · Jai Mahakal! You have earned ${rewardPct()}% off`, 2600, 'boss');
   betweenWaves = 2.6; pendingBlessing = true;
   hud();
 }
@@ -1456,7 +1541,7 @@ function bossDefeated() {   // the final battle: Andhakasura falls, then the gra
   try { navigator.vibrate && navigator.vibrate([80, 60, 160]); } catch (e) {}
   shake = 0.8; sfx.roar();
   $('bossbar').classList.remove('show');
-  banner('Andhakasura is defeated!', 'Jai Mahakal! Tap Celebrate', 2600, 'boss');
+  banner(BOSSES[boss.kind].name + ' is defeated!', 'Jai Shri Ram! Jai Mahakal! Tap Celebrate', 2600, 'boss');
   state = 'won'; C.t = 0; C.btn = false; C.landed = false;
   setTimeout(() => { if (state === 'won' || state === 'celebrate') artClip('videos/game/art/victory', 'The path to Darshan is open'); }, 4700);   // after the defeat clip
   hud();
@@ -1505,7 +1590,7 @@ $('celebrate-again-btn').addEventListener('click', e => { e.stopPropagation(); e
 // ---------------- Input ----------------
 function move(dir) {
   if (state !== 'playing') return;
-  const n = Math.max(0, Math.min(2, player.lane + dir));
+  const n = Math.max(0, Math.min(2, player.lane + dir)); player.lastDir = dir;
   if (n !== player.lane) {
     const p = playerPos();
     for (let i = 0; i < 6; i++) parts.push({ x: p.x + (Math.random() - 0.5) * 20, y: p.y + (Math.random() - 0.2) * 50 * unit(), vx: -dir * (2 + Math.random() * 2), vy: -0.4, r: 1.5 + Math.random() * 1.5, life: 0.45, color: 'rgba(255,236,190,0.9)' });
@@ -1517,6 +1602,7 @@ addEventListener('keydown', e => {
   if (state === 'blessing' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); acceptAshirvaad(); return; }
   if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { setPause(!userPaused); return; }
   if (userPaused) return;
+  if (e.key === 'b' || e.key === 'B') { fireBrahmastra(); }
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); move(-1); }
   else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); move(1); }
 });
@@ -1544,7 +1630,7 @@ $('enter-btn').addEventListener('click', () => {
   setTimeout(() => {
     $('intro').style.display = 'none';
     const ib = $('intro-bg'); ib.pause(); ib.removeAttribute('autoplay'); ib.innerHTML = ''; ib.load();   // release the start-screen video
-    $('hud').classList.add('show');
+    $('hud').classList.add('show'); $('hudbar').classList.add('show');
     playCutscene('trailer', startRun, { force: true });   // the trailer plays on every Enter (skippable)
     track('game_start', {});
   }, 2200);
@@ -1574,10 +1660,10 @@ function spawnDanav(type, lane, o = {}) {
   }
   const t = DANAV[type], wn = wavesBefore();
   const elite = !boss && !o.mini && wn >= 3 && Math.random() < 0.06 + 0.02 * (wn - 3) && danavs.filter(x => x.elite).length < 2;
-  const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * LV().bossNo : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
+  const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * (LV().bossNo || 4) : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
   const d = { type, lane, x: lane - 1, z: o.z || 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2, elite, mini: !!o.mini, big: o.mini ? 0.72 : elite ? 1.12 : 1, spd: 1 + 0.045 * wn, castT: 1.2 + Math.random() };
   if (t.armor) d.armor = d.armorMax = Math.round(t.armor * (1 + 0.25 * wn));
-  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 2600); artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
+  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 3200, 'enemy'); artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
   danavs.push(d);
   return d;
 }
@@ -1596,8 +1682,20 @@ function fire() {
   player.recoil = 1;
   sfx.shoot(w.kind);
 }
+const TAUNTS = ['Ha ha! Too slow!', 'हा हा हा!', 'Catch me if you can!', 'पकड़ के दिखाओ!', 'Your arrows tickle!', 'Go home, little monk!'];
+const LANKA_TAUNTS = ['Lanka never falls!', 'जय लंकेश!', 'Lankesh will crush you!', 'The gold is ours!'];
+let tauntT = 7;
+function tauntTick(dt) {   // the danav jeer at you now and then (more after they hurt you)
+  if (state !== 'playing' || (boss && !boss.dead)) return;
+  tauntT -= dt; if (tauntT > 0) return;
+  tauntT = 7 + Math.random() * 5;
+  const near = danavs.filter(x => !x.dead && !x.decoy && x.z < 0.85 && x.z > 0.22); if (!near.length) return;
+  const d = near[Math.floor(Math.random() * near.length)], list = LV().act >= 3 && Math.random() < 0.55 ? LANKA_TAUNTS : TAUNTS;
+  const p = project(d.z, d.x); floatText(p.x, p.y - 95 * p.scale * unit(), list[Math.floor(Math.random() * list.length)], '#FFB4A0', 15);
+}
 function hurtPlayer(reason) {
   if (player.hurt > 0) return;
+  tauntT = Math.min(tauntT, 0.5);
   const pp = playerPos();
   if (shieldT > 0 && shieldHits > 0) {
     shieldHits--; if (shieldHits <= 0) shieldT = 0;
@@ -1622,6 +1720,7 @@ function spawnPickup(kind, lane, z) {
   pickups.push({ kind: kind || pickKind(), lane, x: lane - 1, z: z === undefined ? 1.02 : z, t: Math.random() * 6 });
 }
 function collect(pk) {
+  if (pk.trap) { hurtPlayer('trap'); const pp = playerPos(); burst(pp.x, pp.y - 40, '#A860FF', 24, 5); floatText(pp.x, pp.y - 100 * unit(), "Maya! It was Ravana's trick", '#C9A2FF', 17); sfx.cackle(); return; }
   const P = PICKUPS[pk.kind], pp = playerPos();
   floatText(pp.x, pp.y - 95 * unit(), P.name + '! ' + P.sub, P.col, 18);
   burst(pp.x, pp.y, P.col, 22, 5); sfx.heal();
@@ -1648,13 +1747,25 @@ function tandav() {   // Shiva's damru: a shockwave rolls up the bridge
 // Each special move is telegraphed, has a cooldown, and is capped. Art for them exists only as reference videos, so
 // they are drawn by the existing code renderer with their own silhouettes and colours.
 const GROUND = [];   // short-lived ground hazards (Agni Vetala fire, Kaal Pishacha claw): max 3, one hit each
-const ENEMY_INFO = { chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
+const ENEMY_INFO = { lankaguard: "Ravana's golden guard: its shield blocks your strikes. Hit it after its slam", nishachar: 'A sneaky thief that steals your boons! Catch it before it escapes to win the boon back', chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
 const seenTypes = new Set();
 function addHazard(lane, kind) {
   if (GROUND.length >= 3 || GROUND.some(g => g.lane === lane)) return false;
   GROUND.push({ lane, kind, warn: kind === 'claw' ? 1.0 : 0.9, life: kind === 'claw' ? 0.35 : 2.4, hit: false }); return true;
 }
 const AI = {
+  thief(d, dt, t) {   // Nishachar Chor: sneaks to a boon, steals it with a cackle and runs back; catch it to win the boon back
+    if (d.loot) { d.z += (t.speed * d.spd * (boss ? 1.1 : 1) + 0.3) * dt; if (d.z > 1.06) d.life = 0.0001; return; }
+    if (d.cd > 0) d.cd -= dt;
+    const pk = pickups.find(p => !p.trap && p.z > 0.15 && p.z < 0.95);
+    if (!pk || d.z > 0.98) return;
+    if (pk.lane !== d.lane && !(d.cd > 0)) { d.lane = pk.lane; d.cd = 1.4; }   // side-steps into the boon's path
+    if (d.lane === pk.lane && pk.z < d.z) d.z -= 0.45 * dt;   // sprints after it
+    if (d.lane === pk.lane && Math.abs(pk.z - d.z) < 0.07) {
+      pickups.splice(pickups.indexOf(pk), 1); d.loot = pk.kind; sfx.cackle();
+      const p = project(d.z, d.x); floatText(p.x, p.y - 90 * p.scale * unit(), 'Hee hee! Mine!', '#C9A2FF', 16);
+    }
+  },
   dash(d, dt) {   // Chhaya Rakshasa: shimmer for 0.6 s, then a quick shadow-step to a neighbouring path
     if (d.z > 0.85 || d.z < 0.3) return;
     d.cd = (d.cd ?? 2 + Math.random()) - dt;
@@ -1727,6 +1838,7 @@ function slay(d, i) {
     floatText(q.x, q.y - 80 * q.scale * unit(), 'Illusion!', '#FFB8E8', 14); danavs.splice(i, 1); return;
   }
   const t = DANAV[d.type], p = project(d.z, d.x);
+  if (d.loot) { spawnPickup(d.loot, d.lane, Math.max(0.2, Math.min(0.9, d.z))); floatText(p.x, p.y - 110 * p.scale * unit(), 'Boon recovered!', '#9BF0B0', 15); }
   burst(p.x, p.y - 40 * p.scale * unit(), t.skin, 18, 5); burst(p.x, p.y - 40 * p.scale * unit(), '#FFD27D', 8, 3);
   combo++; comboT = 2.2;
   const bonus = combo >= 3 ? Math.min(combo, 10) * 2 : 0;
@@ -1757,7 +1869,9 @@ function damage(d, dmg, color) {
 function hitBoss(dmg) {
   if (!boss || boss.dead) return;
   const winded = boss.recover > 0;
-  boss.hp -= dmg * (winded ? 1.6 : 1); boss.hitFlash = 1; sfx.hit();
+  const mult = (winded ? 1.6 : 1) * (boss.kind === 'kumbha' && boss.sleep > 0 ? 1.5 : 1) * (boss.kind === 'vibhi' && boss.shieldT > 0 ? 0.2 : 1) * (boss.kind === 'ravana' ? (boss.mortal ? 1.25 : boss.amrit > 0 ? 1.2 : 1) : 1);
+  boss.hp -= dmg * mult; boss.hitFlash = 1; sfx.hit();
+  if (boss.kind === 'ravana' && !boss.mortal) boss.hp = Math.max(boss.hp, boss.max * 0.12);
   const p = project(boss.z, boss.x); burst(p.x, p.y - 110 * p.scale * unit(), winded ? '#FFE27A' : '#FFFFFF', winded ? 9 : 5, 3);
   if (boss.kind === 'rakta' && Math.random() < 0.09) {   // a drop of his blood becomes a demon (same caps as the clones)
     if (spawnClone(boss)) burst(p.x, p.y - 60 * p.scale * unit(), '#B0101E', 12, 3);
@@ -1850,10 +1964,13 @@ function update(dt) {
   }
 
   if (boss && !boss.dead) updateBoss(dt);
+  tauntTick(dt);
   for (let i = fires.length - 1; i >= 0; i--) {
     const f = fires[i];
     if (f.warn > 0) { f.warn -= dt; continue; }
     f.z -= (f.speed || 0.85) * dt;
+    if (f.fake && f.z < 0.24) { const p = project(f.z, f.lane - 1); burst(p.x, p.y - 20, '#B070FF', 14, 3); floatText(p.x, p.y - 60 * unit(), 'Only maya!', '#C9A2FF', 14); fires.splice(i, 1); continue; }   // Ravana's illusion head: a fake that vanishes
+    if (f.col === 'wind' && f.z <= 0.05) { if (f.lane === player.lane) { const dir = player.lane === 0 ? 1 : player.lane === 2 ? -1 : (Math.random() < 0.5 ? -1 : 1); move(dir); const pp = playerPos(); floatText(pp.x, pp.y - 90 * unit(), 'Whoosh! Blown aside', '#D8FFF0', 15); } fires.splice(i, 1); continue; }   // Kumbhakarna's snore: pushes, never hurts
     if (f.z <= 0.05) { if (f.lane === player.lane && lives > 0) hurtPlayer('fire'); const p = project(0.03, f.lane - 1); burst(p.x, p.y - 10, FIRECOL[f.col || 'fire'][1], 12, 4); fires.splice(i, 1); }
   }
 
@@ -1862,7 +1979,7 @@ function update(dt) {
   for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
   for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.r += dt * (r.big ? 1400 : 700) * unit(); r.life -= dt * (r.big ? 1.1 : 1.8); if (r.life <= 0) rings.splice(i, 1); }
   $('score').textContent = Math.floor(score).toLocaleString('en-IN');
-  if (!boss && !LV().boss) { const lv = LV(); $('hud-wave').textContent = `Wave ${lv.waveNo} of ${TOTAL_WAVES} · ${Math.min(kills, lv.kills)}/${lv.kills}`; $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%'; }
+  if (!boss && !LV().boss) { const lv = LV(); journeyHud(); $('hud-wave').textContent = `${Math.min(kills, lv.kills)} / ${lv.kills} danav`; $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%'; }
 }
 // Boss behaviour: each asura fights differently
 // ---------------- Boss encounters: phases and signature mechanics ----------------
@@ -1873,7 +1990,7 @@ function update(dt) {
 // The art clips play in a small framed window that never pauses the fight; if a clip fails, it simply hides.
 const BOSS_CLIP = { 'mahisha-rage': 'Mahishasura rages', 'mahisha-defeat': 'Mahishasura falls', 'rakta-split': 'Raktabija multiplies', 'rakta-defeat': 'Raktabija falls', 'andhaka-rise': 'The king of darkness rises', 'andhaka-defeat': 'Andhakasura falls' };
 let bossClipTok = 0;
-function bossClip(key) { artClip('videos/game/boss/' + key, BOSS_CLIP[key] || ''); }
+function bossClip(key) { if (!BOSS_CLIP[key]) return; artClip('videos/game/boss/' + key, BOSS_CLIP[key] || ''); }
 function artClip(base, caption) {   // base = path without extension; .mp4 + .jpg poster
   if (state === 'cutscene') return;
   const box = $('bossclip'), v = $('bossclip-video'), tok = ++bossClipTok;
@@ -1887,15 +2004,20 @@ function artClip(base, caption) {   // base = path without extension; .mp4 + .jp
 function hideBossClip() { bossClipTok++; clearTimeout(bossClip.t); $('bossclip').classList.remove('show'); }
 function bossPhase2(b) {
   b.phase = 2; shake = 0.5; screenFlash('red'); sfx.roar();
+  if (b.kind === 'kumbha') { banner('Kumbhakarna is enraged!', 'He slams harder and eats his own soldiers to heal: kill them first', 2400, 'boss'); return; }
+  if (b.kind === 'vibhi') { banner('Vibhishana wavers', 'Dharma is winning his heart: keep testing his resolve', 2400, 'boss'); return; }
+  if (b.kind === 'ravana') { banner('His heads grow back!', 'Cut heads return and heal him. Someone inside Lanka knows his secret…', 2600, 'boss'); return; }
   if (b.kind === 'mahisha') { banner('Mahishasura rages!', 'His charges come faster: wait for the red path, then step aside', 2400, 'boss'); bossClip('mahisha-rage'); }
   else if (b.kind === 'rakta') { banner('Raktabija multiplies!', 'Blood clones are weak and fade fast: strike the real one', 2400, 'boss'); bossClip('rakta-split'); b.splitT = 0.6; }
   else { banner('Andhakar: darkness falls!', 'Watch the glowing warnings: they still show where danger strikes', 2600, 'boss'); bossClip('andhaka-rise'); b.darkT = 1.2; }
 }
 const SURGE_AT = [0.7, 0.4, 0.1];
+const LANKA_SURGE_AT = [0.8, 0.6, 0.4, 0.2];   // Ravana and his brothers use their power four times
+const surgeAt = b => (b.kind === 'ravana' || b.kind === 'kumbha' || b.kind === 'vibhi') ? LANKA_SURGE_AT : SURGE_AT;
 function bossSurge(b, n) {   // n = 1, 2, 3: each surge is stronger than the last; one path always stays safe
   shake = 0.6 + 0.2 * n; screenFlash('red'); sfx.surge(); SKY.flash = 0.6; SKY.strikeT = 2.5;
   const p = project(b.z, b.x); burst(p.x, p.y - 100 * unit(), b.kind === 'andhaka' ? '#7A3CFF' : '#FF3A2A', 20 + n * 6, 6);
-  const tag = ['', 'I', 'II', 'III'][n];
+  const tag = ['', 'I', 'II', 'III', 'IV'][n];
   if (b.kind === 'mahisha') {
     b.power = n;   // stronger, faster charges and heavier rock storms from here on
     const safe = [0, 1, 2].filter(l => l !== player.lane)[Math.floor(Math.random() * 2)];
@@ -1907,6 +2029,22 @@ function bossSurge(b, n) {   // n = 1, 2, 3: each surge is stronger than the las
     let made = 0; const want = n + 1;   // 2, 3, 4 blood clones across the lanes
     for (let k = 0; k < want; k++) if (spawnClone(b, true, k)) made++;
     banner('Raktabija multiplies ' + tag, made + ' blood clones rise across the paths: strike the real one', 2200, 'boss');
+  } else if (b.kind === 'kumbha') {
+    b.power = n; let ate = 0;
+    for (const d of danavs.filter(x => !x.dead && !x.decoy).slice(0, 2)) { danavs.splice(danavs.indexOf(d), 1); b.hp = Math.min(b.max, b.hp + b.max * 0.03); ate++; }
+    const safe = Math.floor(Math.random() * 3);
+    for (let w = 0; w < 2; w++) for (let l = 0; l < 3; l++) if (l !== (w ? (safe + 1) % 3 : safe)) fires.push({ lane: l, z: b.z - 0.02, warn: 1.0 + w * 1.1, col: 'rock', speed: 1.0 });
+    banner("Kumbhakarna's hunger " + tag, ate ? 'He devours his own soldiers and slams twice: move between the slams' : 'The ground shakes twice: move between the slams', 2400, 'boss');
+  } else if (b.kind === 'vibhi') {
+    b.power = n; b.recover = 2.2;
+    banner('Vibhishana is torn ' + tag, ['"Loyalty to my brother… or to dharma?"', '"Ravana will not listen to reason."', '"Sita must be returned. He refuses."', '"Forgive me, brother. Dharma comes first."'][n - 1], 2600, 'boss');
+  } else if (b.kind === 'ravana') {
+    b.power = n; if (b.heads) b.heads.forEach(h => { h.flash = 1; });
+    if (n >= 2) ravenSwarm(b, n);   // surges II–IV also bring the raven swarm
+    const safe = Math.floor(Math.random() * 3);
+    for (let w = 0; w < 2; w++) for (let l = 0; l < 3; l++) if (l !== (w ? (safe + 1) % 3 : safe)) fires.push({ lane: l, z: b.z - 0.02, warn: 1.0 + w * 1.1, col: HEAD_ATK[(l + w * 3 + n) % 10] === 'maya' ? 'dark' : HEAD_ATK[(l + w * 3 + n) % 10], speed: 0.95 });
+    for (let k = 0; k < 4; k++) setTimeout(() => sfx.growl(), k * 70);
+    banner("Dashanana's fury " + tag, n >= 3 ? 'All ten heads attack at once: move between the waves' : 'Ten heads roar together: find the safe path, then move', 2400, 'boss');
   } else {
     b.power = n; b.darkOn = true; b.darkT = 5 + n; sfx.whisper();   // darkness falls at once, deeper each time
     banner('Andhakar deepens ' + tag, n === 3 ? 'Near-total darkness: trust the glowing warnings' : 'The light around you shrinks', 2200, 'boss');
@@ -1920,12 +2058,271 @@ function spawnClone(b, surge, k = 0) {   // a blood clone: weak, short-lived, ca
   if (d) { d.clone = true; d.life = 6; d.hp = d.max = 3; b.clones = (b.clones || 0) + 1; }
   return d;
 }
+// ---------------- Lanka: Kumbhakarna, Vibhishana's trial, Ravana ----------------
+let brahma = 0;   // the Brahmastra: given by the Sarva Devta Ashirvaad, used once against Ravana
+const BRAHMA = { t: -1 };
+const HEAD_ATK = ['gold', 'sonic', 'fire', 'frost', 'venom', 'bolt', 'dark', 'blood', 'rock', 'maya'];   // what each of Ravana's ten heads spits
+const RAVANA_LINES = ['I am Lankesh! Kneel!', 'Ten heads, ten deaths for you!', 'Even the gods fear me!', 'A boy and a lion? Ha ha ha!', 'Mahadev himself blessed me!', 'हा हा हा… मूर्ख बालक!'];
+const KUMBHA_LINES = ['Who woke me?!', 'FOOD! Bring me food!', 'I will swallow you whole!', 'Hmmph… so sleepy…'];
+const VIBHI_LINES = ['I am bound to my brother… but dharma calls.', 'Show me your devotion, yoddha.', '"Return Sita, brother." He never listens.'];
+function bossLine(b, list, col) { const p = project(b.z, b.x); floatText(p.x, p.y - BOSSES[b.kind].size * unit() * 2.25, list[Math.floor(Math.random() * list.length)], col, 16); }
+const BOSS_TICK = {
+  kumbha(b, dt) {
+    if (b.sleep === undefined) { b.sleep = 5.5; b.snoreT = 1.0; b.atkT = 99; b.moveT = 99; b.lineT = 9; }
+    if (b.chew > 0) b.chew -= dt;
+    if (b.sleep > 0) {   // asleep: snores that blow you aside; hits land harder
+      b.sleep -= dt; b.snoreT -= dt;
+      if (b.snoreT <= 0) { b.snoreT = 1.7; if (fires.length < 3) fires.push({ lane: Math.floor(Math.random() * 3), z: b.z - 0.02, warn: 0.6, col: 'wind', speed: 1.0 }); tone(70, 0.9, 'sawtooth', 0.04, 45); const p = project(b.z, b.x); floatText(p.x + 40 * unit(), p.y - b.size * 0, 'Zzz… ZZZ…', '#E8F4FF', 16); }
+      if (b.sleep <= 0 || b.hp < b.max * 0.9) {
+        b.sleep = 0; b.atkT = 1.2; b.moveT = 1.5; shake = 0.8; sfx.surge(); screenFlash('red');
+        banner('Kumbhakarna wakes!', '"Who dares disturb my sleep?! FOOD!"', 2400, 'boss');
+      }
+      return;
+    }
+    b.lineT -= dt; if (b.lineT <= 0) { b.lineT = 9 + Math.random() * 5; bossLine(b, KUMBHA_LINES, '#FFD0A0'); }
+  },
+  vibhi(b, dt) {
+    if (b.shieldT > 0) b.shieldT -= dt;
+    if (b.shieldCd > 0) b.shieldCd -= dt;
+    if ((rudraT > 0 || tej >= 90) && !(b.shieldCd > 0)) { b.shieldT = 2.6; b.shieldCd = 10; bossLine(b, ["Narayana's shield!"], '#BFD8FF'); }   // smart: shields against your strongest moment
+    b.lineT = (b.lineT ?? 4) - dt; if (b.lineT <= 0) { b.lineT = 8 + Math.random() * 4; bossLine(b, VIBHI_LINES, '#DDE8FF'); }
+  },
+  ravana(b, dt) {
+    if (!b.heads) { b.heads = Array.from({ length: 10 }, () => ({ cut: 0, flash: 0, grow: 1 })); b.cuts = 0; b.amrit = 0; b.vibhiT = 0; b.vibhiNext = 0; b.lineT = 5; b.revealed = 0; }
+    for (const h of b.heads) {
+      if (h.flash > 0) h.flash -= dt;
+      if (h.grow < 1) h.grow = Math.min(1, h.grow + dt * 1.4);
+      if (h.cut > 0 && h.cut < 900) { h.cut -= dt; if (h.cut <= 0) { h.cut = 0; h.grow = 0; b.cuts = Math.max(0, b.cuts - 1); b.hp = Math.min(b.max, b.hp + b.max * 0.025); bossLine(b, ['A head grows back!'], '#FFD27D'); sfx.growl(); } }
+    }
+    // a head falls for every tenth of his life lost (it grows back unless the amrit is destroyed)
+    const lost = Math.floor((1 - b.hp / b.max) * 10);
+    while (b.cuts < Math.min(9, lost)) {
+      const can = b.heads.map((h, i) => i).filter(i => i !== 0 && !(b.heads[i].cut > 0)); if (!can.length) break;
+      const i = can[Math.floor(Math.random() * can.length)], s = bossScale(b), hp = ravanaHeads(s)[i], p = project(b.z, b.x);
+      b.heads[i].cut = b.mortal ? 999 : 7.5; b.cuts++;
+      burst(p.x + hp.x, p.y + hp.y, '#FFB040', 20, 5); burst(p.x + hp.x, p.y + hp.y, '#B070FF', 10, 4); sfx.kill();
+      floatText(p.x + hp.x, p.y + hp.y - 30 * unit(), b.mortal ? 'A head falls for good!' : 'A head falls… for now', '#FFE08A', 15);
+    }
+    if (!b.mortal && b.hp < b.max * 0.12) b.hp = b.max * 0.12;   // Brahma's boon: the amrit keeps him alive until the Brahmastra
+    // Vibhishana's betrayal: he reveals the secret of the amrit in Ravana's navel
+    if (!b.mortal && b.amrit <= 0 && b.hp <= b.max * 0.45) {
+      if (b.vibhiNext > 0) b.vibhiNext -= dt;
+      else {
+        b.amrit = 9; b.vibhiT = 9; b.vibhiNext = 16; b.revealed++;
+        banner(b.revealed === 1 ? 'Vibhishana betrays Ravana!' : 'Vibhishana shows the way again!', '"His amrit lies in his navel, yoddha! Fire the Brahmastra!"', 3400, 'boss');
+        sfx.bell(); screenFlash('gold');
+        if (b.revealed === 1) setTimeout(() => { if (boss === b && !b.dead) bossLine(b, ['VIBHISHANA! TRAITOR!'], '#FF8080'); }, 1200);
+      }
+    }
+    if (b.amrit > 0) b.amrit -= dt;
+    if (b.vibhiT > 0) b.vibhiT -= dt;
+    $('brahma-btn').hidden = !(b.amrit > 0 && brahma > 0 && !b.mortal && !b.dead && BRAHMA.t < 0);
+    b.lineT -= dt; if (b.lineT <= 0) { b.lineT = 7 + Math.random() * 5; bossLine(b, RAVANA_LINES, '#FFD27D'); if (Math.random() < 0.5) sfx.cackle(); }
+    if (b.liftT > 0) b.liftT -= dt;
+    if (b.swordT > 0) b.swordT -= dt;
+    if (b.swarmT > 0) b.swarmT -= dt;
+    b.laserT = (b.laserT ?? 3.5) - dt;
+    if (b.laserT <= 0) { b.laserT = 3.2 + Math.random() * 3.5 - 0.4 * (b.power || 0); eyeLaser(b); }   // eyes fire lasers at random moments
+    updateBeams(dt);
+    if (!RAVENS.some(r => r.mode === 'orbit')) spawnRavens(b, 6, 'orbit');   // a few ravens always circle his heads
+  },
+};
+const BOSS_AI = {
+  kumbha(b, rage) {
+    if (b.sleep > 0) { b.atkT = 99; return; }
+    const pw = b.power || 0; b.atkT = (rage ? 1.7 : 2.3) - 0.12 * pw + b.slow;
+    const m = b.n % 4;
+    if (m === 1) {   // ground slam: two paths shake, one stays safe
+      const safe = Math.floor(Math.random() * 3);
+      for (let l = 0; l < 3; l++) if (l !== safe) fires.push({ lane: l, z: b.z - 0.02, warn: 1.0, col: 'rock', speed: 1.0 + 0.1 * pw });
+      shake = 0.45; sfx.drum(); bossLine(b, ['SLAM!'], '#FFB070');
+    } else if (m === 2) {   // hurls a boulder at you
+      fires.push({ lane: player.lane, z: b.z - 0.02, warn: 0.85, col: 'rock', speed: 1.1 });
+      if (rage) fires.push({ lane: (player.lane + 1 + Math.floor(Math.random() * 2)) % 3, z: b.z - 0.02, warn: 1.05, col: 'rock', speed: 1.1 });
+      sfx.roar();
+    } else if (m === 3) kumbhaDevour(b);
+    else { b.recover = 2.3; b.atkT += 1.4; bossLine(b, ['*YAAAWN*'], '#E8F4FF'); banner('Kumbhakarna yawns!', 'Strike now: he is drowsy', 1400, 'boss'); sfx.growl(); }
+  },
+  vibhi(b, rage) {
+    b.atkT = (rage ? 1.5 : 2.0) - 0.1 * (b.power || 0) + b.slow;
+    const m = b.n % 3;
+    if (m === 1) { const l = Math.max(0, Math.min(2, player.lane + (player.lastDir || 0))); fires.push({ lane: l, z: b.z - 0.02, warn: 0.85, col: 'bolt', speed: 1.0 }); sfx.cast(); }   // aims where you are heading
+    else if (m === 2) { fires.push({ lane: player.lane, z: b.z - 0.02, warn: 0.95, col: 'rock', speed: 0.9 }); sfx.drum(); }   // his mace
+    else { b.shieldT = 1.8; b.atkT += 0.6; }
+  },
+  ravana(b, rage) {
+    const pw = b.power || 0; b.atkT = (rage ? 1.4 : 1.8) - 0.1 * pw + b.slow;
+    const alive = b.heads ? b.heads.map((h, i) => i).filter(i => !(b.heads[i].cut > 0)) : [0];
+    const m = b.n % 8;
+    if (m === 6) {   // he lifts Kailash: three waves of falling rock, the safe path moves each time
+      const s0 = Math.floor(Math.random() * 3), dir = Math.random() < 0.5 ? 1 : 2;
+      for (let w = 0; w < 3; w++) { const safe = (s0 + w * dir) % 3; for (let l = 0; l < 3; l++) if (l !== safe) fires.push({ lane: l, z: b.z - 0.02, warn: 0.95 + w * 0.95, col: 'rock', speed: 1.05 }); }
+      b.atkT += 2.6; shake = 0.9; sfx.surge(); b.liftT = 2.2;
+      banner('Ravana lifts Kailash!', 'The bridge quakes: three waves of rock, follow the safe path', 1800, 'boss');
+      return;
+    }
+    if (m === 2 && b.n % 16 === 2) { ravenSwarm(b, 1); b.atkT += 1.2; return; }
+    if (m === 3) {   // Chandrahas, the moon-sword from Mahadev: sweeps the paths one after another
+      const order = Math.random() < 0.5 ? [0, 1, 2] : [2, 1, 0];
+      order.forEach((l, k) => fires.push({ lane: l, z: b.z - 0.02, warn: 0.75 + k * 0.5, col: 'gold', speed: 1.5 }));
+      b.swordT = 1.8; b.atkT += 1.4; sfx.roar();
+      banner('Chandrahas!', 'His moon-sword sweeps across the paths: step in behind it', 1400, 'boss');
+    } else if (m === 5) {
+      if (b.n % 14 === 5) {   // maya: a "humble sadhu" leaves a laddoo on the bridge. It is a trap
+        const l = Math.floor(Math.random() * 3), before = pickups.length; spawnPickup('laddoo', l, 0.9);
+        if (pickups.length > before) { pickups[pickups.length - 1].trap = true; bossLine(b, ['A gift from a humble sadhu… hee hee'], '#D8B8FF'); sfx.cackle(); }
+      } else {   // golden fire of Lanka on two paths
+        const safe = Math.floor(Math.random() * 3); for (let l = 0; l < 3; l++) if (l !== safe) addHazard(l, 'fire');
+        banner('Lanka burns!', 'Golden fire on two paths: find the safe one', 1300, 'boss'); sfx.cast();
+      }
+    } else {   // Dashanana: different heads spit different attacks (never all three paths at once)
+      const k = Math.min(alive.length, rage ? 2 : 1 + (b.n % 2));
+      const lanes = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, Math.min(2, k));
+      lanes.forEach((l, j) => { const hi = alive[Math.floor(Math.random() * alive.length)], col = HEAD_ATK[hi]; if (b.heads) b.heads[hi].flash = 0.7; fires.push({ lane: l, z: b.z - 0.02, warn: 0.85 + j * 0.3, col, speed: col === 'bolt' ? 1.25 : col === 'frost' ? 0.8 : 0.92, fake: col === 'maya' }); });
+      sfx.cast();
+    }
+  },
+};
+// ---- Ravana's ravens: black, thick-furred, purple-eyed; they pour from his shoulders ----
+const RAVENS = [];
+let ravenLast = 0;
+function ravenSprite(frame) {   // pre-rendered (4 wing frames) so a sky full of ravens stays cheap
+  return envSprite('raven' + frame, 72, 56, (g, w, h) => {
+    const cx = w * 0.46, cy = h * 0.56, flap = [-0.9, -0.35, 0.25, -0.2][frame];
+    g.fillStyle = '#050407';
+    for (const side of [-1, 1]) {   // ragged feathered wings
+      g.beginPath(); g.moveTo(cx, cy - 2);
+      const tipX = cx + side * w * 0.48, tipY = cy + flap * h * 0.55;
+      g.quadraticCurveTo(cx + side * w * 0.22, cy + flap * h * 0.62 - 6, tipX, tipY);
+      for (let k = 0; k < 5; k++) { const t = k / 4; g.lineTo(tipX - side * t * w * 0.4 + side * 3, tipY + 4 + t * (cy - tipY) * 0.6 + (k % 2 ? 6 : 0)); }
+      g.closePath(); g.fill();
+    }
+    g.beginPath(); g.ellipse(cx, cy, w * 0.2, h * 0.17, -0.15, 0, Math.PI * 2); g.fill();   // body
+    g.beginPath(); g.moveTo(cx - w * 0.17, cy + 2); g.lineTo(cx - w * 0.36, cy + h * 0.12); g.lineTo(cx - w * 0.3, cy + h * 0.2); g.lineTo(cx - w * 0.1, cy + h * 0.08); g.fill();   // tail
+    g.beginPath(); g.arc(cx + w * 0.17, cy - h * 0.12, h * 0.12, 0, Math.PI * 2); g.fill();   // head
+    g.strokeStyle = '#141018'; g.lineWidth = 1;   // thick fur: short ragged strokes around body and head
+    for (let k = 0; k < 26; k++) { const a = k / 26 * Math.PI * 2, rx = w * 0.2, ry = h * 0.17; const x0 = cx + Math.cos(a) * rx, y0 = cy + Math.sin(a) * ry; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + Math.cos(a + 0.4) * 4, y0 + Math.sin(a + 0.4) * 4); g.stroke(); }
+    for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, x0 = cx + w * 0.17 + Math.cos(a) * h * 0.12, y0 = cy - h * 0.12 + Math.sin(a) * h * 0.12; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + Math.cos(a) * 3, y0 + Math.sin(a) * 3); g.stroke(); }
+    g.fillStyle = '#2A2630'; g.beginPath(); g.moveTo(cx + w * 0.27, cy - h * 0.14); g.lineTo(cx + w * 0.4, cy - h * 0.08); g.lineTo(cx + w * 0.27, cy - h * 0.06); g.fill();   // beak
+    const eg = g.createRadialGradient(cx + w * 0.2, cy - h * 0.15, 0, cx + w * 0.2, cy - h * 0.15, 7); eg.addColorStop(0, 'rgba(230,190,255,1)'); eg.addColorStop(0.35, 'rgba(170,80,255,0.9)'); eg.addColorStop(1, 'rgba(170,80,255,0)');
+    g.fillStyle = eg; g.beginPath(); g.arc(cx + w * 0.2, cy - h * 0.15, 7, 0, Math.PI * 2); g.fill();   // purple eye
+  });
+}
+function ravanShoulders(b) { const s = bossScale(b), p = project(b.z, b.x), y = p.y + (1 - b.enter) * 80 - s * 1.42; return [{ x: p.x - s * 0.56, y }, { x: p.x + s * 0.56, y }]; }
+function spawnRavens(b, n, mode) {
+  const sh = ravanShoulders(b), u = unit();
+  for (let i = 0; i < n && RAVENS.length < 70; i++) {
+    const o = sh[i % 2], a = -Math.PI / 2 + (o.x < W / 2 ? -1 : 1) * (0.3 + Math.random() * 1.1);
+    const sp = (180 + Math.random() * 240) * u;
+    RAVENS.push({ x: o.x, y: o.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: mode === 'orbit' ? 1e9 : 4 + Math.random() * 1.5, mode, ph: Math.random() * 6, sc: (mode === 'orbit' ? 0.6 + Math.random() * 0.4 : 0.8 + Math.random() * 0.7) * u, ang: Math.random() * 6 });
+  }
+}
+function ravenSwarm(b, n) {   // the sky fills with ravens; some dive down the paths (always one safe path)
+  spawnRavens(b, 40 + n * 6, 'swarm'); b.swarmT = 4.5;
+  const safe = Math.floor(Math.random() * 3);
+  for (let w = 0; w < 2; w++) for (let l = 0; l < 3; l++) if (l !== (w ? (safe + 2) % 3 : safe)) fires.push({ lane: l, z: b.z - 0.02, warn: 1.1 + w * 1.2, col: 'raven', speed: 1.15 });
+  for (let k = 0; k < 4; k++) setTimeout(() => sfx.cackle(), k * 180);
+  banner("Ravana's ravens!", 'They cover the sky: watch the warnings, the diving ravens follow them', 2000, 'boss');
+}
+function updateDrawRavens() {   // flight + drawing in one pass (sprites only)
+  if (!RAVENS.length) return;
+  const now = performance.now(), dt = paused || userPaused || frozen ? 0 : Math.min(0.05, (now - (ravenLast || now)) / 1000); ravenLast = now;
+  const b = boss && boss.kind === 'ravana' && !boss.dead ? boss : null, ctr = b ? project(b.z, b.x) : null, s = b ? bossScale(b) : 0;
+  for (let i = RAVENS.length - 1; i >= 0; i--) {
+    const r = RAVENS[i]; r.t += dt; r.life -= dt;
+    if (r.mode === 'orbit') {
+      if (!b) { r.mode = 'swarm'; r.life = 2; continue; }
+      r.ang += dt * (0.8 + (r.ph % 1) * 0.6); const tx = ctr.x + Math.cos(r.ang) * s * (0.9 + 0.3 * Math.sin(r.ph)), ty = ctr.y - s * 1.9 + Math.sin(r.ang * 1.3) * s * 0.35;
+      r.vx += (tx - r.x) * dt * 4 - r.vx * dt * 2; r.vy += (ty - r.y) * dt * 4 - r.vy * dt * 2;
+    } else if (r.life > 1) {   // swarm: each raven chases its own wandering point, so the flock fills the whole screen
+      const tx = W * (0.5 + 0.46 * Math.sin(r.t * 0.9 + r.ph)), ty = H * (0.4 + 0.34 * Math.sin(r.t * 1.25 + r.ph * 1.7));
+      r.vx += (tx - r.x) * dt * 3 - r.vx * dt * 1.2; r.vy += (ty - r.y) * dt * 3 - r.vy * dt * 1.2;
+    } else r.vy -= 600 * unit() * dt;   // then scatter up and away
+    r.x += r.vx * dt; r.y += r.vy * dt;
+    if (r.life <= 0 || (r.life < 1 && (r.y < -140 || r.x < -140 || r.x > W + 140))) { RAVENS.splice(i, 1); continue; }
+    const fr = Math.floor(r.t * 12 + r.ph) % 4, spr = ravenSprite(fr), w = 72 * r.sc, h = 56 * r.sc;
+    ctx.save(); ctx.translate(r.x, r.y); if (r.vx < 0) ctx.scale(-1, 1);
+    ctx.drawImage(spr, -w / 2, -h / 2, w, h); ctx.restore();
+  }
+}
+// ---- eye lasers: a head locks on with a thin purple line, then fires a beam down that path ----
+const BEAMS = [];
+function eyeLaser(b) {
+  const alive = b.heads.map((h, i) => i).filter(i => !(b.heads[i].cut > 0)); if (!alive.length || BEAMS.length >= 2) return;
+  const hi = alive[Math.floor(Math.random() * alive.length)], lane = Math.random() < 0.6 ? player.lane : Math.floor(Math.random() * 3);
+  BEAMS.push({ hi, lane, warn: 0.8, life: 0.35, hit: false }); b.heads[hi].flash = 0.8; tone(880, 0.5, 'sawtooth', 0.02, 1500);
+}
+function updateBeams(dt) {
+  for (let i = BEAMS.length - 1; i >= 0; i--) {
+    const B = BEAMS[i];
+    if (B.warn > 0) { B.warn -= dt; if (B.warn <= 0) { tone(220, 0.3, 'square', 0.04, 90); noise(0.2, 0.08, 3000); } continue; }
+    B.life -= dt;
+    if (!B.hit && player.lane === B.lane && lives > 0) { B.hit = true; hurtPlayer('laser'); }
+    if (B.life <= 0) BEAMS.splice(i, 1);
+  }
+}
+function drawBeams() {
+  if (!BEAMS.length || !boss || boss.kind !== 'ravana') return;
+  const b = boss, s = bossScale(b), p = project(b.z, b.x), H0 = ravanaHeads(s);
+  for (const B of BEAMS) {
+    const h = H0[B.hi], ox = p.x + h.x, oy = p.y + (1 - b.enter) * 80 + h.y - h.r * 0.08, t = project(0.02, B.lane - 1);
+    ctx.save(); ctx.lineCap = 'round';
+    if (B.warn > 0) { ctx.strokeStyle = `rgba(200,140,255,${0.35 + 0.35 * Math.abs(Math.sin(time * 24))})`; ctx.lineWidth = 1.5; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(t.x, t.y - 20); ctx.stroke(); }
+    else {
+      const a = Math.min(1, B.life / 0.2);
+      ctx.strokeStyle = `rgba(150,60,255,${0.45 * a})`; ctx.lineWidth = 22 * unit(); ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(t.x, t.y - 20); ctx.stroke();
+      ctx.strokeStyle = `rgba(245,225,255,${a})`; ctx.lineWidth = 6 * unit(); ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(t.x, t.y - 20); ctx.stroke();
+      ctx.drawImage(glowSprite('170,80,255'), t.x - 40 * unit(), t.y - 60 * unit(), 80 * unit(), 80 * unit());
+    }
+    ctx.restore();
+  }
+}
+function kumbhaDevour(b) {   // he grabs one of his own soldiers and eats it to heal; kill them first!
+  const food = danavs.filter(d => !d.dead && !d.decoy && d.z > 0.3).sort((a, c) => Math.abs(a.z - b.z) - Math.abs(c.z - b.z))[0];
+  if (food) {
+    const q = project(food.z, food.x); burst(q.x, q.y - 30 * q.scale, '#C0101E', 14, 4);
+    danavs.splice(danavs.indexOf(food), 1); b.hp = Math.min(b.max, b.hp + b.max * 0.04); b.chew = 1.4;
+    bossLine(b, ['Nom nom! (+health)'], '#FFB070'); sfx.growl();
+    banner('He eats his own soldier!', 'Kill his danav before he devours them to heal', 1600, 'boss');
+  } else { spawnDanav('lankaguard'); spawnDanav('rakshas'); bossLine(b, ['FOOD! Bring me food!'], '#FFD0A0'); }
+}
+function fireBrahmastra() {
+  const b = boss;
+  if (!(b && b.kind === 'ravana' && !b.dead && b.amrit > 0 && brahma > 0 && !b.mortal) || BRAHMA.t >= 0 || state !== 'playing') return;
+  brahma = 0; BRAHMA.t = 0; $('brahma-btn').hidden = true; sfx.shankh(); screenFlash('gold'); CINE.slow = 0.9;
+  track('game_brahmastra', {});
+}
+function brahmaUpdate(dt) {
+  if (BRAHMA.t < 0) return;
+  BRAHMA.t += dt;
+  if (BRAHMA.t < 0.6) return;
+  BRAHMA.t = -1;
+  const b = boss; if (!b || b.kind !== 'ravana' || b.dead) return;
+  b.mortal = true; b.amrit = 0; b.vibhiT = 0; b.hp = Math.max(1, b.hp - b.max * 0.25);
+  for (const h of b.heads || []) if (h.cut > 0) h.cut = 999;
+  const n = ravanaNavel(); for (let k = 0; k < 4; k++) burst(n.x, n.y, k % 2 ? '#FFFFFF' : '#FFD27D', 30, 8);
+  rings.push({ x: n.x, y: n.y, r: 0, life: 1, col: '255,220,140', big: true });
+  shake = 1.1; sfx.bigThunder(); CINE.zoomT = 1.22; CINE.barsT = 1; setTimeout(() => { CINE.zoomT = 1; CINE.barsT = 0; }, 1500);
+  banner('The Brahmastra strikes his navel!', 'The amrit is gone: Ravana is mortal now. Finish him!', 3000, 'boss');
+  bossLine(b, ['NO! My amrit…!'], '#FF9090');
+}
+function drawBrahmastra() {
+  if (BRAHMA.t < 0 || !boss) return;
+  const k = Math.min(1, BRAHMA.t / 0.6), a = launchPoint(), n = ravanaNavel(), x = a.x + (n.x - a.x) * k, y = a.y + (n.y - a.y) * k, ang = Math.atan2(n.y - a.y, n.x - a.x);
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,214,120,0.45)'; ctx.lineWidth = 14 * unit(); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(x, y); ctx.stroke();
+  ctx.strokeStyle = '#FFF6D8'; ctx.lineWidth = 4 * unit(); ctx.beginPath(); ctx.moveTo(x - Math.cos(ang) * 60 * unit(), y - Math.sin(ang) * 60 * unit()); ctx.lineTo(x, y); ctx.stroke();
+  ctx.drawImage(glowSprite('255,230,150'), x - 30 * unit(), y - 30 * unit(), 60 * unit(), 60 * unit());
+  ctx.restore();
+}
 function updateBoss(dt) {
   const b = boss, B = BOSSES[b.kind];
+  brahmaUpdate(dt);
+  if (BOSS_TICK[b.kind]) BOSS_TICK[b.kind](b, dt);
   if (!b.phase) b.phase = 1;
   if (b.phase === 1 && b.hp <= b.max / 2) bossPhase2(b);
   b.surges = b.surges || 0;
-  if (b.surges < 3 && b.hp > 0 && b.hp <= b.max * SURGE_AT[b.surges]) { b.surges++; bossSurge(b, b.surges); }
+  const SA = surgeAt(b); if (b.surges < SA.length && b.hp > 0 && b.hp <= b.max * SA[b.surges]) { b.surges++; bossSurge(b, b.surges); }
   b.horrorT = (b.horrorT === undefined ? 4 : b.horrorT) - dt;   // eerie sounds through the fight; a heartbeat near the end
   if (b.horrorT <= 0) { b.horrorT = 5 + Math.random() * 5 - (b.surges || 0); const r = Math.random(); if (b.hp < b.max * 0.3) sfx.heartbeat(); else if (r < 0.4) sfx.growl(); else if (r < 0.7) sfx.whisper(); else sfx.dread(); }
   if (b.recover > 0) b.recover -= dt;
@@ -1956,7 +2353,8 @@ function updateBoss(dt) {
   b.atkT -= dt;
   if (b.atkT <= 0 && b.enter >= 1 && !b.charge) {
     b.n++;
-    if (b.kind === 'mahisha') {
+    if (BOSS_AI[b.kind]) BOSS_AI[b.kind](b, rage);
+    else if (b.kind === 'mahisha') {
       b.atkT = (rage ? 2.2 : 2.9) - 0.15 * (b.power || 0) + b.slow;
       if (b.n % 2 === 0) { b.charge = { lane: player.lane, warn: rage ? 0.8 : 1.05 }; b.lane = player.lane; sfx.roar(); }
       else { const l = player.lane; fires.push({ lane: l, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 }); if (rage) fires.push({ lane: (l + 1 + Math.floor(Math.random() * 2)) % 3, z: b.z - 0.02, warn: 0.9, col: 'rock', speed: 0.8 + 0.12 * (b.power || 0) }); if ((b.power || 0) >= 2) shake = Math.max(shake, 0.35); sfx.drum(); }
@@ -2054,8 +2452,11 @@ function render() {
   for (const pk of pickups) all.push({ z: pk.z - 0.001, draw: () => drawPickup(pk) });
   for (const d of fallen) all.push({ z: d.z, draw: () => drawDanav(d) });
   if (boss) all.push({ z: boss.z, draw: () => { if (boss.splitFx > 0) drawBossGhosts(); drawBoss(); if (boss.recover > 0 && !boss.dead) drawWinded(); } });
+  if (boss && boss.vibhiT > 0) all.push({ z: 0.36, draw: drawVibhiAlly });
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
+  drawBeams(); updateDrawRavens();
+  drawBrahmastra();
   drawDarkness();
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawWarrior(); drawPowerFx(true);
@@ -2080,14 +2481,15 @@ const ACT_SKY = [
   { s: ['#2B2C7A', '#7D5BB8', '#F096B9', '#FFD7A3'], sea: ['#FFE6EE', '#F2CFE4', '#D9B2D8'], peak: '#B79AD0', sun: '255,244,214' },
   { s: ['#33195A', '#A8457A', '#F2864E', '#FFCF7A'], sea: ['#FFE0C4', '#EDB29A', '#B97E8C'], peak: '#A86A88', sun: '255,222,160' },
   { s: ['#04061A', '#111A46', '#2A2862', '#5E4A8C'], sea: ['#7E70AE', '#433A7E', '#1C1842'], peak: '#3E4274', sun: '200,220,255' },
+  { s: ['#3A1606', '#9A4E12', '#EAA030', '#FFE6A0'], sea: ['#FFF0C8', '#F2C060', '#A8701A'], peak: '#C08A36', sun: '255,226,150' },   // Swarna Lanka
 ];
 const lerpHex = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
-function actCol(key, i) { const a = Math.floor(SKY.act), b = Math.min(2, a + 1), t = SKY.act - a, A = ACT_SKY[a], B = ACT_SKY[b]; return i === undefined ? lerpHex(A[key], B[key], t) : lerpHex(A[key][i], B[key][i], t); }
-function SUNC() { const a = Math.floor(SKY.act), b = Math.min(2, a + 1), t = SKY.act - a, A = ACT_SKY[a].sun.split(',').map(Number), B = ACT_SKY[b].sun.split(',').map(Number); return A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(','); }
+function actCol(key, i) { const a = Math.floor(SKY.act), b = Math.min(ACT_SKY.length - 1, a + 1), t = SKY.act - a, A = ACT_SKY[a], B = ACT_SKY[b]; return i === undefined ? lerpHex(A[key], B[key], t) : lerpHex(A[key][i], B[key][i], t); }
+function SUNC() { const a = Math.floor(SKY.act), b = Math.min(ACT_SKY.length - 1, a + 1), t = SKY.act - a, A = ACT_SKY[a].sun.split(',').map(Number), B = ACT_SKY[b].sun.split(',').map(Number); return A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(','); }
 function drawSky() {
   const m = SKY.mood, hy = HORIZON_Y * H, u = unit();
   SKY.act += ((state === 'intro' ? 0 : LV().act) - SKY.act) * 0.012; if (Math.abs(SKY.act - Math.round(SKY.act)) < 0.002) SKY.act = Math.round(SKY.act);
-  const night = Math.max(0, SKY.act - 1);
+  const night = Math.max(0, Math.min(SKY.act - 1, 3 - SKY.act));   // the night of act 3 gives way to golden Lanka
   const g = ctx.createLinearGradient(0, 0, 0, hy + 2);
   g.addColorStop(0, mix(actCol('s', 0), '#10061A', m));
   g.addColorStop(0.35, mix(actCol('s', 1), '#2A0C2C', m));
@@ -2174,7 +2576,47 @@ function drawSky() {
     }
     ctx.shadowBlur = 0;
   }
-  drawEnvFar(); drawTemple(); drawEnvHaze();
+  drawEnvFar();
+  { const lk = Math.max(0, Math.min(1, SKY.act - 2)); if (lk < 1) { ctx.save(); ctx.globalAlpha = 1 - lk; drawTemple(); ctx.restore(); } if (lk > 0) drawLanka(lk); }
+  drawEnvHaze();
+}
+function drawLanka(k) {   // Swarna Lanka: golden palaces and towers on the three Trikuta hills
+  const u = unit() * 0.8, hy = HORIZON_Y * H, h = 190 * u;
+  const spr = envSprite('lanka', W, h, (g, w, hh) => paintLanka(g, w, hh, u));
+  ctx.save(); ctx.globalAlpha = k; ctx.drawImage(spr, 0, hy - h + 6 * u, W, h);
+  for (let i = 0; i < 7; i++) {   // windows twinkling with lamplight
+    const x = W * (0.2 + 0.6 * ((i * 0.6180339) % 1)), y = hy - h * (0.25 + 0.4 * ((i * 0.381966) % 1)), a = 0.4 + 0.6 * Math.max(0, Math.sin(time * (1.5 + i * 0.3) + i));
+    ctx.globalAlpha = k * a; ctx.drawImage(glowSprite('255,220,140'), x - 6 * u, y - 6 * u, 12 * u, 12 * u);
+  }
+  ctx.restore();
+}
+function paintLanka(g, w, h, u) {
+  let sd = 11; const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
+  const cx = w / 2;
+  // the three hills of Trikuta
+  const hg = g.createLinearGradient(0, h * 0.35, 0, h); hg.addColorStop(0, '#8A5418'); hg.addColorStop(1, '#4A2A0C');
+  g.fillStyle = hg; g.beginPath(); g.moveTo(cx - w * 0.42, h);
+  g.quadraticCurveTo(cx - w * 0.3, h * 0.55, cx - w * 0.18, h * 0.62); g.quadraticCurveTo(cx - w * 0.08, h * 0.38, cx, h * 0.42);
+  g.quadraticCurveTo(cx + w * 0.08, h * 0.38, cx + w * 0.18, h * 0.62); g.quadraticCurveTo(cx + w * 0.3, h * 0.55, cx + w * 0.42, h); g.closePath(); g.fill();
+  const gold = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#B8801E'); q.addColorStop(0.45, '#FFE594'); q.addColorStop(1, '#A86E14'); return q; };
+  const tower = (x, base, tw, th, dome) => {
+    g.fillStyle = gold(x - tw / 2, x + tw / 2); g.fillRect(x - tw / 2, base - th, tw, th);
+    g.fillStyle = 'rgba(120,50,10,0.55)'; for (let r = 1; r < th / (9 * u); r++) g.fillRect(x - tw / 2, base - r * 9 * u, tw, 1);   // storeys
+    g.fillStyle = 'rgba(255,230,150,0.9)'; for (let r = 1; r < th / (9 * u) - 0.5; r++) g.fillRect(x - tw * 0.15, base - r * 9 * u - 5 * u, tw * 0.3, 3 * u);   // windows
+    g.fillStyle = gold(x - tw / 2, x + tw / 2); g.beginPath();
+    if (dome) { g.moveTo(x - tw * 0.62, base - th); g.quadraticCurveTo(x - tw * 0.6, base - th - tw * 0.9, x, base - th - tw * 1.25); g.quadraticCurveTo(x + tw * 0.6, base - th - tw * 0.9, x + tw * 0.62, base - th); }
+    else { g.moveTo(x - tw * 0.6, base - th); g.lineTo(x, base - th - tw * 1.6); g.lineTo(x + tw * 0.6, base - th); }
+    g.closePath(); g.fill();
+    g.strokeStyle = '#FFF1B8'; g.lineWidth = Math.max(1, u); g.beginPath(); g.moveTo(x, base - th - tw * (dome ? 1.25 : 1.6)); g.lineTo(x, base - th - tw * (dome ? 1.25 : 1.6) - 7 * u); g.stroke();
+  };
+  // city on the three hills, the royal palace tallest in the middle
+  for (let i = 0; i < 16; i++) { const t = i / 15, x = cx - w * 0.36 + t * w * 0.72, dist = Math.abs(x - cx) / (w * 0.36); tower(x + (rnd() - 0.5) * 8 * u, h * (0.6 + 0.25 * dist), (8 + rnd() * 7) * u, (18 + (1 - dist) * 34 + rnd() * 10) * u, rnd() < 0.5); }
+  tower(cx - 26 * u, h * 0.48, 16 * u, 62 * u, true); tower(cx + 26 * u, h * 0.48, 16 * u, 62 * u, true);
+  tower(cx, h * 0.45, 24 * u, 92 * u, false);
+  g.fillStyle = '#C0101E'; g.beginPath(); g.moveTo(cx, h * 0.45 - 92 * u - 24 * 1.6 * u - 7 * u); g.lineTo(cx + 14 * u, h * 0.45 - 92 * u - 24 * 1.6 * u - 3 * u); g.lineTo(cx, h * 0.45 - 92 * u - 24 * 1.6 * u + 1 * u); g.fill();   // Ravana's banner
+  // golden glow over the city
+  const gl = g.createRadialGradient(cx, h * 0.45, 0, cx, h * 0.45, w * 0.4); gl.addColorStop(0, 'rgba(255,210,110,0.35)'); gl.addColorStop(1, 'rgba(255,190,80,0)');
+  g.fillStyle = gl; g.fillRect(0, 0, w, h);
 }
 function drawTemple() {
   // a glowing sandstone temple (shikhara, mandapa domes, amalaka, kalash, flag) standing on a cloud
@@ -2223,12 +2665,12 @@ function drawBridge() {
   for (let i = 0; i < NC; i++) {
     const z = 1 - (((i / NC) + time * 0.06) % 1), side = i % 2 ? 1 : -1, off = side * (2.3 + (i % 5) * 0.45);
     const p = project(z, off), sp = SKY.sprites[i % 5], w = 360 * p.scale * u, h = w * 160 / 340;
-    ctx.globalAlpha = Math.min(1, (1 - z) * 2.2) * (0.9 - 0.45 * m) * (1 - 0.5 * Math.max(0, SKY.act - 1));
+    ctx.globalAlpha = Math.min(1, (1 - z) * 2.2) * (0.9 - 0.45 * m) * (1 - 0.5 * Math.max(0, Math.min(SKY.act - 1, 3 - SKY.act)));
     ctx.drawImage(sp, p.x - w / 2, p.y - h * 0.6, w, h);
   }
   ctx.globalAlpha = 1;
   if (m > 0.05) { ctx.fillStyle = `rgba(32,8,32,${0.4 * m})`; ctx.fillRect(-20, -20, W + 40, H + 40); }
-  const night = Math.max(0, SKY.act - 1);
+  const night = Math.max(0, Math.min(SKY.act - 1, 3 - SKY.act));   // the night of act 3 gives way to golden Lanka
   if (night > 0.02) { ctx.fillStyle = `rgba(8,10,40,${0.38 * night})`; ctx.fillRect(-20, -20, W + 40, H + 40); }   // the night of Mahakal: everything but the bridge falls into shadow   // storm tint over the whole sky and cloud sea
   // the bridge
   const a = project(1, -1.6), b = project(1, 1.6), c = project(0, 1.6), d = project(0, -1.6);
@@ -2271,7 +2713,8 @@ function drawLanes() {
 }
 
 // Pre-drawn soft glow (white core fading out), tinted per colour and reused every frame
-const GLOW = new Map();
+const GLOW = new Map(), RGB = new Map();
+const rgbOf = c => { let v = RGB.get(c); if (!v) { v = hex(c).join(','); RGB.set(c, v); } return v; };
 function glowSprite(rgb) {
   let c = GLOW.get(rgb); if (c) return c;
   c = document.createElement('canvas'); c.width = c.height = 64;
@@ -2294,6 +2737,7 @@ const ENV_ART = {
   0: { manifest: 'env.bridge-temple-concept.b', src: null },
   1: { manifest: 'env.temple-production.a', src: null },
   2: { manifest: 'env.act-variations.a', src: null },
+  3: { manifest: null, src: null },   // Swarna Lanka: procedural
 };
 const ENV = { cache: new Map(), img: {}, key: '' };
 function envImage(act) {   // loads a still once, on demand; on error the procedural layer stays
@@ -2316,6 +2760,7 @@ const ENV_PAL = [
   { far: '#9C8AC8', farB: '#B9A6DA', glow: '255,226,170', ray: '255,236,190', haze: '255,226,236', pillar: ['#D8A374', '#9E6A48', '#F2C98E'], flag: '#E2702A' },
   { far: '#6E3A52', farB: '#8E4A5E', glow: '255,120,70', ray: '255,170,110', haze: '255,180,150', pillar: ['#9C6A58', '#5E3A34', '#C48A6A'], flag: '#B5121B' },
   { far: '#26285A', farB: '#34336E', glow: '255,200,112', ray: '200,220,255', haze: '120,110,190', pillar: ['#4A4670', '#26233F', '#7A72A8'], flag: '#E8C77A' },
+  { far: '#B07A2A', farB: '#D2A04A', glow: '255,215,120', ray: '255,230,160', haze: '255,214,140', pillar: ['#E8B44A', '#A8741E', '#FFE08A'], flag: '#C0101E' },   // Swarna Lanka: gold
 ];
 let envSeed = 1;
 const envRnd = () => ((envSeed = (envSeed * 9301 + 49297) % 233280) / 233280);
@@ -2412,10 +2857,10 @@ function paintToran(g, w, h) {
     g.fillStyle = '#E8C77A'; g.beginPath(); g.arc(x0, h * 0.14, h * 0.06, 0, Math.PI * 2); g.fill();
   }
 }
-const envAct = () => Math.max(0, Math.min(2, Math.round(SKY.act)));
+const envAct = () => Math.max(0, Math.min(ENV_PAL.length - 1, Math.round(SKY.act)));
 // called from drawSky, before the main temple
 function drawEnvFar() {
-  const hy = HORIZON_Y * H, m = SKY.mood, a0 = Math.floor(SKY.act), a1 = Math.min(2, a0 + 1), t = SKY.act - a0;
+  const hy = HORIZON_Y * H, m = SKY.mood, a0 = Math.floor(SKY.act), a1 = Math.min(ENV_PAL.length - 1, a0 + 1), t = SKY.act - a0;
   for (const [act, w] of [[a0, 1 - t], [a1, t]]) {
     if (w < 0.02) continue;
     const img = envImage(act);
@@ -2495,6 +2940,11 @@ const AURA = [
   { name: 'Aurora of the Rudras',       tint: '60,200,160',  ta: 0.1,  fx: 'aurora',    fc: '130,255,210', bats: 8,  witches: 3, flame: ['210,255,230', '40,220,150'] },
   { name: 'Cosmic night',               tint: '80,60,180',   ta: 0.15, fx: 'comets',    fc: '210,225,255', bats: 9,  witches: 3, flame: ['235,240,255', '120,150,255'] },
   { name: 'Andhakar · the great darkness', tint: '70,0,90',  ta: 0.26, fx: 'vortex',    fc: '200,130,255', bats: 12, witches: 4, flame: ['240,200,255', '160,40,220'], moon: 'blood' },
+  { name: 'Swarna Lanka · the city of gold', tint: '255,200,80', ta: 0.1, fx: 'motes',     fc: '255,215,120', bats: 3,  witches: 1, flame: ['255,240,170', '255,170,40'] },
+  { name: 'Kumbhakarna awakens',        tint: '200,120,40',  ta: 0.16, fx: 'dust',      fc: '230,190,120', bats: 5,  witches: 1, flame: ['255,220,140', '230,110,30'] },
+  { name: 'Golden fire of Lanka',       tint: '255,150,40',  ta: 0.14, fx: 'embers',    fc: '255,180,60',  bats: 6,  witches: 2, flame: ['255,236,160', '255,120,20'] },
+  { name: "Vibhishana's crossroads",    tint: '130,160,255', ta: 0.12, fx: 'wisps',     fc: '200,215,255', bats: 4,  witches: 1, flame: ['230,240,255', '120,150,255'] },
+  { name: "Dashanana · Ravana's wrath",  tint: '255,170,40',  ta: 0.22, fx: 'embers',    fc: '255,200,80',  bats: 10, witches: 3, flame: ['255,240,180', '200,90,255'], moon: 'blood' },
 ];
 const AMB = { key: -1, prev: AURA[0], blend: 1, list: [], bats: [], witches: [], trail: [], cackleT: 6, comet: null };
 const lerpRGB = (a, b, t) => { const A = a.split(',').map(Number), B = b.split(',').map(Number); return A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(','); };
@@ -2570,7 +3020,7 @@ function drawAuraSky() {
   const A = aura(), T = auraTint(), I = intensity(), hy = HORIZON_Y * H, u = unit();
   ctx.fillStyle = `rgba(${T.tint},${T.ta})`; ctx.fillRect(-20, -20, W + 40, hy + 40);
   if (A.fx === 'aurora') {
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.save();
     for (let k = 0; k < 3; k++) {
       const g = ctx.createLinearGradient(0, 0, 0, hy * 0.7); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, k === 1 ? 'rgba(160,90,255,0.18)' : 'rgba(80,255,180,0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, hy * 0.1);
@@ -2603,7 +3053,7 @@ function drawBat(b, I) {
   }
   ctx.beginPath(); ctx.ellipse(0, 0, s * 0.42, s * 0.6, 0, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.4); ctx.lineTo(-s * 0.22, -s * 0.85); ctx.lineTo(-s * 0.05, -s * 0.5); ctx.lineTo(s * 0.05, -s * 0.5); ctx.lineTo(s * 0.22, -s * 0.85); ctx.lineTo(s * 0.3, -s * 0.4); ctx.fill();   // ears
-  ctx.fillStyle = '#FF2A2A'; ctx.shadowColor = '#FF0000'; ctx.shadowBlur = 6 + 8 * I;   // devilish red eyes
+  ctx.fillStyle = '#FF2A2A'; ctx.shadowColor = '#FF0000'; ctx.shadowBlur = 0;   // devilish red eyes
   ctx.beginPath(); ctx.arc(-s * 0.15, -s * 0.22, Math.max(1, s * 0.11), 0, Math.PI * 2); ctx.arc(s * 0.15, -s * 0.22, Math.max(1, s * 0.11), 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
@@ -2622,7 +3072,7 @@ function drawWitch(w, I) {   // a hag on her broom: tattered cloak, wild hair st
   ctx.strokeStyle = '#1A0A16'; ctx.lineWidth = Math.max(1, s * 0.05);
   for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.moveTo(s * 0.25, -s * (0.75 - k * 0.04)); ctx.quadraticCurveTo(-s * 0.2, -s * (0.9 - k * 0.1) + Math.sin(time * 10 + k) * s * 0.1, -s * (0.7 + k * 0.06), -s * (0.7 - k * 0.12) + Math.sin(time * 9 + k) * s * 0.12); ctx.stroke(); }   // wild hair
   ctx.beginPath(); ctx.moveTo(s * 0.3, -s * 0.4); ctx.lineTo(s * 0.75, -s * 0.15); ctx.lineTo(s * 0.9, -s * 0.2); ctx.stroke();   // clawed arm reaching forward
-  ctx.fillStyle = '#9CFF5A'; ctx.shadowColor = '#7CFF3A'; ctx.shadowBlur = 8 + 8 * I;
+  ctx.fillStyle = '#9CFF5A'; ctx.shadowColor = '#7CFF3A'; ctx.shadowBlur = 0;
   ctx.beginPath(); ctx.arc(s * 0.4, -s * 0.66, Math.max(1.2, s * 0.05), 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
@@ -2783,8 +3233,8 @@ function playCutscene(key, done, opts = {}) {
 
 // ---------------- Cinema: letterbox, camera, title cards, slow-motion kill-cam ----------------
 const CINE = { bars: 0, barsT: 0, zoom: 1, zoomT: 1, fx: 0, fy: 0, slow: 0, flash: 0, introT: 0, introLen: 2.8 };
-const BOSS_HI = { mahisha: 'महिषासुर', rakta: 'रक्तबीज', andhaka: 'अंधकासुर' };
-const ACT_HI = ['प्रभात', 'संध्या', 'महानिशा'];
+const BOSS_HI = { mahisha: 'महिषासुर', rakta: 'रक्तबीज', andhaka: 'अंधकासुर', kumbha: 'कुम्भकर्ण', vibhi: 'विभीषण', ravana: 'रावण' };
+const ACT_HI = ['प्रभात', 'संध्या', 'महानिशा', 'स्वर्ण लंका'];
 function titleCard(small, big, sub, ms = 2600, cls = '') {
   const t = $('titlecard');
   t.querySelector('small').textContent = small; t.querySelector('b').textContent = big; t.querySelector('span').textContent = sub || '';
@@ -2795,11 +3245,29 @@ function screenFlash(kind) { const f = $('flash'); f.className = 'flash'; void f
 // a boss walks out of the storm: black bars slide in, the camera pushes in on him and his name is carved across the screen
 function bossIntro() {
   const B = BOSSES[boss.kind], lv = LV();
-  state = 'bossintro'; CINE.introT = 0; CINE.introLen = (triesAt[level] || 0) > 1 ? 1.6 : 2.8;
+  const epic = boss.kind === 'ravana' && (triesAt[level] || 0) <= 1;
+  state = 'bossintro'; CINE.introT = 0; CINE.introLen = epic ? 7 : (triesAt[level] || 0) > 1 ? 1.6 : 2.8;
   CINE.barsT = 1; CINE.zoomT = 1.32;
-  titleCard(`Boss ${lv.bossNo} of ${TOTAL_BOSSES}`, BOSS_HI[boss.kind], B.name, CINE.introLen * 1000, 'boss');
+  if (epic) { ravanaIntro(); music.sting('boss'); return; }
+  titleCard(lv.trial ? 'The trial of dharma' : `Boss ${lv.bossNo} of ${TOTAL_BOSSES}`, BOSS_HI[boss.kind], boss.kind === 'kumbha' ? B.name + ' · asleep… for now' : B.name, CINE.introLen * 1000, 'boss');
   sfx.roar(); setTimeout(sfx.thunder, 250); screenFlash('red');
   music.sting('boss');
+}
+function ravanaIntro() {   // Lanka darkens, the ten heads open their purple eyes one by one, then all ten roar
+  const tok = boss; tok.lit = 0; sfx.dread(); SKY.flash = 0.25;
+  titleCard('Swarna Lanka trembles', '', 'The king of Lanka rises…', 2000, 'boss');
+  const order = [5, 9, 4, 8, 3, 7, 2, 6, 1, 0];
+  order.forEach((hi, i) => setTimeout(() => {
+    if (boss !== tok) return; tok.lit = i + 1; tone(52 + i * 7, 0.8, 'sawtooth', 0.035, 38);
+    const s = bossScale(tok), h = ravanaHeads(s)[hi], p = project(tok.z, tok.x); burst(p.x + h.x, p.y + h.y, '#B070FF', 10, 3);
+  }, 1100 + i * 300));
+  setTimeout(() => {
+    if (boss !== tok) return;
+    for (let k = 0; k < 6; k++) setTimeout(() => sfx.growl(), k * 60);
+    sfx.bigThunder(); screenFlash('gold'); shake = 1.1; SKY.flash = 0.7; SKY.strikeT = 2;
+    spawnRavens(tok, 34, 'swarm'); for (let k = 0; k < 3; k++) setTimeout(() => sfx.cackle(), k * 200);
+    titleCard('Dashanana · King of Lanka', BOSS_HI.ravana, 'Ten heads, twenty arms and the boon of Brahma', 2700, 'boss');
+  }, 4300);
 }
 function bossIntroUpdate(dt) {
   time += dt; CINE.introT += dt;
@@ -2936,8 +3404,8 @@ function buildPile() {
     fallen[fallen.length - 1].dz = fallen[fallen.length - 1].z - boss.z;
   }
 }
-function celebPos() {   // the top of the fallen Andhakasura
-  const p = project(boss.z, boss.x), s = 84 * unit();
+function celebPos() {   // the top of the fallen final boss
+  const p = project(boss.z, boss.x), s = Math.min(92, BOSSES[boss.kind].size) * unit();
   return { x: p.x - s * 0.95, y: p.y - s * 0.62 };
 }
 function startCelebration() {
@@ -3119,7 +3587,8 @@ function drawDanav(d) {
   ctx.fillStyle = t.horn;
   if (!t.head) for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.14, hy - s * 0.16); ctx.quadraticCurveTo(side * s * 0.42, hy - s * 0.3, side * s * 0.34, hy - s * 0.58); ctx.quadraticCurveTo(side * s * 0.28, hy - s * 0.3, side * s * 0.05, hy - s * 0.2); ctx.fill(); }
   if (t.crown) { ctx.fillStyle = '#D4A53A'; ctx.beginPath(); ctx.moveTo(-s * 0.2, hy - s * 0.2); for (let k = 0; k <= 4; k++) { ctx.lineTo(-s * 0.2 + k * s * 0.1, hy - s * (k % 2 ? 0.3 : 0.44)); } ctx.lineTo(s * 0.2, hy - s * 0.2); ctx.fill(); }
-  ctx.fillStyle = t.eye; ctx.shadowColor = t.eye; ctx.shadowBlur = 8 * p.scale;
+  if (!d.dead) { const er = s * 0.11; for (const sx of [-1, 1]) ctx.drawImage(glowSprite(rgbOf(t.eye)), sx * s * 0.09 - er, hy - s * 0.03 - er, er * 2, er * 2); }
+  ctx.fillStyle = t.eye;
   if (t.head === 'helm' || t.head === 'flamehelm') { ctx.beginPath(); ctx.rect(-s * 0.17, hy - s * 0.02, s * 0.34, s * 0.045); ctx.fill(); }
   else if (t.head === 'snake') { ctx.beginPath(); ctx.ellipse(-s * 0.08, hy - s * 0.05, s * 0.035, s * 0.02, 0.5, 0, Math.PI * 2); ctx.ellipse(s * 0.08, hy - s * 0.05, s * 0.035, s * 0.02, -0.5, 0, Math.PI * 2); ctx.fill(); }
   else { ctx.beginPath(); ctx.ellipse(-s * 0.09, hy - s * 0.03, s * 0.05, s * (t.head === 'mask' ? 0.018 : 0.035), 0.3, 0, Math.PI * 2); ctx.ellipse(s * 0.09, hy - s * 0.03, s * 0.05, s * (t.head === 'mask' ? 0.018 : 0.035), -0.3, 0, Math.PI * 2); ctx.fill(); }
@@ -3128,7 +3597,7 @@ function drawDanav(d) {
   if (t.head === 'snake' && !d.dead) { ctx.strokeStyle = '#E03050'; ctx.lineWidth = Math.max(1, s * 0.02); ctx.beginPath(); ctx.moveTo(0, hy + s * 0.3); ctx.lineTo(0, hy + s * 0.4 + Math.sin(time * 20) * s * 0.03); ctx.stroke(); }   // forked tongue
   if (!t.head) { ctx.fillStyle = '#FFF'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.08, hy + s * 0.08); ctx.lineTo(side * s * 0.06, hy + s * 0.2); ctx.lineTo(side * s * 0.03, hy + s * 0.09); ctx.fill(); } }
   if (t.glowLines && !d.dead) { ctx.strokeStyle = t.glowLines; ctx.globalAlpha = 0.85; ctx.lineWidth = Math.max(1, s * 0.03); ctx.beginPath(); ctx.moveTo(-s * 0.28, -s * 1.02); ctx.lineTo(-s * 0.1, -s * 0.86); ctx.lineTo(-s * 0.2, -s * 0.72); ctx.moveTo(s * 0.28, -s * 1.02); ctx.lineTo(s * 0.1, -s * 0.86); ctx.lineTo(s * 0.2, -s * 0.72); ctx.stroke(); ctx.globalAlpha = 1; }   // glowing armour seams
-  if (d.type === 'vajra' && !d.dead) {
+  if ((d.type === 'vajra' || d.type === 'lankaguard') && !d.dead) {
     if (d.gs !== 'exposed') {   // blue energy shield (with a charge glow before the slam)
       const sh = d.gs === 'charge' ? 1 + 0.15 * Math.sin(time * 30) : 1, r = s * 0.5 * sh;
       ctx.fillStyle = 'rgba(80,160,255,0.28)'; ctx.strokeStyle = d.gs === 'charge' ? '#E6F4FF' : 'rgba(150,210,255,0.9)'; ctx.lineWidth = Math.max(2, s * 0.06);
@@ -3161,6 +3630,228 @@ function drawDanav(d) {
   if (d.z < 0.97 && d.z > 0.55 && (d.max >= 5 || d.elite) && !d.mini) { ctx.font = `600 ${Math.round(9 + 4 * p.scale)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(244,236,219,0.75)'; ctx.fillText((d.elite ? '★ Elite ' : '') + t.name, p.x, p.y - bob - s * 2.05 - 4 - ride - (d.armor > 0 ? 6 : 0)); }
 }
 
+// ---------------- Lanka bosses: drawing ----------------
+function bossScale(b) { return BOSSES[b.kind].size * unit() * (0.6 + 0.4 * b.enter) * (0.85 + 0.15 * Math.min(1, (1 - b.z) / (1 - b.home + 0.001))); }
+function bossBegin(b, s) {   // shared transform: walk-in, and the fall when defeated
+  const p = project(b.z, b.x), fl = b.dead ? (b.fall || 0) : 0;
+  ctx.save(); ctx.translate(p.x, p.y + (1 - b.enter) * 80);
+  if (b.dead && !b.kneel) { ctx.translate(0, -s * 0.3 * fl); ctx.rotate(-1.45 * fl * fl); }
+  return fl;
+}
+function muscle(x, y, rx, ry, rot, base, hi) {
+  const g = ctx.createRadialGradient(x - rx * 0.3, y - ry * 0.35, 0, x, y, Math.max(rx, ry) * 1.1); g.addColorStop(0, hi); g.addColorStop(1, base);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fill();
+}
+function goldFill(x0, x1) { const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, '#9A6A14'); g.addColorStop(0.45, '#FFE594'); g.addColorStop(1, '#B07818'); return g; }
+function ravanaHeads(s) {   // 10 heads: 0 the crowned main head, 1 above it, 2–5 to the left, 6–9 to the right
+  const H = [{ x: 0, y: -s * 1.62, r: s * 0.2 }, { x: 0, y: -s * 2.12, r: s * 0.125 }];
+  for (const side of [-1, 1]) for (let k = 1; k <= 4; k++) H.push({ x: side * k * s * 0.26, y: -s * 1.6 + k * k * s * 0.022, r: s * (0.165 - k * 0.012) });
+  return H;
+}
+function ravanaNavel() { const b = boss, s = bossScale(b), p = project(b.z, b.x); return { x: p.x, y: p.y + (1 - b.enter) * 80 - s * 0.93 }; }
+const RAVANA_LIT_ORDER = [5, 9, 4, 8, 3, 7, 2, 6, 1, 0];
+function drawRavanaHead(h, i, b) {
+  const st = b.heads ? b.heads[i] : null, skin = '#5E3622', hi = '#9A6A48';
+  if (st && st.cut > 0) {   // a severed neck glowing with molten gold (until the head grows back)
+    ctx.fillStyle = st.cut > 900 ? 'rgba(120,40,20,0.9)' : `rgba(255,150,50,${0.6 + 0.3 * Math.sin(time * 10)})`;
+    ctx.beginPath(); ctx.ellipse(h.x, h.y + h.r * 0.75, h.r * 0.42, h.r * 0.17, 0, 0, Math.PI * 2); ctx.fill(); return;
+  }
+  const r = h.r * (st ? 0.35 + 0.65 * st.grow : 1), x = h.x, y = h.y + (h.r - r) * 0.8;
+  const lit = b.lit === undefined || RAVANA_LIT_ORDER.indexOf(i) < b.lit;
+  // crown: tall tiered mukut for the main head, smaller crowns for the rest
+  const ch = r * (i === 0 ? 1.25 : 0.85);
+  ctx.fillStyle = goldFill(x - r, x + r); ctx.beginPath(); ctx.moveTo(x - r * 0.85, y - r * 0.55);
+  for (let k = 0; k <= 4; k++) { const tx = x - r * 0.85 + k * r * 0.425; ctx.lineTo(tx - r * 0.1, y - r * 0.6 - ch * (k === 2 ? 1 : 0.62)); ctx.lineTo(tx + r * 0.1, y - r * 0.6 - ch * (k === 2 ? 1 : 0.62)); }
+  ctx.lineTo(x + r * 0.85, y - r * 0.55); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(x, y - r * 0.82, r * 0.11, 0, Math.PI * 2); ctx.fill();   // ruby
+  if (i === 0) { ctx.fillStyle = '#7FD8FF'; for (const sx of [-0.45, 0.45]) { ctx.beginPath(); ctx.arc(x + sx * r, y - r * 0.72, r * 0.07, 0, Math.PI * 2); ctx.fill(); } }
+  // face
+  muscle(x, y, r * 0.78, r * 0.9, 0, skin, hi);
+  ctx.fillStyle = goldFill(x - r, x + r); for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(x + sx * r * 0.8, y + r * 0.2, r * 0.16, 0, Math.PI * 2); ctx.fill(); }   // kundals
+  ctx.strokeStyle = '#1A0A04'; ctx.lineWidth = Math.max(1.5, r * 0.1); ctx.lineCap = 'round';
+  for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(x + sx * r * 0.12, y - r * 0.22); ctx.lineTo(x + sx * r * 0.55, y - r * 0.38); ctx.stroke(); }   // angry brows
+  // ten heads, twenty eyes glowing purple
+  for (const sx of [-1, 1]) {
+    const ex = x + sx * r * 0.3, ey = y - r * 0.08, er = r * 0.42;
+    if (lit) {   // purple fire burning out of each eye
+      const fh = r * (0.35 + 0.15 * Math.sin(time * 13 + i * 1.7 + sx));
+      ctx.fillStyle = 'rgba(160,70,255,0.75)'; ctx.beginPath(); ctx.moveTo(ex - r * 0.12, ey); ctx.quadraticCurveTo(ex - r * 0.1, ey - fh * 0.6, ex + sx * r * 0.05, ey - fh); ctx.quadraticCurveTo(ex + r * 0.12, ey - fh * 0.45, ex + r * 0.12, ey); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.85 + 0.15 * Math.sin(time * 6 + i); ctx.drawImage(glowSprite('170,80,255'), ex - er, ey - er, er * 2, er * 2); ctx.globalAlpha = 1; ctx.fillStyle = '#F2DCFF';
+    }
+    else ctx.fillStyle = '#1A0E14';
+    ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.15, r * 0.07, sx * -0.25, 0, Math.PI * 2); ctx.fill();
+  }
+  // curled moustache and mouth (it glows with the attack this head is about to spit)
+  ctx.strokeStyle = '#0E0603'; ctx.lineCap = 'round';   // a long, sweeping royal moustache with upturned curls
+  for (const sx of [-1, 1]) {
+    ctx.lineWidth = Math.max(2, r * 0.16); ctx.beginPath(); ctx.moveTo(x, y + r * 0.3); ctx.quadraticCurveTo(x + sx * r * 0.5, y + r * 0.42, x + sx * r * 0.95, y + r * 0.12); ctx.stroke();
+    ctx.lineWidth = Math.max(1.5, r * 0.1); ctx.beginPath(); ctx.moveTo(x + sx * r * 0.95, y + r * 0.12); ctx.quadraticCurveTo(x + sx * r * 1.18, y - r * 0.12, x + sx * r * 1.0, y - r * 0.3); ctx.stroke();
+  }
+  const fl = st ? Math.max(0, st.flash) : 0;
+  if (fl > 0) { const c = FIRECOL[HEAD_ATK[i]] || FIRECOL.fire, mr = r * (0.18 + 0.12 * fl); ctx.fillStyle = c[1]; ctx.beginPath(); ctx.ellipse(x, y + r * 0.5, mr, mr * 0.8, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = Math.min(1, fl * 1.5); ctx.drawImage(glowSprite(hex(c[1]).join(',')), x - r, y + r * 0.5 - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+  else { ctx.fillStyle = '#2A0A06'; ctx.beginPath(); ctx.ellipse(x, y + r * 0.5, r * 0.18, r * 0.06, 0, 0, Math.PI * 2); ctx.fill(); }
+}
+function drawRavana(b) {
+  const s = bossScale(b), fl = bossBegin(b, s);
+  const skin = '#5E3622', skinHi = '#A8704A', vein = 'rgba(150,40,120,0.75)', wv = Math.sin(time * 2.4) * s * 0.05;
+  // the golden aura of Lanka's king
+  const ag = ctx.createRadialGradient(0, -s * 1.1, s * 0.2, 0, -s * 1.1, s * 1.9);
+  ag.addColorStop(0, `rgba(255,205,60,${b.dead ? 0.35 * (1 - fl) : 0.5 + 0.12 * Math.sin(time * 3)})`); ag.addColorStop(1, 'rgba(255,150,0,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s * 1.1, s * 1.9, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.75, s * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+  // royal cloak: crimson outside, purple inside, gold trim, flowing
+  ctx.fillStyle = '#2A0A3A'; ctx.beginPath(); ctx.moveTo(-s * 0.55, -s * 1.42); ctx.quadraticCurveTo(-s * 1.0 - wv, -s * 0.7, -s * 0.86 + wv, -s * 0.02); ctx.lineTo(s * 0.86 - wv, -s * 0.02); ctx.quadraticCurveTo(s * 1.0 + wv, -s * 0.7, s * 0.55, -s * 1.42); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5A0A1E'; ctx.beginPath(); ctx.moveTo(-s * 0.55, -s * 1.42); ctx.quadraticCurveTo(-s * 1.06 - wv, -s * 0.7, -s * 0.96 + wv, -s * 0.02); ctx.lineTo(-s * 0.78, -s * 0.02); ctx.quadraticCurveTo(-s * 0.8, -s * 0.8, -s * 0.5, -s * 1.38); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(s * 0.55, -s * 1.42); ctx.quadraticCurveTo(s * 1.06 + wv, -s * 0.7, s * 0.96 - wv, -s * 0.02); ctx.lineTo(s * 0.78, -s * 0.02); ctx.quadraticCurveTo(s * 0.8, -s * 0.8, s * 0.5, -s * 1.38); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#E8C77A'; ctx.lineWidth = Math.max(2, s * 0.025); ctx.beginPath(); ctx.moveTo(-s * 0.96 + wv, -s * 0.02); ctx.lineTo(-s * 0.78, -s * 0.02); ctx.moveTo(s * 0.96 - wv, -s * 0.02); ctx.lineTo(s * 0.78, -s * 0.02); ctx.stroke();
+  // ghostly extra arms behind him: twenty arms
+  if (!b.dead) { ctx.globalAlpha = 0.22; for (const side of [-1, 1]) for (let k = 0; k < 3; k++) { ctx.save(); ctx.translate(side * s * 0.5, -s * 1.3); ctx.rotate(side * (-2.1 + k * 0.45 + Math.sin(time * 1.6 + k) * 0.1)); ctx.fillStyle = '#7A4AA8'; ctx.beginPath(); ctx.ellipse(0, -s * 0.36, s * 0.07, s * 0.36, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } ctx.globalAlpha = 1; }
+  // legs with golden greaves, crimson dhoti with gold border
+  for (const side of [-1, 1]) { muscle(side * s * 0.2, -s * 0.36, s * 0.13, s * 0.3, 0, skin, skinHi); ctx.fillStyle = goldFill(side * s * 0.2 - s * 0.13, side * s * 0.2 + s * 0.13); ctx.fillRect(side * s * 0.2 - s * 0.13, -s * 0.3, s * 0.26, s * 0.24); }
+  ctx.fillStyle = '#7A0A1A'; ctx.beginPath(); ctx.moveTo(-s * 0.46, -s * 0.86); ctx.lineTo(s * 0.46, -s * 0.86); ctx.lineTo(s * 0.4, -s * 0.42); ctx.lineTo(-s * 0.4, -s * 0.42); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = goldFill(-s * 0.4, s * 0.4); ctx.fillRect(-s * 0.4, -s * 0.47, s * 0.8, s * 0.05);
+  // muscular torso: V-shape, chest, eight-pack, pumped veins
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.86); ctx.lineTo(-s * 0.56, -s * 1.38); ctx.quadraticCurveTo(0, -s * 1.5, s * 0.56, -s * 1.38); ctx.lineTo(s * 0.3, -s * 0.86); ctx.closePath(); ctx.fill();
+  for (const side of [-1, 1]) muscle(side * s * 0.22, -s * 1.42, s * 0.2, s * 0.08, side * -0.35, skin, skinHi);   // trapezius
+  for (const side of [-1, 1]) muscle(side * s * 0.21, -s * 1.23, s * 0.22, s * 0.13, side * 0.12, skin, skinHi);   // chest
+  for (let r = 0; r < 3; r++) for (const side of [-1, 1]) muscle(side * s * 0.075, -s * (1.07 - r * 0.07), s * 0.065, s * 0.03, 0, skin, skinHi);   // abs
+  ctx.strokeStyle = vein; ctx.lineWidth = Math.max(1, s * 0.012);
+  ctx.beginPath(); ctx.moveTo(-s * 0.12, -s * 1.13); ctx.quadraticCurveTo(-s * 0.2, -s * 1.02, -s * 0.16, -s * 0.9); ctx.moveTo(s * 0.12, -s * 1.13); ctx.quadraticCurveTo(s * 0.21, -s * 1.0, s * 0.15, -s * 0.9); ctx.stroke();
+  // navel: when Vibhishana reveals it, the amrit glows there
+  if (b.amrit > 0 && !b.dead) {
+    const pr = s * (0.16 + 0.04 * Math.sin(time * 9)); ctx.drawImage(glowSprite('255,240,180'), -pr * 2, -s * 0.93 - pr * 2, pr * 4, pr * 4);
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = Math.max(2, s * 0.02); ctx.beginPath(); ctx.arc(0, -s * 0.93, pr * 1.3, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(0, -s * 0.93, s * 0.03, 0, Math.PI * 2); ctx.fill();
+  } else { ctx.fillStyle = '#2A1008'; ctx.beginPath(); ctx.arc(0, -s * 0.93, s * 0.018, 0, Math.PI * 2); ctx.fill(); }
+  // gold: crossed chest straps, belt with a lion roundel, great collar, shoulder plates
+  ctx.strokeStyle = '#E8B84A'; ctx.lineWidth = Math.max(2, s * 0.035); ctx.beginPath(); ctx.moveTo(-s * 0.48, -s * 1.36); ctx.lineTo(s * 0.28, -s * 0.88); ctx.moveTo(s * 0.48, -s * 1.36); ctx.lineTo(-s * 0.28, -s * 0.88); ctx.stroke();
+  ctx.fillStyle = goldFill(-s * 0.34, s * 0.34); ctx.fillRect(-s * 0.34, -s * 0.9, s * 0.68, s * 0.07);
+  ctx.beginPath(); ctx.arc(0, -s * 0.865, s * 0.06, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(0, -s * 0.865, s * 0.025, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = goldFill(-s * 0.44, s * 0.44); ctx.beginPath(); ctx.moveTo(-s * 0.44, -s * 1.42); ctx.quadraticCurveTo(0, -s * 1.22, s * 0.44, -s * 1.42); ctx.quadraticCurveTo(0, -s * 1.34, -s * 0.44, -s * 1.42); ctx.fill();
+  ctx.fillStyle = '#C0101E'; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.arc(k * s * 0.13, -s * 1.33 + Math.abs(k) * -s * 0.025, s * 0.022, 0, Math.PI * 2); ctx.fill(); }
+  // arms: huge biceps with veins and gold bands; right holds Chandrahas, left a fist of purple fire
+  for (const side of [-1, 1]) {
+    const swing = b.liftT > 0 ? -2.6 : side === 1 ? (b.swordT > 0 ? -2.2 + (1.8 - b.swordT) * 1.6 : -0.55 + Math.sin(time * 1.8) * 0.12) : 0.5 + Math.sin(time * 2 + 1) * 0.12;
+    ctx.save(); ctx.translate(side * s * 0.56, -s * 1.34); ctx.rotate(side * swing);
+    muscle(0, s * 0.12, s * 0.15, s * 0.12, 0, skin, skinHi);   // deltoid
+    muscle(0, s * 0.22, s * 0.155, s * 0.24, 0, skin, skinHi);   // biceps
+    ctx.strokeStyle = vein; ctx.lineWidth = Math.max(1, s * 0.012); ctx.beginPath(); ctx.moveTo(-s * 0.04, s * 0.06); ctx.quadraticCurveTo(s * 0.05, s * 0.2, -s * 0.02, s * 0.36); ctx.stroke();
+    ctx.fillStyle = goldFill(-s * 0.13, s * 0.13); ctx.fillRect(-s * 0.13, s * 0.34, s * 0.26, s * 0.05);
+    muscle(0, s * 0.56, s * 0.12, s * 0.21, 0, skin, skinHi);   // forearm
+    ctx.strokeStyle = vein; ctx.beginPath(); ctx.moveTo(s * 0.03, s * 0.42); ctx.lineTo(-s * 0.02, s * 0.66); ctx.stroke();
+    ctx.fillStyle = goldFill(-s * 0.11, s * 0.11); ctx.fillRect(-s * 0.11, s * 0.66, s * 0.22, s * 0.08);   // bracer
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, s * 0.8, s * 0.08, 0, Math.PI * 2); ctx.fill();
+    if (side === 1) {   // Chandrahas: the crescent moon-sword
+      ctx.fillStyle = goldFill(-s * 0.03, s * 0.03); ctx.fillRect(-s * 0.025, s * 0.72, s * 0.05, s * 0.2);
+      ctx.save(); ctx.translate(0, s * 0.9);
+      const sg = ctx.createLinearGradient(0, 0, 0, s * 0.9); sg.addColorStop(0, '#F4FAFF'); sg.addColorStop(1, '#8EC8FF');
+      ctx.fillStyle = sg; ctx.shadowColor = '#BFE6FF'; ctx.shadowBlur = Q.shadows ? 14 : 0;
+      ctx.beginPath(); ctx.arc(-s * 0.28, s * 0.38, s * 0.42, -0.9, 0.95); ctx.arc(-s * 0.36, s * 0.38, s * 0.34, 0.85, -0.8, true); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.restore();
+    } else if (!b.dead) { const fr = s * 0.2; ctx.drawImage(glowSprite('170,80,255'), -fr, s * 0.8 - fr, fr * 2, fr * 2); }
+    ctx.restore();
+    // golden shoulder plates with spikes
+    ctx.fillStyle = goldFill(side * s * 0.56 - s * 0.2, side * s * 0.56 + s * 0.2); ctx.beginPath(); ctx.ellipse(side * s * 0.56, -s * 1.38, s * 0.2, s * 0.13, side * 0.3, Math.PI, 0); ctx.fill();
+    for (let k = 0; k < 3; k++) { const bx = side * s * (0.44 + k * 0.1); ctx.beginPath(); ctx.moveTo(bx - s * 0.03, -s * 1.44); ctx.lineTo(bx, -s * 1.56 + k * s * 0.02); ctx.lineTo(bx + s * 0.03, -s * 1.44); ctx.fill(); }
+  }
+  // ten heads (outer ones first, the main head last)
+  const H = ravanaHeads(s);
+  for (const i of [1, 5, 9, 4, 8, 3, 7, 2, 6, 0]) drawRavanaHead(H[i], i, b);
+  if (b.hitFlash > 0) { ctx.globalAlpha = b.hitFlash * 0.3; ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.ellipse(0, -s * 1.2, s * 0.7, s * 1.0, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+  ctx.restore();
+}
+function drawKumbha(b) {
+  const s = bossScale(b), fl = bossBegin(b, s), asleep = b.sleep > 0, skin = '#4E3424', skinHi = '#8A6040';
+  if (b.dead) ctx.globalAlpha = Math.max(0, 1 - Math.max(0, fl - 0.6) * 2);
+  const ag = ctx.createRadialGradient(0, -s, s * 0.2, 0, -s, s * 1.5); ag.addColorStop(0, `rgba(200,110,40,${asleep ? 0.18 : 0.38})`); ag.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s, s * 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.8, s * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+  const sway = asleep ? Math.sin(time * 1.2) * 0.03 : 0; ctx.rotate(sway);
+  // tree-trunk legs, dark green dhoti
+  for (const side of [-1, 1]) { muscle(side * s * 0.28, -s * 0.3, s * 0.17, s * 0.3, 0, skin, skinHi); ctx.fillStyle = goldFill(side * s * 0.28 - s * 0.17, side * s * 0.28 + s * 0.17); ctx.fillRect(side * s * 0.28 - s * 0.17, -s * 0.1, s * 0.34, s * 0.05); }
+  ctx.fillStyle = '#1F3A2A'; ctx.beginPath(); ctx.moveTo(-s * 0.55, -s * 0.72); ctx.lineTo(s * 0.55, -s * 0.72); ctx.lineTo(s * 0.5, -s * 0.36); ctx.lineTo(-s * 0.5, -s * 0.36); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = goldFill(-s * 0.5, s * 0.5); ctx.fillRect(-s * 0.5, -s * 0.4, s * 1.0, s * 0.05);
+  // the great belly and chest
+  muscle(0, -s * 0.95, s * 0.52, s * 0.42, 0, skin, skinHi);
+  for (const side of [-1, 1]) muscle(side * s * 0.22, -s * 1.3, s * 0.24, s * 0.15, side * 0.1, skin, skinHi);
+  ctx.fillStyle = '#2A1408'; ctx.beginPath(); ctx.arc(0, -s * 0.9, s * 0.03, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#E8B84A'; ctx.lineWidth = Math.max(2, s * 0.03); ctx.beginPath(); ctx.arc(0, -s * 1.42, s * 0.28, 0.25, Math.PI - 0.25); ctx.stroke();   // necklace
+  // arms: right holds a giant iron trident (shula), left reaches for food
+  for (const side of [-1, 1]) {
+    ctx.save(); ctx.translate(side * s * 0.6, -s * 1.38); ctx.rotate(side * (side === 1 ? -0.35 : 0.55 + (b.chew > 0 ? -0.9 : 0)) + (asleep ? 0.3 * side : 0));
+    muscle(0, s * 0.24, s * 0.17, s * 0.27, 0, skin, skinHi); muscle(0, s * 0.66, s * 0.14, s * 0.24, 0, skin, skinHi);
+    ctx.fillStyle = goldFill(-s * 0.16, s * 0.16); ctx.fillRect(-s * 0.16, s * 0.42, s * 0.32, s * 0.06);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, s * 0.92, s * 0.11, 0, Math.PI * 2); ctx.fill();
+    if (side === 1) {
+      ctx.fillStyle = '#3A3A44'; ctx.fillRect(-s * 0.035, -s * 0.6, s * 0.07, s * 1.6);
+      ctx.fillStyle = '#6A6A78'; ctx.beginPath(); ctx.moveTo(0, -s * 0.95); ctx.lineTo(s * 0.06, -s * 0.6); ctx.lineTo(-s * 0.06, -s * 0.6); ctx.fill();
+      for (const tx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(tx * s * 0.2, -s * 0.82); ctx.quadraticCurveTo(tx * s * 0.2, -s * 0.6, 0, -s * 0.58); ctx.lineTo(tx * s * 0.04, -s * 0.62); ctx.quadraticCurveTo(tx * s * 0.14, -s * 0.66, tx * s * 0.2, -s * 0.82); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+  // head: wild hair, small crown, tusks, beard; eyes shut while asleep
+  const hy = -s * 1.72, hr = s * 0.26;
+  ctx.fillStyle = '#120A06'; for (let k = -4; k <= 4; k++) { ctx.beginPath(); ctx.moveTo(k * hr * 0.22, hy - hr * 0.6); ctx.lineTo(k * hr * 0.3, hy - hr * 1.25 - Math.abs(k % 2) * hr * 0.15); ctx.lineTo(k * hr * 0.22 + hr * 0.18, hy - hr * 0.6); ctx.fill(); }
+  muscle(0, hy, hr, hr * 1.02, 0, skin, skinHi);
+  ctx.fillStyle = goldFill(-hr * 0.6, hr * 0.6); ctx.beginPath(); ctx.moveTo(-hr * 0.6, hy - hr * 0.78); for (let k = 0; k <= 3; k++) { ctx.lineTo(-hr * 0.6 + k * hr * 0.4, hy - hr * (k % 3 === 0 ? 1.05 : 1.25)); } ctx.lineTo(hr * 0.6, hy - hr * 0.78); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#120A06'; ctx.beginPath(); ctx.moveTo(-hr * 0.75, hy + hr * 0.2); ctx.quadraticCurveTo(0, hy + hr * 1.5, hr * 0.75, hy + hr * 0.2); ctx.quadraticCurveTo(0, hy + hr * 0.75, -hr * 0.75, hy + hr * 0.2); ctx.fill();   // beard
+  if (asleep) { ctx.strokeStyle = '#1A0A04'; ctx.lineWidth = Math.max(1.5, hr * 0.08); for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(sx * hr * 0.35, hy - hr * 0.08, hr * 0.14, 0.2, Math.PI - 0.2); ctx.stroke(); } }
+  else for (const sx of [-1, 1]) { const er = hr * 0.5; ctx.drawImage(glowSprite('255,60,30'), sx * hr * 0.35 - er, hy - hr * 0.1 - er, er * 2, er * 2); ctx.fillStyle = '#FFE0A0'; ctx.beginPath(); ctx.ellipse(sx * hr * 0.35, hy - hr * 0.1, hr * 0.12, hr * 0.07, 0, 0, Math.PI * 2); ctx.fill(); }
+  const mouthOpen = b.recover > 0 ? 0.32 : b.chew > 0 ? 0.12 + 0.1 * Math.abs(Math.sin(time * 14)) : asleep ? 0.05 + 0.04 * Math.sin(time * 2) : 0.08;
+  ctx.fillStyle = '#2A0806'; ctx.beginPath(); ctx.ellipse(0, hy + hr * 0.42, hr * 0.3, hr * mouthOpen, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FFF6E0'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sx * hr * 0.2, hy + hr * 0.36); ctx.lineTo(sx * hr * 0.3, hy + hr * 0.05); ctx.lineTo(sx * hr * 0.1, hy + hr * 0.36); ctx.fill(); }   // tusks
+  ctx.restore();
+}
+function drawVibhiFigure(s, pose, shield) {   // pose 0 standing with mace, 1 kneeling with folded hands, 2 pointing (in Ravana's fight)
+  const skin = '#7A5236', skinHi = '#B07E58', kneel = pose === 1;
+  if (kneel) ctx.translate(0, s * 0.28);
+  // long blue silk robe with gold borders and a yellow sash (a devotee of Narayana)
+  ctx.fillStyle = '#24346E'; ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 1.3); ctx.lineTo(s * 0.3, -s * 1.3); ctx.lineTo(s * 0.42, kneel ? -s * 0.3 : 0); ctx.lineTo(-s * 0.42, kneel ? -s * 0.3 : 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = goldFill(-s * 0.42, s * 0.42); ctx.fillRect(-s * 0.42, (kneel ? -s * 0.3 : 0) - s * 0.05, s * 0.84, s * 0.05);
+  ctx.strokeStyle = '#F2C230'; ctx.lineWidth = Math.max(2, s * 0.06); ctx.beginPath(); ctx.moveTo(-s * 0.28, -s * 1.26); ctx.lineTo(s * 0.24, -s * 0.78); ctx.stroke();
+  // arms
+  for (const side of [-1, 1]) {
+    ctx.save(); ctx.translate(side * s * 0.32, -s * 1.22);
+    const rot = kneel ? side * -0.55 : pose === 2 && side === 1 ? -2.0 : side * 0.25;
+    ctx.rotate(rot); muscle(0, s * 0.22, s * 0.08, s * 0.24, 0, skin, skinHi);
+    ctx.fillStyle = goldFill(-s * 0.08, s * 0.08); ctx.fillRect(-s * 0.08, s * 0.34, s * 0.16, s * 0.04);
+    if (side === -1 && pose === 0) { ctx.fillStyle = goldFill(-s * 0.03, s * 0.03); ctx.fillRect(-s * 0.025, s * 0.4, s * 0.05, s * 0.55); ctx.beginPath(); ctx.arc(0, s * 1.0, s * 0.12, 0, Math.PI * 2); ctx.fill(); }   // gada
+    ctx.restore();
+  }
+  if (kneel) { ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, -s * 0.98, s * 0.07, 0, Math.PI * 2); ctx.fill(); }   // folded hands
+  // head: gold crown, Vaishnava tilak, calm eyes, neat beard
+  const hy = -s * 1.52, hr = s * 0.18;
+  muscle(0, hy, hr * 0.85, hr, 0, skin, skinHi);
+  ctx.fillStyle = goldFill(-hr, hr); ctx.beginPath(); ctx.moveTo(-hr * 0.7, hy - hr * 0.62); ctx.lineTo(-hr * 0.45, hy - hr * 1.4); ctx.lineTo(0, hy - hr * 1.7); ctx.lineTo(hr * 0.45, hy - hr * 1.4); ctx.lineTo(hr * 0.7, hy - hr * 0.62); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = Math.max(1, hr * 0.08); ctx.beginPath(); ctx.moveTo(-hr * 0.12, hy - hr * 0.6); ctx.lineTo(-hr * 0.08, hy - hr * 0.3); ctx.moveTo(hr * 0.12, hy - hr * 0.6); ctx.lineTo(hr * 0.08, hy - hr * 0.3); ctx.stroke();
+  ctx.strokeStyle = '#C0101E'; ctx.beginPath(); ctx.moveTo(0, hy - hr * 0.6); ctx.lineTo(0, hy - hr * 0.32); ctx.stroke();
+  ctx.fillStyle = '#FFF6D8'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sx * hr * 0.32, hy - hr * 0.08, hr * 0.12, hr * (kneel ? 0.03 : 0.06), 0, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.moveTo(-hr * 0.55, hy + hr * 0.3); ctx.quadraticCurveTo(0, hy + hr * 1.15, hr * 0.55, hy + hr * 0.3); ctx.quadraticCurveTo(0, hy + hr * 0.6, -hr * 0.55, hy + hr * 0.3); ctx.fill();
+  if (shield) {   // Narayana's shield: a blue disc with the Sudarshan spokes
+    ctx.save(); ctx.translate(0, -s * 0.95); ctx.rotate(time * 2);
+    ctx.fillStyle = 'rgba(90,150,255,0.22)'; ctx.strokeStyle = 'rgba(190,220,255,0.9)'; ctx.lineWidth = Math.max(2, s * 0.03);
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.62, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    for (let k = 0; k < 8; k++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(k * Math.PI / 4) * s * 0.6, Math.sin(k * Math.PI / 4) * s * 0.6); ctx.stroke(); }
+    ctx.restore();
+  }
+}
+function drawVibhi(b) {
+  const s = bossScale(b), fl = bossBegin(b, s);
+  if (b.dead) ctx.globalAlpha = Math.max(0, 1 - Math.max(0, fl - 0.55) * 2.2);
+  const ag = ctx.createRadialGradient(0, -s, s * 0.2, 0, -s, s * 1.3); ag.addColorStop(0, 'rgba(120,160,255,0.35)'); ag.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s, s * 1.3, 0, Math.PI * 2); ctx.fill();
+  drawVibhiFigure(s, b.dead ? 1 : 0, b.shieldT > 0 && !b.dead);
+  ctx.restore();
+}
+function drawVibhiAlly() {   // during Ravana's fight: Vibhishana at the edge of the bridge, pointing at his brother's navel
+  if (!boss || boss.kind !== 'ravana' || !(boss.vibhiT > 0) || boss.dead) return;
+  const p = project(0.36, -1.62), s = 62 * unit() * p.scale * 1.6, a = Math.min(1, boss.vibhiT, 9 - boss.vibhiT + 0.0001);
+  ctx.save(); ctx.globalAlpha = Math.min(1, a * 2); ctx.translate(p.x, p.y);
+  const ag = ctx.createRadialGradient(0, -s, 0, 0, -s, s * 1.2); ag.addColorStop(0, 'rgba(255,240,180,0.5)'); ag.addColorStop(1, 'rgba(255,240,180,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(0, -s, s * 1.2, 0, Math.PI * 2); ctx.fill();
+  drawVibhiFigure(s, 2, false); ctx.restore();
+}
+const BOSS_DRAW = { ravana: drawRavana, kumbha: drawKumbha, vibhi: drawVibhi };
 // ---------------- Bosses: Mahishasura, Raktabija, Andhakasura ----------------
 const BOSS_LOOK = {
   andhaka: { helm: 1, mace: 1, cracks: 1, aura: '120,20,40', leg: '#14121C', dhoti: '#3A0F18', arm: '#24222E', t0: '#0E0C14', t1: '#2E2A3A', head: '#22202C', horn: '#C9A24F', eye: '#FF2A1A', crown: 1 },
@@ -3168,12 +3859,13 @@ const BOSS_LOOK = {
   rakta:   { spear: 1, halo: 1, aura: '190,10,30', leg: '#3A0810', dhoti: '#1A0A0C', arm: '#8E1426', t0: '#4A0812', t1: '#B8202F', head: '#A3172A', horn: '#FFD0C0', eye: '#FFE14D', hair: 1, drip: 1 },
 };
 function drawBoss() {
+  if (BOSS_DRAW[boss.kind]) return BOSS_DRAW[boss.kind](boss);
   const b = boss, L = BOSS_LOOK[b.kind], p = project(b.z, b.x), u = unit();
   const s = BOSSES[b.kind].size * u * (0.6 + 0.4 * b.enter) * (0.85 + 0.15 * Math.min(1, (1 - b.z) / (1 - b.home + 0.001))), breathe = Math.sin(time * 2.2) * 3;
   const charging = b.charge && b.charge.warn <= 0 && !b.charge.back;
   ctx.save(); ctx.translate(p.x, p.y + (1 - b.enter) * 80);
   const fl = b.dead ? (b.fall || 0) : 0;
-  if (b.dead) { ctx.translate(0, -s * 0.3 * fl); ctx.rotate(-1.45 * fl * fl); ctx.globalAlpha = b.kind === 'andhaka' ? 1 : Math.max(0, 1 - Math.max(0, fl - 0.6) * 2); }
+  if (b.dead) { ctx.translate(0, -s * 0.3 * fl); ctx.rotate(-1.45 * fl * fl); ctx.globalAlpha = b.kind === FINAL_BOSS ? 1 : Math.max(0, 1 - Math.max(0, fl - 0.6) * 2); }
   // aura
   const ag = ctx.createRadialGradient(0, -s * 0.9, s * 0.2, 0, -s * 0.9, s * 1.35);
   ag.addColorStop(0, `rgba(${L.aura},${b.dead ? 0.45 * (1 - fl) : 0.5 + 0.1 * Math.sin(time * 4)})`); ag.addColorStop(1, 'rgba(0,0,0,0)');
@@ -3250,9 +3942,10 @@ function drawBoss() {
   if (b.hitFlash > 0) { const fg = ctx.createRadialGradient(0, -s * 1.2, 0, 0, -s * 1.2, s * 1.1); fg.addColorStop(0, `rgba(255,255,240,${b.hitFlash * 0.6})`); fg.addColorStop(1, 'rgba(255,255,240,0)'); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, -s * 1.2, s * 1.1, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
   ctx.restore();
 }
-const FIRECOL = { venom: ['#E8FFD0', '#4CC870', 'rgba(20,90,40,0.6)'], bolt: ['#E6F4FF', '#4FA8FF', 'rgba(20,60,160,0.6)'], fire: ['#FFF3C4', '#FF8A3D', 'rgba(200,30,20,0.6)'], blood: ['#FFD6D6', '#E0202A', 'rgba(110,0,10,0.65)'], rock: ['#F2E2C8', '#A07850', 'rgba(70,50,30,0.5)'], maya: ['#F4E6FF', '#A860FF', 'rgba(60,0,120,0.6)'], dark: ['#E8D8FF', '#6A3AB0', 'rgba(10,0,30,0.8)'] };
+const FIRECOL = { raven: ['#E6D0FF', '#7A3CFF', 'rgba(20,0,40,0.6)'], frost: ['#F0FCFF', '#7FD8FF', 'rgba(30,120,190,0.6)'], sonic: ['#FFF4FF', '#C9A0FF', 'rgba(90,40,150,0.5)'], gold: ['#FFF8D8', '#FFC23A', 'rgba(210,120,0,0.6)'], wind: ['#F2FFF8', '#BFE8D8', 'rgba(120,170,160,0.35)'], venom: ['#E8FFD0', '#4CC870', 'rgba(20,90,40,0.6)'], bolt: ['#E6F4FF', '#4FA8FF', 'rgba(20,60,160,0.6)'], fire: ['#FFF3C4', '#FF8A3D', 'rgba(200,30,20,0.6)'], blood: ['#FFD6D6', '#E0202A', 'rgba(110,0,10,0.65)'], rock: ['#F2E2C8', '#A07850', 'rgba(70,50,30,0.5)'], maya: ['#F4E6FF', '#A860FF', 'rgba(60,0,120,0.6)'], dark: ['#E8D8FF', '#6A3AB0', 'rgba(10,0,30,0.8)'] };
 function drawFireball(f) {
   const p = project(f.z, f.lane - 1), r = (10 + 22 * p.scale) * unit(), c = FIRECOL[f.col || 'fire'];
+  if (f.col === 'raven') { const sc = r / 26, spr = ravenSprite(Math.floor(time * 14) % 4); ctx.drawImage(spr, p.x - 36 * sc, p.y - r - 28 * sc, 72 * sc, 56 * sc); return; }
   if (f.col === 'rock') {   // a boulder kicked up by Mahishasura's hooves
     ctx.save(); ctx.translate(p.x, p.y - r); ctx.rotate(-time * 8);
     const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0, 0, 0, r); g.addColorStop(0, '#B8A08A'); g.addColorStop(1, '#4A3A2E');
@@ -3266,7 +3959,7 @@ function drawFireball(f) {
   if (f.col === 'dark' || f.col === 'maya') { ctx.strokeStyle = `rgba(230,210,255,${0.5 + 0.3 * Math.sin(time * 20)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y - r, r * (0.9 + 0.2 * Math.sin(time * 12)), 0, Math.PI * 2); ctx.stroke(); }
 }
 function drawWarn(f, strong) {
-  const zf = Math.min(0.66, (f.from || (boss ? boss.z : 0.64)) + 0.02), col = f.col === 'maya' ? '170,90,255' : f.col === 'dark' ? '120,60,200' : f.col === 'venom' ? '80,220,120' : f.col === 'bolt' ? '90,170,255' : '255,60,30';
+  const zf = Math.min(0.66, (f.from || (boss ? boss.z : 0.64)) + 0.02), col = f.col === 'raven' ? '170,90,255' : f.col === 'wind' ? '170,230,210' : f.col === 'gold' ? '255,190,40' : f.col === 'frost' ? '120,210,255' : f.col === 'sonic' ? '200,150,255' : f.col === 'maya' ? '170,90,255' : f.col === 'dark' ? '120,60,200' : f.col === 'venom' ? '80,220,120' : f.col === 'bolt' ? '90,170,255' : '255,60,30';
   const a = project(zf, f.lane - 1.5), b = project(0, f.lane - 1.5), c = project(0, f.lane - 0.5), d = project(zf, f.lane - 0.5);
   ctx.fillStyle = `rgba(${col},${(strong ? 0.22 : 0.12) + (strong ? 0.25 : 0.18) * Math.abs(Math.sin(time * 14))})`;
   ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y + 30); ctx.lineTo(c.x, c.y + 30); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
@@ -3289,6 +3982,7 @@ function drawPickup(pk) {
   ctx.translate(p.x, y);
   ctx.save(); ctx.rotate(pk.t * 1.5); ctx.strokeStyle = rgba(P.col, 0.9); ctx.lineWidth = Math.max(1.5, r * 0.08); ctx.setLineDash([r * 0.3, r * 0.22]); ctx.beginPath(); ctx.arc(0, 0, r * 1.2, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
   drawBoonIcon(ctx, pk.kind, r, pk.t);
+  if (pk.trap) { ctx.strokeStyle = `rgba(170,80,255,${0.35 + 0.45 * Math.abs(Math.sin(time * 9))})`; ctx.lineWidth = Math.max(2, r * 0.12); ctx.beginPath(); ctx.arc(0, 0, r * (1.45 + 0.1 * Math.sin(time * 13)), 0, Math.PI * 2); ctx.stroke(); }
   if (pk.z < 0.5) { ctx.font = `600 ${Math.round(9 + 5 * p.scale)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#FFF6E0'; ctx.shadowColor = '#000'; ctx.shadowBlur = 4; ctx.fillText(P.name, 0, r * 1.95); }
   ctx.restore();
 }
@@ -3446,7 +4140,7 @@ function drawShot(s) {
   ctx.save(); ctx.translate(p.x, p.y);
   if (s.kind === 'arrow' || s.kind === 'blade' || s.kind === 'trishul' || s.kind === 'flame') ctx.rotate(ang);
   ctx.globalAlpha = fade;
-  ctx.shadowColor = s.color; ctx.shadowBlur = 14;
+  { const gr = k * 2.4; ctx.drawImage(glowSprite(rgbOf(s.color)), -gr, -gr, gr * 2, gr * 2); }   // glow (sprite: much cheaper than shadowBlur)
   if (s.kind === 'arrow') {
     ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, k * 1.2); ctx.lineTo(0, -k); ctx.stroke();
     ctx.fillStyle = s.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.5); ctx.lineTo(-k * 0.3, -k * 0.9); ctx.lineTo(k * 0.3, -k * 0.9); ctx.fill();
@@ -4030,7 +4724,7 @@ function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
     ctx.restore(); return;
   }
   const w = WEAPONS[weapon], k = s * 0.55;
-  ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = 10; ctx.lineCap = 'round';
+  ctx.save(); ctx.shadowColor = w.color; ctx.shadowBlur = Q.shadows ? 10 : 0; ctx.lineCap = 'round';
   if (weapon === 'simha') {
     const g = ctx.createRadialGradient(hx, hy - s * 0.08, 0, hx, hy - s * 0.08, s * 0.16); g.addColorStop(0, 'rgba(255,245,200,0.95)'); g.addColorStop(1, 'rgba(255,140,40,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(hx, hy - s * 0.08, s * 0.16, 0, Math.PI * 2); ctx.fill();
@@ -4065,8 +4759,10 @@ function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
 
 // ---------------- Main loop ----------------
 let last = performance.now(), frozen = false;
+const PERF = { on: false, upd: [], ren: [], gap: [] };   // frame-time probe for local testing (records only when switched on)
 function loop(now) {
   const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  const p0 = PERF.on ? performance.now() : 0;
   if (raw < 0.5) watchPerf(raw);
   cineStep(dt);
   if (!paused && !userPaused && !frozen && state === 'playing') update(dt * timeScale());
@@ -4074,13 +4770,15 @@ function loop(now) {
   else if (!paused && !frozen && (state === 'won' || state === 'celebrate' || state === 'victory')) celebUpdate(dt);
   if (!paused && !userPaused && !frozen && state !== 'intro') updateAmbient(dt);
   if (W < 10 || H < 10) resize();
+  const p1 = PERF.on ? performance.now() : 0;
   if (state !== 'intro' && W >= 10 && H >= 10) render();
+  if (PERF.on) { const p2 = performance.now(); PERF.upd.push(p1 - p0); PERF.ren.push(p2 - p1); PERF.gap.push(raw * 1000); }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get brahma() { return brahma; }, fireBrahmastra, BRAHMA, PERF, sfx, Q, setQuality, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
