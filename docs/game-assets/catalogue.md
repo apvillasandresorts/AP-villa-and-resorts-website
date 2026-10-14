@@ -174,4 +174,4 @@ Not used in game: the hero action/animation references (plain studio turnarounds
 
 | File | Source | Where it plays |
 | --- | --- | --- |
-| `videos/game/trailer.mp4` (+ `.jpg` poster) | Owner's Gemini video `gemini_generated_video_c275422a.mp4` (30 s, 16:9, with sound), cropped to remove the watermark, 960×540 | Plays once when a player first taps Enter the Temple (registry key `trailer`), and as chapter 1 of Watch the story. On phones held upright it shows whole over a blurred copy with a "turn sideways" hint. The older portrait `intro.mp4` remains as story chapter 2. |
+| `videos/game/trailer.mp4` (+ `.jpg` poster) | Owner's Gemini video `gemini_generated_video_c275422a.mp4` (30 s, 16:9, with sound), full 1280×720, watermark blurred out with delogo, CRF 19 (about 14.7 MB) | Plays once when a player first taps Enter the Temple (registry key `trailer`), and as chapter 1 of Watch the story. On phones held upright it shows whole over a blurred copy with a "turn sideways" hint. The older portrait `intro.mp4` remains as story chapter 2. |
