@@ -1209,7 +1209,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; LEECHES.length = 0; FALLING.length = 0; petLevelStart(); $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
+function resetField() { FALLEN_HEADS.length = 0; BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; LEECHES.length = 0; FALLING.length = 0; petLevelStart(); $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1697,7 +1697,7 @@ function spawnDanav(type, lane, o = {}) {
   const hp = Math.round(t.hp * (boss ? 1.2 + 0.4 * (LV().bossNo || 4) : 1 + 0.38 * wn) * (elite ? 2.2 : 1) * (o.mini ? 0.45 : 1)) || 1;
   const d = { type, lane, x: lane - 1, z: o.z || 1.02, hp, max: hp, flash: 0, phase: Math.random() * 6, hopT: 2 + Math.random() * 2, elite, mini: !!o.mini, big: o.mini ? 0.72 : elite ? 1.12 : 1, spd: 1 + 0.045 * wn, castT: 1.2 + Math.random() };
   if (t.armor) d.armor = d.armorMax = Math.round(t.armor * (1 + 0.25 * wn));
-  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if ($('banner').classList.contains('show') && ++tries < 4) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 3200, 'enemy'); if (ENEMY_CLIPS.has(type)) artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
+  if (ENEMY_INFO[type] && !o.mini && !seenTypes.has(type) && state === 'playing') { seenTypes.add(type); let tries = 0; const show = () => { if (state !== 'playing') return; if (($('banner').classList.contains('show') || $('titlecard').classList.contains('show')) && ++tries < 6) { setTimeout(show, 900); return; } banner(t.name, ENEMY_INFO[type], 3200, 'enemy'); if (ENEMY_CLIPS.has(type)) artClip('videos/game/art/enemy-' + type, t.name); }; setTimeout(show, 50); }   // waits for the wave banner to clear
   danavs.push(d);
   return d;
 }
@@ -2197,6 +2197,7 @@ const BOSS_TICK = {
       const can = b.heads.map((h, i) => i).filter(i => i !== 0 && !(b.heads[i].cut > 0)); if (!can.length) break;
       const i = can[Math.floor(Math.random() * can.length)], s = bossScale(b), hp = ravanaHeads(s)[i], p = project(b.z, b.x);
       b.heads[i].cut = b.mortal ? 999 : 7.5; b.cuts++;
+      FALLEN_HEADS.push({ i, x: p.x + hp.x, y: p.y + (1 - b.enter) * 80 + hp.y, r: hp.r, vx: (hp.x < 0 ? -1 : hp.x > 0 ? 1 : (Math.random() < 0.5 ? -1 : 1)) * (90 + Math.random() * 120) * unit(), vy: -220 * unit(), rot: 0, vr: (Math.random() - 0.5) * 9, t: 0, floor: p.y + (8 + Math.random() * 30) * unit(), bounced: false });
       burst(p.x + hp.x, p.y + hp.y, '#FFB040', 20, 5); burst(p.x + hp.x, p.y + hp.y, '#B070FF', 10, 4); sfx.kill();
       floatText(p.x + hp.x, p.y + hp.y - 30 * unit(), b.mortal ? 'A head falls for good!' : 'A head falls… for now', '#FFE08A', 15);
     }
@@ -2215,6 +2216,12 @@ const BOSS_TICK = {
     if (b.vibhiT > 0) b.vibhiT -= dt;
     $('brahma-btn').hidden = !(b.amrit > 0 && brahma > 0 && !b.mortal && !b.dead && BRAHMA.t < 0);
     b.lineT -= dt; if (b.lineT <= 0) { b.lineT = 7 + Math.random() * 5; bossLine(b, RAVANA_LINES, '#FFD27D'); if (Math.random() < 0.5) sfx.cackle(); }
+    if (!b.darkUsed && b.hp <= b.max * 0.55) {   // once: the great darkness of Andhakasura
+      b.darkUsed = true; b.darkOn = true; b.darkT = 7; sfx.dread(); sfx.thunder(); SKY.flash = 0.4;
+      titleCard("Ravana calls Andhakasura's power", 'अंधकार', 'The great darkness: trust the glowing warnings', 3000, 'boss');   // a title card: never overwritten by banners
+      setTimeout(() => { if (boss === b && !b.dead) bossLine(b, ['Now you cannot see me, little monk!'], '#C9A2FF'); }, 900);
+    }
+    if (b.darkOn && b.kind === 'ravana') { b.darkT -= dt; if (b.darkT <= 0) b.darkOn = false; }
     if (b.liftT > 0) b.liftT -= dt;
     if (b.swordT > 0) b.swordT -= dt;
     if (b.swarmT > 0) b.swarmT -= dt;
@@ -2298,7 +2305,7 @@ function petLevelStart() {   // every level: the latest companion, back on its f
   const k = petForLevel(), isNew = k && k !== pet.kind;
   pet.kind = k; if (!k) return;
   const P = PETS[k]; pet.max = P.hp; pet.hp = P.hp; pet.down = false; pet.hurt = 0; pet.fireT = 1.2;
-  if (isNew) { let tries = 0; const show = () => { if (pet.kind !== k) return; if ((state !== 'playing' || $('banner').classList.contains('show')) && ++tries < 8) { setTimeout(show, 800); return; } if (state !== 'playing') return; banner(P.name + ' joins you!', P.line + '. Keep it safe: if it faints you lose 500 points', 3800, 'enemy pet'); sfx.up(); const q = petPos(); burst(q.x, q.y - 20 * unit(), '#FFE7A8', 24, 4); }; setTimeout(show, 3000); }
+  if (isNew) { let tries = 0; const show = () => { if (pet.kind !== k) return; if ((state !== 'playing' || $('banner').classList.contains('show') || $('titlecard').classList.contains('show')) && ++tries < 8) { setTimeout(show, 800); return; } if (state !== 'playing') return; banner(P.name + ' joins you!', P.line + '. Keep it safe: if it faints you lose 500 points', 3800, 'enemy pet'); sfx.up(); const q = petPos(); burst(q.x, q.y - 20 * unit(), '#FFE7A8', 24, 4); }; setTimeout(show, 3000); }
 }
 const petAt = lane => pet.kind && !pet.down && pet.lane === lane && lane !== player.lane;
 function petPos() { const p = project(0.1, pet.x); return { x: p.x, y: p.y, scale: p.scale }; }   // just ahead of the yoddha, always in view
@@ -2635,7 +2642,7 @@ function updateBoss(dt) {
   if (b.kind === 'andhaka' && b.phase === 2) {   // 5 s of darkness every 14 s
     b.darkT -= dt; if (b.darkT <= 0) { b.darkOn = !b.darkOn; const pw = b.power || 0; b.darkT = b.darkOn ? 5 + pw : Math.max(3.5, 9 - pw * 1.8); if (b.darkOn) sfx.thunder(); }
   }
-  DARK.target = b.kind === 'andhaka' && b.darkOn ? 1 : 0; DARK.level = b.kind === 'andhaka' ? (b.power || 0) : 0;
+  DARK.target = (b.kind === 'andhaka' || b.kind === 'ravana') && b.darkOn ? 1 : 0; DARK.level = b.kind === 'andhaka' ? (b.power || 0) : b.kind === 'ravana' ? 2 : 0;
   b.enter = Math.min(1, b.enter + dt * 0.45);
   b.hitFlash = Math.max(0, b.hitFlash - dt * 5);
   const rage = b.hp < b.max / 2;
@@ -2694,7 +2701,12 @@ function drawDarkness() {   // Andhakasura's darkness: everything dims except a 
   g.addColorStop(0, 'rgba(6,2,16,0)'); g.addColorStop(1, `rgba(6,2,16,${Math.min(0.97, 0.82 + 0.05 * lv) * DARK.a})`);
   ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
   for (const f of fires) if (f.warn > 0) drawWarn(f);
-  if (boss && !boss.dead) {   // his eyes still burn in the dark
+  if (boss && !boss.dead && boss.kind === 'ravana') {   // only his twenty purple eyes burn in the dark
+    const sc = bossScale(boss), q = project(boss.z, boss.x), oy = q.y + (1 - boss.enter) * 80, H0 = ravanaHeads(sc);
+    ctx.globalAlpha = DARK.a;
+    H0.forEach((h, i) => { if (boss.heads && boss.heads[i].cut > 0) return; const er = h.r * 0.5; for (const sx of [-1, 1]) ctx.drawImage(glowSprite('170,80,255'), q.x + h.x + sx * h.r * 0.3 - er, oy + h.y - h.r * 0.08 - er, er * 2, er * 2); });
+    ctx.globalAlpha = 1;
+  } else if (boss && !boss.dead) {   // his eyes still burn in the dark
     const q = project(boss.z, boss.x), s = BOSSES[boss.kind].size * unit(), y = q.y - s * 1.68, rr = s * 0.12;
     ctx.globalAlpha = DARK.a; for (const k of [-1, 1]) ctx.drawImage(glowSprite('255,40,30'), q.x + k * s * 0.09 - rr, y - rr, rr * 2, rr * 2); ctx.globalAlpha = 1;
   }
@@ -2759,9 +2771,10 @@ function render() {
   if (boss && boss.vibhiT > 0) all.push({ z: 0.36, draw: drawVibhiAlly });
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
-  drawBeams(); updateDrawRavens();
+  updateDrawFallenHeads(paused || userPaused ? 0 : 1 / 60); updateDrawRavens();
   drawBrahmastra();
   drawDarkness();
+  drawBeams();   // eye lasers stay visible even in the darkness
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawPet(); drawWarrior(); drawLeeches(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
@@ -3973,6 +3986,18 @@ function ravanaHeads(s) {   // 10 heads: 0 the crowned main head, 1 above it, 2�
 }
 function ravanaNavel() { const b = boss, s = bossScale(b), p = project(b.z, b.x); return { x: p.x, y: p.y + (1 - b.enter) * 80 - s * 0.93 }; }
 const RAVANA_LIT_ORDER = [5, 9, 4, 8, 3, 7, 2, 6, 1, 0];
+const FALLEN_HEADS = [], HEAD_STUB = { heads: null, lit: 0 };
+function updateDrawFallenHeads(dt) {   // severed heads tumble down, bounce on the bridge, eyes go dark, then fade
+  for (let k = FALLEN_HEADS.length - 1; k >= 0; k--) {
+    const F = FALLEN_HEADS[k]; F.t += dt;
+    if (F.y < F.floor || F.vy < 0) { F.vy += 900 * unit() * dt; F.x += F.vx * dt; F.y += F.vy * dt; F.rot += F.vr * dt; }
+    if (F.y >= F.floor && F.vy > 0) { if (!F.bounced && F.vy > 120 * unit()) { F.bounced = true; F.vy *= -0.35; F.vx *= 0.5; F.vr *= 0.5; burst(F.x, F.floor, '#FFB040', 8, 3); } else { F.y = F.floor; F.vy = 0; F.vx *= 0.9; F.vr *= 0.85; } }
+    const a = F.t < 1.6 ? 1 : Math.max(0, 1 - (F.t - 1.6) / 0.8); if (a <= 0) { FALLEN_HEADS.splice(k, 1); continue; }
+    HEAD_STUB.lit = F.t < 0.45 ? 10 : 0;   // the purple fire in its eyes dies out
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(F.x, F.y); ctx.rotate(F.rot);
+    drawRavanaHead({ x: 0, y: 0, r: F.r }, F.i, HEAD_STUB); ctx.restore();
+  }
+}
 function drawRavanaHead(h, i, b) {
   const st = b.heads ? b.heads[i] : null, skin = '#5E3622', hi = '#9A6A48';
   if (st && st.cut > 0) {   // a severed neck glowing with molten gold (until the head grows back)
@@ -5107,7 +5132,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get brahma() { return brahma; }, fireBrahmastra, BRAHMA, pet, LEECHES, shakeOffLeeches, petLevelStart, PERF, sfx, Q, setQuality, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get brahma() { return brahma; }, fireBrahmastra, BRAHMA, RAVENS, FALLEN_HEADS, pet, LEECHES, shakeOffLeeches, petLevelStart, PERF, sfx, Q, setQuality, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
