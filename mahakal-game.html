@@ -6,11 +6,11 @@
 <!-- Google Analytics 4 (loaded after the page so it never slows it down) -->
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BEZ8KC5XGV');addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-BEZ8KC5XGV';document.head.appendChild(s);},1500);});</script>
 <title>Mahakal Game · Path to Darshan | AP Villas & Resorts Ujjain</title>
-<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, battle Mahishasura, Raktabija and Andhakasura across 9 waves, climb the top-10 leaderboard and win 5% to 30% off your stay. By AP Villas &amp; Resorts, Ujjain.">
+<meta name="description" content="Play Path to Darshan, a free Mahakal game: stop the danav, earn the Ashirvaad and divine weapons of Ganesh ji, Hanuman ji, Maa Durga and Shri Vishnu, battle Mahishasura, Raktabija and Andhakasura across 9 waves, climb the top-10 leaderboard and win 5% to 30% off your stay or food bill. By AP Villas &amp; Resorts, Ujjain.">
 <meta name="keywords" content="mahakal game, mahakaleshwar game, ujjain mahakal, path to darshan, mahakal online game, hindu temple game, ap villas ujjain, mahakal blessing, ujjain villa booking">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="Path to Darshan — A Mahakal Mini Game by AP Villas, Ujjain">
-<meta property="og:description" content="Stop the danav across 9 waves, defeat Mahishasura, Raktabija and Andhakasura, earn divine weapons and win up to 30% off your stay. A mini game by AP Villas & Resorts, Ujjain.">
+<meta property="og:description" content="Stop the danav across 9 waves, defeat Mahishasura, Raktabija and Andhakasura, earn divine weapons and win up to 30% off your stay or food bill. A mini game by AP Villas & Resorts, Ujjain.">
 <meta property="og:type" content="game">
 <link rel="canonical" href="https://www.apvillasandresorts.in/mahakal-game.html">
 <meta property="og:url" content="https://www.apvillasandresorts.in/mahakal-game.html">
@@ -786,7 +786,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
       <div class="intro__small">— HAR HAR MAHADEV —</div>
       <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Mahakal Game: Path to Darshan by AP Villas &amp; Resorts</h1>
       <div class="intro__title">Path to <em>Darshan</em></div>
-      <div class="intro__sub">Danav block the path to the temple. Fight through 9 waves and 3 great asuras: Mahishasura, Raktabija and Andhakasura. Earn the Ashirvaad and divine weapons of the gods, gather boons on the bridge, grow from a little monk boy into a Siddha sadhu and ride Mahakal's fire-breathing lion. Win <b>5% to 30% off</b> your stay at AP Villas &amp; Resorts, Ujjain.</div>
+      <div class="intro__sub">Danav block the path to the temple. Fight through 9 waves and 3 great asuras: Mahishasura, Raktabija and Andhakasura. Earn the Ashirvaad and divine weapons of the gods, gather boons on the bridge, grow from a little monk boy into a Siddha sadhu and ride Mahakal's fire-breathing lion. Win <b>5% to 30% off</b> your stay or food bill at AP Villas &amp; Resorts, Ujjain.</div>
       <button class="intro__btn" id="enter-btn">Enter the Temple</button>
       <div class="intro__row"><button class="intro__lb" id="story-btn" type="button">🎬 Watch the story</button><button class="intro__lb" id="lb-open" type="button">🏆 Top 10 Yoddhas</button></div>
     </div>
@@ -933,7 +933,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 <script>
 // =========================================================================
 // PATH TO DARSHAN — lane shooter: stop the danav, earn divine weapons,
-// 9 waves and 3 asura bosses, boons and Shakti (power up/down with your play), a 5–30% stay coupon
+// 9 waves and 3 asura bosses, boons and Shakti (power up/down with your play), a 5–30% coupon for the stay or the food bill
 // and a public top-10 leaderboard (kept in the owner's Google Sheet via the Apps Script web app).
 // =========================================================================
 const $ = (id) => document.getElementById(id);
@@ -1247,12 +1247,12 @@ function issueCoupon(pct, result) {
   return c;
 }
 function showCoupon(box, c, pct) {
-  if (!c) { box.innerHTML = `<div class="coupon__where">Clear 2 waves to win your first stay coupon.</div><div class="coupon__terms">${REWARD_LADDER}</div>`; return; }
-  const msg = ['Namaste Apoorv ji 🙏', `I played the Mahakal game on your website and won a ${c.pct}% discount coupon.`, '', '🎟️ Coupon: ' + c.code, '🏡 Villa: Rudrangan Suites / AP Residency', '📅 My dates: ', '👨‍👩‍👧 Guests: ', '', 'Please share availability and the discounted price. Thank you!', '(Ref: WEB-GAME-COUPON)'].join('\n');
+  if (!c) { box.innerHTML = `<div class="coupon__where">Clear 2 waves to win your first coupon (stay or food bill).</div><div class="coupon__terms">${REWARD_LADDER}</div>`; return; }
+  const msg = ['Namaste Apoorv ji 🙏', `I played the Mahakal game on your website and won a ${c.pct}% discount coupon.`, '', '🎟️ Coupon: ' + c.code, '🧾 Use it on: my stay / my food bill', '🏡 Villa: Rudrangan Suites / AP Residency', '📅 My dates: ', '👨‍👩‍👧 Guests: ', '', 'Please share availability and the discounted price. Thank you!', '(Ref: WEB-GAME-COUPON)'].join('\n');
   box.innerHTML = `<div class="coupon__off">${c.pct}<small>%</small> OFF</div>
-    <div class="coupon__where">your stay at <b>Rudrangan Suites</b> or <b>AP Residency</b>, Ujjain${pct < c.pct ? `<br><small>Your best coupon so far (this run earned ${pct ? pct + '%' : 'none yet'})</small>` : ''}</div>
+    <div class="coupon__where">your stay <b>or</b> your food bill at <b>Rudrangan Suites</b> or <b>AP Residency</b>, Ujjain${pct < c.pct ? `<br><small>Your best coupon so far (this run earned ${pct ? pct + '%' : 'none yet'})</small>` : ''}</div>
     <div class="coupon__code">${c.code}</div>
-    <div class="coupon__terms">Send this code on WhatsApp when you book directly with us. Valid on direct bookings only, subject to availability; one coupon per booking.${c.pct < 30 ? '<br>' + REWARD_LADDER : ''}</div>
+    <div class="coupon__terms">Use it on your stay (send the code on WhatsApp when you book directly with us) or on your food bill during your stay. Subject to availability; one coupon per booking.${c.pct < 30 ? '<br>' + REWARD_LADDER : ''}</div>
     <div class="coupon__btns"><a class="go-btn go-btn--whatsapp" href="https://wa.me/918999061598?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" data-claim>Claim on WhatsApp</a><button class="go-btn go-btn--ghost" type="button" data-copy="${c.code}">Copy code</button></div>`;
 }
 document.addEventListener('click', async e => {
@@ -2717,7 +2717,8 @@ const CUTSCENE_REGISTRY = [
   // landscape (16:9) versions for desktop are pending; desktop plays the portrait clip over a blurred backdrop
 ];
 const CUTSCENES = Object.fromEntries(CUTSCENE_REGISTRY.filter(c => c.status === 'verified').map(c => [c.key, { portrait: c.portrait, landscape: c.landscape, wide: c.wide }]));
-const CUT_TITLES = { trailer: ['महाकाल', 'Path to Darshan'], intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], finale: ['हर हर महादेव', 'Victory'] };
+const CUT_TITLES = { trailer: ['', ''],   // the trailer carries its own boss names and end title
+  intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], finale: ['हर हर महादेव', 'Victory'] };
 let cutTok = 0;
 // widescreen clips: full screen + landscape while they play (Android / desktop), the iPhone's own player on iPhone
 const CFS = { on: false };

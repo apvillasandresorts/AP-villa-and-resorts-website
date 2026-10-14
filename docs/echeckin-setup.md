@@ -29,5 +29,5 @@ The form at **www.apvillasandresorts.in/checkin.html** sends every check-in to a
 ## Mahakal game: leaderboard and coupons (same Google Sheet, "Game" tab)
 - The game at **www.apvillasandresorts.in/mahakal-game.html** uses this same web app. Every coupon it gives out and every leaderboard entry becomes a row in the **Game** tab.
 - **Checking a guest's coupon:** search the code (for example `MAHAKAL25-AB3CD`) in the Game tab. A genuine code has a row with Type = Coupon and its discount %. Codes that are not in the sheet were not issued by the game.
-- Discounts: clear 2 waves 5% · beat Mahishasura 10% · beat Raktabija 15% · beat Andhakasura 20%, plus up to 10% more for a strong run (no retries, little damage, high score). Maximum 30%.
+- Discounts: clear 2 waves 5% · beat Mahishasura 10% · beat Raktabija 15% · beat Andhakasura 20%, plus up to 10% more for a strong run (no retries, little damage, high score). Maximum 30%. The guest can use the coupon on the stay (direct booking) or on the food bill; one coupon per booking.
 - The public top 10 shows only the name and score. To remove an unwanted name, delete its row (Type = Leaderboard).
