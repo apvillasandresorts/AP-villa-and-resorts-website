@@ -787,6 +787,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 #hud-marks i.done { background: #FFE08A; }
 .hudbar__journey em { font-style: normal; font-size: 11px; font-weight: 700; color: #FFE7A8; min-width: 34px; text-align: right; }
 @media (max-width: 600px) { .hudbar { padding: 6px 8px 7px; } .hudbar__row { grid-template-columns: 1fr 1fr; gap: 3px 10px; } .hudbar__cell b { font-size: 11.5px; } .hudbar__cell small { font-size: 8.5px; } }
+@media (min-width: 601px) {
+  .hudbar { display: grid; grid-template-columns: 1fr 1.6fr; align-items: center; gap: 12px; padding: 6px 12px; width: min(820px, calc(100% - 16px)); }
+  .hudbar__row { gap: 10px; }
+  .hudbar__journey { margin-top: 0; }
+}
+@media (min-width: 601px) and (max-width: 900px) { .hudbar { grid-template-columns: 1fr; gap: 4px; } }
 </style>
 </head>
 <body>
@@ -1096,6 +1102,7 @@ const DANAV = {
   agni:    { name: 'Agni Vetala', hp: 7, speed: 0.1, size: 1.05, skin: '#4A3222', dark: '#1E140C', horn: '#C98A4A', eye: '#FFB020', pts: 65, ai: 'burn', float: true, head: 'flamehelm', glowLines: '#FF8A2A' },
   maya:    { name: 'Maya Mohini Asura', hp: 8, speed: 0.095, size: 1.05, skin: '#4A2E78', dark: '#24163E', horn: '#E8D8FF', eye: '#B07CFF', pts: 70, ai: 'illusion', hop: true, head: 'mask', robe: '#3A2464' },
   kaal:    { name: 'Kaal Pishacha', hp: 18, speed: 0.08, size: 1.25, skin: '#A9A4BE', dark: '#3A3650', horn: '#B9B2D8', eye: '#C69CFF', pts: 120, ai: 'kaal', shadowy: true, head: 'ghoul', robe: '#1E1A2A' },
+  jonk: { name: 'Rakta Jonk', hp: 4, speed: 0.17, size: 0.7, skin: '#5A1418', dark: '#2A0608', horn: '#8A2A2A', eye: '#FFD24D', pts: 60, ai: 'leech', leech: true },
   lankaguard: { name: 'Lanka Rakshak', hp: 10, speed: 0.085, size: 1.22, skin: '#6A4426', dark: '#2E1C0E', horn: '#F4D58D', eye: '#FFD24D', pts: 95, ai: 'guard', head: 'helm', glowLines: '#FFD24D' },
   nishachar: { name: 'Nishachar Chor', hp: 5, speed: 0.13, size: 0.95, skin: '#3A2E4A', dark: '#1A1424', horn: '#C9A24F', eye: '#FFE14D', pts: 75, ai: 'thief', shadowy: true },
   tantrik: { name: 'Tantrik-asura', hp: 7, speed: 0.11, size: 1.05, skin: '#3B2A55', dark: '#1C1230', horn: '#C8B6FF', eye: '#C69CFF', pts: 70, caster: true },
@@ -1133,17 +1140,17 @@ const LEVELS = [
   { kills: 14, every: 1.42, act: 0, mix: { rakshas: 0.32, danav: 0.27, pishach: 0.12, vrishabh: 0.17, chhaya: 0.06, naga: 0.06 }, intro: 'naga', bless: 'hanuman' },
   { boss: 'mahisha', act: 0, bless: 'durga' },
   { kills: 15, every: 1.35, act: 1, mix: { rakshas: 0.22, danav: 0.18, kavach: 0.17, vrishabh: 0.13, mayavi: 0.16, naga: 0.06, vajra: 0.08 }, intro: 'vajra' },
-  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.17, kavach: 0.15, tantrik: 0.1, naag: 0.15, pishach: 0.13, rakshas: 0.12, vajra: 0.08, agni: 0.1 }, intro: 'agni', bless: 'vishnu' },
+  { kills: 16, every: 1.3,  act: 1, mix: { danav: 0.16, kavach: 0.14, tantrik: 0.1, naag: 0.14, pishach: 0.12, rakshas: 0.11, vajra: 0.08, agni: 0.09, jonk: 0.06 }, intro: 'agni', bless: 'vishnu' },
   { kills: 18, every: 1.25, act: 1, mix: { danav: 0.12, kavach: 0.12, tantrik: 0.1, naag: 0.12, maha: 0.11, raktaja: 0.13, mayavi: 0.1, agni: 0.08, chhaya: 0.06, maya: 0.06 }, intro: 'maya' },
   { boss: 'rakta', act: 1, bless: 'lakshmi' },
   { kills: 18, every: 1.2,  act: 2, mix: { kavach: 0.14, tantrik: 0.11, naag: 0.12, maha: 0.13, raktaja: 0.14, pishach: 0.12, maya: 0.08, naga: 0.06, vajra: 0.05, kaal: 0.05 }, intro: 'kaal' },
-  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.13, tantrik: 0.11, naag: 0.11, maha: 0.13, raktaja: 0.12, vrishabh: 0.13, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08 } },
+  { kills: 20, every: 1.15, act: 2, mix: { kavach: 0.12, tantrik: 0.1, naag: 0.1, maha: 0.13, raktaja: 0.12, vrishabh: 0.12, agni: 0.07, chhaya: 0.06, vajra: 0.06, kaal: 0.08, jonk: 0.04 } },
   { kills: 22, every: 1.1,  act: 2, mix: { kavach: 0.12, tantrik: 0.11, naag: 0.1, maha: 0.14, raktaja: 0.11, pishach: 0.1, maya: 0.08, naga: 0.07, agni: 0.07, kaal: 0.1 }, bless: 'mahakal' },
   { boss: 'andhaka', act: 2 },
   // act 4 · Swarna Lanka
   { kills: 20, every: 1.1,  act: 3, mix: { lankaguard: 0.2, nishachar: 0.12, kavach: 0.1, maha: 0.12, tantrik: 0.1, mayavi: 0.1, raktaja: 0.08, vajra: 0.06, maya: 0.06, agni: 0.06 }, intro: 'lankaguard' },
   { boss: 'kumbha', act: 3 },
-  { kills: 22, every: 1.05, act: 3, mix: { lankaguard: 0.18, nishachar: 0.14, maha: 0.12, kavach: 0.1, tantrik: 0.1, kaal: 0.08, maya: 0.08, naga: 0.07, agni: 0.07, vajra: 0.06 }, intro: 'nishachar' },
+  { kills: 22, every: 1.05, act: 3, mix: { lankaguard: 0.17, nishachar: 0.13, maha: 0.11, kavach: 0.1, tantrik: 0.1, kaal: 0.08, maya: 0.08, naga: 0.07, agni: 0.06, vajra: 0.05, jonk: 0.05 }, intro: 'nishachar' },
   { boss: 'vibhi', act: 3, trial: true, bless: 'sarva' },
   { boss: 'ravana', act: 3, final: true },
 ];
@@ -1197,7 +1204,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
+function resetField() { BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; LEECHES.length = 0; FALLING.length = 0; petLevelStart(); $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1207,7 +1214,7 @@ function hud() {
   $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
   const w = WEAPONS[weapon];
   $('hud-weapon').textContent = tokenT > 0 ? 'Trishul (token)' : w.name;
-  $('hud-stage').textContent = STAGES[Math.min(5, bulk)].name;
+  $('hud-stage').textContent = STAGES[Math.min(5, bulk)].name + (pet.kind ? ' + ' + PETS[pet.kind].name : '');
   const lv = LV();
   if (boss) {
     const B = BOSSES[boss.kind];
@@ -1603,14 +1610,16 @@ addEventListener('keydown', e => {
   if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { setPause(!userPaused); return; }
   if (userPaused) return;
   if (e.key === 'b' || e.key === 'B') { fireBrahmastra(); }
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { if (shakeOffLeeches()) e.preventDefault(); }
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); move(-1); }
   else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); move(1); }
 });
 stage.addEventListener('pointerdown', e => {
   ensureAudio();
   if (state !== 'playing' || userPaused || e.target.closest('a, button, input, .ashirvaad, .gameover, .victory, .pausebox, .lbpanel')) return;
-  const r = stage.getBoundingClientRect();
-  move(e.clientX - r.left < r.width / 2 ? -1 : 1);
+  const r = stage.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (LEECHES.length) { const pp = playerPos(); if (Math.abs(x - pp.x) < 95 * unit() && y > pp.y - 170 * unit()) { shakeOffLeeches(); return; } }
+  move(x < r.width / 2 ? -1 : 1);
 });
 function setPause(v) {
   if (v && state !== 'playing') return;
@@ -1685,6 +1694,42 @@ function fire() {
 const TAUNTS = ['Ha ha! Too slow!', 'हा हा हा!', 'Catch me if you can!', 'पकड़ के दिखाओ!', 'Your arrows tickle!', 'Go home, little monk!'];
 const LANKA_TAUNTS = ['Lanka never falls!', 'जय लंकेश!', 'Lankesh will crush you!', 'The gold is ours!'];
 let tauntT = 7;
+const LEECHES = [], FALLING = [];
+function leechTip() {}
+function leechUpdate(dt) {
+  for (const L of LEECHES) {
+    L.t += dt; L.drainT -= dt;
+    if (L.drainT <= 0 && state === 'playing') { L.drainT = 2.6; changeTej(-5); if (lives > 0) hurtPlayer('leech'); const pp = playerPos(); floatText(pp.x + L.side * 22 * unit(), pp.y - 30 * unit(), 'Slurp! −prana', '#FF6060', 14); }
+  }
+  for (let i = FALLING.length - 1; i >= 0; i--) { const F = FALLING[i]; F.t += dt; F.x += F.vx * dt; F.y += F.vy * dt; F.vy += 900 * unit() * dt; F.rot += F.vr * dt; if (F.t > 0.9) { burst(F.x, F.y, '#8A1018', 10, 3); FALLING.splice(i, 1); } }
+}
+function shakeOffLeeches() {
+  if (!LEECHES.length || state !== 'playing') return false;
+  const pp = playerPos();
+  for (const L of LEECHES) { FALLING.push({ x: pp.x + L.side * 18 * unit(), y: pp.y - 10 * unit(), vx: L.side * (160 + Math.random() * 120) * unit(), vy: -260 * unit(), rot: 0, vr: L.side * 9, t: 0 }); addScore(DANAV.jonk.pts); }
+  floatText(pp.x, pp.y - 110 * unit(), LEECHES.length > 1 ? 'Shaken off! Both leeches fall' : 'Shaken off!', '#9BF0B0', 17);
+  LEECHES.length = 0; player.shakeT = 0.45; sfx.pop(); sfx.hit();
+  return true;
+}
+function drawLeeches() {
+  const pp = playerPos(), u = unit();
+  for (const L of LEECHES) {
+    const x = pp.x + L.side * 22 * u, y = pp.y + 4 * u + Math.sin(L.t * 6 + L.ph) * 2, pulse = 1 + 0.12 * Math.sin(L.t * 10);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(L.side * 0.5);
+    const g = ctx.createRadialGradient(-4, -6, 0, 0, 0, 24 * u); g.addColorStop(0, '#C8404A'); g.addColorStop(1, '#3A0A0E');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, 15 * u * pulse, 25 * u * pulse, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,210,210,0.35)'; ctx.lineWidth = 1.5; for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.ellipse(0, k * 9 * u, 13 * u * pulse, 3 * u, 0, 0, Math.PI); ctx.stroke(); }
+    ctx.fillStyle = '#FFD24D'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(sx * 5 * u, -18 * u, 2.6 * u, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#C01020'; ctx.beginPath(); ctx.arc(0, -24 * u * pulse, 5 * u, 0, Math.PI * 2); ctx.fill();   // sucker
+    ctx.restore();
+    if (Math.random() < 0.15) parts.push({ x, y: y + 10 * u, vx: (Math.random() - 0.5), vy: 1, r: 2, life: 0.7, color: '#C01020' });   // blood drops
+  }
+  if (LEECHES.length && state === 'playing') {   // the prompt
+    ctx.save(); ctx.font = `800 ${Math.round(13 * Math.max(1, u))}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,240,200,${0.7 + 0.3 * Math.sin(time * 10)})`; ctx.strokeStyle = 'rgba(80,0,0,0.85)'; ctx.lineWidth = 4;
+    ctx.strokeText('TAP YODDHA TO SHAKE IT OFF!', pp.x, pp.y - 92 * u); ctx.fillText('TAP YODDHA TO SHAKE IT OFF!', pp.x, pp.y - 92 * u); ctx.restore();
+  }
+  for (const F of FALLING) { ctx.save(); ctx.translate(F.x, F.y); ctx.rotate(F.rot); ctx.fillStyle = '#5A1418'; ctx.beginPath(); ctx.ellipse(0, 0, 8 * u, 13 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+}
 function tauntTick(dt) {   // the danav jeer at you now and then (more after they hurt you)
   if (state !== 'playing' || (boss && !boss.dead)) return;
   tauntT -= dt; if (tauntT > 0) return;
@@ -1724,6 +1769,7 @@ function collect(pk) {
   const P = PICKUPS[pk.kind], pp = playerPos();
   floatText(pp.x, pp.y - 95 * unit(), P.name + '! ' + P.sub, P.col, 18);
   burst(pp.x, pp.y, P.col, 22, 5); sfx.heal();
+  if ((pk.kind === 'laddoo' || pk.kind === 'kalash') && pet.kind && !pet.down) pet.hp = Math.min(pet.max, pet.hp + 1);   // boons heal your companion too
   if (pk.kind === 'laddoo') lives = Math.min(MAX_LIVES, lives + 1);
   else if (pk.kind === 'rudraksha') rapidT = P.t;
   else if (pk.kind === 'trinetra') trinetraT = P.t;
@@ -1747,13 +1793,26 @@ function tandav() {   // Shiva's damru: a shockwave rolls up the bridge
 // Each special move is telegraphed, has a cooldown, and is capped. Art for them exists only as reference videos, so
 // they are drawn by the existing code renderer with their own silhouettes and colours.
 const GROUND = [];   // short-lived ground hazards (Agni Vetala fire, Kaal Pishacha claw): max 3, one hit each
-const ENEMY_INFO = { lankaguard: "Ravana's golden guard: its shield blocks your strikes. Hit it after its slam", nishachar: 'A sneaky thief that steals your boons! Catch it before it escapes to win the boon back', chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
+const ENEMY_INFO = { jonk: 'A blood-sucking leech! If it latches on, TAP your yoddha (or press Space) to shake it off', lankaguard: "Ravana's golden guard: its shield blocks your strikes. Hit it after its slam", nishachar: 'A sneaky thief that steals your boons! Catch it before it escapes to win the boon back', chhaya: 'Shadow-dashes between paths: watch for the violet shimmer', naga: 'Swift: its tail sweeps two paths after a green warning', vajra: 'Shielded: strike it after its heavy slam, when the shield drops', agni: 'Sets a path on fire after an orange warning; the fire fades fast', maya: 'Casts illusions: the real one wears a golden jewel and has a shadow', kaal: 'Elite shadow: a claw strikes the glowing circle after a warning' };
 const seenTypes = new Set();
 function addHazard(lane, kind) {
   if (GROUND.length >= 3 || GROUND.some(g => g.lane === lane)) return false;
   GROUND.push({ lane, kind, warn: kind === 'claw' ? 1.0 : 0.9, life: kind === 'claw' ? 0.35 : 2.4, hit: false }); return true;
 }
 const AI = {
+  leech(d, dt) {   // Rakta Jonk: slithers into your path and latches on
+    if (d.cd > 0) d.cd -= dt;
+    if (d.z > 0.15) { if (d.lane === player.lane && !(d.cd > 0)) { const opts = [0, 1, 2].filter(l => l !== player.lane); d.lane = opts[Math.floor(Math.random() * opts.length)]; d.cd = 0.5; } }   // slithers beside you, out of your line of fire…
+    else { if (d.lane !== player.lane) d.lane = player.lane; d.z -= 0.6 * dt; }   // …then lunges in to latch on
+    if (d.z < 0.07 && d.lane === player.lane && state === 'playing') {
+      if (LEECHES.length < 2) {
+        LEECHES.push({ t: 0, drainT: 1.6, side: LEECHES.length ? 1 : -1, ph: Math.random() * 6 });
+        if (!leechTip.shown) { leechTip.shown = true; banner('A leech latched on!', 'Tap your yoddha (or press Space) to shake it off', 2600, 'boss'); }
+        sfx.cast();
+      }
+      d.gone = true;
+    }
+  },
   thief(d, dt, t) {   // Nishachar Chor: sneaks to a boon, steals it with a cackle and runs back; catch it to win the boon back
     if (d.loot) { d.z += (t.speed * d.spd * (boss ? 1.1 : 1) + 0.3) * dt; if (d.z > 1.06) d.life = 0.0001; return; }
     if (d.cd > 0) d.cd -= dt;
@@ -1926,9 +1985,11 @@ function update(dt) {
       if (d.castT <= 0) { d.castT = 2.9 + Math.random() * 1.2; fires.push({ lane: Math.random() < 0.65 ? player.lane : Math.floor(Math.random() * 3), z: d.z - 0.02, warn: 0.95, col: 'maya', from: d.z }); sfx.cast(); }
     }
     if (t.ai) AI[t.ai](d, dt, t);
+    if (d.gone) { danavs.splice(i, 1); continue; }
     if (t.hop && d.z < 0.8 && d.z > 0.3) { d.hopT -= dt; if (d.hopT <= 0) { d.hopT = (t.ghost ? 1.2 : 1.8) + Math.random() * 1.5; const opts = [d.lane - 1, d.lane + 1].filter(l => l >= 0 && l <= 2); d.lane = opts[Math.floor(Math.random() * opts.length)]; } }
     d.x += (d.lane - 1 - d.x) * Math.min(1, dt * 6);
     if (d.life !== undefined) { d.life -= dt; if (d.life <= 0) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#8E0A18', 10, 2); danavs.splice(i, 1); continue; } }
+    if (d.z <= 0.05 && !d.decoy && petAt(d.lane)) { const q = project(d.z, d.x); burst(q.x, q.y - 20 * q.scale, '#FFD27D', 10, 3); danavs.splice(i, 1); petHurt(1); continue; }   // it bites your companion instead
     if (d.z <= 0.01) { danavs.splice(i, 1); if (lives > 0 && !d.decoy) hurtPlayer('breach'); }
   }
 
@@ -1964,14 +2025,14 @@ function update(dt) {
   }
 
   if (boss && !boss.dead) updateBoss(dt);
-  tauntTick(dt);
+  tauntTick(dt); petUpdate(dt); leechUpdate(dt); if (player.shakeT > 0) player.shakeT -= dt;
   for (let i = fires.length - 1; i >= 0; i--) {
     const f = fires[i];
     if (f.warn > 0) { f.warn -= dt; continue; }
     f.z -= (f.speed || 0.85) * dt;
     if (f.fake && f.z < 0.24) { const p = project(f.z, f.lane - 1); burst(p.x, p.y - 20, '#B070FF', 14, 3); floatText(p.x, p.y - 60 * unit(), 'Only maya!', '#C9A2FF', 14); fires.splice(i, 1); continue; }   // Ravana's illusion head: a fake that vanishes
     if (f.col === 'wind' && f.z <= 0.05) { if (f.lane === player.lane) { const dir = player.lane === 0 ? 1 : player.lane === 2 ? -1 : (Math.random() < 0.5 ? -1 : 1); move(dir); const pp = playerPos(); floatText(pp.x, pp.y - 90 * unit(), 'Whoosh! Blown aside', '#D8FFF0', 15); } fires.splice(i, 1); continue; }   // Kumbhakarna's snore: pushes, never hurts
-    if (f.z <= 0.05) { if (f.lane === player.lane && lives > 0) hurtPlayer('fire'); const p = project(0.03, f.lane - 1); burst(p.x, p.y - 10, FIRECOL[f.col || 'fire'][1], 12, 4); fires.splice(i, 1); }
+    if (f.z <= 0.05) { if (f.lane === player.lane && lives > 0) hurtPlayer('fire'); else if (petAt(f.lane)) petHurt(1); const p = project(0.03, f.lane - 1); burst(p.x, p.y - 10, FIRECOL[f.col || 'fire'][1], 12, 4); fires.splice(i, 1); }
   }
 
   // particles + texts + shockwaves
@@ -2184,6 +2245,144 @@ const BOSS_AI = {
   },
 };
 // ---- Ravana's ravens: black, thick-furred, purple-eyed; they pour from his shoulders ----
+// ---- companions: the vahana of each Ashirvaad's deity runs beside the yoddha ----
+const PETS = {
+  mushak:   { name: 'Mushak', from: 'Shri Ganesh', hp: 3, dmg: 3, rate: 1.3, col: '#D8D2E8' },
+  vanar:    { name: 'Vanar', from: 'Hanuman ji', hp: 4, dmg: 4, rate: 1.2, col: '#E0A060' },
+  bagh:     { name: 'Bagh', from: 'Maa Durga', hp: 5, dmg: 5, rate: 1.1, col: '#FFA040' },
+  garuda:   { name: 'Garuda', from: 'Shri Vishnu', hp: 5, dmg: 6, rate: 1.0, col: '#FFD27D' },
+  uluka:    { name: 'Uluka', from: 'Maa Lakshmi', hp: 5, dmg: 6, rate: 1.0, col: '#FFF0C0' },
+  nandi:    { name: 'Nandi', from: 'Mahakal', hp: 6, dmg: 7, rate: 0.95, col: '#FFFFFF' },
+  airavata: { name: 'Airavata', from: 'all the gods', hp: 8, dmg: 10, rate: 0.8, col: '#E8F4FF' },
+};
+const PET_OF = { ganesh: 'mushak', hanuman: 'vanar', durga: 'bagh', vishnu: 'garuda', lakshmi: 'uluka', mahakal: 'nandi', sarva: 'airavata' };
+const pet = { kind: null, hp: 0, max: 0, x: -1, lane: 0, fireT: 1, hurt: 0, down: false, t: 0 };
+function petForLevel() { let k = null; for (let i = 0; i < level; i++) if (LEVELS[i].bless) k = PET_OF[LEVELS[i].bless] || k; return k; }
+function petLevelStart() {   // every level: the latest companion, back on its feet with full health
+  const k = petForLevel(), isNew = k && k !== pet.kind;
+  pet.kind = k; if (!k) return;
+  const P = PETS[k]; pet.max = P.hp; pet.hp = P.hp; pet.down = false; pet.hurt = 0; pet.fireT = 1.2;
+  if (isNew) setTimeout(() => { if (pet.kind === k && state === 'playing') { const q = petPos(); floatText(q.x, q.y - 70 * unit(), P.name + ' joins you!', '#FFE7A8', 17); } }, 1800);
+}
+const petAt = lane => pet.kind && !pet.down && pet.lane === lane && lane !== player.lane;
+function petPos() { const p = project(0.1, pet.x); return { x: p.x, y: p.y, scale: p.scale }; }   // just ahead of the yoddha, always in view
+function petHurt(n) {
+  if (!pet.kind || pet.down || pet.hurt > 0) return;
+  pet.hp -= n; pet.hurt = 0.9; const q = petPos(); burst(q.x, q.y - 20 * unit(), '#FF8060', 10, 3); sfx.hurt();
+  if (pet.hp <= 0) {
+    pet.hp = 0; pet.down = true; score = Math.max(0, score - 500);
+    banner(PETS[pet.kind].name + ' has fainted!', '−500 points. Protect your companion: it recovers next level', 2200, 'boss'); sfx.down();
+  } else floatText(q.x, q.y - 60 * unit(), PETS[pet.kind].name + ' is hurt!', '#FFB0A0', 14);
+}
+function petUpdate(dt) {
+  if (!pet.kind) return;
+  pet.t += dt; if (pet.hurt > 0) pet.hurt -= dt;
+  pet.lane = player.lane === 0 ? 1 : player.lane - 1;   // runs on the path beside you
+  pet.x += (pet.lane - 1 - pet.x) * Math.min(1, dt * 7);
+  if (pet.down || state !== 'playing') return;
+  pet.fireT -= dt;
+  if (pet.fireT <= 0) {
+    const P = PETS[pet.kind], foe = danavs.some(d => !d.dead && d.lane === pet.lane && d.z < 0.75) || (boss && !boss.dead && boss.lane === pet.lane);
+    if (foe) {
+      const q = petPos();
+      shots.push({ lane: pet.lane, z: 0.05, range: boss && !boss.dead ? boss.z + 0.06 : 0.8, dmg: P.dmg * (1 + 0.12 * bulk), pierce: 0, kind: 'pet', speed: 1.8, color: P.col, hit: new Set(), spin: 0, side: true, sx: q.x, sy: q.y - 24 * unit() });
+      pet.fireT = P.rate; pet.atk = 0.25;
+    } else pet.fireT = 0.2;
+  }
+  if (pet.atk > 0) pet.atk -= dt;
+}
+function drawPet() {
+  if (!pet.kind || state === 'intro') return;
+  const q = petPos(), u = unit(), s = 34 * u * q.scale, k = pet.kind, run = pet.down ? 0 : Math.sin(pet.t * 12), flip = pet.lane < player.lane ? 1 : -1;
+  ctx.save(); ctx.translate(q.x, q.y);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.7, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+  if (k === 'airavata' && !pet.down) { ctx.globalAlpha = 0.55 + 0.2 * Math.sin(time * 4); ctx.drawImage(glowSprite('200,230,255'), -s * 1.4, -s * 1.9, s * 2.8, s * 2.8); ctx.globalAlpha = 1; }
+  if (pet.down) { ctx.globalAlpha = 0.55; ctx.rotate(flip * 1.3); ctx.translate(0, s * 0.2); }
+  else if (pet.hurt > 0 && Math.floor(pet.t * 20) % 2) ctx.globalAlpha = 0.5;
+  ctx.scale(flip, 1);
+  const fly = k === 'garuda' || k === 'uluka', by = fly ? -s * 0.9 + Math.sin(pet.t * 4) * s * 0.12 : -Math.abs(run) * s * 0.08;
+  ctx.translate(0, by + (pet.atk > 0 ? -s * 0.08 : 0));
+  petBody(k, s, run);
+  ctx.restore();
+  // name + health
+  ctx.save(); const w = 38 * u, hy = q.y - (fly ? 2.0 : 1.35) * s - 10 * u;
+  ctx.fillStyle = 'rgba(15,18,30,0.75)'; ctx.fillRect(q.x - w / 2 - 1, hy - 1, w + 2, 6);
+  ctx.fillStyle = pet.down ? '#666' : pet.hp / pet.max > 0.5 ? '#7CE08A' : pet.hp / pet.max > 0.25 ? '#FFC24A' : '#FF5A4A'; ctx.fillRect(q.x - w / 2, hy, w * pet.hp / pet.max, 4);
+  ctx.font = `700 ${Math.round(10 * Math.max(1, u))}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = pet.down ? '#BBB' : '#FFF0C8';
+  ctx.fillText(pet.down ? PETS[k].name + ' · fainted' : PETS[k].name, q.x, hy - 4); ctx.restore();
+}
+function petEyes(x, y, r, col) {   // big cute eyes with fierce brows
+  for (const dx of [-1, 1]) {
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = col || '#1A0E08'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1 + r * 0.2, y + r * 0.1, r * 0.62, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(x + dx * r * 1.1 + r * 0.35, y - r * 0.2, r * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, r * 0.35); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x + dx * r * 1.1 - r * 0.8, y - r * 1.25 - dx * r * 0.3); ctx.lineTo(x + dx * r * 1.1 + r * 0.8, y - r * 1.05 + dx * r * 0.3); ctx.stroke();
+  }
+}
+function petBody(k, s, run) {
+  const leg = (x, c) => { ctx.fillStyle = c; ctx.fillRect(x - s * 0.06, -s * 0.28, s * 0.12, s * 0.28 + run * s * 0.04 * (x > 0 ? 1 : -1)); };
+  if (k === 'mushak') {   // Ganesh ji's mouse
+    ctx.strokeStyle = '#B8A8C8'; ctx.lineWidth = Math.max(1.5, s * 0.05); ctx.beginPath(); ctx.moveTo(-s * 0.4, -s * 0.2); ctx.quadraticCurveTo(-s * 0.85, -s * 0.1 + run * s * 0.1, -s * 0.7, -s * 0.5); ctx.stroke();
+    ctx.fillStyle = '#A89AB8'; ctx.beginPath(); ctx.ellipse(0, -s * 0.3, s * 0.45, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s * 0.42, -s * 0.42, s * 0.24, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F4B8C8'; for (const ex of [0.28, 0.55]) { ctx.beginPath(); ctx.arc(s * ex, -s * 0.66, s * 0.13, 0, Math.PI * 2); ctx.fill(); }
+    petEyes(s * 0.45, -s * 0.45, s * 0.07); ctx.fillStyle = '#FF7090'; ctx.beginPath(); ctx.arc(s * 0.66, -s * 0.38, s * 0.05, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFF'; ctx.fillRect(s * 0.56, -s * 0.3, s * 0.04, s * 0.07);
+  } else if (k === 'vanar') {   // Hanuman ji's monkey, with a tiny gada
+    ctx.strokeStyle = '#8A5428'; ctx.lineWidth = Math.max(1.5, s * 0.07); ctx.beginPath(); ctx.moveTo(-s * 0.25, -s * 0.35); ctx.quadraticCurveTo(-s * 0.8, -s * 0.5, -s * 0.55, -s * 0.95 + run * s * 0.05); ctx.stroke();
+    leg(-s * 0.15, '#8A5428'); leg(s * 0.15, '#8A5428');
+    ctx.fillStyle = '#9A6030'; ctx.beginPath(); ctx.ellipse(0, -s * 0.5, s * 0.3, s * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s * 0.08, -s * 0.95, s * 0.26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E8B888'; ctx.beginPath(); ctx.ellipse(s * 0.14, -s * 0.9, s * 0.18, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    for (const ex of [-0.18, 0.32]) { ctx.fillStyle = '#9A6030'; ctx.beginPath(); ctx.arc(s * ex, -s * 0.98, s * 0.09, 0, Math.PI * 2); ctx.fill(); }
+    petEyes(s * 0.12, -s * 0.98, s * 0.06); ctx.fillStyle = '#C04040'; ctx.fillRect(s * 0.06, -s * 0.84, s * 0.14, s * 0.03);
+    ctx.fillStyle = '#E8B84A'; ctx.fillRect(s * 0.3, -s * 0.8, s * 0.05, s * 0.4); ctx.beginPath(); ctx.arc(s * 0.325, -s * 0.85, s * 0.1, 0, Math.PI * 2); ctx.fill();
+  } else if (k === 'bagh') {   // Maa Durga's tiger cub
+    leg(-s * 0.3, '#E07A20'); leg(s * 0.3, '#E07A20');
+    ctx.strokeStyle = '#E07A20'; ctx.lineWidth = Math.max(1.5, s * 0.08); ctx.beginPath(); ctx.moveTo(-s * 0.45, -s * 0.4); ctx.quadraticCurveTo(-s * 0.8, -s * 0.6, -s * 0.7, -s * 0.85 + run * s * 0.06); ctx.stroke();
+    ctx.fillStyle = '#F08A2A'; ctx.beginPath(); ctx.ellipse(0, -s * 0.42, s * 0.48, s * 0.24, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#1A0E08'; ctx.lineWidth = Math.max(1.2, s * 0.05); for (const sx of [-0.25, -0.05, 0.15]) { ctx.beginPath(); ctx.moveTo(s * sx, -s * 0.62); ctx.lineTo(s * (sx + 0.05), -s * 0.42); ctx.stroke(); }
+    ctx.fillStyle = '#F08A2A'; ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.6, s * 0.27, 0, Math.PI * 2); ctx.fill();
+    for (const ex of [0.28, 0.62]) { ctx.beginPath(); ctx.arc(s * ex, -s * 0.84, s * 0.09, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#FFF4E0'; ctx.beginPath(); ctx.ellipse(s * 0.52, -s * 0.5, s * 0.15, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    petEyes(s * 0.45, -s * 0.66, s * 0.065, '#3A6A10'); ctx.fillStyle = '#FFF'; for (const fx of [0.46, 0.58]) { ctx.beginPath(); ctx.moveTo(s * fx, -s * 0.46); ctx.lineTo(s * (fx + 0.02), -s * 0.38); ctx.lineTo(s * (fx + 0.04), -s * 0.46); ctx.fill(); }
+  } else if (k === 'garuda') {   // Shri Vishnu's Garuda (a fierce golden eaglet)
+    const fl = Math.sin(pet.t * 16) * 0.6;
+    ctx.fillStyle = '#C8901E'; for (const side of [-1, 1]) { ctx.save(); ctx.rotate(side * (0.6 + fl * 0.5)); ctx.beginPath(); ctx.moveTo(0, -s * 0.4); ctx.lineTo(side * s * 0.75, -s * 0.75); ctx.lineTo(side * s * 0.62, -s * 0.45); ctx.lineTo(side * s * 0.5, -s * 0.5); ctx.lineTo(side * s * 0.4, -s * 0.3); ctx.closePath(); ctx.fill(); ctx.restore(); }
+    ctx.fillStyle = '#E8B84A'; ctx.beginPath(); ctx.ellipse(0, -s * 0.38, s * 0.26, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s * 0.12, -s * 0.72, s * 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#D02020'; for (let c = 0; c < 3; c++) { ctx.beginPath(); ctx.moveTo(s * (0.02 + c * 0.06), -s * 0.88); ctx.lineTo(s * (0.0 + c * 0.06), -s * 1.05); ctx.lineTo(s * (0.07 + c * 0.06), -s * 0.88); ctx.fill(); }
+    ctx.fillStyle = '#F8D040'; ctx.beginPath(); ctx.moveTo(s * 0.28, -s * 0.74); ctx.quadraticCurveTo(s * 0.46, -s * 0.72, s * 0.36, -s * 0.6); ctx.lineTo(s * 0.26, -s * 0.66); ctx.fill();
+    petEyes(s * 0.12, -s * 0.74, s * 0.055);
+  } else if (k === 'uluka') {   // Maa Lakshmi's owl
+    const fl = Math.sin(pet.t * 10) * 0.3;
+    ctx.fillStyle = '#E8DCC0'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.ellipse(side * s * 0.3, -s * 0.4, s * 0.16, s * 0.3, side * (0.4 + fl), 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#F6EED8'; ctx.beginPath(); ctx.ellipse(0, -s * 0.45, s * 0.32, s * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E8DCC0'; for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * s * 0.12, -s * 0.78); ctx.lineTo(side * s * 0.26, -s * 0.98); ctx.lineTo(side * s * 0.28, -s * 0.72); ctx.fill(); }
+    for (const dx of [-1, 1]) { ctx.fillStyle = '#FFB020'; ctx.beginPath(); ctx.arc(dx * s * 0.13, -s * 0.6, s * 0.12, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#1A0E08'; ctx.beginPath(); ctx.arc(dx * s * 0.13, -s * 0.6, s * 0.065, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.arc(dx * s * 0.13 + s * 0.03, -s * 0.63, s * 0.025, 0, Math.PI * 2); ctx.fill(); }
+    ctx.strokeStyle = '#3A2410'; ctx.lineWidth = Math.max(1.2, s * 0.04); for (const dx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(dx * s * 0.25, -s * 0.78); ctx.lineTo(dx * s * 0.04, -s * 0.72); ctx.stroke(); }
+    ctx.fillStyle = '#C08A20'; ctx.beginPath(); ctx.moveTo(-s * 0.04, -s * 0.5); ctx.lineTo(0, -s * 0.4); ctx.lineTo(s * 0.04, -s * 0.5); ctx.fill();
+  } else if (k === 'nandi') {   // Mahakal's Nandi calf
+    leg(-s * 0.32, '#E8E2D8'); leg(s * 0.3, '#E8E2D8');
+    ctx.fillStyle = '#F6F2EA'; ctx.beginPath(); ctx.ellipse(0, -s * 0.45, s * 0.5, s * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-s * 0.05, -s * 0.66, s * 0.14, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();   // hump
+    ctx.fillStyle = '#B01828'; ctx.fillRect(-s * 0.3, -s * 0.62, s * 0.5, s * 0.2); ctx.fillStyle = '#E8B84A'; ctx.fillRect(-s * 0.3, -s * 0.44, s * 0.5, s * 0.04);   // red cloth
+    ctx.fillStyle = '#F6F2EA'; ctx.beginPath(); ctx.ellipse(s * 0.5, -s * 0.55, s * 0.2, s * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E8B84A'; for (const hx of [0.4, 0.6]) { ctx.beginPath(); ctx.moveTo(s * hx, -s * 0.72); ctx.quadraticCurveTo(s * (hx - 0.04), -s * 0.92, s * (hx + 0.06), -s * 0.95); ctx.lineTo(s * (hx + 0.04), -s * 0.72); ctx.fill(); }
+    ctx.fillStyle = '#F4C0B0'; ctx.beginPath(); ctx.ellipse(s * 0.6, -s * 0.44, s * 0.1, s * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+    petEyes(s * 0.48, -s * 0.6, s * 0.06); ctx.fillStyle = '#E8B84A'; ctx.beginPath(); ctx.arc(s * 0.42, -s * 0.32, s * 0.06, 0, Math.PI * 2); ctx.fill();   // bell
+  } else {   // Airavata: a young white elephant with four tusks and a gold headdress
+    leg(-s * 0.32, '#E4E8F0'); leg(s * 0.3, '#E4E8F0');
+    ctx.fillStyle = '#F2F6FC'; ctx.beginPath(); ctx.ellipse(-s * 0.05, -s * 0.5, s * 0.52, s * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.62, s * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#DCE4F0'; ctx.beginPath(); ctx.ellipse(s * 0.24, -s * 0.6, s * 0.18, s * 0.24, -0.2, 0, Math.PI * 2); ctx.fill();   // ear
+    ctx.strokeStyle = '#F2F6FC'; ctx.lineWidth = Math.max(3, s * 0.13); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(s * 0.68, -s * 0.55); ctx.quadraticCurveTo(s * 0.85, -s * 0.3 + run * s * 0.05, s * 0.72 + Math.sin(pet.t * 3) * s * 0.06, -s * 0.12); ctx.stroke();   // trunk
+    ctx.strokeStyle = '#FFFBEA'; ctx.lineWidth = Math.max(1.5, s * 0.05); for (const t of [0, 1]) { ctx.beginPath(); ctx.moveTo(s * (0.6 + t * 0.06), -s * 0.46); ctx.quadraticCurveTo(s * (0.72 + t * 0.06), -s * 0.4, s * (0.78 + t * 0.06), -s * 0.5); ctx.stroke(); }   // four tusks (two on this side)
+    ctx.fillStyle = goldFill(s * 0.2, s * 0.7); ctx.beginPath(); ctx.moveTo(s * 0.25, -s * 0.84); ctx.lineTo(s * 0.45, -s * 1.02); ctx.lineTo(s * 0.65, -s * 0.84); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#C0101E'; ctx.beginPath(); ctx.arc(s * 0.45, -s * 0.88, s * 0.04, 0, Math.PI * 2); ctx.fill();
+    petEyes(s * 0.5, -s * 0.68, s * 0.055);
+  }
+}
 const RAVENS = [];
 let ravenLast = 0;
 function ravenSprite(frame) {   // pre-rendered (4 wing frames) so a sky full of ravens stays cheap
@@ -2459,7 +2658,7 @@ function render() {
   drawBrahmastra();
   drawDarkness();
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
-  drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawWarrior(); drawPowerFx(true);
+  drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawPet(); drawWarrior(); drawLeeches(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
   const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - 0.08 * intensity()), W / 2, H / 2, Math.max(W, H) * 0.8);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(${lerpRGB('40,10,50', AMB.T.tint, 0.25)},${0.28 + 0.22 * intensity() + 0.25 * SKY.mood})`);
@@ -3486,7 +3685,26 @@ function drawCelebrationFx() {
     fxCtx.restore();
   }
 }
+function drawLeech(d) {   // a fat, glistening, segmented leech with a toothy sucker
+  const p = project(d.z, d.x), u = unit(), s = 40 * p.scale * 0.7 * u + 4;
+  ctx.save(); ctx.translate(p.x, p.y - s * 0.25);
+  const wig = Math.sin(time * 9 + d.phase);
+  for (let k = 4; k >= 0; k--) {   // tail to head
+    const y = -k * s * 0.18, x = Math.sin(time * 9 + d.phase + k * 0.9) * s * 0.12, r = s * (0.2 + 0.05 * (4 - Math.abs(k - 2)));
+    const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, '#9A3038'); g.addColorStop(1, '#3A0A0E');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, r * 1.1, r, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,200,200,0.25)'; ctx.lineWidth = Math.max(1, s * 0.02); ctx.beginPath(); ctx.arc(x, y, r * 0.75, Math.PI * 1.15, Math.PI * 1.6); ctx.stroke();   // shine
+  }
+  const hx = Math.sin(time * 9 + d.phase - 0.9) * s * 0.12, hy = s * 0.18;
+  ctx.fillStyle = '#2A0608'; ctx.beginPath(); ctx.ellipse(hx, hy, s * 0.18, s * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#C01020'; ctx.beginPath(); ctx.arc(hx, hy + s * 0.02, s * 0.09 * (1 + 0.15 * wig), 0, Math.PI * 2); ctx.fill();   // sucker
+  ctx.fillStyle = '#FFF0E0'; for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; ctx.beginPath(); ctx.arc(hx + Math.cos(a) * s * 0.07, hy + s * 0.02 + Math.sin(a) * s * 0.07, s * 0.018, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = '#FFD24D'; for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(hx + sx * s * 0.1, hy - s * 0.06, s * 0.03, 0, Math.PI * 2); ctx.fill(); }
+  if (d.flash > 0) { ctx.globalAlpha = d.flash * 0.6; ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.ellipse(0, -s * 0.3, s * 0.4, s * 0.6, 0, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
 function drawDanav(d) {
+  if (DANAV[d.type].leech && !d.dead) return drawLeech(d);
   const t = d.dead ? DEAD_DANAV[d.type] : DANAV[d.type], p = project(d.z, d.x), u = unit();
   const s = 40 * p.scale * t.size * u * (d.big || 1) + 5;
   const bob = d.dead ? 0 : Math.sin(d.phase) * 2 * p.scale, step = d.dead ? 0.2 : Math.sin(d.phase) * 0.35;
@@ -4141,6 +4359,7 @@ function drawShot(s) {
   if (s.kind === 'arrow' || s.kind === 'blade' || s.kind === 'trishul' || s.kind === 'flame') ctx.rotate(ang);
   ctx.globalAlpha = fade;
   { const gr = k * 2.4; ctx.drawImage(glowSprite(rgbOf(s.color)), -gr, -gr, gr * 2, gr * 2); }   // glow (sprite: much cheaper than shadowBlur)
+  if (s.kind === 'pet') { ctx.fillStyle = '#FFFBEA'; ctx.beginPath(); ctx.arc(0, 0, k * 0.32, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return; }   // a companion's spark
   if (s.kind === 'arrow') {
     ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, k * 1.2); ctx.lineTo(0, -k); ctx.stroke();
     ctx.fillStyle = s.color; ctx.beginPath(); ctx.moveTo(0, -k * 1.5); ctx.lineTo(-k * 0.3, -k * 0.9); ctx.lineTo(k * 0.3, -k * 0.9); ctx.fill();
@@ -4518,6 +4737,10 @@ function skinGrad(x1, x2, base, dark, light) {
   return g;
 }
 function drawWarrior() {
+  if (player.shakeT > 0) { ctx.save(); ctx.translate(Math.sin(time * 70) * 7 * unit(), 0); drawWarriorInner(); ctx.restore(); return; }
+  drawWarriorInner();
+}
+function drawWarriorInner() {
   const u = unit();
   WR.bulkVis += (bulk - WR.bulkVis) * 0.04;
   const B = WR.bulkVis;
@@ -4778,7 +5001,7 @@ function loop(now) {
 requestAnimationFrame(loop);
 hud();
 // test hook for automated play-testing; only on a local preview with ?test=1 (never on the live site)
-if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get brahma() { return brahma; }, fireBrahmastra, BRAHMA, PERF, sfx, Q, setQuality, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
+if (/[?&]test=1/.test(location.search) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__game = { get state() { return state; }, get level() { return level; }, DARK, SKY, get brahma() { return brahma; }, fireBrahmastra, BRAHMA, pet, LEECHES, shakeOffLeeches, petLevelStart, PERF, sfx, Q, setQuality, get tokenT() { return tokenT; }, get celestT() { return celestT; }, activeWeapon, fire, GROUND, AI, damage, get lives2() { return lives; }, get dark() { return DARK.a; }, hitBoss, ascend, get bulk2() { return bulk; }, Q, setQuality, get tej() { return tej; }, set tej(v) { tej = v; }, get pickups() { return pickups; }, get finalWon() { return finalWon; }, reward: rewardPct, spawnPickup, spawnDanav, collect, setLevel(l, w, b) { level = l; weapon = w; bulk = b; WR.bulkVis = b; startLevel(true); }, get kills() { return kills; }, get lives() { return lives; }, get boss() { return boss; }, get weapon() { return weapon; }, get bulk() { return bulk; }, get score() { return score; }, danavs, shots, fires, player, setLives(n) { lives = n; hud(); }, freeze(v) { frozen = v; last = performance.now(); }, zoom(v) { WZ = v; }, setBulk(b, w) { bulk = b; weapon = w; WR.bulkVis = b; hud(); }, move, accept: acceptAshirvaad, toBoss() { bulk = 5; weapon = 'simha'; WR.bulkVis = 5; level = LEVELS.length - 1; slain = 60; startBoss(); }, killBoss() { boss.hp = 0; bossDown(); }, celebrate: startCelebration, celebStep(n) { for (let i = 0; i < n; i++) { celebUpdate(1 / 60); updateAmbient(1 / 60); } render(); }, tick(n) { if (state === 'bossintro') { state = 'playing'; CINE.barsT = 0; CINE.zoomT = 1; } for (let i = 0; i < n && state === 'playing'; i++) { update(1 / 60); updateAmbient(1 / 60); } render(); } };
 </script>
 </body>
 </html>
