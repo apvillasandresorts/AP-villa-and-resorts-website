@@ -1132,7 +1132,7 @@ const BOSSES = {
   rakta:   { name: 'Raktabija', hp: 820, z: 0.6, size: 82, intro: 'Every drop of his blood becomes a new demon. Strike fast and dodge the blood fire!', minions: ['raktaja', 'pishach'] },
   kumbha:  { name: 'Kumbhakarna', hp: 2300, z: 0.62, size: 102, intro: 'The giant wakes hungry. Dodge his slams and boulders, kill his soldiers before he eats them, and strike when he yawns!', minions: ['lankaguard', 'rakshas'] },
   vibhi:   { name: 'Vibhishana', hp: 1300, z: 0.6, size: 84, intro: "Ravana's wise brother tests your dharma. Break his resolve, not his life", minions: ['lankaguard', 'kavach'], trial: true },
-  ravana:  { name: 'Ravana', hp: 3600, z: 0.68, size: 104, intro: 'Dashanana, king of Lanka. Ten heads, ten attacks: watch every glowing mouth!', minions: ['lankaguard', 'nishachar'] },
+  ravana:  { name: 'Ravana', hp: 3200, z: 0.68, size: 104, intro: 'Dashanana, king of Lanka. Ten heads, ten attacks: watch every glowing mouth!', minions: ['lankaguard', 'nishachar'] },
   andhaka: { name: 'Andhakasura', hp: 1700, z: 0.66, size: 84, intro: "King of darkness. Stand in his path so your lion's sacred fire burns him, and dodge his fireballs", minions: ['vrishabh', 'naag'] },
 };
 // three acts (dawn, golden dusk, the night of Mahakal): 9 waves and 3 boss battles
@@ -1178,6 +1178,9 @@ const PICKUPS = {
   kalash:    { name: 'Amrit Kalash', sub: '+ shakti', col: '#9BF0B0', w: 0.16 },
   token:     { name: 'Divine Weapon Token', sub: 'Trishul for 8 s', col: '#FFD27D', w: 0.08, t: 8 },
   celestial: { name: 'Celestial Bonus', sub: 'double points for 10 s', col: '#E8C77A', w: 0.08, t: 10 },
+  sanjeevani: { name: 'Sanjeevani', sub: 'all prana restored + shield', col: '#7CFFA0', w: 0 },
+  rambaan:    { name: 'Ram Baan', sub: "Shri Ram's arrow strikes Ravana", col: '#FFD24D', w: 0 },
+  vanarsena:  { name: 'Vanar Sena', sub: "Shri Ram's monkey army attacks", col: '#E0A060', w: 0, t: 10 },
 };
 const MAX_LIVES = 5;
 
@@ -1209,7 +1212,7 @@ const LV = () => LEVELS[Math.min(level, LEVELS.length - 1)];
 const wavesBefore = () => LEVELS.slice(0, level).filter(l => !l.boss).length;   // difficulty grows with every wave
 
 function saveCheckpoint() { checkpoint = { level, weapon, bulk, score, lakshmi, tej: Math.max(tej, 40), wavesCleared, bossesBeaten }; }
-function resetField() { FALLEN_HEADS.length = 0; BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; LEECHES.length = 0; FALLING.length = 0; petLevelStart(); $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
+function resetField() { RAMBAAN.length = 0; VANARS.length = 0; vanarT = 0; FALLEN_HEADS.length = 0; BRAHMA.t = -1; BEAMS.length = 0; RAVENS.length = 0; LEECHES.length = 0; FALLING.length = 0; petLevelStart(); $('brahma-btn').hidden = true; GROUND.length = 0; DARK.target = 0; DARK.a = 0; hideBossClip(); pendingBlessing = false; fallen.length = 0; C.petals.length = 0; C.btn = false; C.landed = false; C.t = 0; WR.at = null; WR.pose = null; $('celebrate-btn').classList.remove('show'); danavs.length = shots.length = fires.length = parts.length = texts.length = pickups.length = rings.length = 0; boss = null; $('bossbar').classList.remove('show'); rudraT = rapidT = trinetraT = shieldT = tokenT = celestT = 0; shieldHits = 0; }
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
@@ -1272,6 +1275,7 @@ function tejHud(force) {
   if (lakshmi) b.push(['🪷', '×1.5']);
   if (tokenT > 0) b.push(['⚜', Math.ceil(tokenT)]);
   if (celestT > 0) b.push(['✦×2', Math.ceil(celestT)]);
+  if (vanarT > 0) b.push(['🐒', Math.ceil(vanarT)]);
   const k = b.map(x => x.join('')).join('|');
   if (force || k !== buffKey) { buffKey = k; $('buffs').innerHTML = b.map(([i, n]) => `<span>${i}<b>${n}</b></span>`).join(''); }
 }
@@ -1817,6 +1821,9 @@ function collect(pk) {
   else if (pk.kind === 'kalash') changeTej(25);
   else if (pk.kind === 'damru') tandav();
   else if (pk.kind === 'token') { tokenT = P.t; artClip('videos/game/art/pickup-token', 'Divine Weapon Token: Trishul'); }          // W07 Trishul, temporarily (reuses the existing weapon and projectile)
+  else if (pk.kind === 'sanjeevani') { lives = MAX_LIVES; shieldT = 12; shieldHits = 2; if (pet.kind) { pet.down = false; pet.hp = pet.max; } burst(pp.x, pp.y - 30, '#7CFFA0', 30, 6); rings.push({ x: pp.x, y: pp.y, r: 0, life: 1, col: '124,255,160', big: true }); }
+  else if (pk.kind === 'rambaan') { RAMBAAN.push({ t: 0 }); sfx.shankh(); }
+  else if (pk.kind === 'vanarsena') { vanarT = P.t; vanarHitT = 0.3; for (const d of danavs) { const q = project(d.z, d.x); burst(q.x, q.y - 30 * q.scale, '#E0A060', 12, 4); addScore(DANAV[d.type].pts); } danavs.length = 0; banner('Vanar Sena!', "Shri Ram's monkey army leaps at Ravana", 1800, 'boss'); sfx.up(); }
   else if (pk.kind === 'celestial') { celestT = P.t; artClip('videos/game/art/pickup-celestial', 'Celestial Bonus: double points'); }
   if (pk.kind !== 'kalash') changeTej(5);
   hud();
@@ -2162,7 +2169,52 @@ function spawnClone(b, surge, k = 0) {   // a blood clone: weak, short-lived, ca
   return d;
 }
 // ---------------- Lanka: Kumbhakarna, Vibhishana's trial, Ravana ----------------
-let brahma = 0;   // the Brahmastra: given by the Sarva Devta Ashirvaad, used once against Ravana
+let brahma = 0;
+let vanarT = 0, vanarHitT = 0;   // Vanar Sena: monkeys keep leaping at Ravana
+const RAMBAAN = [], VANARS = [];
+function ramayanaUpdate(b, dt) {
+  // power-ups fall during the fight: Ram Baan, Sanjeevani (sooner when you are low), Vanar Sena
+  b.boonT = (b.boonT ?? 5) - dt;
+  if (b.boonT <= 0 && !b.dead) {
+    b.boonT = 6 + Math.random() * 3; b.boonN = (b.boonN || 0) + 1;
+    const k = lives <= 2 ? 'sanjeevani' : ['rambaan', 'sanjeevani', 'vanarsena'][(b.boonN - 1) % 3];
+    const before = pickups.length; spawnPickup(k, Math.floor(Math.random() * 3), 0.85);
+    if (pickups.length > before && b.boonN === 1 && !$('banner').classList.contains('show')) banner("Shri Ram's blessings fall!", 'Catch Ram Baan, Sanjeevani and Vanar Sena to defeat Ravana', 2600);
+  }
+  for (let i = RAMBAAN.length - 1; i >= 0; i--) {   // Ram Baan in flight
+    const R = RAMBAAN[i]; R.t += dt;
+    if (R.t >= 0.5) {
+      RAMBAAN.splice(i, 1);
+      if (!b.dead) {
+        hitBoss(b.max * 0.06);
+        const can = (b.heads || []).map((h, k) => k).filter(k => k !== 0 && !(b.heads[k].cut > 0));   // and a head falls
+        if (can.length) { const k = can[Math.floor(Math.random() * can.length)], sc = bossScale(b), hp = ravanaHeads(sc)[k], p = project(b.z, b.x); b.heads[k].cut = b.mortal ? 999 : 10; b.cuts++; FALLEN_HEADS.push({ i: k, x: p.x + hp.x, y: p.y + (1 - b.enter) * 80 + hp.y, r: hp.r, vx: (hp.x < 0 ? -1 : 1) * 150 * unit(), vy: -240 * unit(), rot: 0, vr: (Math.random() - 0.5) * 9, t: 0, floor: p.y + 20 * unit(), bounced: false }); }
+        const n = ravanaNavel(); burst(n.x, n.y - 60 * unit(), '#FFE08A', 30, 7); shake = Math.max(shake, 0.5); sfx.bigThunder();
+        bossLine(b, ['ARGH! The arrow of Ram!'], '#FFB0A0');
+      }
+    }
+  }
+  if (vanarT > 0) {   // Vanar Sena: a monkey leaps at him every 0.5 s
+    vanarT -= dt; vanarHitT -= dt;
+    if (vanarHitT <= 0 && !b.dead) { vanarHitT = 0.5; const pp = playerPos(); VANARS.push({ t: 0, x0: pp.x + (Math.random() - 0.5) * W * 0.6, y0: H * 0.92 }); }
+  }
+  for (let i = VANARS.length - 1; i >= 0; i--) { const V = VANARS[i]; V.t += dt; if (V.t >= 0.6) { VANARS.splice(i, 1); if (!b.dead) { hitBoss(b.max * 0.006); const p = project(b.z, b.x); burst(p.x + (Math.random() - 0.5) * 60 * unit(), p.y - bossScale(b) * 1.1, '#E0A060', 8, 3); } } }
+}
+function drawRamayanaFx() {
+  if (!boss || boss.kind !== 'ravana') return;
+  const n = ravanaNavel(), u = unit();
+  for (const R of RAMBAAN) {   // a blazing golden arrow
+    const a = launchPoint(), k = Math.min(1, R.t / 0.5), tx = n.x, ty = n.y - 60 * u, x = a.x + (tx - a.x) * k, y = a.y + (ty - a.y) * k, ang = Math.atan2(ty - a.y, tx - a.x);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(glowSprite('255,210,80'), -40 * u, -40 * u, 80 * u, 80 * u);
+    ctx.strokeStyle = '#FFF6D0'; ctx.lineWidth = 4 * u; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-50 * u, 0); ctx.lineTo(10 * u, 0); ctx.stroke();
+    ctx.fillStyle = '#FFD24D'; ctx.beginPath(); ctx.moveTo(22 * u, 0); ctx.lineTo(8 * u, -7 * u); ctx.lineTo(8 * u, 7 * u); ctx.fill(); ctx.restore();
+  }
+  const sc = bossScale(boss), bp = project(boss.z, boss.x);
+  for (const V of VANARS) {   // monkeys arcing up at him
+    const k = Math.min(1, V.t / 0.6), tx = bp.x + (Math.random() - 0.5) * 0, ty = bp.y - sc * 1.0, x = V.x0 + (tx - V.x0) * k, y = V.y0 + (ty - V.y0) * k - Math.sin(k * Math.PI) * H * 0.18;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(k * 6); petBody('vanar', 26 * u, 1); ctx.restore();
+  }
+}   // the Brahmastra: given by the Sarva Devta Ashirvaad, used once against Ravana
 const BRAHMA = { t: -1 };
 const HEAD_ATK = ['gold', 'sonic', 'fire', 'frost', 'venom', 'bolt', 'dark', 'blood', 'rock', 'maya'];   // what each of Ravana's ten heads spits
 const RAVANA_LINES = ['I am Lankesh! Kneel!', 'Ten heads, ten deaths for you!', 'Even the gods fear me!', 'A boy and a lion? Ha ha ha!', 'Mahadev himself blessed me!', 'हा हा हा… मूर्ख बालक!'];
@@ -2635,6 +2687,7 @@ function drawBrahmastra() {
 function updateBoss(dt) {
   const b = boss, B = BOSSES[b.kind];
   brahmaUpdate(dt);
+  if (b.kind === 'ravana') ramayanaUpdate(b, dt);
   if (BOSS_TICK[b.kind]) BOSS_TICK[b.kind](b, dt);
   if (!b.phase) b.phase = 1;
   if (b.phase === 1 && b.hp <= b.max / 2) bossPhase2(b);
@@ -2781,6 +2834,7 @@ function render() {
   drawBrahmastra();
   drawDarkness();
   drawBeams();   // eye lasers stay visible even in the darkness
+  drawRamayanaFx();
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
   drawAscension(FDT); drawPowerFx(false); drawPet(); drawWarrior(); drawLeeches(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
@@ -4370,6 +4424,23 @@ function drawBoonIcon(c, kind, r, t) {
     c.strokeStyle = '#3A1A0A'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(r * 0.7, -r * 0.1 + Math.sin(t * 20) * r * 0.3, r * 0.95, 0); c.stroke();
     c.fillStyle = '#3A1A0A'; c.beginPath(); c.arc(r * 0.95, 0, r * 0.1, 0, Math.PI * 2); c.fill();
     c.restore();
+  } else if (kind === 'sanjeevani') {   // the glowing Sanjeevani herb
+    c.fillStyle = 'rgba(124,255,160,0.35)'; c.beginPath(); c.arc(0, 0, r * 0.85, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#2E8A40'; c.lineWidth = Math.max(1.5, r * 0.1); c.beginPath(); c.moveTo(0, r * 0.6); c.lineTo(0, -r * 0.5); c.stroke();
+    c.fillStyle = '#5AE07A'; for (const [lx, ly, a] of [[-0.28, -0.1, -0.6], [0.28, -0.1, 0.6], [-0.22, 0.25, -0.5], [0.22, 0.25, 0.5], [0, -0.52, 0]]) { c.beginPath(); c.ellipse(r * lx, r * ly, r * 0.13, r * 0.28, a, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#FFFFFF'; c.beginPath(); c.arc(0, -r * 0.55, r * 0.07, 0, Math.PI * 2); c.fill();
+  } else if (kind === 'rambaan') {   // Shri Ram's golden arrow
+    c.save(); c.rotate(-0.75); c.strokeStyle = '#FFE08A'; c.lineWidth = Math.max(2, r * 0.12); c.lineCap = 'round'; c.beginPath(); c.moveTo(0, r * 0.8); c.lineTo(0, -r * 0.55); c.stroke();
+    c.fillStyle = '#FFD24D'; c.beginPath(); c.moveTo(0, -r * 0.9); c.lineTo(-r * 0.2, -r * 0.5); c.lineTo(r * 0.2, -r * 0.5); c.fill();
+    c.fillStyle = '#C0101E'; for (const sx of [-1, 1]) { c.beginPath(); c.moveTo(0, r * 0.55); c.lineTo(sx * r * 0.22, r * 0.85); c.lineTo(0, r * 0.75); c.fill(); }
+    c.restore();
+  } else if (kind === 'vanarsena') {   // a vanar face
+    c.fillStyle = '#9A5C2A'; c.beginPath(); c.arc(0, 0, r * 0.62, 0, Math.PI * 2); c.fill();
+    for (const sx of [-1, 1]) { c.beginPath(); c.arc(sx * r * 0.62, -r * 0.05, r * 0.2, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#ECC294'; c.beginPath(); c.ellipse(0, r * 0.1, r * 0.4, r * 0.4, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#1A0E08'; for (const sx of [-1, 1]) { c.beginPath(); c.arc(sx * r * 0.15, -r * 0.02, r * 0.07, 0, Math.PI * 2); c.fill(); }
+    c.strokeStyle = '#D0101E'; c.lineWidth = Math.max(1, r * 0.06); c.beginPath(); c.moveTo(0, -r * 0.42); c.lineTo(0, -r * 0.26); c.stroke();
+    c.fillStyle = '#7A2A20'; c.beginPath(); c.ellipse(0, r * 0.28, r * 0.13, r * 0.06, 0, 0, Math.PI); c.fill();
   } else if (kind === 'token') {   // golden star emblem with a small trishul
     c.fillStyle = '#C9962E'; c.beginPath(); for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, rr = k % 2 ? r * 0.55 : r * 0.85; c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } c.closePath(); c.fill();
     c.fillStyle = '#FFE08A'; c.beginPath(); c.arc(0, 0, r * 0.45, 0, Math.PI * 2); c.fill();
