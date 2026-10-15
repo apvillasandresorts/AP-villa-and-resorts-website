@@ -1213,30 +1213,36 @@ function resetField() { FALLEN_HEADS.length = 0; BRAHMA.t = -1; BEAMS.length = 0
 
 // ---------------- HUD ----------------
 function nextBlessing() { for (let i = level; i < LEVELS.length; i++) if (LEVELS[i].bless) return BLESS[LEVELS[i].bless]; return null; }
+const HUDC = {};   // last values written, so the page is only touched when something changes
+function setText(id, v) { if (HUDC[id] !== v) { HUDC[id] = v; $(id).textContent = v; } }
+function setHTML(id, v) { const k = 'h:' + id; if (HUDC[k] !== v) { HUDC[k] = v; $(id).innerHTML = v; } }
+function setW(id, v) { const k = 'w:' + id; v = typeof v === 'number' ? v : parseFloat(v); v = (Math.round(v * 2) / 2) + '%'; if (HUDC[k] !== v) { HUDC[k] = v; $(id).style.width = v; } }
+let scoreShown = -1;
+function setScore() { const f = Math.floor(score); if (f !== scoreShown) { scoreShown = f; $('score').textContent = f.toLocaleString('en-IN'); } }
 function hud() {
-  $('score').textContent = Math.floor(score).toLocaleString('en-IN');
-  $('best-score').textContent = best.toLocaleString('en-IN');
-  $('lives').innerHTML = Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join('');
+  setScore();
+  setText('best-score', best.toLocaleString('en-IN'));
+  setHTML('lives', Array.from({ length: MAX_LIVES }, (_, i) => `<i class="${i < lives ? '' : 'off'}"></i>`).join(''));
   const w = WEAPONS[weapon];
-  $('hud-weapon').textContent = tokenT > 0 ? 'Trishul (token)' : w.name;
-  $('hud-stage').textContent = STAGES[Math.min(5, bulk)].name + (pet.kind ? ' + ' + PETS[pet.kind].name : '');
+  setText('hud-weapon', tokenT > 0 ? 'Trishul (token)' : w.name);
+  setText('hud-stage', STAGES[Math.min(5, bulk)].name + (pet.kind ? ' + ' + PETS[pet.kind].name : ''));
   const lv = LV();
   if (boss) {
     const B = BOSSES[boss.kind];
-    $('hud-wave-label').textContent = lv.trial ? 'Trial of dharma' : `Boss ${lv.bossNo} of ${TOTAL_BOSSES}`;
-    $('hud-wave').textContent = boss.dead ? B.name + (lv.trial ? ' chooses dharma!' : ' falls!') : B.name;
-    $('hud-bar').style.width = (boss.dead ? 100 : 100 * Math.max(0, boss.hp) / boss.max) + '%';
-    const nb2 = nextBlessing(); $('hud-next').textContent = boss.dead ? 'Jai Mahakal!' : lv.bless ? 'Ashirvaad: ' + BLESS[lv.bless].name : nb2 ? 'Ashirvaad: ' + nb2.name : 'Darshan!';
-    $('boss-hp').style.width = Math.max(0, 100 * boss.hp / boss.max) + '%';
+    setText('hud-wave-label', lv.trial ? 'Trial of dharma' : `Boss ${lv.bossNo} of ${TOTAL_BOSSES}`);
+    setText('hud-wave', boss.dead ? B.name + (lv.trial ? ' chooses dharma!' : ' falls!') : B.name);
+    setW('hud-bar', (boss.dead ? 100 : 100 * Math.max(0, boss.hp) / boss.max) + '%');
+    const nb2 = nextBlessing(); setText('hud-next', boss.dead ? 'Jai Mahakal!' : lv.bless ? 'Ashirvaad: ' + BLESS[lv.bless].name : nb2 ? 'Ashirvaad: ' + nb2.name : 'Darshan!');
+    setW('boss-hp', Math.max(0, 100 * boss.hp / boss.max) + '%');
   } else {
-    $('hud-wave-label').textContent = `Wave ${lv.waveNo} of ${TOTAL_WAVES}`;
-    $('hud-wave').textContent = `${Math.min(kills, lv.kills)} / ${lv.kills} danav`;
-    $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%';
+    setText('hud-wave-label', `Wave ${lv.waveNo} of ${TOTAL_WAVES}`);
+    setText('hud-wave', `${Math.min(kills, lv.kills)} / ${lv.kills} danav`);
+    setW('hud-bar', (100 * Math.min(1, kills / lv.kills)) + '%');
     const nb = nextBlessing(), nboss = LEVELS.slice(level).find(l => l.boss);
-    $('hud-next').textContent = LEVELS[level + 1] && LEVELS[level + 1].boss && !lv.bless ? 'Next: ' + BOSSES[LEVELS[level + 1].boss].name + '!' : nb ? 'Next Ashirvaad: ' + nb.name : nboss ? 'Next: ' + BOSSES[nboss.boss].name : '';
+    setText('hud-next', LEVELS[level + 1] && LEVELS[level + 1].boss && !lv.bless ? 'Next: ' + BOSSES[LEVELS[level + 1].boss].name + '!' : nb ? 'Next Ashirvaad: ' + nb.name : nboss ? 'Next: ' + BOSSES[nboss.boss].name : '');
   }
   journeyHud();
-  tejHud(true);
+  tejHud();
 }
 function journeyHud() {   // the whole game as one bar: each level is an equal step, bosses are gold diamonds
   const lv = LV(), n = LEVELS.length;
@@ -2072,11 +2078,11 @@ function update(dt) {
   }
 
   // particles + texts + shockwaves
-  for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= dt * 1.6; if (p.life <= 0) parts.splice(i, 1); }
+  for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx * F60; p.y += p.vy * F60; p.vy += 0.15 * F60; p.life -= dt * 1.6; if (p.life <= 0) parts.splice(i, 1); }
   for (let i = texts.length - 1; i >= 0; i--) { const t = texts[i]; t.y -= 40 * dt; t.life -= dt * 0.8; if (t.life <= 0) texts.splice(i, 1); }
   for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.r += dt * (r.big ? 1400 : 700) * unit(); r.life -= dt * (r.big ? 1.1 : 1.8); if (r.life <= 0) rings.splice(i, 1); }
-  $('score').textContent = Math.floor(score).toLocaleString('en-IN');
-  if (!boss && !LV().boss) { const lv = LV(); journeyHud(); $('hud-wave').textContent = `${Math.min(kills, lv.kills)} / ${lv.kills} danav`; $('hud-bar').style.width = (100 * Math.min(1, kills / lv.kills)) + '%'; }
+  setScore();
+  if (!boss && !LV().boss) { const lv = LV(); journeyHud(); setText('hud-wave', `${Math.min(kills, lv.kills)} / ${lv.kills} danav`); setW('hud-bar', 100 * Math.min(1, kills / lv.kills)); }
 }
 // Boss behaviour: each asura fights differently
 // ---------------- Boss encounters: phases and signature mechanics ----------------
@@ -2189,14 +2195,14 @@ const BOSS_TICK = {
     for (const h of b.heads) {
       if (h.flash > 0) h.flash -= dt;
       if (h.grow < 1) h.grow = Math.min(1, h.grow + dt * 1.4);
-      if (h.cut > 0 && h.cut < 900) { h.cut -= dt; if (h.cut <= 0) { h.cut = 0; h.grow = 0; b.cuts = Math.max(0, b.cuts - 1); b.hp = Math.min(b.max, b.hp + b.max * 0.025); bossLine(b, ['A head grows back!'], '#FFD27D'); sfx.growl(); } }
+      if (h.cut > 0 && h.cut < 900) { h.cut -= dt; if (h.cut <= 0) { h.cut = 0; h.grow = 0; b.cuts = Math.max(0, b.cuts - 1); b.hp = Math.min(b.max, b.hp + b.max * 0.01); bossLine(b, ['A head grows back!'], '#FFD27D'); sfx.growl(); } }
     }
     // a head falls for every tenth of his life lost (it grows back unless the amrit is destroyed)
     const lost = Math.floor((1 - b.hp / b.max) * 10);
     while (b.cuts < Math.min(9, lost)) {
       const can = b.heads.map((h, i) => i).filter(i => i !== 0 && !(b.heads[i].cut > 0)); if (!can.length) break;
       const i = can[Math.floor(Math.random() * can.length)], s = bossScale(b), hp = ravanaHeads(s)[i], p = project(b.z, b.x);
-      b.heads[i].cut = b.mortal ? 999 : 7.5; b.cuts++;
+      b.heads[i].cut = b.mortal ? 999 : 10; b.cuts++;
       FALLEN_HEADS.push({ i, x: p.x + hp.x, y: p.y + (1 - b.enter) * 80 + hp.y, r: hp.r, vx: (hp.x < 0 ? -1 : hp.x > 0 ? 1 : (Math.random() < 0.5 ? -1 : 1)) * (90 + Math.random() * 120) * unit(), vy: -220 * unit(), rot: 0, vr: (Math.random() - 0.5) * 9, t: 0, floor: p.y + (8 + Math.random() * 30) * unit(), bounced: false });
       burst(p.x + hp.x, p.y + hp.y, '#FFB040', 20, 5); burst(p.x + hp.x, p.y + hp.y, '#B070FF', 10, 4); sfx.kill();
       floatText(p.x + hp.x, p.y + hp.y - 30 * unit(), b.mortal ? 'A head falls for good!' : 'A head falls… for now', '#FFE08A', 15);
@@ -2214,7 +2220,7 @@ const BOSS_TICK = {
     }
     if (b.amrit > 0) b.amrit -= dt;
     if (b.vibhiT > 0) b.vibhiT -= dt;
-    $('brahma-btn').hidden = !(b.amrit > 0 && brahma > 0 && !b.mortal && !b.dead && BRAHMA.t < 0);
+    { const hide = !(b.amrit > 0 && brahma > 0 && !b.mortal && !b.dead && BRAHMA.t < 0), bb = $('brahma-btn'); if (bb.hidden !== hide) bb.hidden = hide; }   // only touch the page when it changes
     b.lineT -= dt; if (b.lineT <= 0) { b.lineT = 7 + Math.random() * 5; bossLine(b, RAVANA_LINES, '#FFD27D'); if (Math.random() < 0.5) sfx.cackle(); }
     if (!b.darkUsed && b.hp <= b.max * 0.55) {   // once: the great darkness of Andhakasura
       b.darkUsed = true; b.darkOn = true; b.darkT = 7; sfx.dread(); sfx.thunder(); SKY.flash = 0.4;
@@ -2694,7 +2700,7 @@ function updateBoss(dt) {
 
 const DARK = { a: 0, target: 0, level: 0 };
 function drawDarkness() {   // Andhakasura's darkness: everything dims except a circle of light around the yoddha; warnings are redrawn on top
-  DARK.a += (DARK.target - DARK.a) * 0.04;
+  DARK.a += (DARK.target - DARK.a) * Math.min(1, 0.04 * F60);
   if (DARK.a < 0.02) return;
   const lv = DARK.level || 0, p = WR.at || project(0, player.x), r = Math.min(W, H) * (0.42 - 0.06 * lv);   // the light shrinks with each surge
   const g = ctx.createRadialGradient(p.x, p.y - 60 * unit(), r * 0.25, p.x, p.y - 60 * unit(), r);
@@ -2755,8 +2761,8 @@ initSky();
 function render() {
   ctx.clearRect(0, 0, W, H); fxCtx.clearRect(0, 0, W, H);
   const stormTarget = boss && !boss.dead ? 1 : 0;
-  SKY.mood += (stormTarget - SKY.mood) * 0.02;
-  SKY.glory += ((state === 'celebrate' || state === 'victory' ? 1 : 0) - SKY.glory) * 0.03;
+  SKY.mood += (stormTarget - SKY.mood) * Math.min(1, 0.02 * F60);
+  SKY.glory += ((state === 'celebrate' || state === 'victory' ? 1 : 0) - SKY.glory) * Math.min(1, 0.03 * F60);
   ctx.save();
   if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
   cineCamera();
@@ -2771,12 +2777,12 @@ function render() {
   if (boss && boss.vibhiT > 0) all.push({ z: 0.36, draw: drawVibhiAlly });
   all.sort((a, b) => b.z - a.z).forEach(o => o.draw());
   for (const s of shots) drawShot(s);
-  updateDrawFallenHeads(paused || userPaused ? 0 : 1 / 60); updateDrawRavens();
+  updateDrawFallenHeads(FDT); updateDrawRavens();
   drawBrahmastra();
   drawDarkness();
   drawBeams();   // eye lasers stay visible even in the darkness
   for (const f of fires) if (f.warn <= 0) drawFireball(f);
-  drawAscension(paused || userPaused ? 0 : 1 / 60); drawPowerFx(false); drawPet(); drawWarrior(); drawLeeches(); drawPowerFx(true);
+  drawAscension(FDT); drawPowerFx(false); drawPet(); drawWarrior(); drawLeeches(); drawPowerFx(true);
   drawWeather(); drawEnvFore();
   const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - 0.08 * intensity()), W / 2, H / 2, Math.max(W, H) * 0.8);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, player.hurt > 0.6 ? 'rgba(140,0,20,0.55)' : `rgba(${lerpRGB('40,10,50', AMB.T.tint, 0.25)},${0.28 + 0.22 * intensity() + 0.25 * SKY.mood})`);
@@ -2805,7 +2811,7 @@ function actCol(key, i) { const a = Math.floor(SKY.act), b = Math.min(ACT_SKY.le
 function SUNC() { const a = Math.floor(SKY.act), b = Math.min(ACT_SKY.length - 1, a + 1), t = SKY.act - a, A = ACT_SKY[a].sun.split(',').map(Number), B = ACT_SKY[b].sun.split(',').map(Number); return A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(','); }
 function drawSky() {
   const m = SKY.mood, hy = HORIZON_Y * H, u = unit();
-  SKY.act += ((state === 'intro' ? 0 : LV().act) - SKY.act) * 0.012; if (Math.abs(SKY.act - Math.round(SKY.act)) < 0.002) SKY.act = Math.round(SKY.act);
+  SKY.act += ((state === 'intro' ? 0 : LV().act) - SKY.act) * Math.min(1, 0.012 * F60); if (Math.abs(SKY.act - Math.round(SKY.act)) < 0.002) SKY.act = Math.round(SKY.act);
   const night = Math.max(0, Math.min(SKY.act - 1, 3 - SKY.act));   // the night of act 3 gives way to golden Lanka
   const g = ctx.createLinearGradient(0, 0, 0, hy + 2);
   g.addColorStop(0, mix(actCol('s', 0), '#10061A', m));
@@ -2856,7 +2862,7 @@ function drawSky() {
   // drifting sky clouds
   for (let ci = 0; ci < SKY.clouds.length; ci++) {
     const c = SKY.clouds[ci]; if (ci >= Math.round(SKY.clouds.length * Q.clouds)) break;
-    c.x += c.sp * (1 / 60) * (1 + m * 2); if (c.x > 1.2) c.x = -0.3;
+    c.x += c.sp * FDT * (1 + m * 2); if (c.x > 1.2) c.x = -0.3;
     const sp = SKY.sprites[c.spr], w = 300 * c.sc * u, h = w * 160 / 340;
     ctx.globalAlpha = c.a * (1 - 0.45 * m) * (1 - 0.55 * night);
     ctx.drawImage(sp, W * c.x - w / 2, H * c.y - h / 2, w, h);
@@ -2866,7 +2872,7 @@ function drawSky() {
   if (m < 0.5 && night < 0.5) {
     ctx.strokeStyle = 'rgba(70,40,80,0.55)'; ctx.lineWidth = 1.5;
     for (const b of SKY.birds) {
-      b.x += b.sp / 60; if (b.x > 1.1) b.x = -0.1;
+      b.x += b.sp * FDT; if (b.x > 1.1) b.x = -0.1;
       const x = W * b.x, y = H * b.y + Math.sin(time + b.ph) * 6, f = Math.sin(time * 8 + b.ph) * 3;
       ctx.beginPath(); ctx.moveTo(x - 7, y - f); ctx.quadraticCurveTo(x - 3, y - 3, x, y); ctx.quadraticCurveTo(x + 3, y - 3, x + 7, y - f); ctx.stroke();
     }
@@ -2874,17 +2880,17 @@ function drawSky() {
   // lightning while Andhakasura lives
   // lightning in every boss fight: more often as the boss weakens, bigger during a surge
   const pw = boss && !boss.dead ? (boss.surges || 0) : 0;
-  if (SKY.strikeT > 0) SKY.strikeT -= 1 / 60;
-  if (m > 0.6 && SKY.bolts.length < 3 && Math.random() < 0.007 + 0.004 * pw + (SKY.strikeT > 0 ? 0.05 : 0)) {
+  if (SKY.strikeT > 0) SKY.strikeT -= FDT;
+  if (m > 0.6 && SKY.bolts.length < 3 && Math.random() < (0.007 + 0.004 * pw + (SKY.strikeT > 0 ? 0.05 : 0)) * F60) {
     const big = SKY.strikeT > 0 || Math.random() < 0.25, x0 = W * (0.08 + Math.random() * 0.84), y1 = big ? hy + 30 : hy - 40, pts = [[x0, 0]];
     let x = x0, y = 0; while (y < y1) { x += (Math.random() - 0.5) * 46; y += 22 + Math.random() * 26; pts.push([x, y]); }
     const br = []; for (let k = 0; k < 2; k++) { const i = 1 + Math.floor(Math.random() * (pts.length - 2)); let [bx, by] = pts[i]; const q = [[bx, by]], dir = Math.random() < 0.5 ? -1 : 1; for (let j = 0; j < 4; j++) { bx += dir * (10 + Math.random() * 22); by += 14 + Math.random() * 18; q.push([bx, by]); } br.push(q); }
     SKY.bolts.push({ pts, br, t: big ? 0.35 : 0.25, big });
     SKY.flash = Math.max(SKY.flash, big ? 0.5 : 0.3); if (big) { sfx.bigThunder(); shake = Math.max(shake, 0.25); } else sfx.thunder();
   }
-  if (SKY.flash > 0) SKY.flash = Math.max(0, SKY.flash - 0.02);
+  if (SKY.flash > 0) SKY.flash = Math.max(0, SKY.flash - 0.02 * F60);
   for (let i = SKY.bolts.length - 1; i >= 0; i--) {
-    const bo = SKY.bolts[i]; bo.t -= 1 / 60; if (bo.t <= 0) { SKY.bolts.splice(i, 1); continue; }
+    const bo = SKY.bolts[i]; bo.t -= FDT; if (bo.t <= 0) { SKY.bolts.splice(i, 1); continue; }
     const a = Math.min(1, bo.t * 4) * (Math.random() < 0.15 ? 0.4 : 1);   // flicker
     ctx.lineCap = 'round'; ctx.shadowColor = '#E8C8FF'; ctx.shadowBlur = Q.shadows ? 16 : 0;
     for (const [lw, col] of [[bo.big ? 7 : 5, `rgba(190,160,255,${a * 0.35})`], [bo.big ? 3 : 2.2, `rgba(255,248,255,${a})`]]) {
@@ -3299,7 +3305,7 @@ function updateAmbient(dt) {
   for (const w of AMB.witches) {
     if (w.wait > 0) { w.wait -= dt; if (w.wait <= 0) { w.dir = Math.random() < 0.5 ? 1 : -1; w.x = w.dir > 0 ? -0.15 : 1.15; w.y = 0.05 + Math.random() * 0.2; AMB.cackleT = Math.min(AMB.cackleT, 0.6); } continue; }
     w.x += w.dir * w.sp * dt * (1 + 0.6 * I); w.ph += dt;
-    if (Math.random() < 0.6) AMB.trail.push({ x: w.x * W - w.dir * 20 * unit() * w.sc, y: w.y * H + Math.sin(w.ph * 2) * 8 + 6 * unit(), life: 1, r: 1 + Math.random() * 2.2 });
+    if (Math.random() < 0.6 * F60) AMB.trail.push({ x: w.x * W - w.dir * 20 * unit() * w.sc, y: w.y * H + Math.sin(w.ph * 2) * 8 + 6 * unit(), life: 1, r: 1 + Math.random() * 2.2 });
     if (w.x < -0.2 || w.x > 1.2) w.wait = 3 + Math.random() * (9 - 5 * I);
   }
   for (let i = AMB.trail.length - 1; i >= 0; i--) { const t = AMB.trail[i]; t.life -= dt * 1.4; t.y += dt * 12; if (t.life <= 0) AMB.trail.splice(i, 1); }
@@ -3592,7 +3598,7 @@ function bossIntroUpdate(dt) {
   const p = project(boss.z, boss.x); CINE.fx = p.x; CINE.fy = p.y - 100 * unit();
   if (CINE.introT > CINE.introLen - 0.6) { CINE.zoomT = 1; CINE.barsT = 0; }
   if (CINE.introT >= CINE.introLen) { state = 'playing'; last = performance.now(); banner(CINE.introMsg[0], CINE.introMsg[1], 3000, 'boss'); }
-  for (let i = parts.length - 1; i >= 0; i--) { const q = parts[i]; q.x += q.vx; q.y += q.vy; q.vy += 0.15; q.life -= dt * 1.6; if (q.life <= 0) parts.splice(i, 1); }
+  for (let i = parts.length - 1; i >= 0; i--) { const q = parts[i]; q.x += q.vx * F60; q.y += q.vy * F60; q.vy += 0.15 * F60; q.life -= dt * 1.6; if (q.life <= 0) parts.splice(i, 1); }
 }
 // slow motion and a push-in when a boss falls
 function killCam(p) {
@@ -4872,7 +4878,7 @@ function drawWarrior() {
 }
 function drawWarriorInner() {
   const u = unit();
-  WR.bulkVis += (bulk - WR.bulkVis) * 0.04;
+  WR.bulkVis += (bulk - WR.bulkVis) * Math.min(1, 0.04 * F60);
   const B = WR.bulkVis;
   const p = WR.at || project(0, player.x);
   const ST = Math.max(0, Math.min(5, bulk));        // life stage: 0 boy monk … 5 Siddha sadhu
@@ -4886,7 +4892,7 @@ function drawWarriorInner() {
   const vx = player.x - WR.prevX; WR.prevX = player.x;
   WR.lean += (Math.max(-0.35, Math.min(0.35, vx * 9)) - WR.lean) * 0.25;
   // dust puffs from the feet
-  WR.dustT -= 1 / 60;
+  WR.dustT -= FDT;
   if (moving && WR.dustT <= 0 && (!mounted || Math.random() < 0.6)) { WR.dustT = Math.abs(vx) > 0.01 ? 0.03 : 0.16; parts.push({ x: p.x + (Math.random() - 0.5) * s * 0.5, y: p.y - 2, vx: (Math.random() - 0.5) * 1.2 - vx * 40, vy: -0.6 - Math.random() * 0.6, r: 2 + Math.random() * 3 * u, life: 0.6, color: 'rgba(150,120,80,0.55)' }); }
 
   const SKIN = '#E7B184', SK_D = '#A86F45', SK_L = '#F6CFA4', DHOTI = DHOTI_COL[ST][0], DH_D = DHOTI_COL[ST][1], GOLD = '#D9AE45', GOLD_D = '#9C7420', SAFF = ST >= 3 ? '#B5121B' : '#D2601F', RUD = '#6A2E10';
@@ -5113,8 +5119,10 @@ function drawHeldWeapon(s, hx, hy, ang, lx, ly, cyc) {
 // ---------------- Main loop ----------------
 let last = performance.now(), frozen = false;
 const PERF = { on: false, upd: [], ren: [], gap: [] };   // frame-time probe for local testing (records only when switched on)
+let FDT = 1 / 60, F60 = 1;   // this frame's real length (s) and its size relative to a 60 fps frame
 function loop(now) {
   const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  FDT = paused || userPaused ? 0 : Math.max(0, dt); F60 = FDT * 60;
   const p0 = PERF.on ? performance.now() : 0;
   if (raw < 0.5) watchPerf(raw);
   cineStep(dt);
