@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/style.css?v=20d2be54">
+<link rel="stylesheet" href="assets/css/style.css?v=713e3be1">
 <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/brand/favicon-search-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/brand/favicon-search-512.png">
@@ -54,6 +54,7 @@
     <span class="eyebrow">The AP Villas Journal</span>
     <h1>Stories, guides, <em style="font-style:italic;color:var(--saffron);">and rituals.</em></h1>
     <p style="font-size: 18px; color: var(--muted); max-width: 720px; margin: 24px auto 0;">Practical guides for pilgrims, quiet recommendations for travellers, and the occasional reflection on what hospitality means in a sacred city.</p>
+    <a class="journal-sub-pill" href="#subscribe">✦ Get new guides free by email</a>
   </div>
 </section>
 
@@ -225,6 +226,37 @@
 <!-- POSTS:END -->
     </div>
     <p class="journal-empty">No guides match that yet. <a href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas." target="_blank" rel="noopener" style="color:var(--saffron);">Ask us on WhatsApp</a> — we answer every question.</p>
+    <section class="journal-sub reveal" id="subscribe" aria-labelledby="journal-sub-title">
+      <div class="journal-sub__pitch">
+        <span class="journal-sub__eyebrow">Free · The AP Villas Journal</span>
+        <h2 id="journal-sub-title">Plan your Mahakal darshan like a local.</h2>
+        <p>New Ujjain guides from a pilgrim-family host, straight to your inbox the day they are published.</p>
+        <ul class="journal-sub__perks">
+          <li><b>Darshan &amp; Bhasma Aarti</b><span>Timings, booking steps and what changed, explained simply.</span></li>
+          <li><b>Festival guides before the rush</b><span>Mahashivratri, Shravan and Simhastha 2028: plan early, stay close.</span></li>
+          <li><b>Win up to 30% off your stay</b><span>Your welcome email brings the Mahakal game: earn a 5–30% coupon for your stay or food bill.</span></li>
+          <li><b>The 3 newest guides, instantly</b><span>A welcome email the moment you join. Only new guides after that, never spam.</span></li>
+        </ul>
+      </div>
+      <form class="journal-sub__form" novalidate data-endpoint="https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec">
+        <div class="journal-sub__fields">
+          <label>Your name<input name="name" type="text" autocomplete="name" maxlength="60" placeholder="e.g. Priya Sharma"></label>
+          <label>Email<input name="email" type="email" autocomplete="email" maxlength="120" required placeholder="you@example.com"></label>
+          <label>Planning a visit to Ujjain?<select name="when"><option value="">Choose one (optional)</option><option>Within a month</option><option>In 1–3 months</option><option>Later this year</option><option>Next year (Simhastha 2028)</option><option>Just exploring</option></select></label>
+          <input class="journal-sub__trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn--primary" type="submit">Send me the guides</button>
+          <p class="journal-sub__fine">Free. One-click unsubscribe in every email. We never share your email. <a href="policies.html#privacy">Privacy notice</a></p>
+          <p class="journal-sub__msg" role="status" aria-live="polite"></p>
+        </div>
+        <div class="journal-sub__done" hidden>
+          <div class="journal-sub__tick" aria-hidden="true">✓</div>
+          <h3>You're in. Har Har Mahadev!</h3>
+          <p>Your welcome email with the newest guides is on its way (check Promotions or Spam if you don't see it in a few minutes).</p>
+          <a class="btn btn--primary" href="mahakal-game.html">Play now and win up to 30% off</a>
+          <a class="journal-sub__wa" href="https://wa.me/918999061598?text=Hi%20Apoorv%2C%20I%27d%20like%20to%20enquire%20about%20AP%20Villas." target="_blank" rel="noopener">Or WhatsApp Apoorv for dates →</a>
+        </div>
+      </form>
+    </section>
     <aside class="journal-cta reveal">
       <div>
         <h3>Planning your Mahakal darshan?</h3>
@@ -290,5 +322,5 @@
   </div>
 </div>
 <script src="assets/js/main.js?v=38bde6f9"></script>
-<script src="assets/js/journal.js?v=62eb1a1b" defer></script>
+<script src="assets/js/journal.js?v=e8fe9e6e" defer></script>
 </body></html>

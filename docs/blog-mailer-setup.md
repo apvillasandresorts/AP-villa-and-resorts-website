@@ -17,8 +17,9 @@ email link-scanners can't unsubscribe anyone by accident).
 
 ## Install / update (once)
 1. Open the e-check-in Apps Script project.
-2. In the main file: add `['consent_email', 'Email updates'],` as the last entry of `COLUMNS`, and add as the first line of `doGet`:
+2. In the main file: add `['consent_email', 'Email updates'],` as the last entry of `COLUMNS`, add as the first line of `doGet`:
    `if (e && e.parameter && e.parameter.unsub) return unsubscribe_(e.parameter);`
+   and in `doPost`, right after the Mahakal game line: `if (body.action === 'subscribe') return json_(subscribePost_(body));`
    (do NOT paste the whole repo file: the live script holds the real caretaker number and Wi-Fi details).
 3. Add a new script file **BlogMailer** with the contents of `docs/blog-mailer.gs`.
 4. Deploy → Manage deployments → edit the web app → Version: **New version** → Deploy (the URL stays the same).
@@ -30,5 +31,9 @@ email link-scanners can't unsubscribe anyone by accident).
   **Subscribed** (green) or **Unsubscribed** (red). Change it from the dropdown on any row of a guest and all
   their rows follow (logged in the Email updates tab as "Owner set"). Guests who unsubscribe by email turn red
   here, and you can switch them back if they ask.
+- **Website sign-ups** (the "Plan your Mahakal darshan like a local" box on blog.html, for people who have not
+  done e-check-in) go to the **Journal subscribers** tab: Joined, Name, Email, Planning a visit, Source, Status, Last change.
+  The Status dropdown there is the control, same as the Newsletter column. New subscribers get a welcome email right away
+  (newest guide, two more, and the Mahakal game coupon gift). Unsubscribed in either tab means no email.
 - New check-ins get a status within 15 minutes: Subscribed, unless they unticked the box or unsubscribed before.
 - Turn it off: run `stopBlogMailer`. Turn it on again: run `setupBlogMailer` (it never re-sends old posts).

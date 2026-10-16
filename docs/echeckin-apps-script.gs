@@ -55,6 +55,7 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     if (body.action === 'score' || body.action === 'coupon') return json_(gamePost_(body));   // Mahakal game (see the end of this file)
+    if (body.action === 'subscribe') return json_(subscribePost_(body));   // Journal sign-up on blog.html (BlogMailer.gs)
     if (body.website) return json_({ ok: true });                  // spam trap
     const f = body.fields || {};
     if (!f.guest_name || !f.phone || !f.checkin_date) return json_({ ok: false, error: 'Missing required details' });

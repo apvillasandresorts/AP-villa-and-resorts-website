@@ -7,6 +7,8 @@
  * That column is the owner's control: pick Subscribed / Unsubscribed on any row and every row with the same
  * email follows. New check-ins are filled in automatically (unticked box or an earlier unsubscribe → Unsubscribed),
  * and the unsubscribe link in each email sets it to Unsubscribed.
+ * Website sign-ups (the subscribe box on blog.html) go to their own tab, "Journal subscribers" (Status column = control).
+ * Unsubscribed in either tab means no email; the unsubscribe link and the owner's edits keep both tabs in step.
  * Sends from this Google account (free; MailApp allows about 100 emails a day on a normal Gmail account,
  * a bigger list continues automatically the next day). Log: the "Email updates" tab of the same Sheet.
  * Setup guide: docs/blog-mailer-setup.md
@@ -19,6 +21,9 @@ const MAIL_LOGO = SITE + '/assets/brand/logo-full-720.png';
 const KEEP_FOR_CHECKINS = 10;   // daily emails kept free for check-in welcome emails
 const STATUS_COL = 'Newsletter';   // column in the E-Check-in tab: Subscribed / Unsubscribed
 const SUBSCRIBED = 'Subscribed', UNSUBSCRIBED = 'Unsubscribed';
+const SUBS_TAB = 'Journal subscribers';   // sign-ups from the website (people who have not done e-check-in)
+const SUBS_COLS = ['Joined', 'Name', 'Email', 'Planning a visit', 'Source', 'Status', 'Last change'];
+const SUBS_STATUS = 6, SUBS_EMAIL = 3, SUBS_CHANGED = 7;   // 1-based columns in SUBS_TAB
 
 /** Run once from the editor: grants permission, makes the log tab, remembers today's newest post, starts the 15-minute check. */
 function setupBlogMailer() {
@@ -49,21 +54,25 @@ function setupNewsletterColumn() {
   rules.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(SUBSCRIBED).setBackground('#DCEFE2').setFontColor('#1F4D3A').setRanges([range]).build());
   rules.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(UNSUBSCRIBED).setBackground('#F6DEDA').setFontColor('#8A2E1F').setRanges([range]).build());
   sh.setConditionalFormatRules(rules);
+  subsSheet_();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'newsletterEdited').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('newsletterEdited').forSpreadsheet(SHEET_ID).onEdit().create();
   const st = syncNewsletter_();
-  Logger.log('Newsletter column ready. Subscribed: ' + [...st.status.values()].filter(v => v === SUBSCRIBED).length + ', Unsubscribed: ' + [...st.status.values()].filter(v => v === UNSUBSCRIBED).length);
+  Logger.log('Newsletter column ready. Subscribed: ' + [...st.status.values()].filter(v => v === SUBSCRIBED).length + ', Unsubscribed: ' + [...st.status.values()].filter(v => v === UNSUBSCRIBED).length + '. Will email now: ' + subscribers_().length);
 }
 
 /** Runs by itself when the owner edits the sheet: a Newsletter change on one row is copied to every row with that email. */
 function newsletterEdited(e) {
   const r = e && e.range; if (!r || r.getNumColumns() !== 1) return;
-  const sh = r.getSheet(); if (sh.getName() !== sheet_().getName() || r.getColumn() !== statusCol_(sh)) return;
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], ei = head.indexOf('Email'); if (ei < 0) return;
+  const sh = r.getSheet(), subs = sh.getName() === SUBS_TAB;
+  if (subs ? r.getColumn() !== SUBS_STATUS : (sh.getName() !== sheet_().getName() || r.getColumn() !== statusCol_(sh))) return;
+  const ei = subs ? SUBS_EMAIL - 1 : sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].indexOf('Email'); if (ei < 0) return;
   for (let i = 0; i < r.getNumRows(); i++) {
     const row = r.getRow() + i; if (row < 2) continue;
     const v = String(sh.getRange(row, r.getColumn()).getValue()).trim(), email = String(sh.getRange(row, ei + 1).getValue()).trim().toLowerCase();
-    if (email && (v === SUBSCRIBED || v === UNSUBSCRIBED) && setStatus_(email, v)) mailerSheet_().appendRow([new Date(), 'Owner set: ' + v, email, '', '']);
+    if (!email || (v !== SUBSCRIBED && v !== UNSUBSCRIBED)) continue;
+    if (subs) sh.getRange(row, SUBS_CHANGED).setValue(new Date());
+    if (setStatus_(email, v) || subs) mailerSheet_().appendRow([new Date(), 'Owner set: ' + v, email, '', '']);
   }
 }
 
@@ -104,10 +113,74 @@ function sendQueue_(q) {
   p.deleteProperty('MAIL_QUEUE');
 }
 
-// ---- who gets it: guests marked Subscribed in the Newsletter column (latest row per email counts) ----
+// ---- who gets it: Subscribed in the E-Check-in Newsletter column or the Journal subscribers tab; Unsubscribed in either wins ----
 function subscribers_() {
-  const st = syncNewsletter_();
-  return [...st.status].filter(([, v]) => v === SUBSCRIBED).map(([email]) => ({ email, name: st.names.get(email) || '' }));
+  const st = syncNewsletter_(), out = new Map();
+  st.status.forEach((v, email) => out.set(email, { v, name: st.names.get(email) || '', source: 'checkin' }));
+  subsRows_().forEach(r => {
+    const had = out.get(r.email);
+    if (!had) out.set(r.email, { v: r.status, name: r.name, source: 'web' });
+    else if (r.status === UNSUBSCRIBED) had.v = UNSUBSCRIBED;
+  });
+  return [...out].filter(([, o]) => o.v === SUBSCRIBED).map(([email, o]) => ({ email, name: o.name, source: o.source }));
+}
+function subsSheet_() {
+  const ss = SpreadsheetApp.openById(SHEET_ID); let sh = ss.getSheetByName(SUBS_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(SUBS_TAB); sh.appendRow(SUBS_COLS); sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, SUBS_COLS.length).setFontWeight('bold').setBackground('#F3EEE3');
+    const range = sh.getRange(2, SUBS_STATUS, Math.max(sh.getMaxRows() - 1, 1), 1);
+    range.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([SUBSCRIBED, UNSUBSCRIBED], true).setAllowInvalid(false).build());
+    sh.setConditionalFormatRules([
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(SUBSCRIBED).setBackground('#DCEFE2').setFontColor('#1F4D3A').setRanges([range]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(UNSUBSCRIBED).setBackground('#F6DEDA').setFontColor('#8A2E1F').setRanges([range]).build()]);
+    sh.setColumnWidth(SUBS_EMAIL, 240);
+  }
+  return sh;
+}
+function subsRows_() {
+  const sh = subsSheet_(), n = sh.getLastRow() - 1; if (n < 1) return [];
+  return sh.getRange(2, 1, n, SUBS_COLS.length).getValues().map((r, i) => ({ row: i + 2, name: String(r[1] || '').trim(), email: String(r[SUBS_EMAIL - 1] || '').trim().toLowerCase(), status: String(r[SUBS_STATUS - 1] || '').trim() === UNSUBSCRIBED ? UNSUBSCRIBED : SUBSCRIBED }))
+    .filter(r => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
+}
+
+/** Website sign-up (blog.html subscribe box) → a row in "Journal subscribers" + a welcome email with the newest guides. */
+const VISIT_CHOICES = ['Within a month', 'In 1–3 months', 'Later this year', 'Next year (Simhastha 2028)', 'Just exploring'];
+function subscribePost_(b) {
+  if (b.website) return { ok: true };   // spam trap
+  const email = String(b.email || '').trim().toLowerCase().slice(0, 120);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return { ok: false, error: 'Please enter a valid email address.' };
+  const name = clean_(String(b.name || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60));
+  const when = VISIT_CHOICES.includes(b.when) ? b.when : '';
+  const cache = CacheService.getScriptCache();
+  if (cache.get('sub:' + email)) return { ok: true };   // double click / repeat within 10 minutes
+  const hour = Number(cache.get('subs:hour') || 0); if (hour > 60) return { ok: false, error: 'Too many sign-ups right now. Please try again in an hour.' };
+  cache.put('sub:' + email, '1', 600); cache.put('subs:hour', String(hour + 1), 3600);
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  let welcome = false;
+  try {
+    const sh = subsSheet_(), found = subsRows_().find(r => r.email === email);
+    if (found) {
+      welcome = found.status !== SUBSCRIBED;
+      sh.getRange(found.row, SUBS_STATUS).setValue(SUBSCRIBED); sh.getRange(found.row, SUBS_CHANGED).setValue(new Date());
+      if (name) sh.getRange(found.row, 2).setValue(name);
+      if (when) sh.getRange(found.row, 4).setValue(when);
+    } else {
+      sh.appendRow([new Date(), name, email, when, 'Journal page', SUBSCRIBED, new Date()]); welcome = true;
+    }
+    if (welcome) { setStatus_(email, SUBSCRIBED); mailerSheet_().appendRow([new Date(), 'Subscribed (website)', email, name, '']); }
+  } finally { lock.releaseLock(); }
+  if (welcome && MailApp.getRemainingDailyQuota() > KEEP_FOR_CHECKINS) {
+    try {
+      const posts = journalPosts_();
+      if (posts.length) {
+        const m = journalEmail_(postDetails_(posts[0]), posts.slice(1, 3), { email, name, source: 'web' }, true);
+        MailApp.sendEmail({ to: email, subject: m.subject, htmlBody: m.html, body: m.text, name: 'AP Villas & Resorts', replyTo: 'apvillasandresorts@gmail.com' });
+        mailerSheet_().appendRow([new Date(), 'Welcome sent', email, name, posts[0].title]);
+      }
+    } catch (err) { mailerSheet_().appendRow([new Date(), 'Welcome failed: ' + String(err && err.message || err).slice(0, 80), email, name, '']); }
+  }
+  return { ok: true };
 }
 function statusCol_(sh) {   // 1-based column of "Newsletter"; added after the last column the first time
   const last = Math.max(sh.getLastColumn(), 1), head = sh.getRange(1, 1, 1, last).getValues()[0];
@@ -137,8 +210,9 @@ function syncNewsletter_() {
 /** Sets every row of one email to Subscribed / Unsubscribed. Returns true if anything changed. */
 function setStatus_(email, v) {
   const sh = sheet_(), c = statusCol_(sh), data = sh.getDataRange().getValues(), ei = (data[0] || []).indexOf('Email'); let changed = false;
-  if (ei < 0) return false;
-  for (let i = 1; i < data.length; i++) if (String(data[i][ei] || '').trim().toLowerCase() === email && String(data[i][c - 1]).trim() !== v) { sh.getRange(i + 1, c).setValue(v); changed = true; }
+  if (ei >= 0) for (let i = 1; i < data.length; i++) if (String(data[i][ei] || '').trim().toLowerCase() === email && String(data[i][c - 1]).trim() !== v) { sh.getRange(i + 1, c).setValue(v); changed = true; }
+  const subs = subsSheet_();
+  subsRows_().filter(r => r.email === email && r.status !== v).forEach(r => { subs.getRange(r.row, SUBS_STATUS).setValue(v); subs.getRange(r.row, SUBS_CHANGED).setValue(new Date()); changed = true; });
   return changed;
 }
 function unsubscribed_() {
@@ -173,7 +247,7 @@ function postDetails_(post) {   // the post's cover photo and its caption/credit
 function strip_(s) { return String(s || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&rsquo;/g, "'").replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim(); }
 
 // ---- the email ----
-function journalEmail_(post, more, r) {
+function journalEmail_(post, more, r, welcome) {
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const utm = u => u + (u.includes('?') ? '&' : '?') + 'utm_source=journal-email&utm_medium=email&utm_campaign=' + encodeURIComponent(post.slug);
   const first = String(r.name || '').trim().split(/\s+/)[0];
@@ -197,7 +271,7 @@ function journalEmail_(post, more, r) {
     </td></tr>
     <tr><td style="padding:26px 30px 6px">
       <div style="font:15px/1.6 ${sans};color:#1A1A1A">${hello}</div>
-      <div style="font:15px/1.6 ${sans};color:#4A453D;margin-top:6px">A new guide is up on our Journal, written for pilgrim families planning their next visit to Mahakal.</div>
+      <div style="font:15px/1.6 ${sans};color:#4A453D;margin-top:6px">${welcome ? 'Welcome to the AP Villas Journal, and thank you for joining. Here is our newest guide for pilgrim families planning a visit to Mahakal, with two more below. Each new guide will reach you the day it is published.' : 'A new guide is up on our Journal, written for pilgrim families planning their next visit to Mahakal.'}</div>
     </td></tr>
     ${post.image ? `<tr><td style="padding:16px 30px 0"><a href="${esc(utm(post.url))}"><img src="${esc(post.image)}" width="540" alt="${esc(post.credit || post.title)}" style="display:block;width:100%;max-width:540px;height:auto;border-radius:14px;border:0"></a>
       ${post.credit ? `<div style="font:11px/1.45 ${sans};color:#8A8275;margin-top:6px">${esc(post.credit)}</div>` : ''}</td></tr>` : ''}
@@ -218,6 +292,14 @@ function journalEmail_(post, more, r) {
         <a href="${esc(wa)}" style="font:700 13.5px/1 ${sans};color:#177A40;text-decoration:none">WhatsApp Apoorv for dates &rarr;</a>
       </td></tr></table>
     </td></tr>
+    ${welcome ? `<tr><td style="padding:18px 30px 4px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF1DD;border:1px dashed #B88A2C;border-radius:14px"><tr><td style="padding:16px 18px">
+        <div style="font:700 11px/1 ${sans};letter-spacing:2px;color:#B5532A">YOUR WELCOME GIFT</div>
+        <div style="font:600 17px/1.35 ${serif};color:#1F4D3A;margin-top:6px">Win 5&ndash;30% off your stay in the Mahakal game</div>
+        <div style="font:13.5px/1.55 ${sans};color:#4A453D;margin:4px 0 10px">Defend Ujjain from the asuras, earn a coupon of 5% to 30%, and use it on a direct booking or your food bill (one coupon per booking).</div>
+        <a href="${esc(utm(SITE + '/mahakal-game.html'))}" style="font:700 13.5px/1 ${sans};color:#B5532A;text-decoration:none">Play now &rarr;</a>
+      </td></tr></table>
+    </td></tr>` : ''}
     ${moreRows ? `<tr><td style="padding:22px 30px 4px">
       <div style="font:600 11px/1 ${sans};letter-spacing:2.5px;color:#8C6512;margin-bottom:6px">MORE FROM THE JOURNAL</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${moreRows}</table>
@@ -227,16 +309,16 @@ function journalEmail_(post, more, r) {
       <div style="font:italic 15px/1.4 ${serif};color:#B88A2C;margin-top:10px">Where devotion feels at home</div>
     </td></tr>
     <tr><td style="background:#FAF6EE;padding:16px 30px;border-top:1px solid #EDE4D3">
-      <div style="font:11.5px/1.6 ${sans};color:#8A8275">You are receiving this because you ticked "Email me new Ujjain travel guides" during your e-check-in with AP Villas &amp; Resorts. We never share your email.<br>
+      <div style="font:11.5px/1.6 ${sans};color:#8A8275">${r.source === 'web' ? 'You are receiving this because you subscribed to the AP Villas Journal on apvillasandresorts.in.' : 'You are receiving this because you shared your email during e-check-in with AP Villas &amp; Resorts.'} We never share your email.<br>
       <a href="${esc(unsub)}" style="color:#8A8275">Unsubscribe</a> &middot; <a href="${esc(utm(SITE + '/blog.html'))}" style="color:#8A8275">All guides</a> &middot; <a href="${esc(utm(SITE))}" style="color:#8A8275">apvillasandresorts.in</a></div>
     </td></tr>
   </table>
 </td></tr></table>
 </body></html>`;
-  const text = `${first ? 'Namaste ' + first + ' ji,' : 'Namaste,'}\n\nA new guide is up on the AP Villas Journal:\n\n${post.title}\n${post.description}\n\nRead it: ${utm(post.url)}\n\n` +
+  const text = `${first ? 'Namaste ' + first + ' ji,' : 'Namaste,'}\n\n${welcome ? 'Welcome to the AP Villas Journal! Our newest guide:' : 'A new guide is up on the AP Villas Journal:'}\n\n${post.title}\n${post.description}\n\nRead it: ${utm(post.url)}\n\n` +
     (more && more.length ? 'More from the Journal:\n' + more.map(m => '- ' + m.title + ': ' + utm(m.url)).join('\n') + '\n\n' : '') +
-    `Planning a darshan trip? WhatsApp Apoorv: ${wa}\n\nWith Mahakal's blessings,\nApoorv · AP Villas & Resorts, Ujjain\n\nYou ticked "Email me new Ujjain travel guides" during e-check-in. Unsubscribe: ${unsub}`;
-  return { subject: `New guide: ${post.title}`, html, text };
+    (welcome ? `Welcome gift: win a 5-30% coupon for your stay or food bill in the Mahakal game: ${utm(SITE + '/mahakal-game.html')}\n\n` : '') + `Planning a darshan trip? WhatsApp Apoorv: ${wa}\n\nWith Mahakal's blessings,\nApoorv · AP Villas & Resorts, Ujjain\n\n${r.source === 'web' ? 'You subscribed on apvillasandresorts.in.' : 'You shared your email at e-check-in.'} Unsubscribe: ${unsub}`;
+  return { subject: welcome ? 'Welcome to the AP Villas Journal: ' + post.title : `New guide: ${post.title}`, html, text };
 }
 
 // ---- unsubscribe (two steps, so link scanners in email apps can never unsubscribe anyone by accident) ----

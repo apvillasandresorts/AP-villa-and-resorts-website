@@ -68,6 +68,31 @@
     }
   }
 
+  // ---------- Subscribe (blog.html #subscribe): saved in the "Journal subscribers" tab by the Apps Script web app ----------
+  const sub = document.querySelector('.journal-sub__form');
+  if (sub) {
+    const done = () => { sub.querySelector('.journal-sub__fields').hidden = true; sub.querySelector('.journal-sub__done').hidden = false; };
+    const msg = sub.querySelector('.journal-sub__msg'), btn = sub.querySelector('button[type=submit]'), mail = sub.elements.email;
+    sub.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = mail.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { mail.setAttribute('aria-invalid', 'true'); msg.textContent = 'Please enter a valid email address.'; mail.focus(); return; }
+      mail.removeAttribute('aria-invalid'); msg.textContent = ''; btn.disabled = true; btn.textContent = 'Subscribing…';
+      try {
+        const r = await fetch(sub.dataset.endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'subscribe', name: sub.elements.name.value.trim(), email, when: sub.elements.when.value, website: sub.elements.website.value, page: location.pathname }) });
+        const j = await r.json();
+        if (!j || !j.ok) { const x = new Error(j && j.error || ''); x.server = true; throw x; }
+        try { localStorage.setItem('apv_journal_sub', '1'); } catch (err) {}
+        if (typeof gtag === 'function') gtag('event', 'journal_subscribe', { when: sub.elements.when.value || 'not_set' });
+        done();
+      } catch (err) {
+        msg.textContent = err && err.server && err.message ? err.message : 'Sorry, that did not go through. Please try again, or WhatsApp us.';
+        btn.disabled = false; btn.textContent = 'Send me the guides';
+      }
+    });
+  }
+
   // ---------- Home: latest posts ----------
   const home = document.getElementById('home-journal');
   if (home) {
