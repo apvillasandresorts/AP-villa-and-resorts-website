@@ -53,6 +53,10 @@ const FO_TABS = {
   Events: ['event_id', 'name', 'start', 'end', 'kind', 'confidence', 'source', 'created_at', 'updated_at', 'updated_by'],
   Decisions: ['decision_id', 'rec_key', 'title', 'status', 'note', 'follow_up_metric', 'baseline', 'review_date', 'outcome', 'decided_at', 'decided_by', 'created_at', 'updated_at', 'updated_by'],
   Settings: ['key', 'value', 'updated_at'],
+  // market intelligence + pricing (FoMarket.gs)
+  Competitors: ['competitor_id', 'name', 'type', 'area', 'distance_km', 'bedrooms', 'sleeps', 'segment', 'website', 'listing_urls', 'positioning', 'amenities', 'review_themes', 'notes', 'last_checked', 'source_url', 'created_at', 'updated_at', 'updated_by'],
+  MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at'],
+  DemandSignals: ['signal_id', 'date', 'source', 'metric', 'keyword', 'value', 'period', 'growth_pct', 'source_url', 'notes', 'collected_by', 'created_at'],
   Jobs: ['job', 'started', 'finished', 'status', 'detail'],
 };
 
@@ -354,6 +358,10 @@ function foRoutes_() {
     'f.event.save': [foEventSave_, 'manager'], 'f.event.delete': [(b, u) => foDelete_('Events', 'event_id', b.event_id, u), 'manager'],
     'f.decision.save': [foDecisionSave_, 'founder'], 'f.settings.save': [foSettingsSave_, 'founder'],
     'f.report.run': [foReportRun_, 'manager'], 'f.report.get': [foReportGet_, 'viewer'], 'f.ga4': [foGa4Api_, 'viewer'],
+    // market intelligence + pricing
+    'f.market.save': [foMarketSave_, 'manager'], 'f.market.delete': [foMarketDelete_, 'manager'], 'f.market.import': [(b, u) => foMarketImport_(b, u.email), 'manager'],
+    'f.pricing.settings': [foPricingSettingsSave_, 'founder'],
+    'f.automation.create': [foAutomationCreate_, 'founder'], 'f.automation.revoke': [foAutomationRevoke_, 'founder'],
   };
 }
 function foApi_(b) {
@@ -362,6 +370,7 @@ function foApi_(b) {
     if (a === 'f.login.start') return foLoginStart_(b);
     if (a === 'f.login.verify') return foLoginVerify_(b);
     if (a === 'f.login.resend') return foLoginResend_(b);
+    if (b.key && !b.token) return foMachineApi_(b);   // automation key (FoMarket.gs): a few machine-only actions, no guest data
     const sess = foAuth_(b.token);
     if (!sess.ok) return { ok: false, auth: false, error: 'Your session has ended. Please sign in again.' };
     const r = foRoutes_()[a]; if (!r) return { ok: false, error: 'Unknown action.' };

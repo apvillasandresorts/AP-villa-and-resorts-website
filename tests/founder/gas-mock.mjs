@@ -108,7 +108,7 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
   vm.createContext(ctx);
   vm.runInContext('Date.now = () => __now(); const __RealDate = Date; Date = class extends __RealDate { constructor(...a) { if (a.length) super(...a); else super(__now()); } static now() { return __now(); } };', Object.assign(ctx, { __now: () => now }));
   const root = new URL('../../', import.meta.url);
-  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
+  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
   vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_ };', ctx);
 
   // the e-check-in tab, with the real column titles from docs/echeckin-apps-script.gs

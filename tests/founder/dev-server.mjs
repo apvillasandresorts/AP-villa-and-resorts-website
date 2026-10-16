@@ -37,6 +37,12 @@ env.fo.foSetup();
   env.api({ action: 'f.import.rows', token: tok, channel: 'Booking.com', file: 'sample-history.csv', rows });
   env.api({ action: 'f.expense.save', token: tok, expense: { date: '2026-09-30', category: 'staff', amount: 45000, property_id: 'all' } });
   env.api({ action: 'f.expense.save', token: tok, expense: { date: '2026-09-15', category: 'laundry', amount: 6000, property_id: 'all', basis: 'estimate' } });
+  // fictional SAMPLE market data (local preview only)
+  const comp = ['Sample Hotel Near Temple', 'Sample Family Villa', 'Sample Serviced Apartment', 'Sample Boutique Stay'];
+  const rates = [];
+  for (let i = 0; i < 40; i++) rates.push({ competitor: comp[i % 4], observed_at: addD('2026-10-16', -(i % 20)), stay_date: addD('2026-10-20', i * 2), nights: 1, unit_type: i % 2 ? '3BHK villa' : '2BHK apartment', bedrooms: i % 2 ? 3 : 2, price_per_night: 4800 + (i % 7) * 450, source_type: i % 3 ? 'ota' : 'website', source_url: 'https://example.com/sample-' + i, confidence: 'medium' });
+  env.api({ action: 'f.market.import', token: tok, competitors: comp.map((n, i) => ({ name: n, type: ['hotel', 'villa', 'serviced apartment', 'boutique'][i], area: 'Sample area', distance_km: 0.5 + i, bedrooms: i === 1 ? 3 : 2, website: 'https://example.com/' + i, positioning: 'Sample positioning text', source_url: 'https://example.com/' + i })), rates,
+    signals: [{ date: '2026-10-10', source: 'trends', metric: 'search_interest', keyword: 'ujjain', growth_pct: 30, source_url: 'https://example.com/trend' }] });
   env.api({ action: 'f.logout', token: tok });
 }
 let shown = 0;

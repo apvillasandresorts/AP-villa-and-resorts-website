@@ -1,4 +1,4 @@
-# AP Villas research rules (used by /research, /analyse-bookings, /analyse-ga4, /exec-summary)
+# AP Villas research rules (used by /research, /market-scan, /analyse-bookings, /analyse-ga4, /exec-summary and the weekly market job)
 
 ## Evidence labels (every finding carries exactly one)
 - **[FACT]** Verified: from a cited source (link + publisher + publication date + date retrieved) or from AP Villas' own data (file name / GA4 property + date range).
@@ -23,9 +23,10 @@
 
 ## Tools
 - Free Search MCP (`search`, `fetch`, `research`, `compare`): keyless, local; engines can be blocked or incomplete, so retry with another engine or phrasing and say when coverage was thin.
-- Google Analytics MCP (`run_report`, `run_funnel_report`, ...): read-only, property 558430227, live hostname www.apvillasandresorts.in only.
+- Google Analytics 4: read on the server by the Founder OS (property 558430227, live hostname only); locally via `node scripts/push-market.mjs --ga4 …`.
 - Trends MCP (`get_growth`, `get_time_series`, `get_top_trends`): relative interest (0–100), not visitor counts. Search interest is not booking demand.
-- Booking data: `node scripts/analyse-bookings.mjs <export>` (same metric definitions as the Founder OS). Facts about the villas come only from content/business-facts.json.
+- Booking data: Founder OS aggregates via `node scripts/push-market.mjs --summary …`, or an export with `node scripts/analyse-bookings.mjs <export>` (same metric definitions). Facts about the villas come only from content/business-facts.json.
+- Market data goes to the Founder OS (Pricing & market) with `node scripts/push-market.mjs research/market.json`; it feeds the pricing engine.
 
 ## Output
 Save to `research/YYYY-MM-DD-<topic>.md` (git-ignored and never deployed: this repo is public). Structure:

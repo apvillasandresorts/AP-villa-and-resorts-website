@@ -1,0 +1,86 @@
+# Weekly market intelligence for the Founder OS (free: runs on the Claude subscription token, no paid APIs).
+# Claude researches PUBLIC market data (competitors, dated public prices, demand signals), a validator checks it, and it is
+# sent to the Founder OS with the automation key. On the first Monday of the month it also writes the Market Intelligence Report.
+# Nothing is committed. This repo is public, so the job never handles AP Villas' own figures (that comparison is in the portal).
+# Needs repository secrets: CLAUDE_CODE_OAUTH_TOKEN (already used by the blog) and FOUNDER_OS_KEY (portal: Settings → Automation).
+
+name: Market intelligence
+
+on:
+  workflow_dispatch:
+    inputs:
+      full_report:
+        description: "Also write the monthly Market Intelligence Report"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 2 * * 1" # 07:30 IST every Monday
+
+concurrency:
+  group: market-intel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  MARKET_MODEL: ${{ vars.MARKET_MODEL || 'sonnet' }}
+
+jobs:
+  research:
+    name: Research and send
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Plan
+        id: plan
+        env:
+          HAS_KEY: ${{ secrets.FOUNDER_OS_KEY != '' }}
+          MANUAL_FULL: ${{ github.event.inputs.full_report }}
+        run: |
+          echo "today=$(TZ=Asia/Kolkata date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "period=$(TZ=Asia/Kolkata date +%Y-%m)" >> "$GITHUB_OUTPUT"
+          full=false
+          if [ "$MANUAL_FULL" = "true" ] || [ "$(TZ=Asia/Kolkata date +%d)" -le 7 ]; then full=true; fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_KEY" != "true" ]; then echo "::warning::FOUNDER_OS_KEY secret is not set (portal: Settings → Automation). Skipping."; echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+          mkdir -p research
+
+      - name: Research with Claude
+        if: steps.plan.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Follow content/market-research-instructions.md and content/research-rules.md exactly.
+            Today's date (IST): ${{ steps.plan.outputs.today }}
+            FULL_REPORT: "${{ steps.plan.outputs.full }}"
+            Write research/market.json (always) and, only if FULL_REPORT is "true", research/market-report.html.
+            Finish only when `node scripts/market-validate.mjs research/market.json` prints OK.
+            Do not run git. Do not print or look for any secret or key.
+          claude_args: >-
+            --model ${{ env.MARKET_MODEL }}
+            --max-turns 70
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node scripts/market-validate.mjs:*)"
+
+      - name: Validate
+        if: steps.plan.outputs.skip != 'true'
+        run: node scripts/market-validate.mjs research/market.json
+
+      - name: Send to the Founder OS
+        if: steps.plan.outputs.skip != 'true'
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+        run: |
+          if [ "${{ steps.plan.outputs.full }}" = "true" ] && [ -f research/market-report.html ]; then
+            node scripts/push-market.mjs research/market.json --report research/market-report.html --period "${{ steps.plan.outputs.period }}"
+          else
+            node scripts/push-market.mjs research/market.json
+          fi

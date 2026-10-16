@@ -10,6 +10,8 @@ Scope by argument:
 - `competitors`: public developments of accommodation near Mahakaleshwar: new hotels/dharamshalas/homestays opening, chain entries (OYO, Treebo, FabHotels, Taj/IHCL, Marriott etc. in Ujjain), MP Tourism properties, their public positioning and amenities. Only what sources state; never guess prices, occupancy or ratings.
 - anything else: research that topic in the same way.
 
+For a full competitor price scan that feeds the Founder OS pricing engine, use /market-scan instead.
+
 Steps:
 1. Plan 4–8 queries (English and Hindi where useful). Run them with the Free Search `search` tool (`freshness` = "year" or "month" for news; `category="news"` for current events). If an engine is blocked or results are thin, rephrase or name other engines, and note it.
 2. Open every page you will cite with `fetch` (or `fetch_batch`) and take figures only from the page text. Record publisher, publication date and retrieval date.

@@ -45,7 +45,7 @@
       trend: 'M3 17l6-6 4 4 8-8M15 7h6v6', web: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20', home: 'M3 11l9-8 9 8v10H3zM9 21v-6h6v6',
       money: 'M3 6h18v12H3zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', guest: 'M16 21v-2a4 4 0 0 0-8 0v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', forecast: 'M3 12h4l3 8 4-16 3 8h4',
       ops: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21h-4v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1-2.8-2.8.1-.1A1.7 1.7 0 0 0 3.2 14H3v-4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1 2.8-2.8.1.1A1.7 1.7 0 0 0 10 3.2V3h4v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1 2.8 2.8-.1.1A1.7 1.7 0 0 0 20.8 10H21v4h-.2a1.7 1.7 0 0 0-1.4 1z',
-      idea: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z', report: 'M6 2h9l5 5v15H6zM14 2v6h6M9 13h6M9 17h6', plug: 'M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4',
+      idea: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z', tag: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01', report: 'M6 2h9l5 5v15H6zM14 2v6h6M9 13h6M9 17h6', plug: 'M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4',
       lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4', bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0', menu: 'M3 6h18M3 12h18M3 18h18',
       search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3', moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', x: 'M18 6 6 18M6 6l12 12',
     };
@@ -158,26 +158,29 @@
 
   // ------------------------------------------------------------ modules ------------------------------------------------------------
   var MODULES = [
-    { g: 'Command' },
+    { g: 'Today' },
     { id: 'overview', label: 'Executive Overview', ic: 'overview' },
-    { id: 'bookings', label: 'Booking Management', ic: 'bookings', count: function () { return openEx().length; } },
-    { id: 'analytics', label: 'Booking Analytics', ic: 'chart' },
-    { id: 'revenue', label: 'Revenue Intelligence', ic: 'revenue', phase: 8 },
-    { id: 'studio', label: 'Analytics Studio', ic: 'studio', phase: 5 },
-    { g: 'Market & web' },
-    { id: 'trends', label: 'Trends & Market Intelligence', ic: 'trend', phase: 9 },
-    { id: 'website', label: 'Website Analytics', ic: 'web', phase: 6 },
-    { g: 'Business' },
-    { id: 'properties', label: 'Property Performance', ic: 'home' },
-    { id: 'finance', label: 'Financial Intelligence', ic: 'money', phase: 8 },
-    { id: 'guests', label: 'Guest Intelligence', ic: 'guest' },
-    { id: 'forecast', label: 'Forecasting & Scenario Lab', ic: 'forecast', phase: 9 },
     { id: 'ops', label: 'Operations Center', ic: 'ops' },
-    { id: 'strategy', label: 'Strategic Recommendations', ic: 'idea', phase: 10 },
-    { g: 'Admin' },
+    { g: 'Bookings' },
+    { id: 'bookings', label: 'Booking Management', ic: 'bookings', count: function () { return openEx().length; } },
+    { g: 'Revenue & pricing' },
+    { id: 'pricing', label: 'Pricing & Market', ic: 'tag' },
+    { id: 'revenue', label: 'Revenue Intelligence', ic: 'revenue' },
+    { id: 'finance', label: 'Financial Intelligence', ic: 'money' },
+    { g: 'Analytics' },
+    { id: 'analytics', label: 'Booking Analytics', ic: 'chart' },
+    { id: 'properties', label: 'Property Performance', ic: 'home' },
+    { id: 'guests', label: 'Guest Intelligence', ic: 'guest' },
+    { id: 'website', label: 'Website Analytics', ic: 'web' },
+    { id: 'trends', label: 'Trends & Events', ic: 'trend' },
+    { id: 'forecast', label: 'Forecasting & Scenarios', ic: 'forecast' },
+    { id: 'studio', label: 'Analytics Studio', ic: 'studio' },
+    { g: 'Decisions & reports' },
+    { id: 'strategy', label: 'Recommendations', ic: 'idea' },
     { id: 'reports', label: 'Reports & Exports', ic: 'report' },
-    { id: 'integrations', label: 'Integrations', ic: 'plug' },
-    { id: 'settings', label: 'Founder Settings & Security', ic: 'lock' },
+    { g: 'Admin' },
+    { id: 'integrations', label: 'Integrations & Automation', ic: 'plug' },
+    { id: 'settings', label: 'Settings & Security', ic: 'lock' },
   ];
   function openEx() { return (S.data && S.data.exceptions || []).filter(function (e) { return e.status === 'open'; }); }
 
@@ -349,9 +352,12 @@
       kpiCard('cancellation_rate', 'Cancellation rate', cur.cancellation_rate, 'pct', 'booked', c('cancellation_rate'), { drill: 'made', lowerIsBetter: true }),
       kpiCard('lead_time', 'Booking lead time (median)', cur.lead_time_median, 'days', 'booked', { prev: prev && prev.lead_time_median, ly: ly && ly.lead_time_median }, { drill: 'made', note: cur.lead_time_proxy_n ? cur.lead_time_proxy_n + ' bookings only have the e-check-in date (not counted)' : '' }),
       kpiCard('direct_share', 'Direct booking share', cur.direct_share_count, 'pct', 'booked', { prev: prev && prev.direct_share_count, ly: ly && ly.direct_share_count }, { drill: 'made', note: cur.direct_share_value != null ? pct(cur.direct_share_value) + ' of booking value' : '' }),
-      kpiCard('website_conversion', 'Website conversion', null, 'pct', 'GA4', {}, { na: 'Connect GA4 reporting (phase 6).' }),
-      kpiCard('contribution_margin', 'Contribution margin', null, 'inr', 'stay', {}, { na: 'Record operating costs (phase 8).' }),
+      '<div class="fo-card fo-kpi" id="ov-conv" data-goto="#/website"><div class="fo-kpi__label">Website enquiry rate<span class="fo-badge">GA4</span></div><div class="fo-kpi__value">…</div><div class="fo-kpi__cmp"><span class="flat">enquiries + WhatsApp + calls ÷ sessions</span></div></div>',
     ];
+    if (window.FoInsights && (D.expenses || []).some(function (e) { return e.date >= r.from && e.date <= r.to; })) {   // profit only when costs are recorded
+      var fin = window.FoInsights.finance(D, r.from, r.to, f);
+      cards.push(kpiCard('contribution_margin', 'Contribution margin', fin.contribution, 'inr', 'stay', {}, { drill: '', note: fin.status === 'complete' ? '' : fin.status_note }));
+    }
     page.innerHTML = hello('Welcome back, ' + ((S.user.name || 'Apoorv').split(' ')[0]) + '.', esc(dmy(r.from)) + ' – ' + esc(dmy(r.to)) + (S.property !== 'all' ? ' · ' + esc(propName(S.property)) : ' · all villas') + ' · compared with ' + esc(dmy(pr.from)) + ' – ' + esc(dmy(pr.to)) + ' and the same dates last year') +
       '<div class="fo-grid fo-grid--kpi">' + cards.join('') + '</div>' +
       '<p class="fo-hint" style="margin:8px 2px 18px">“booked” cards count bookings by the date they were made; “stay” cards count the nights guests stay. Booking value is not revenue, and neither is cash: see Financial figures below. Hover a card for its formula; click it for the bookings behind it.</p>' +
@@ -369,6 +375,14 @@
     $('[data-x=svg]', page).onclick = function () { C.exportSvg($('#ov-chart'), 'revenue-occupancy-' + r.from + '-' + r.to); };
     $('[data-x=csv]', page).onclick = function () { csvDownload('revenue-occupancy-' + r.from + '-' + r.to, ['period', 'revenue', 'occupied_nights', 'available_nights', 'occupancy', 'adr'], s.map(function (x) { return [x.key, x.revenue.toFixed(2), x.occupied, x.available, x.occupancy == null ? '' : x.occupancy.toFixed(4), x.adr == null ? '' : x.adr.toFixed(2)]; })); };
     $$('[data-drill]', page).forEach(function (el) { if (el.dataset.drill) el.onclick = function () { drill(el.dataset.drill, r.from, r.to); }; });
+    var gaTo = r.to > t ? t : r.to;   // GA4 has no future data
+    if (r.from <= t) api('f.ga4', { from: r.from, to: gaTo }).then(function (j) {
+      var box = $('#ov-conv'); if (!box || !j.ok) return;
+      var g = j.ga; S.ga = g; S.gaKey = r.from + gaTo;
+      $('.fo-kpi__value', box).textContent = g.connected && g.totals.sessions ? pct(g.intent / g.totals.sessions) : g.connected ? '—' : 'Not connected';
+      if (g.connected) $('.fo-kpi__cmp', box).innerHTML = '<span class="flat">' + g.intent + ' actions from ' + g.totals.sessions + ' sessions (live site only)</span>';
+    }).catch(function () {});
+    else { var cb = $('#ov-conv .fo-kpi__value'); if (cb) cb.textContent = '—'; }
     $$('[data-goto]', page).forEach(function (el) { el.onclick = function () { location.hash = el.dataset.goto; }; });
   }
   function commissionNote(b) { var parts = []; if (b.estimated) parts.push(b.estimated + ' estimated from rate'); if (b.unknown) parts.push(b.unknown + ' unknown'); return parts.length ? ' <span class="fo-hint">(' + parts.join(', ') + ')</span>' : ''; }
@@ -851,23 +865,28 @@
 
   // ------------------------------------------------------------ Integrations ------------------------------------------------------------
   function viewIntegrations(page) {
-    var st = staleNote();
+    var st = staleNote(), a = S.data.automation || {}, lastObs = (S.data.market_rates || []).map(function (r) { return r.observed_at; }).sort().pop(), ga = S.ga;
     var items = [
-      ['E-check-in sheet', st ? 'part' : 'on', st ? 'Connected, but ' + st : 'Connected · syncs every hour · last ' + ago(S.data.lastSync), 'Source of real guest stays, amounts, payments and how guests found you.'],
-      ['OTA CSV import', 'on', 'Available', 'Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda exports. Idempotent: re-imports never duplicate.'],
-      ['OTA live APIs', 'off', 'Not connected', 'Booking.com and Airbnb APIs are only given to approved connectivity partners. Use CSV import; nothing is claimed to sync automatically.'],
-      ['Google Analytics 4', 'part', 'Tag installed on the website (G-BEZ8KC5XGV) · reporting not connected', 'Phase 6 connects the GA4 Data API on the server (needs one Google permission from you).'],
-      ['Google Search Console', 'off', 'Not connected', 'Optional, needs your authorisation.'],
-      ['Email (Gmail via Apps Script)', 'on', 'Sending sign-in codes and journal emails', 'About 100 emails a day on a normal Gmail account.'],
-      ['Payment gateway (Razorpay)', 'off', 'No integration found in the website', 'Payments are recorded manually or from e-check-in. A Razorpay export import can be added.'],
-      ['Scheduled jobs', 'on', 'Hourly e-check-in sync and reconciliation', 'Runs on Google’s servers even when nobody is signed in. Reports join in phase 5.'],
+      ['Bookings', [
+        ['E-check-in sheet → booking ledger', st ? 'part' : 'on', st ? st : 'Hourly sync · last ' + ago(S.data.lastSync), 'Real stays, amounts, payments and how guests found you.'],
+        ['OTA exports (CSV)', 'on', 'Booking management → Import', 'Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda. Re-imports never duplicate. OTA live APIs are partner-only, so they are not connected.']]],
+      ['Website & demand', [
+        ['Google Analytics 4 (server-side)', ga && ga.connected ? 'on' : ga && !ga.connected ? 'off' : 'part', ga ? (ga.connected ? 'Connected · live site only' : ga.reason) : 'Open Website analytics to check', 'Traffic, sources, booking-intent funnel; daily traffic-growth signal for pricing.'],
+        ['Demand signals', (S.data.demand_signals || []).length ? 'on' : 'part', (S.data.demand_signals || []).length + ' signals', 'Website traffic growth (daily) and search/news signals from the research job.']]],
+      ['Market intelligence', [
+        ['Automation key', a.active ? 'on' : 'off', a.active ? 'Active · last used ' + (a.last_used ? ago(a.last_used) : 'never') : 'Not set: Settings → Automation', 'Lets the research job send market data and reports.'],
+        ['Weekly research job (GitHub Actions + Claude subscription)', a.active && lastObs ? 'on' : 'part', lastObs ? 'Latest market price seen ' + dmy(lastObs) : 'No market data yet', 'Competitors, dated public prices, demand signals; monthly market intelligence report.'],
+        ['Local research tools (Claude Code on the Mac)', 'on', '/research · /market-scan · /exec-summary', 'Free Search MCP (no key). Optional: Trends MCP (free 100 requests/month, needs your key).']]],
+      ['Delivery & storage', [
+        ['Reports', 'on', 'Archived as HTML + PDF in Drive', 'Daily/weekly/monthly/quarterly/annual and monthly market reports. Email only for types you choose.'],
+        ['Data store', 'on', 'Private Google Sheet', 'All Founder OS data; never published.']]],
     ];
-    page.innerHTML = hello('Integrations', 'What is really connected, and what is not.') + '<div class="fo-grid fo-grid--2">' + items.map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>';
+    page.innerHTML = hello('Integrations & automation', 'What is connected, what runs on its own, and what still needs you.') + items.map(function (g) { return '<h3 style="margin:18px 2px 8px">' + esc(g[0]) + '</h3><div class="fo-grid fo-grid--2">' + g[1].map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>'; }).join('');
   }
 
   // ------------------------------------------------------------ Settings & security ------------------------------------------------------------
   function viewSettings(page) {
-    var T = tabs('settings', [['security', 'Security'], ['channels', 'Channel rates'], ['reports', 'Report delivery'], ['ga4', 'Google Analytics'], ['villas', 'Villas'], ['metrics', 'Metric dictionary'], ['audit', 'Audit log']]);
+    var T = tabs('settings', [['security', 'Security'], ['channels', 'Channel rates'], ['reports', 'Report delivery'], ['ga4', 'Google Analytics'], ['automation', 'Automation'], ['villas', 'Villas'], ['metrics', 'Metric dictionary'], ['audit', 'Audit log']]);
     page.innerHTML = hello('Founder settings & security', 'Signed in as ' + esc(S.user.email) + ' (' + esc(S.user.role) + ')') + T.html + '<div id="st-body"></div>';
     wireTabs(page, 'settings');
     var body = $('#st-body');

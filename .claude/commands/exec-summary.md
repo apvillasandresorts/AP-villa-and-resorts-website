@@ -6,8 +6,9 @@ Produce the AP Villas executive summary for **$ARGUMENTS** following `content/re
 
 1. Gather, reusing reports already in `research/` from the last 14 days where they exist (say which):
    - Market: run /research ujjain and /research india if no recent report (cap: 12 searches, 5 Trends requests).
-   - Bookings: if a booking export path was given (or one is in `research/`), run /analyse-bookings on it. Otherwise ask for the Founder OS Excel export; do not guess figures.
-   - Website: run /analyse-ga4 for the same period if the Google Analytics MCP is connected; otherwise note it as a gap.
+   - Bookings: `node scripts/push-market.mjs --summary research/summary.json` (aggregates from the Founder OS: occupancy, ADR, RevPAR, revenue, channels, villas, reference rates). For deeper analysis, a booking export with /analyse-bookings. Never guess figures.
+   - Market: the latest market data and report are in the portal (Pricing & market, Reports); run /market-scan if older than 14 days.
+   - Website: run /analyse-ga4 for the same period.
 2. Write `research/<today>-executive-summary.md` (max ~2 pages):
    - **Headline** (3–5 bullets, each labelled [FACT]/[ESTIMATE]/[HYPOTHESIS]/[RECOMMENDATION]).
    - **Performance**: bookings, revenue, occupancy, ADR, RevPAR, channel mix vs previous period / last year, from the booking analysis only.

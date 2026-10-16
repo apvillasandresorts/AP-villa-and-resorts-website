@@ -1,19 +1,15 @@
 ---
-description: Analyse GA4 acquisition, engagement and booking-intent funnel (read-only Google Analytics MCP), compared with the booking ledger
+description: Analyse GA4 acquisition, engagement and booking-intent funnel for the live site (read through the Founder OS, read-only)
 argument-hint: [last7 | last28 | last90 | YYYY-MM-DD YYYY-MM-DD]
 ---
 Analyse Google Analytics 4 for www.apvillasandresorts.in for **$ARGUMENTS** (default: last 28 days vs the 28 days before). Follow `content/research-rules.md`.
 
-1. Use the Google Analytics MCP (`analytics-mcp`). First call `get_account_summaries` / `get_property_details` for property **558430227** to confirm access. If it is not connected or credentials fail, stop and say exactly which setup step is missing (see docs/research-stack.md).
-2. Always filter `hostName` = `www.apvillasandresorts.in` (excludes localhost and preview traffic). Run `run_report` for:
-   - totals and by date: activeUsers, totalUsers, sessions, engagedSessions, engagementRate, keyEvents;
-   - acquisition: sessionDefaultChannelGroup, sessionSourceMedium (sessions, engagedSessions, keyEvents);
-   - landing pages: landingPage (sessions, engagementRate, keyEvents);
-   - devices and cities: deviceCategory, city;
-   - booking-intent events: eventName in (enquiry_sheet_open, enquiry_form_submit, whatsapp_click, phone_click, echeckin_submit, journal_subscribe) with eventCount;
-   - villa interest: pagePath beginning `/villas/` (screenPageViews).
-   Optionally `run_funnel_report`: page_view → villa page → enquiry_sheet_open → enquiry_form_submit → whatsapp_click.
-3. Compare with the previous period. Label every figure [FACT] with property, metric and date range.
-4. Booking reality check: GA4 does not see OTA, WhatsApp, phone or walk-in bookings, and the site has no online checkout (no purchase events). If a booking export or Founder OS data is available, compare website-attributed bookings (Direct · Website, or found via Website/Google) with booking-intent events as a ratio, labelled [ESTIMATE], and explain consent, ad-blocker and cross-device gaps.
-5. Recommendations only where the data supports them (e.g. a landing page with high traffic and low engagement), each with the metric to watch.
-6. Save to `research/<today>-ga4.md`; give me the key points.
+1. GA4 is read on the server by the Founder OS (property 558430227, live hostname only). Fetch both periods:
+   `node scripts/push-market.mjs --ga4 <from> <to> research/ga4-<from>-<to>.json` (needs the local automation key; if missing, say how to add it, see /market-scan step 4).
+   The portal's Website analytics page shows the same data with charts.
+2. From the files: totals (users, sessions, engagement rate, key events), daily trend, channels, source/medium, landing pages, devices,
+   booking-intent events (enquiry_sheet_open, enquiry_form_submit, whatsapp_click, phone_click), villa page views, funnel.
+3. Compare the periods; label every figure [FACT] with metric and date range.
+4. Booking reality check: GA4 does not see OTA, WhatsApp, phone or walk-in bookings and the site has no online checkout. If
+   `node scripts/push-market.mjs --summary research/summary.json` works, compare booking-intent actions with direct bookings as an [ESTIMATE].
+5. Recommendations only where the data supports them, each with the metric to watch. Save to `research/<today>-ga4.md`.

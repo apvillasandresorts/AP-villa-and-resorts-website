@@ -365,6 +365,7 @@ function foDataLoad_() {
   let d = FO_MEMO.dirty ? null : foCacheGet_(key), cached = !!d;
   if (!d) { d = foDataBuild_(); if (!FO_MEMO.dirty) foCachePut_(key, d); }
   d.serverTime = foNow_(); d.today = foToday_(); d.lastSync = p.getProperty('FO_LAST_SYNC') || ''; d.cached = cached;
+  d.automation = typeof foAutomationStatus_ === 'function' ? foAutomationStatus_() : { active: false };
   return d;
 }
 function foCachePut_(key, obj, ttl) {
@@ -395,5 +396,6 @@ function foDataBuild_() {
     guests: foRows_('Guests').map(g => ({ guest_id: g.guest_id, name: g.name, city: g.city, state: g.state, first_seen: g.first_seen, phone: g.phone, email: g.email })),
     exceptions: ex.filter(e => e.status === 'open').concat(ex.filter(e => e.status !== 'open').slice(-100)).map(strip),
     imports: foRows_('Imports').slice(-50).map(strip),
+    competitors: foRows_('Competitors').map(strip), market_rates: foRows_('MarketRates').slice(-1500).map(strip), demand_signals: foRows_('DemandSignals').slice(-600).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }

@@ -134,9 +134,20 @@ function foDailyIfDue_() {
     let ok = foJob_('snapshot', () => foSnapshot_(today));
     ok = foJob_('reports', () => foRunDueReports_(today)) && ok;
     ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
+    foJob_('ga_signal', () => foGaSignal_(today));   // optional: never blocks the day being marked done
     if (ok) foSettingSet_('last_daily', today);
     return ok ? 'done' : 'retry later';
   } finally { p.deleteProperty('FO_DAILY_RUN'); }
+}
+/** Website traffic growth (last 28 days vs the 28 before) saved as a demand signal for the pricing engine. */
+function foGaSignal_(today) {
+  if (foRows_('DemandSignals').some(r => r.date === today && r.source === 'ga4')) return 'exists';
+  const a = FoMetrics.addDays(today, -28), b = FoMetrics.addDays(today, -1), c = FoMetrics.addDays(today, -56), d = FoMetrics.addDays(today, -29);
+  const now = foGa4_(a, b), before = foGa4_(c, d);
+  if (!now.connected || !before.connected) return 'GA4 not connected';
+  const s1 = now.totals.sessions || 0, s0 = before.totals.sessions || 0;
+  foAppend_('DemandSignals', { signal_id: foId_('SIG'), date: today, source: 'ga4', metric: 'sessions_28d', keyword: 'www.apvillasandresorts.in', value: s1, period: '28d', growth_pct: s0 >= 20 ? Math.round((s1 / s0 - 1) * 100) : '', notes: 'previous 28 days: ' + s0 + (s0 < 20 ? ' (too few for a growth figure)' : ''), collected_by: 'system', created_at: foNow_() });
+  return 'saved';
 }
 function foSnapshot_(today) {
   if (foRows_('Snapshots').some(s => s.date === today)) return 'exists';

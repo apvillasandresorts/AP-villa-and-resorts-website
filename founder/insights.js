@@ -460,11 +460,127 @@ var FoInsights = (function () {
       '<p style="font-size:11px;color:#8A948F;margin-top:16px">Booking value, revenue and cash are different figures. Management estimates are marked as such. Generated automatically by the AP Villas Founder OS.</p></div></div></body></html>';
   }
 
+
+  // ------------------------------------------------------------ pricing engine (reference rates; never changes live prices) ------------------------------------------------------------
+  var PRICING_DEFAULTS = {
+    weekend_uplift: 0.10,          // Fri & Sat nights, when own data does not say otherwise
+    market_weight: 0.30,           // share of the competitor median in the final rate (only with 3+ comparable observations)
+    event: { mega: 0.60, festival: 0.25, festival_peak: 0.35, holiday: 0.15, custom: 0.15 },
+    floor_pct: 0.80, ceiling_pct: 2.50, mega_ceiling_pct: 4.0, round: 100,
+    market_window_days: 10, market_max_age_days: 45,
+  };
+  var PRICING_VARIABLES = [
+    ['base', 'Base rate', 'Your base rate for the villa (Settings), else the published "from" price in business-facts.'],
+    ['realised', 'Realised ADR', 'The villa\'s own average nightly rate over the last 180 days (15+ nights needed); pulls the base halfway towards what guests actually paid.'],
+    ['season', 'Season', 'Your occupancy in that calendar month vs your average month (6+ months of history needed); ±15% at most.'],
+    ['weekend', 'Weekend', 'Friday and Saturday nights. Uplift from your settings, raised when your own weekends fill clearly better than weekdays.'],
+    ['event', 'Event', 'Verified Ujjain events calendar. Measured lift from the same past event where you have 5+ nights of data, otherwise the default for the event type.'],
+    ['pace', 'Pace (on the books)', 'How full all villas already are for that night and how close it is: +10% at 60% full, +20% at 80%; -10% for empty nights within 7 days.'],
+    ['trend', 'Demand trend', 'Latest search-interest and website-traffic growth signals (last 45 days): ±5% when growth is beyond ±25%.'],
+    ['market', 'Market', 'Median of dated competitor price observations for similar stays (±10 days, observed in the last 45 days), scaled by bedrooms. Blended in at the market weight when 3+ exist.'],
+    ['guardrails', 'Guardrails', 'Your floor and ceiling for the villa (defaults 80% and 250% of base; 400% during mega events), rounded to ₹100.'],
+  ];
+  function pricingSettings(data) {
+    var s = {}; try { s = typeof data.settings === 'object' && data.settings && data.settings.pricing ? JSON.parse(data.settings.pricing) : {}; } catch (e) { s = {}; }
+    var d = JSON.parse(JSON.stringify(PRICING_DEFAULTS));
+    Object.keys(s).forEach(function (k) { if (k === 'event' && s.event) Object.keys(s.event).forEach(function (e) { if (has(s.event[e])) d.event[e] = num(s.event[e]); }); else if (k !== 'villas' && has(s[k])) d[k] = num(s[k]); });
+    d.villas = s.villas || {};
+    return d;
+  }
+  function clampN(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  /** Comparable competitor observations for a stay date, as per-night prices scaled to the villa's bedrooms. */
+  function marketFor(data, villa, date, cfg) {
+    var today = data.today || iso(Date.now()), bd = num(villa.bedrooms);
+    var rows = (data.market_rates || []).filter(function (r) {
+      var obs = String(r.observed_at || '').slice(0, 10), stay = String(r.stay_date || '').slice(0, 10);
+      if (!obs || (t(today) - t(obs)) / DAY > cfg.market_max_age_days) return false;
+      if (stay && Math.abs(t(stay) - t(date)) / DAY > cfg.market_window_days) return false;
+      var b = num(r.bedrooms); if (bd && b && Math.abs(b - bd) > 1) return false;
+      return num(r.price_per_night) > 0 || num(r.price_total) > 0;
+    }).map(function (r) {
+      var pn = num(r.price_per_night) || (num(r.price_total) / Math.max(1, num(r.nights) || 1)), b = num(r.bedrooms);
+      return { name: r.competitor || r.competitor_name || '', price: pn, scaled: bd && b ? pn * bd / b : pn, observed_at: String(r.observed_at).slice(0, 10), stay_date: r.stay_date || '', source_url: r.source_url || '', source_type: r.source_type || '', confidence: r.confidence || '' };
+    });
+    var p = rows.map(function (r) { return r.scaled; });
+    return { n: rows.length, min: p.length ? Math.min.apply(null, p) : null, median: median(p), max: p.length ? Math.max.apply(null, p) : null, rows: rows, latest: rows.map(function (r) { return r.observed_at; }).sort().pop() || null };
+  }
+  /** Shared context for a villa (computed once per run). */
+  function pricingContext(data, villaId, opts) {
+    var Mx = M(), cfg = pricingSettings(data), today = data.today || iso(Date.now());
+    var villa = (data.properties || []).filter(function (p) { return p.property_id === villaId; })[0];
+    if (!villa) return null;
+    var vs = cfg.villas[villaId] || {}, base = has(vs.base) ? num(vs.base) : num(villa.from_rate), baseSrc = has(vs.base) ? 'your setting' : 'published "from" price';
+    var f = { property: villaId }, hist = Mx.compute(data, add(today, -180), add(today, -1), f), anchor = base, realised = null;
+    if (hist.occupied_nights >= 15 && hist.adr) { realised = hist.adr; anchor = (base + hist.adr) / 2; }
+    // season index from own history (all villas, by calendar month)
+    var season = {}, months = I_seasonality(data);
+    if (months.length >= 6) {
+      var occ = months.filter(function (m) { return m.occupancy != null; }), avg = occ.reduce(function (s2, m) { return s2 + m.occupancy; }, 0) / Math.max(1, occ.length);
+      occ.forEach(function (m) { var mm = m.month.slice(5, 7); (season[mm] = season[mm] || []).push(avg ? m.occupancy / avg : 1); });
+      Object.keys(season).forEach(function (k) { var a = season[k]; season[k] = a.reduce(function (x, y) { return x + y; }, 0) / a.length; });
+    }
+    var wk = Mx.weekendSplit(data, add(today, -180), add(today, -1)), weekend = cfg.weekend_uplift, weekendBasis = 'default setting';
+    if (wk.weekend.occupied >= 8 && wk.weekday.occupied >= 8 && wk.weekend.occupancy != null && wk.weekday.occupancy != null) {   // own data overrides the default only with enough nights
+      if (wk.weekend.occupancy - wk.weekday.occupancy > 0.10) { weekend = cfg.weekend_uplift + 0.05; weekendBasis = 'your weekends fill ' + Math.round((wk.weekend.occupancy - wk.weekday.occupancy) * 100) + ' pts better'; }
+      else if (wk.weekend.occupancy <= wk.weekday.occupancy) { weekend = 0; weekendBasis = 'your weekends do not fill better than weekdays'; }
+    }
+    var sig = (data.demand_signals || []).filter(function (x) { return has(x.growth_pct) && (t(today) - t(String(x.date).slice(0, 10))) / DAY <= 45; });
+    var g = sig.length ? sig.reduce(function (s2, x) { return s2 + num(x.growth_pct); }, 0) / sig.length : null;
+    var events = allEvents(data.events);
+    var measured = {}; events.filter(function (e) { return e.end < today; }).forEach(function (e) { var imp = eventImpact(data, e); if (imp.nights >= 5 && imp.adr_lift != null) measured[e.kind + ':' + e.name.split(' ')[0].toLowerCase()] = imp; });
+    return { cfg: cfg, villa: villa, base: base, baseSrc: baseSrc, anchor: anchor, realised: realised, realisedNights: hist.occupied_nights, season: season, weekend: weekend, weekendBasis: weekendBasis, trend: g, trendN: sig.length, events: events, measured: measured, today: today };
+  }
+  function I_seasonality(data) { return seasonality(data); }
+  /** Reference rate for one villa and one night, with every factor explained. */
+  function priceFor(data, ctx, date) {
+    var Mx = M(), cfg = ctx.cfg, factors = [], v = ctx.anchor, measuredCount = 0;
+    factors.push({ key: 'base', label: 'Base', mult: 1, value: ctx.base, basis: ctx.baseSrc });
+    if (ctx.realised) { factors.push({ key: 'realised', label: 'Realised ADR', mult: ctx.anchor / ctx.base, value: ctx.realised, basis: ctx.realisedNights + ' nights in the last 180 days' }); measuredCount++; }
+    var mm = date.slice(5, 7), si = ctx.season[mm];
+    if (si != null) { var sf = clampN(1 + 0.3 * (si - 1), 0.85, 1.15); v *= sf; factors.push({ key: 'season', label: 'Season', mult: sf, basis: 'month index ' + si.toFixed(2) + ' from your history' }); measuredCount++; }
+    var wd = new Date(t(date)).getUTCDay();
+    if ((wd === 5 || wd === 6) && ctx.weekend) { v *= 1 + ctx.weekend; factors.push({ key: 'weekend', label: 'Weekend', mult: 1 + ctx.weekend, basis: ctx.weekendBasis }); }
+    var evs = ctx.events.filter(function (e) { return e.start <= date && e.end >= date; }), mega = false;
+    if (evs.length) {
+      var best = null;
+      evs.forEach(function (e) {
+        var key = e.kind + ':' + e.name.split(' ')[0].toLowerCase(), imp = ctx.measured[key], lift, basis;
+        if (imp) { lift = clampN(imp.adr_lift + Math.max(0, imp.occupancy_lift || 0) * 0.5, 0, 1); basis = 'measured at ' + imp.event.name + ' ' + imp.event.start.slice(0, 4); }
+        else { lift = e.kind === 'mega' ? cfg.event.mega : e.kind === 'festival' ? (e.peak === date ? cfg.event.festival_peak : cfg.event.festival) : e.kind === 'holiday' ? cfg.event.holiday : cfg.event.custom; basis = 'default for ' + (e.peak === date ? 'festival peak day' : e.kind) + ' (' + e.confidence + ' date)'; }
+        if (!best || lift > best.lift) best = { lift: lift, basis: basis, name: e.name, measured: !!imp };
+        if (e.kind === 'mega') mega = true;
+      });
+      v *= 1 + best.lift; factors.push({ key: 'event', label: 'Event: ' + best.name, mult: 1 + best.lift, basis: best.basis }); if (best.measured) measuredCount++;
+    }
+    var lead = Math.round((t(date) - t(ctx.today)) / DAY), all = Mx.compute(data, date, date), occ = all.occupancy || 0, pf = 1, pb = '';
+    if (occ >= 0.8) { pf = 1.2; pb = Math.round(occ * 100) + '% of villas already booked'; } else if (occ >= 0.6) { pf = 1.1; pb = Math.round(occ * 100) + '% of villas already booked'; }
+    else if (lead >= 0 && lead <= 3 && occ < 0.3) { pf = 0.85; pb = 'only ' + Math.round(occ * 100) + '% booked, ' + lead + ' days away'; } else if (lead >= 0 && lead <= 7 && occ < 0.3) { pf = 0.9; pb = 'only ' + Math.round(occ * 100) + '% booked, ' + lead + ' days away'; }
+    if (pf !== 1) { v *= pf; factors.push({ key: 'pace', label: 'Pace', mult: pf, basis: pb }); measuredCount++; }
+    if (ctx.trend != null && Math.abs(ctx.trend) > 25) { var tf = ctx.trend > 0 ? 1.05 : 0.95; v *= tf; factors.push({ key: 'trend', label: 'Demand trend', mult: tf, basis: 'average signal growth ' + Math.round(ctx.trend) + '% (' + ctx.trendN + ' signals)' }); }
+    var own = v, mk = marketFor(data, ctx.villa, date, cfg);
+    if (mk.n >= 3 && mk.median) { v = (1 - cfg.market_weight) * own + cfg.market_weight * mk.median; factors.push({ key: 'market', label: 'Market', mult: v / own, value: mk.median, basis: 'median of ' + mk.n + ' observations (latest ' + mk.latest + '), weight ' + Math.round(cfg.market_weight * 100) + '%' }); measuredCount++; }
+    var vs = cfg.villas[ctx.villa.property_id] || {}, floor = has(vs.floor) ? num(vs.floor) : ctx.base * cfg.floor_pct, ceiling = has(vs.ceiling) ? num(vs.ceiling) : ctx.base * (mega ? cfg.mega_ceiling_pct : cfg.ceiling_pct);
+    var clamped = clampN(v, floor, ceiling); if (clamped !== v) factors.push({ key: 'guardrails', label: clamped > v ? 'Floor' : 'Ceiling', mult: clamped / v, basis: (clamped > v ? 'floor ' : 'ceiling ') + Math.round(clamped > v ? floor : ceiling) });
+    var rec = Math.round(clamped / cfg.round) * cfg.round, confidence = measuredCount >= 3 ? 'high' : measuredCount >= 1 ? 'medium' : 'low', spread = confidence === 'high' ? 0.06 : confidence === 'medium' ? 0.10 : 0.15;
+    var booked = (data.bookings || []).some(function (b) { return b.property_id === ctx.villa.property_id && ['confirmed', 'tentative'].indexOf(b.status) >= 0 && b.checkin <= date && b.checkout > date; });
+    var blocked = (data.blocks || []).some(function (b) { return b.property_id === ctx.villa.property_id && b.start <= date && b.end > date; });
+    return { date: date, villa: ctx.villa.property_id, recommended: rec, low: Math.round(rec * (1 - spread) / cfg.round) * cfg.round, high: Math.round(rec * (1 + spread) / cfg.round) * cfg.round,
+      confidence: confidence, factors: factors, market: { n: mk.n, min: mk.min, median: mk.median, max: mk.max, latest: mk.latest, rows: mk.rows }, booked: booked, blocked: blocked, portfolio_occupancy: occ, lead: lead };
+  }
+  /** Reference rates for one villa over n nights from `from`. */
+  function pricing(data, villaId, from, n) {
+    var ctx = pricingContext(data, villaId); if (!ctx) return null;
+    var rows = []; for (var i = 0; i < n; i++) rows.push(priceFor(data, ctx, add(from, i)));
+    var open = rows.filter(function (r) { return !r.booked && !r.blocked; });
+    return { villa: ctx.villa, base: ctx.base, base_source: ctx.baseSrc, realised: ctx.realised, rows: rows,
+      summary: { avg: open.length ? open.reduce(function (s2, r) { return s2 + r.recommended; }, 0) / open.length : null, min: open.length ? Math.min.apply(null, open.map(function (r) { return r.recommended; })) : null, max: open.length ? Math.max.apply(null, open.map(function (r) { return r.recommended; })) : null, open_nights: open.length, booked_nights: rows.length - open.length } };
+  }
   return {
     EVENTS: EVENTS, allEvents: allEvents, longWeekends: longWeekends, eventImpact: eventImpact,
     decompose: decompose, channelProfit: channelProfit, seasonality: seasonality, weekendByVilla: weekendByVilla, discountEffect: discountEffect, cancellationLeakage: cancellationLeakage, forwardOccupancy: forwardOccupancy,
     EXPENSE_CATEGORIES: EXPENSE_CATEGORIES, finance: finance, receivablesAging: receivablesAging, cashflow: cashflow, budgetVsActual: budgetVsActual, expensesIn: expensesIn,
     METHODS: METHODS, daily: daily, backtest: backtest, forecast: forecast, scenarioBase: scenarioBase, scenario: scenario, scenarioPresets: scenarioPresets,
+    PRICING_DEFAULTS: PRICING_DEFAULTS, PRICING_VARIABLES: PRICING_VARIABLES, pricingSettings: pricingSettings, pricingContext: pricingContext, priceFor: priceFor, pricing: pricing, marketFor: marketFor,
     anomalies: anomalies, recommendations: recommendations, REPORT_TYPES: REPORT_TYPES, reportPeriod: reportPeriod, reportDue: reportDue, buildReport: buildReport, reportHtml: reportHtml,
   };
 })();

@@ -171,3 +171,67 @@ test('reports never compare against periods with no data (no fake "+40 pts vs la
   const occ = r.sections[0].table.rows.find(x => x[0] === 'Occupancy');
   assert.equal(occ[1], '20.0%'); assert.equal(occ[3], '', 'no last-year data → blank');
 });
+
+// ---------------------------------------------------------------- pricing engine ----------------
+function pricingData(extra) {
+  return Object.assign({ today: '2026-10-16', properties: [{ property_id: 'v1', name: 'Villa 1', units: 1, active: 'yes', bedrooms: 3, sleeps: 8, from_rate: 5000 }, { property_id: 'v2', name: 'Villa 2', units: 1, active: 'yes', bedrooms: 2, from_rate: 4000 }],
+    channels, bookings: [], payments: [], blocks: [], events: [], market_rates: [], demand_signals: [], settings: {} }, extra || {});
+}
+test('pricing: a quiet weekday with no data is the base rate, low confidence, every factor explained', () => {
+  const r = I.pricing(pricingData(), 'v1', '2026-12-01', 1).rows[0];   // Tuesday, no events
+  assert.equal(r.recommended, 5000); assert.equal(r.confidence, 'low');
+  assert.deepEqual(r.factors.map(f => f.key), ['base']); assert.match(r.factors[0].basis, /published/);
+  assert.ok(r.low < r.recommended && r.high > r.recommended);
+});
+test('pricing: weekend and event uplifts use the defaults and say so; peak day beats the window', () => {
+  const D = pricingData();
+  const fri = I.pricing(D, 'v1', '2026-12-04', 1).rows[0];
+  assert.equal(fri.recommended, 5500); assert.ok(fri.factors.some(f => f.key === 'weekend'));
+  const dw = I.pricing(D, 'v1', '2026-11-06', 3).rows;   // Diwali window 6-10 Nov, peak 8 Nov (a Sunday)
+  const peak = dw.find(r => r.date === '2026-11-08'), win = dw.find(r => r.date === '2026-11-07');
+  assert.equal(peak.recommended, Math.round(5000 * 1.35 / 100) * 100);
+  assert.equal(win.recommended, Math.round(5000 * 1.10 * 1.25 / 100) * 100, 'Saturday in the window: weekend x festival');
+  assert.match(peak.factors.find(f => f.key === 'event').basis, /default for festival peak day/);
+});
+test('pricing: mega events get the higher ceiling; guardrails from settings are respected', () => {
+  const D = pricingData({ settings: { pricing: JSON.stringify({ villas: { v1: { base: 6000, floor: 5000, ceiling: 7000 } } }) } });
+  const r = I.pricing(D, 'v1', '2028-04-11', 1).rows[0];   // Simhastha
+  assert.equal(r.recommended, 7000, 'ceiling'); assert.ok(r.factors.some(f => f.key === 'guardrails'));
+  assert.equal(r.factors[0].basis, 'your setting');
+  const free = I.pricing(pricingData(), 'v1', '2028-04-11', 1).rows[0];
+  assert.equal(free.recommended, Math.round(5000 * 1.6 / 100) * 100);
+});
+test('pricing: market median of comparable, recent, dated observations is blended only with 3+; bedrooms scaled', () => {
+  const obs = (p, b, o = '2026-10-10', s = '2026-12-01') => ({ competitor: 'C' + p, observed_at: o, stay_date: s, bedrooms: b, price_per_night: p, nights: 1, source_url: 'https://x' });
+  const two = I.pricing(pricingData({ market_rates: [obs(8000, 3), obs(9000, 3)] }), 'v1', '2026-12-01', 1).rows[0];
+  assert.equal(two.recommended, 5000); assert.equal(two.market.n, 2, 'shown but not blended');
+  const D = pricingData({ market_rates: [obs(8000, 3), obs(9000, 3), obs(4000, 2), obs(20000, 6), obs(7000, 3, '2026-07-01'), obs(7000, 3, '2026-10-10', '2027-02-01')] });
+  const r = I.pricing(D, 'v1', '2026-12-01', 1).rows[0];
+  assert.equal(r.market.n, 3, '6-bedroom (not comparable), stale and far-date observations excluded');
+  assert.equal(r.market.median, 8000, '2-bedroom 4000 scaled to 3 bedrooms = 6000');
+  assert.equal(r.recommended, Math.round((0.7 * 5000 + 0.3 * 8000) / 100) * 100);
+  assert.equal(r.confidence, 'medium');
+});
+test('pricing: pace raises busy nights and trims empty last-minute nights; booked nights are flagged', () => {
+  const bk = (id, p, ci, co) => ({ booking_id: id, property_id: p, channel: 'Direct · WhatsApp', checkin: ci, checkout: co, nights: 1, gross_amount: 5000, status: 'confirmed', created_at: '2026-10-01' });
+  const D = pricingData({ properties: [1, 2, 3, 4, 5].map(i => ({ property_id: 'v' + i, name: 'V' + i, units: 1, active: 'yes', bedrooms: 3, from_rate: 5000 })),
+    bookings: ['v2', 'v3', 'v4', 'v5'].map((p, i) => bk('B' + i, p, '2026-12-01', '2026-12-02')) });
+  const busy = I.pricing(D, 'v1', '2026-12-01', 1).rows[0];
+  assert.equal(busy.recommended, 6000, '80% booked: +20%'); assert.equal(busy.booked, false);
+  const D2 = Object.assign({}, D, { today: '2026-12-08' });
+  const soon = I.pricing(D2, 'v1', '2026-12-10', 1).rows[0];   // Thursday, 2 days away, empty, no event
+  assert.equal(soon.recommended, Math.round(5000 * 0.85 / 100) * 100);
+  assert.equal(I.pricing(D2, 'v1', '2026-12-15', 1).rows[0].recommended, Math.round(5000 * 0.9 / 100) * 100, '7 days away');
+  assert.equal(I.pricing(D, 'v2', '2026-12-01', 1).rows[0].booked, true);
+});
+test('pricing: demand trend signals move the rate only beyond ±25%', () => {
+  const sig = g => ({ date: '2026-10-10', source: 'trends', metric: 'growth', keyword: 'ujjain', growth_pct: g });
+  assert.equal(I.pricing(pricingData({ demand_signals: [sig(10)] }), 'v1', '2026-12-01', 1).rows[0].recommended, 5000);
+  assert.equal(I.pricing(pricingData({ demand_signals: [sig(40)] }), 'v1', '2026-12-01', 1).rows[0].recommended, 5300);
+});
+test('pricing: summary covers open nights only; unknown villa returns null', () => {
+  const p = I.pricing(pricingData(), 'v1', '2026-12-01', 30);
+  assert.equal(p.rows.length, 30); assert.equal(p.summary.open_nights, 30); assert.ok(p.summary.min <= p.summary.avg && p.summary.avg <= p.summary.max);
+  assert.equal(I.pricing(pricingData(), 'nope', '2026-12-01', 3), null);
+  assert.equal(I.PRICING_VARIABLES.length, 9);
+});
