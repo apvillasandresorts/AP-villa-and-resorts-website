@@ -13,3 +13,5 @@ summary.json
 review.json
 assets/css/.Rhistory
 scripts/node_modules/
+# Private research output (may hold business figures; this repo is public)
+research/

@@ -55,6 +55,9 @@ This repo is the whole public website. Claude Code in this folder is the permane
 7. Verify live: `curl -sL https://www.apvillasandresorts.in/<page> | grep "<changed text>"` (add `?v=$(date +%s)` to dodge cache).
 8. Report the live URL(s) to the owner.
 
+## Research workflow (local, never deployed)
+`/research india|ujjain|competitors|<topic>`, `/analyse-bookings <export>`, `/analyse-ga4`, `/exec-summary`. Rules: `content/research-rules.md` (label FACT/ESTIMATE/HYPOTHESIS/RECOMMENDATION, never invent figures, no guest data). Output goes to `research/` (git-ignored: this repo is public). MCP servers (Free Search, Google Analytics, Trends) are user-scope on the owner's Mac: status and setup in `docs/research-stack.md`.
+
 ## Common tasks
 - **Change a price / amenity / villa detail:** update `content/business-facts.json`, then `node scripts/build-villa-pages.mjs`, and update the villas.html/index.html cards + compare table. `/ship`.
 - **New blog post now:** `/new-post [topic]` (runs the GitHub workflow). **Publish one:** `/publish <PR number or slug>`.
