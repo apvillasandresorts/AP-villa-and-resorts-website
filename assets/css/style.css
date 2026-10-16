@@ -1717,3 +1717,7 @@ body:has(.hero) .nav:not(.scrolled) .nav__menu a.nav__checkin { border-color: #E
 .post-listen.is-playing .post-listen__label svg { animation: listenPulse 1.2s ease-in-out infinite; color: var(--saffron); }
 @keyframes listenPulse { 50% { transform: scale(1.18); } }
 .article .is-reading { background: linear-gradient(90deg, rgba(232,199,122,.28), rgba(232,199,122,.06)); border-radius: 8px; box-shadow: -4px 0 0 var(--gold); transition: background .4s; }
+
+/* Footer: discreet link to the private founder portal */
+.footer__admin { color: inherit; opacity: .55; text-decoration: none; font-size: .92em; border-bottom: 1px dotted currentColor; }
+.footer__admin:hover { opacity: 1; }

@@ -20,4 +20,12 @@ for (const p of pages) {
   }
   if (s !== o) { writeFileSync(p, s); changed++; }
 }
+// Founder portal (/founder/): its own files, linked relatively from founder/index.html
+if (existsSync('founder/index.html')) {
+  let f = readFileSync('founder/index.html', 'utf8'); const o = f;
+  for (const a of ['founder.css', 'metrics.js', 'charts.js', 'app.js']) {
+    f = f.replace(new RegExp(`(${a.replace('.', '\\.')})(\\?v=[0-9a-f]+)?"`, 'g'), `$1?v=${hash('founder/' + a)}"`);
+  }
+  if (f !== o) { writeFileSync('founder/index.html', f); changed++; }
+}
 console.log('asset versions', ver, 'pages updated', changed);

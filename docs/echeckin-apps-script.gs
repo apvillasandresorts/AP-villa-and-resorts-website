@@ -54,6 +54,7 @@ const COLUMNS = [
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
+    if (String(body.action || '').indexOf('f.') === 0) return json_(foApi_(body));   // Founder OS (docs/founder-os/), every action checks its own session
     if (body.action === 'score' || body.action === 'coupon') return json_(gamePost_(body));   // Mahakal game (see the end of this file)
     if (body.action === 'subscribe') return json_(subscribePost_(body));   // Journal sign-up on blog.html (BlogMailer.gs)
     if (body.website) return json_({ ok: true });                  // spam trap
