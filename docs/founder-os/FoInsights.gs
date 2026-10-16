@@ -119,11 +119,16 @@ function foJob_(job, fn) {
 function foDailyIfDue_() {
   const hour = Number(Utilities.formatDate(new Date(), FO.TZ, 'H')), today = foToday_();
   if (hour < 7 || foSettings_().last_daily === today) return 'not due';
-  let ok = foJob_('snapshot', () => foSnapshot_(today));
-  ok = foJob_('reports', () => foRunDueReports_(today)) && ok;
-  ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
-  if (ok) foSettingSet_('last_daily', today);
-  return ok ? 'done' : 'retry later';
+  // one run at a time: an hourly trigger and a manual run must never both generate today's reports
+  const lock = LockService.getScriptLock(); if (!lock.tryLock(2000)) return 'busy';
+  try {
+    if (foSettings_().last_daily === today) return 'not due';   // re-check inside the lock
+    let ok = foJob_('snapshot', () => foSnapshot_(today));
+    ok = foJob_('reports', () => foRunDueReports_(today)) && ok;
+    ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
+    if (ok) foSettingSet_('last_daily', today);
+    return ok ? 'done' : 'retry later';
+  } finally { lock.releaseLock(); }
 }
 function foSnapshot_(today) {
   if (foRows_('Snapshots').some(s => s.date === today)) return 'exists';

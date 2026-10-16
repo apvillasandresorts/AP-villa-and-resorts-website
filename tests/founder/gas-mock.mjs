@@ -62,7 +62,7 @@ class Spreadsheet {
 export function makeEnv({ checkins = [], analytics = null } = {}) {
   let now = Date.parse('2026-10-16T06:30:00Z');   // 12:00 IST
   const clock = { now: () => now, advance: ms => { now += ms; } };
-  const props = new Map(), cache = new Map(), mails = [], books = new Map(), files = new Map();
+  const props = new Map(), cache = new Map(), mails = [], books = new Map(), files = new Map(), lock = { held: false };
   function blob(data, type, name) {
     const b = { data, type, name, getBytes: () => signed(Buffer.from(data, 'utf8')), getDataAsString: () => data, setName: n => { b.name = n; return b; },
       getAs: t => { if (t !== 'application/pdf') throw new Error('bad type'); return blob('%PDF ' + data.length, t, name); } };
@@ -81,7 +81,7 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
       get: k => { const e = cache.get(k); if (!e || e.exp <= now) { cache.delete(k); return null; } return e.v; },
       put: (k, v, ttl = 600) => { cache.set(k, { v: String(v), exp: now + ttl * 1000 }); }, remove: k => { cache.delete(k); },
     }) },
-    LockService: { getScriptLock: () => ({ tryLock: () => true, waitLock: () => {}, releaseLock: () => {} }) },
+    LockService: { getScriptLock: () => ({ tryLock: () => !lock.held, waitLock: () => { if (lock.held) throw new Error('Lock timeout'); }, releaseLock: () => {} }) },
     Utilities: {
       getUuid: () => crypto.randomUUID(),
       DigestAlgorithm: { SHA_256: 'sha256' }, MacAlgorithm: { HMAC_SHA_256: 'sha256' },
@@ -129,5 +129,5 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
     if (!v.ok) throw new Error('verify failed: ' + v.error);
     return v.token;
   }
-  return { fo, api, clock, files, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); } };
+  return { fo, api, clock, files, lock, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); } };
 }

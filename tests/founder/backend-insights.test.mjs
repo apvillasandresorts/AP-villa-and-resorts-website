@@ -145,3 +145,14 @@ test('a failed scheduled step is logged and retried on the next hourly run', asy
   assert.equal(env.tab('Reports').filter(r => r.type === 'daily').length, 1);
   assert.ok(env.tab('Settings').find(s => s.key === 'last_daily'));
 });
+
+test('daily work never runs twice at once (another execution holding the lock makes it skip, then it runs once)', async () => {
+  const { env } = await ready();
+  env.lock.held = true;
+  assert.equal(env.fo.foDailyIfDue_(), 'busy');
+  assert.equal(env.tab('Reports').length, 0);
+  env.lock.held = false;
+  assert.equal(env.fo.foDailyIfDue_(), 'done');
+  assert.equal(env.fo.foDailyIfDue_(), 'not due');
+  assert.equal(env.tab('Reports').filter(r => r.type === 'daily').length, 1);
+});
