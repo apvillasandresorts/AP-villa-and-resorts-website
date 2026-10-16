@@ -359,12 +359,12 @@ function foChannelSave_(b, user) {
 function foDataLoad_() {
   const strip = r => { delete r._row; return r; };
   const ex = foRows_('Exceptions');
-  return {
+  return Object.assign({
     serverTime: foNow_(), today: foToday_(), lastSync: PropertiesService.getScriptProperties().getProperty('FO_LAST_SYNC') || '',
     properties: foRows_('Properties').map(strip), channels: foRows_('Channels').map(strip),
     bookings: foRows_('Bookings').map(strip), payments: foRows_('Payments').map(strip), blocks: foRows_('Blocks').map(strip),
     guests: foRows_('Guests').map(g => ({ guest_id: g.guest_id, name: g.name, city: g.city, state: g.state, first_seen: g.first_seen, phone: g.phone, email: g.email })),
     exceptions: ex.filter(e => e.status === 'open').concat(ex.filter(e => e.status !== 'open').slice(-100)).map(strip),
     imports: foRows_('Imports').slice(-50).map(strip),
-  };
+  }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }

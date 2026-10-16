@@ -43,7 +43,17 @@ const FO_TABS = {
   Exceptions: ['exception_id', 'type', 'severity', 'booking_id', 'origin_ref', 'detail', 'data', 'status', 'created_at', 'resolved_at', 'resolved_by', 'resolution'],
   Imports: ['import_id', 'ts', 'source', 'file', 'rows', 'created', 'matched', 'unchanged', 'exceptions', 'failed', 'actor', 'status', 'note'],
   Blocks: ['block_id', 'property_id', 'start', 'end', 'reason', 'created_at', 'created_by'],
-  Expenses: ['expense_id', 'date', 'property_id', 'category', 'amount', 'vendor', 'basis', 'note', 'created_at', 'created_by'],
+  Expenses: ['expense_id', 'date', 'property_id', 'category', 'amount', 'vendor', 'basis', 'note', 'created_at', 'updated_at', 'updated_by'],
+  // phases 5–10 (FoInsights.gs)
+  Budgets: ['budget_id', 'month', 'property_id', 'category', 'amount', 'note', 'created_at', 'updated_at', 'updated_by'],
+  Charts: ['chart_id', 'title', 'metric', 'chart_type', 'date_dimension', 'grain', 'range', 'filters', 'comparison', 'dataset', 'refresh_policy', 'pinned', 'created_at', 'updated_at', 'updated_by', 'last_refresh', 'refresh_status'],
+  Dashboards: ['dashboard_id', 'name', 'charts', 'filters', 'created_at', 'updated_at', 'updated_by'],
+  Reports: ['report_id', 'type', 'period_key', 'from', 'to', 'generated_at', 'data_freshness', 'status', 'html_id', 'pdf_id', 'emailed', 'actor'],
+  Snapshots: ['date', 'created_at', 'metrics'],
+  Events: ['event_id', 'name', 'start', 'end', 'kind', 'confidence', 'source', 'created_at', 'updated_at', 'updated_by'],
+  Decisions: ['decision_id', 'rec_key', 'title', 'status', 'note', 'follow_up_metric', 'baseline', 'review_date', 'outcome', 'decided_at', 'decided_by', 'created_at', 'updated_at', 'updated_by'],
+  Settings: ['key', 'value', 'updated_at'],
+  Jobs: ['job', 'started', 'finished', 'status', 'detail'],
 };
 
 // ---------------------------------------------------------------- setup (run once from the editor) ----------------
@@ -66,7 +76,11 @@ function foSetup() {
   Logger.log('Founder OS ready. Data sheet: ' + ss.getUrl() + ' · sync: ' + JSON.stringify(r));
 }
 /** Hourly: pull new e-check-ins into the booking ledger and re-check reconciliation. Runs without anyone signed in. */
-function foHourly() { const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) return; try { foSyncCheckins_('schedule'); } finally { lock.releaseLock(); } }
+function foHourly() {
+  const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) return;
+  try { foSyncCheckins_('schedule'); } finally { lock.releaseLock(); }
+  if (typeof foDailyIfDue_ === 'function') foDailyIfDue_();   // snapshot, scheduled reports, chart refresh: once a day after 07:00 IST
+}
 
 function foSeedReference_() {
   if (!foRows_('Properties').length) {
@@ -301,6 +315,14 @@ function foRoutes_() {
     'f.block.save': [foBlockSave_, 'manager'], 'f.block.delete': [foBlockDelete_, 'manager'],
     'f.exception.resolve': [foExceptionResolve_, 'manager'], 'f.import.rows': [foImportRows_, 'manager'],
     'f.channel.save': [foChannelSave_, 'founder'],
+    // phases 5–10
+    'f.chart.save': [foChartSave_, 'manager'], 'f.chart.delete': [(b, u) => foDelete_('Charts', 'chart_id', b.chart_id, u), 'manager'],
+    'f.dashboard.save': [foDashboardSave_, 'manager'], 'f.dashboard.delete': [(b, u) => foDelete_('Dashboards', 'dashboard_id', b.dashboard_id, u), 'manager'],
+    'f.expense.save': [foExpenseSave_, 'manager'], 'f.expense.delete': [(b, u) => foDelete_('Expenses', 'expense_id', b.expense_id, u), 'founder'],
+    'f.budget.save': [foBudgetSave_, 'founder'], 'f.budget.delete': [(b, u) => foDelete_('Budgets', 'budget_id', b.budget_id, u), 'founder'],
+    'f.event.save': [foEventSave_, 'manager'], 'f.event.delete': [(b, u) => foDelete_('Events', 'event_id', b.event_id, u), 'manager'],
+    'f.decision.save': [foDecisionSave_, 'founder'], 'f.settings.save': [foSettingsSave_, 'founder'],
+    'f.report.run': [foReportRun_, 'manager'], 'f.report.get': [foReportGet_, 'viewer'], 'f.ga4': [foGa4Api_, 'viewer'],
   };
 }
 function foApi_(b) {

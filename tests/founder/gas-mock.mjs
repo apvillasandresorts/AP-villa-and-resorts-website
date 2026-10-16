@@ -10,6 +10,7 @@ function pad(n, w = 2) { return String(n).padStart(w, '0'); }
 function formatDate(date, tz, fmt) {
   const d = new Date(date.getTime() + 330 * 60000);   // Asia/Kolkata = UTC+5:30, no daylight saving
   const Y = d.getUTCFullYear(), M = d.getUTCMonth() + 1, D = d.getUTCDate(), h = d.getUTCHours(), m = d.getUTCMinutes(), s = d.getUTCSeconds();
+  if (fmt === 'H') return String(h);
   const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][M - 1];
   return fmt.replace("yyyy-MM-dd'T'HH:mm:ssXXX", `${Y}-${pad(M)}-${pad(D)}T${pad(h)}:${pad(m)}:${pad(s)}+05:30`)
     .replace("yyyy-MM-dd'T'HH:mm:ss", `${Y}-${pad(M)}-${pad(D)}T${pad(h)}:${pad(m)}:${pad(s)}`)
@@ -58,10 +59,16 @@ class Spreadsheet {
   getSheets() { return this.sheets; }
 }
 
-export function makeEnv({ checkins = [] } = {}) {
+export function makeEnv({ checkins = [], analytics = null } = {}) {
   let now = Date.parse('2026-10-16T06:30:00Z');   // 12:00 IST
   const clock = { now: () => now, advance: ms => { now += ms; } };
-  const props = new Map(), cache = new Map(), mails = [], books = new Map();
+  const props = new Map(), cache = new Map(), mails = [], books = new Map(), files = new Map();
+  function blob(data, type, name) {
+    const b = { data, type, name, getBytes: () => signed(Buffer.from(data, 'utf8')), getDataAsString: () => data, setName: n => { b.name = n; return b; },
+      getAs: t => { if (t !== 'application/pdf') throw new Error('bad type'); return blob('%PDF ' + data.length, t, name); } };
+    return b;
+  }
+  const folder = { getId: () => 'FOLDER1', createFile: b => { const id = 'F' + (files.size + 1); files.set(id, b); return { getId: () => id }; } };
   const checkinSheet = new Sheet('E-Check-in');
   const ctx = {
     console, JSON, Math, Number, String, Array, Object, Boolean, RegExp, isFinite, isNaN, parseInt, parseFloat, Error, Set, Map, encodeURIComponent,
@@ -81,7 +88,7 @@ export function makeEnv({ checkins = [] } = {}) {
       computeDigest: (alg, s) => signed(crypto.createHash(alg).update(toBuf(s)).digest()),
       computeHmacSha256Signature: (m, k) => signed(crypto.createHmac('sha256', toBuf(k)).update(toBuf(m)).digest()),
       computeHmacSignature: (alg, m, k) => signed(crypto.createHmac(alg, toBuf(k)).update(toBuf(m)).digest()),
-      newBlob: s => ({ getBytes: () => signed(Buffer.from(String(s), 'utf8')) }),
+      newBlob: (s, type, name) => blob(String(s), type, name),
       base64EncodeWebSafe: b => toBuf(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
       formatDate,
     },
@@ -92,12 +99,14 @@ export function makeEnv({ checkins = [] } = {}) {
     MailApp: { sendEmail: (a, subj, body) => { mails.push(typeof a === 'object' ? a : { to: a, subject: subj, body }); }, getRemainingDailyQuota: () => 100 },
     ScriptApp: { getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => { const t = { timeBased: () => t, everyHours: () => t, everyMinutes: () => t, create: () => t }; return t; } },
     sheet_: () => checkinSheet,
+    DriveApp: { createFolder: () => folder, getFolderById: () => folder, getFileById: id => ({ getBlob: () => files.get(id) }) },
+    ...(analytics ? { AnalyticsData: analytics } : {}),
   };
   vm.createContext(ctx);
   vm.runInContext('Date.now = () => __now(); const __RealDate = Date; Date = class extends __RealDate { constructor(...a) { if (a.length) super(...a); else super(__now()); } static now() { return __now(); } };', Object.assign(ctx, { __now: () => now }));
   const root = new URL('../../', import.meta.url);
-  const src = ['docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
-  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_ };', ctx);
+  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
+  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_ };', ctx);
 
   // the e-check-in tab, with the real column titles from docs/echeckin-apps-script.gs
   const head = ['Submitted at', 'Reference', 'Booked through', 'Booking ID', 'Villa', 'Check-in', 'Check-out', 'Nights', 'Adults', 'Children', 'Main guest', 'Mobile', 'Email', 'City', 'State',
@@ -120,5 +129,5 @@ export function makeEnv({ checkins = [] } = {}) {
     if (!v.ok) throw new Error('verify failed: ' + v.error);
     return v.token;
   }
-  return { fo, api, clock, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); } };
+  return { fo, api, clock, files, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); } };
 }

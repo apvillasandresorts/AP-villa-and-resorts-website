@@ -7,9 +7,10 @@ var FoCharts = (function () {
   var PALETTE = ['#0F5C45', '#C9A24F', '#2F8F6B', '#8C6512', '#5B7F95', '#B5532A', '#7A6FA8', '#3C4A45', '#9BB8A8', '#E2C27A'];
   function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
   function txt(parent, x, y, s, attrs) { var t = el('text', Object.assign({ x: x, y: y }, attrs || {}), parent); t.textContent = s; return t; }
-  function nice(max) { if (!(max > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log10(max))), f = max / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+  function nice(max) { if (!(max > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log10(max))), f = max / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 4 ? 4 : f <= 8 ? 8 : 10) * p; }   // divisible by 4 → round gridlines
   function fmt(v, kind) {
     if (v == null || !isFinite(v)) return '—';
+    if (v < 0 && (kind === 'inr' || kind === 'n' || !kind)) return '−' + fmt(-v, kind);
     if (kind === 'inr') return '₹' + (Math.abs(v) >= 100000 ? (v / 100000).toFixed(1).replace(/\.0$/, '') + 'L' : Math.round(v).toLocaleString('en-IN'));
     if (kind === 'pct') return (v * 100).toFixed(v < 0.1 ? 1 : 0) + '%';
     if (kind === 'days') return v.toFixed(1) + ' d';
@@ -138,6 +139,46 @@ var FoCharts = (function () {
       if (opt.onClick) bar.addEventListener('click', function () { opt.onClick(it); });
     });
   }
+  /** Waterfall: steps [{label, value, total:bool}] (totals drawn from zero, others float from the running sum). */
+  function waterfall(host, steps, opt) {
+    opt = opt || {};
+    if (!steps.length) return empty(host, opt.empty);
+    var f = frame(host, opt.height || 240), pad = { l: 62, r: 12, t: 14, b: 44 }, W = f.w - pad.l - pad.r, H = f.h - pad.t - pad.b;
+    var run = 0, bars = steps.map(function (s) { var from = s.total ? 0 : run, to = s.total ? s.value : run + s.value; run = to; return { s: s, a: Math.min(from, to), b: Math.max(from, to) }; });
+    var lo = Math.min(0, Math.min.apply(null, bars.map(function (x) { return x.a; }))), hi = nice(Math.max.apply(null, bars.map(function (x) { return x.b; })) - lo) + lo;
+    var y = function (v) { return pad.t + H - (v - lo) / (hi - lo) * H; }, step = W / steps.length, bw = Math.min(64, step * 0.6);
+    for (var g = 0; g <= 4; g++) { var gv = lo + (hi - lo) * g / 4; el('line', { x1: pad.l, x2: pad.l + W, y1: y(gv), y2: y(gv), class: 'fo-grid' }, f.svg); txt(f.svg, pad.l - 6, y(gv) + 4, fmt(gv, opt.kind), { 'text-anchor': 'end', class: 'fo-axis' }); }
+    bars.forEach(function (x, i) {
+      var color = x.s.total ? '#0F5C45' : x.s.value >= 0 ? '#2F8F6B' : '#B4402A', X = pad.l + step * i + (step - bw) / 2;
+      var r = el('rect', { x: X, y: y(x.b), width: bw, height: Math.max(1, y(x.a) - y(x.b)), rx: 3, fill: color }, f.svg);
+      txt(f.svg, X + bw / 2, y(x.b) - 5, (x.s.total || x.s.value < 0 ? '' : '+') + fmt(x.s.value, opt.kind), { 'text-anchor': 'middle', class: 'fo-label' });
+      txt(f.svg, X + bw / 2, f.h - pad.b + 16, x.s.label, { 'text-anchor': 'middle', class: 'fo-axis' });
+      r.addEventListener('mousemove', function (e) { showTip(host, e, '<b>' + esc(x.s.label) + '</b><div>' + fmt(x.s.value, opt.kind) + '</div>'); });
+      r.addEventListener('mouseleave', function () { hideTip(host); });
+    });
+  }
+  /** PNG export (draws the SVG on a canvas at 2× for sharpness). */
+  function exportPng(host, name) {
+    var svg = host.querySelector('svg'); if (!svg) return;
+    var clone = svg.cloneNode(true), w = svg.viewBox.baseVal.width, h = svg.viewBox.baseVal.height;
+    clone.setAttribute('xmlns', NS); clone.setAttribute('width', w); clone.setAttribute('height', h);
+    var st = document.createElementNS(NS, 'style'); st.textContent = 'text{fill:#1C2421;font-family:Arial,sans-serif}.fo-grid{stroke:#E3E9E5}.fo-axis{fill:#6B756F}.fo-track{fill:#EEF2EF}'; clone.insertBefore(st, clone.firstChild);
+    var url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' })), img = new Image();
+    img.onload = function () {
+      var c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2; var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.scale(2, 2); g.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url); c.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name + '.png'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }, 'image/png');
+    };
+    img.src = url;
+  }
+  /** Excel workbook (SpreadsheetML 2003 .xls: opens in Excel, Numbers, LibreOffice, Google Sheets). sheets: [{name, head:[], rows:[[]]}] */
+  function exportExcel(name, sheets) {
+    function x(v) { return String(v == null ? '' : v).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+    function cell(v) { var n = typeof v === 'number' && isFinite(v); return '<Cell><Data ss:Type="' + (n ? 'Number' : 'String') + '">' + x(n ? v : v) + '</Data></Cell>'; }
+    var xml = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      '<Styles><Style ss:ID="h"><Font ss:Bold="1"/><Interior ss:Color="#E7EFEA" ss:Pattern="Solid"/></Style></Styles>' +
+      sheets.map(function (s) { return '<Worksheet ss:Name="' + x(String(s.name).slice(0, 31)) + '"><Table><Row>' + s.head.map(function (h) { return '<Cell ss:StyleID="h"><Data ss:Type="String">' + x(h) + '</Data></Cell>'; }).join('') + '</Row>' + s.rows.map(function (r) { return '<Row>' + r.map(cell).join('') + '</Row>'; }).join('') + '</Table></Worksheet>'; }).join('') + '</Workbook>';
+    download(name + '.xls', xml, 'application/vnd.ms-excel');
+  }
   function exportSvg(host, name) {
     var svg = host.querySelector('svg'); if (!svg) return;
     var clone = svg.cloneNode(true); clone.setAttribute('xmlns', NS);
@@ -149,5 +190,5 @@ var FoCharts = (function () {
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type: type })); a.download = name;
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
-  return { combo: combo, donut: donut, hbars: hbars, exportSvg: exportSvg, download: download, fmt: fmt, PALETTE: PALETTE, empty: empty };
+  return { combo: combo, donut: donut, hbars: hbars, waterfall: waterfall, exportSvg: exportSvg, exportPng: exportPng, exportExcel: exportExcel, download: download, fmt: fmt, PALETTE: PALETTE, empty: empty };
 })();

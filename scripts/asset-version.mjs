@@ -23,7 +23,7 @@ for (const p of pages) {
 // Founder portal (/founder/): its own files, linked relatively from founder/index.html
 if (existsSync('founder/index.html')) {
   let f = readFileSync('founder/index.html', 'utf8'); const o = f;
-  for (const a of ['founder.css', 'metrics.js', 'charts.js', 'app.js']) {
+  for (const a of ['founder.css', 'metrics.js', 'charts.js', 'insights.js', 'app.js', 'modules.js']) {
     f = f.replace(new RegExp(`(${a.replace('.', '\\.')})(\\?v=[0-9a-f]+)?"`, 'g'), `$1?v=${hash('founder/' + a)}"`);
   }
   if (f !== o) { writeFileSync('founder/index.html', f); changed++; }

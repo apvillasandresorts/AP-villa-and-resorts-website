@@ -849,11 +849,12 @@
 
   // ------------------------------------------------------------ Settings & security ------------------------------------------------------------
   function viewSettings(page) {
-    var T = tabs('settings', [['security', 'Security'], ['channels', 'Channel rates'], ['villas', 'Villas'], ['metrics', 'Metric dictionary'], ['audit', 'Audit log']]);
+    var T = tabs('settings', [['security', 'Security'], ['channels', 'Channel rates'], ['reports', 'Report delivery'], ['ga4', 'Google Analytics'], ['villas', 'Villas'], ['metrics', 'Metric dictionary'], ['audit', 'Audit log']]);
     page.innerHTML = hello('Founder settings & security', 'Signed in as ' + esc(S.user.email) + ' (' + esc(S.user.role) + ')') + T.html + '<div id="st-body"></div>';
     wireTabs(page, 'settings');
     var body = $('#st-body');
-    if (T.cur === 'security') {
+    if (window.FoUI && window.FoUI.settingsExtra[T.cur]) { window.FoUI.settingsExtra[T.cur](body); }
+    else if (T.cur === 'security') {
       body.innerHTML = '<div class="fo-grid fo-grid--2"><div class="fo-card"><h3>Change passphrase</h3><label class="fo-field">Current passphrase<input type="password" id="pw-c" autocomplete="current-password"></label><label class="fo-field">New passphrase (12+ characters)<input type="password" id="pw-n" autocomplete="new-password"></label><label class="fo-field">Repeat new passphrase<input type="password" id="pw-n2" autocomplete="new-password"></label><div class="fo-msg" id="pw-msg"></div><button class="btn btn--primary" id="pw-go">Change passphrase</button></div>' +
         '<div class="fo-card"><h3>Active sessions <button class="btn btn--sm btn--danger" id="ss-all">Sign out everywhere</button></h3><div id="ss-list" class="fo-hint">Loading…</div>' +
         '<div class="fo-note" style="margin-top:12px"><b>How sign-in is protected:</b> passphrase (salted PBKDF2 + server key) and a 6-digit email code every time; codes expire in 5 minutes, work once and lock after 5 wrong tries; sign-in pauses after repeated wrong passphrases and emails you; sessions end after 30 idle minutes or 12 hours, rotate every 15 minutes and can be revoked here. The browser keeps the session only for this tab.</div></div></div>';
@@ -902,5 +903,13 @@
     C.download(name + '.csv', '﻿' + [head].concat(rows).map(function (r) { return r.map(cell).join(','); }).join('\r\n'), 'text/csv;charset=utf-8');
   }
 
-  render();
+  // shared with founder/modules.js (phases 5–10), which registers its views and then starts the app
+  window.FoUI = {
+    S: S, M: M, C: C, api: api, load: load, render: render, renderPage: renderPage, hello: hello, tabs: tabs, wireTabs: wireTabs, chartCard: chartCard, kv: kv,
+    esc: esc, $: $, $$: $$, inr: inr, pct: pct, n1: n1, dmy: dmy, dm: dm, when: when, ago: ago, toast: toast, sel: sel, uniq: uniq, drill: drill, bucketRange: bucketRange,
+    currentRange: currentRange, filt: filt, propName: propName, today: today, csvDownload: csvDownload, drawer: drawer, icon: icon, openBooking: openBooking,
+    channelTable: channelTable, openEx: openEx, MODULES: MODULES, VIEWS: VIEWS, PLANNED: PLANNED, settingsExtra: {}, savePrefs: savePrefs,
+    start: function () { render(); },
+  };
+  if (!root.hasAttribute("data-wait-modules")) render();   // modules.js starts the app after registering its views
 })();

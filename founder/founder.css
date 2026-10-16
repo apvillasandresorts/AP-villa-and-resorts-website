@@ -224,6 +224,8 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
   .fo-top { padding: 10px 12px; }
   .fo-filters { margin-left: 0; width: 100%; }
   .fo-page { padding: 16px 12px 60px; }
+  .fo-grid--kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .fo-kpi__value { font-size: 20px; }
   .fo-form { grid-template-columns: 1fr; }
   .fo-dl { grid-template-columns: 120px 1fr; }
   .fo-map { grid-template-columns: 1fr 1fr; }

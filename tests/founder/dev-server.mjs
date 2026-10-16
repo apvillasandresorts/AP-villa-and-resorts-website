@@ -20,6 +20,25 @@ const SAMPLE = [   // fictional guests, for the local preview only
 
 const env = makeEnv({ checkins: SAMPLE });
 env.fo.foSetup();
+// ~7 months of generated SAMPLE OTA history (local preview only) so trends, forecasts and finance views have data
+{
+  const tok = await env.login('local preview only phrase');
+  const villas = ['Divinestay', 'AP Suite', 'Om Shanti Stay', 'Villa Aranya', 'Rudrangan Suites'], rows = [];
+  const addD = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  let k = 0;
+  for (let d = '2026-03-02'; d < '2026-12-20'; d = addD(d, 2)) {
+    villas.forEach((v, i) => {
+      const wd = new Date(d + 'T00:00:00Z').getUTCDay(), busy = wd === 5 || wd === 6 || (d >= '2026-07-30' && d <= '2026-08-28');
+      if ((k++ * 7 + i * 3) % (busy ? 3 : 7) !== 0) return;
+      if (d > '2026-11-15' && k % 3) return;
+      rows.push({ external_id: 'SAMPLE-' + k, guest_name: 'Sample OTA guest ' + k, property: v, checkin: d, checkout: addD(d, 1 + (k % 3)), gross_amount: String((4500 + i * 400 + (busy ? 900 : 0)) * (1 + (k % 3))), created_at: addD(d, -(3 + (k % 25))), status: k % 11 === 0 ? 'Cancelled' : 'Confirmed' });
+    });
+  }
+  env.api({ action: 'f.import.rows', token: tok, channel: 'Booking.com', file: 'sample-history.csv', rows });
+  env.api({ action: 'f.expense.save', token: tok, expense: { date: '2026-09-30', category: 'staff', amount: 45000, property_id: 'all' } });
+  env.api({ action: 'f.expense.save', token: tok, expense: { date: '2026-09-15', category: 'laundry', amount: 6000, property_id: 'all', basis: 'estimate' } });
+  env.api({ action: 'f.logout', token: tok });
+}
 let shown = 0;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg' };
 
@@ -41,4 +60,4 @@ http.createServer((req, res) => {
   if (!file.startsWith(ROOT) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404); res.end('not found'); return; }
   res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   res.end(readFileSync(file));
-}).listen(3100, () => console.log('Founder OS preview: http://localhost:3100/founder/  (login: founder@example.com, first sign-in has no passphrase; codes print here)'));
+}).listen(3100, () => console.log('Founder OS preview: http://localhost:3100/founder/  (login: founder@example.com + the local preview passphrase set in this file; codes print here)'));
