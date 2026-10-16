@@ -138,7 +138,8 @@
     page.innerHTML = U.hello('Analytics studio', 'Saved charts redraw from the live ledger every time; definitions and dashboards are stored in your data sheet.') + T.html + '<div id="st"></div>';
     U.wireTabs(page, 'studio');
     var body = $('#st');
-    if (T.cur === 'new' || S.editChart) return builder(body, S.editChart);
+    if (T.cur !== 'new') S.editChart = null;   // leaving the editor (e.g. via the menu) must not trap the library in edit mode
+    if (T.cur === 'new') return builder(body, S.editChart);
     if (T.cur === 'dashboards') return dashboards(body);
     var charts = (S.data.charts || []).slice().sort(function (a, b) { return (b.pinned === 'yes') - (a.pinned === 'yes') || (a.title < b.title ? -1 : 1); });
     body.innerHTML = charts.length ? '<div class="fo-grid fo-grid--2">' + charts.map(function (c) {
@@ -282,8 +283,9 @@
     var r = range(), T = U.tabs('website', [['overview', 'Traffic'], ['funnel', 'Booking funnel'], ['recon', 'GA4 vs bookings']]);
     page.innerHTML = U.hello('Website analytics', 'Google Analytics 4, read on the server for ' + esc(dmy(r.from)) + ' – ' + esc(dmy(r.to)) + '. Only www.apvillasandresorts.in traffic is counted (no local tests).') + T.html + '<div id="wb"><div class="fo-loading"><div class="fo-spin"></div><div>Asking Google Analytics…</div></div></div>';
     U.wireTabs(page, 'website');
-    var key = r.from + r.to;
-    var go = S.gaKey === key && S.ga ? Promise.resolve({ ok: true, ga: S.ga }) : U.api('f.ga4', { from: r.from, to: M.addDays(today(), -0) < r.to ? today() : r.to });
+    var to = r.to > today() ? today() : r.to, from = r.from > to ? to : r.from, key = from + to;   // GA4 has no future data
+    if (r.from > today()) { $('#wb').innerHTML = '<div class="fo-empty">Website analytics only covers past dates. Choose a range up to today.</div>'; return; }
+    var go = S.gaKey === key && S.ga ? Promise.resolve({ ok: true, ga: S.ga }) : U.api('f.ga4', { from: from, to: to });
     go.then(function (j) {
       var body = $('#wb'); if (!body) return;
       if (!j.ok) { body.innerHTML = '<div class="fo-empty">' + esc(j.error) + '</div>'; return; }

@@ -20,7 +20,7 @@ function formatDate(date, tz, fmt) {
 
 class Range {
   constructor(sh, r, c, nr, nc) { Object.assign(this, { sh, r, c, nr, nc }); }
-  getValues() { const out = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) row.push(this.sh.get(this.r + i, this.c + j)); out.push(row); } return out; }
+  getValues() { if (this.sh.onRead) this.sh.onRead(); const out = []; for (let i = 0; i < this.nr; i++) { const row = []; for (let j = 0; j < this.nc; j++) row.push(this.sh.get(this.r + i, this.c + j)); out.push(row); } return out; }
   setValues(v) {
     if (v.length !== this.nr || v.some(r => r.length !== this.nc)) throw new Error(`setValues size mismatch ${v.length}x${v[0] && v[0].length} vs ${this.nr}x${this.nc}`);
     v.forEach((row, i) => row.forEach((x, j) => this.sh.set(this.r + i, this.c + j, x))); return this;
@@ -62,6 +62,7 @@ class Spreadsheet {
 export function makeEnv({ checkins = [], analytics = null } = {}) {
   let now = Date.parse('2026-10-16T06:30:00Z');   // 12:00 IST
   const clock = { now: () => now, advance: ms => { now += ms; } };
+  const stats = { openById: 0, reads: 0 };
   const props = new Map(), cache = new Map(), mails = [], books = new Map(), files = new Map(), lock = { held: false };
   function blob(data, type, name) {
     const b = { data, type, name, getBytes: () => signed(Buffer.from(data, 'utf8')), getDataAsString: () => data, setName: n => { b.name = n; return b; },
@@ -80,6 +81,8 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
     CacheService: { getScriptCache: () => ({
       get: k => { const e = cache.get(k); if (!e || e.exp <= now) { cache.delete(k); return null; } return e.v; },
       put: (k, v, ttl = 600) => { cache.set(k, { v: String(v), exp: now + ttl * 1000 }); }, remove: k => { cache.delete(k); },
+      putAll: (o, ttl = 600) => { Object.keys(o).forEach(k => cache.set(k, { v: String(o[k]), exp: now + ttl * 1000 })); },
+      getAll: keys => { const r = {}; keys.forEach(k => { const e = cache.get(k); if (e && e.exp > now) r[k] = e.v; }); return r; },
     }) },
     LockService: { getScriptLock: () => ({ tryLock: () => !lock.held, waitLock: () => { if (lock.held) throw new Error('Lock timeout'); }, releaseLock: () => {} }) },
     Utilities: {
@@ -94,7 +97,7 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
     },
     SpreadsheetApp: {
       create: name => { const id = 'SS' + (books.size + 1); const s = new Spreadsheet(id, name); books.set(id, s); return s; },
-      openById: id => { const s = books.get(id); if (!s) throw new Error('no spreadsheet ' + id); return s; },
+      openById: id => { stats.openById++; const s = books.get(id); if (!s) throw new Error('no spreadsheet ' + id); return s; },
     },
     MailApp: { sendEmail: (a, subj, body) => { mails.push(typeof a === 'object' ? a : { to: a, subject: subj, body }); }, getRemainingDailyQuota: () => 100 },
     ScriptApp: { getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => { const t = { timeBased: () => t, everyHours: () => t, everyMinutes: () => t, create: () => t }; return t; } },
@@ -116,7 +119,10 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
   checkins.forEach(addCheckin);
 
   props.set('FO_FOUNDER_EMAIL', 'founder@example.com');
-  const fo = ctx.__fo;
+  // every Apps Script request/trigger is a fresh execution: reset the per-execution memo before each call, like production
+  const fresh = fn => (...args) => { vm.runInContext('FO_MEMO = { ss: null, tabs: {}, rows: {}, last: {}, dirty: false };', ctx); return fn(...args); };
+  const raw = ctx.__fo, fo = {};
+  Object.keys(raw).forEach(k => { fo[k] = typeof raw[k] === 'function' ? fresh(raw[k]) : raw[k]; });
   const api = body => JSON.parse(JSON.stringify(fo.foApi_(body)));
   const lastOtp = () => { const m = mails.filter(x => /sign-in code/.test(x.subject)).pop(); return m && (m.body.match(/code is (\d{6})/) || [])[1]; };
   const dataSheet = () => books.get(props.get('FO_DATA_ID'));
@@ -129,5 +135,7 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
     if (!v.ok) throw new Error('verify failed: ' + v.error);
     return v.token;
   }
-  return { fo, api, clock, files, lock, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); } };
+  books.forEach = books.forEach;
+  const countReads = () => { books.forEach(b => b.sheets.forEach(sh => { sh.onRead = () => { stats.reads++; }; })); };
+  return { fo, api, clock, files, lock, stats, countReads, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); cache.clear(); } };
 }

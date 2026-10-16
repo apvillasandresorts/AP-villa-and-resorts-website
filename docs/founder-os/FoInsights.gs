@@ -43,7 +43,7 @@ function foDelete_(tab, idKey, id, user) {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const row = foRows_(tab).find(r => r[idKey] === id); if (!row) return { ok: false, error: 'Not found.' };
-    foTab_(tab).deleteRow(row._row); foAudit_(user.email, tab.toLowerCase() + '_delete', id, 'ok'); return {};
+    foDeleteRow_(tab, row._row); foAudit_(user.email, tab.toLowerCase() + '_delete', id, 'ok'); return {};
   } finally { lock.releaseLock(); }
 }
 
@@ -119,16 +119,24 @@ function foJob_(job, fn) {
 function foDailyIfDue_() {
   const hour = Number(Utilities.formatDate(new Date(), FO.TZ, 'H')), today = foToday_();
   if (hour < 7 || foSettings_().last_daily === today) return 'not due';
-  // one run at a time: an hourly trigger and a manual run must never both generate today's reports
-  const lock = LockService.getScriptLock(); if (!lock.tryLock(2000)) return 'busy';
+  // One run at a time (an hourly trigger and a manual run must never both generate today's reports), but the script lock is
+  // held only for a moment: the slow part (reports, PDFs) runs under a "running" flag so the founder's saves are never blocked.
+  const p = PropertiesService.getScriptProperties(), lock = LockService.getScriptLock();
+  if (!lock.tryLock(2000)) return 'busy';
   try {
-    if (foSettings_().last_daily === today) return 'not due';   // re-check inside the lock
+    FO_MEMO.rows = {}; FO_MEMO.last = {};   // re-read inside the lock
+    if (foSettings_().last_daily === today) return 'not due';
+    const running = Number(p.getProperty('FO_DAILY_RUN') || 0);
+    if (running && Date.now() - running < 15 * 60000) return 'busy';
+    p.setProperty('FO_DAILY_RUN', String(Date.now()));
+  } finally { lock.releaseLock(); }
+  try {
     let ok = foJob_('snapshot', () => foSnapshot_(today));
     ok = foJob_('reports', () => foRunDueReports_(today)) && ok;
     ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
     if (ok) foSettingSet_('last_daily', today);
     return ok ? 'done' : 'retry later';
-  } finally { lock.releaseLock(); }
+  } finally { p.deleteProperty('FO_DAILY_RUN'); }
 }
 function foSnapshot_(today) {
   if (foRows_('Snapshots').some(s => s.date === today)) return 'exists';
@@ -204,32 +212,36 @@ function foReportGet_(b) {
  */
 function foGa4_(from, to) {
   if (typeof AnalyticsData === 'undefined') return { connected: false, reason: 'The Google Analytics Data API service is not enabled in the Apps Script project yet.' };
-  const s = foSettings_(), prop = 'properties/' + s.ga4_property, cacheKey = 'FO_GA_' + s.ga4_property + from + to, cache = CacheService.getScriptCache();
-  const hit = cache.get(cacheKey); if (hit) return JSON.parse(hit);
+  const s = foSettings_(), prop = 'properties/' + s.ga4_property, cacheKey = 'FO_GA_' + s.ga4_property + '_' + from + '_' + to;
+  const hit = foCacheGet_(cacheKey); if (hit) return hit;
   const host = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: s.ga4_host } } };
-  const run = (dims, mets, filter, limit) => {
-    const req = { dateRanges: [{ startDate: from, endDate: to }], dimensions: dims.map(n => ({ name: n })), metrics: mets.map(n => ({ name: n })), dimensionFilter: filter || host, limit: limit || 100 };
-    if (mets.indexOf('sessions') >= 0) req.orderBys = [{ metric: { metricName: 'sessions' }, desc: true }];
-    const r = AnalyticsData.Properties.runReport(req, prop);
-    return (r.rows || []).map(row => { const o = {}; dims.forEach((d, i) => { o[d] = row.dimensionValues[i].value; }); mets.forEach((m, i) => { o[m] = Number(row.metricValues[i].value); }); return o; });
+  const req = (dims, mets, filter, limit) => {
+    const r = { dateRanges: [{ startDate: from, endDate: to }], dimensions: dims.map(n => ({ name: n })), metrics: mets.map(n => ({ name: n })), dimensionFilter: filter || host, limit: limit || 100 };
+    if (mets.indexOf('sessions') >= 0) r.orderBys = [{ metric: { metricName: 'sessions' }, desc: true }];
+    return r;
   };
+  const parse = (q, rep) => (rep && rep.rows || []).map(row => { const o = {}; q.dimensions.forEach((d, i) => { o[d.name] = row.dimensionValues[i].value; }); q.metrics.forEach((m, i) => { o[m.name] = Number(row.metricValues[i].value); }); return o; });
+  /** Up to 5 reports per call (GA4 batch limit) instead of one round trip each. */
+  const batch = qs => { const out = AnalyticsData.Properties.batchRunReports({ requests: qs }, prop); return qs.map((q, i) => parse(q, (out.reports || [])[i])); };
   const and = f2 => ({ andGroup: { expressions: [host, f2] } });
   try {
-    const totals = run([], ['activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'keyEvents', 'screenPageViews'])[0] || {};
-    const daily = run(['date'], ['activeUsers', 'sessions', 'engagedSessions'], null, 400).map(r => ({ date: r.date.slice(0, 4) + '-' + r.date.slice(4, 6) + '-' + r.date.slice(6), activeUsers: r.activeUsers, sessions: r.sessions, engagedSessions: r.engagedSessions })).sort((a, b) => a.date < b.date ? -1 : 1);
-    const landing = run(['landingPage'], ['sessions', 'engagedSessions', 'keyEvents'], null, 25);
-    const sources = run(['sessionSourceMedium'], ['sessions', 'engagedSessions', 'keyEvents'], null, 25);
-    const channels = run(['sessionDefaultChannelGroup'], ['sessions', 'engagedSessions', 'keyEvents'], null, 20);
-    const devices = run(['deviceCategory'], ['sessions', 'engagedSessions'], null, 10);
-    const events = run(['eventName'], ['eventCount', 'totalUsers'], null, 100);
-    const villaViews = run(['pagePath'], ['screenPageViews', 'totalUsers'], and({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/villas' } } }), 30);
+    const A = [req([], ['activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'keyEvents', 'screenPageViews']), req(['date'], ['activeUsers', 'sessions', 'engagedSessions'], null, 400),
+      req(['landingPage'], ['sessions', 'engagedSessions', 'keyEvents'], null, 25), req(['sessionSourceMedium'], ['sessions', 'engagedSessions', 'keyEvents'], null, 25), req(['sessionDefaultChannelGroup'], ['sessions', 'engagedSessions', 'keyEvents'], null, 20)];
+    const B = [req(['deviceCategory'], ['sessions', 'engagedSessions'], null, 10), req(['eventName'], ['eventCount', 'totalUsers'], null, 100),
+      req(['pagePath'], ['screenPageViews', 'totalUsers'], and({ filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/villas' } } }), 30)];
+    const ra = batch(A), rb = batch(B);
+    const totals = ra[0][0] || {};
+    const daily = ra[1].map(r => ({ date: r.date.slice(0, 4) + '-' + r.date.slice(4, 6) + '-' + r.date.slice(6), activeUsers: r.activeUsers, sessions: r.sessions, engagedSessions: r.engagedSessions })).sort((a, b) => a.date < b.date ? -1 : 1);
+    const landing = ra[2], sources = ra[3], channels = ra[4], devices = rb[0], events = rb[1], villaViews = rb[2];
     let purchases = [];
-    try { purchases = run(['transactionId'], ['eventCount', 'purchaseRevenue'], and({ filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'purchase' } } }), 100); } catch (e) {}
+    if ((events.find(e => e.eventName === 'purchase') || {}).eventCount) {   // only ask when purchases exist (saves a round trip)
+      try { purchases = batch([req(['transactionId'], ['eventCount', 'purchaseRevenue'], and({ filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'purchase' } } }), 100)])[0]; } catch (e) {}
+    }
     const ev = n => (events.find(e => e.eventName === n) || {}).eventCount || 0;
     const out = { connected: true, property: s.ga4_property, host: s.ga4_host, from, to, fetched_at: foNow_(), totals, daily, landing, sources, channels, devices, events, villa_views: villaViews, purchases,
       funnel: [['Sessions (landing)', totals.sessions || 0], ['Villa page views', villaViews.reduce((a, r) => a + r.screenPageViews, 0)], ['Enquiry form opened', ev('enquiry_sheet_open')], ['Enquiry submitted', ev('enquiry_form_submit')], ['WhatsApp / call clicks', ev('whatsapp_click') + ev('phone_click')], ['Purchase events', ev('purchase')]],
       intent: ev('enquiry_form_submit') + ev('whatsapp_click') + ev('phone_click') };
-    cache.put(cacheKey, JSON.stringify(out).slice(0, 95000), 1800);
+    foCachePut_(cacheKey, out, 1800);   // chunked, so long reports are never cut off; 30 minutes
     return out;
   } catch (e) {
     const msg = String(e && e.message || e);

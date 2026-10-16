@@ -308,8 +308,8 @@ function foBlockSave_(b, user) {
   } finally { lock.releaseLock(); }
 }
 function foBlockDelete_(b, user) {
-  const sh = foTab_('Blocks'), row = foRows_('Blocks').find(x => x.block_id === b.block_id); if (!row) return { ok: false, error: 'Not found.' };
-  sh.deleteRow(row._row); foAudit_(user.email, 'block_delete', b.block_id, 'ok'); return {};
+  const row = foRows_('Blocks').find(x => x.block_id === b.block_id); if (!row) return { ok: false, error: 'Not found.' };
+  foDeleteRow_('Blocks', row._row); foAudit_(user.email, 'block_delete', b.block_id, 'ok'); return {};
 }
 
 // ---------------------------------------------------------------- reconciliation center ----------------
@@ -356,7 +356,36 @@ function foChannelSave_(b, user) {
 }
 
 // ---------------------------------------------------------------- everything the portal needs in one call ----------------
+/**
+ * The portal's data bundle. Cached on the server (CacheService, 1 hour) under the current data version: any write anywhere
+ * changes the version (foTouch_/foFlush_), so a cached bundle is never stale; a cache hit avoids ~20 sheet reads.
+ */
 function foDataLoad_() {
+  const p = PropertiesService.getScriptProperties(), key = 'FO_D_' + (p.getProperty('FO_DATA_VER') || '0');
+  let d = FO_MEMO.dirty ? null : foCacheGet_(key), cached = !!d;
+  if (!d) { d = foDataBuild_(); if (!FO_MEMO.dirty) foCachePut_(key, d); }
+  d.serverTime = foNow_(); d.today = foToday_(); d.lastSync = p.getProperty('FO_LAST_SYNC') || ''; d.cached = cached;
+  return d;
+}
+function foCachePut_(key, obj, ttl) {
+  try {
+    const s = JSON.stringify(obj), size = 90000, n = Math.ceil(s.length / size), o = {};
+    if (n > 40) return;   // > 3.6 MB: just rebuild each time
+    for (let i = 0; i < n; i++) o[key + '_' + i] = s.slice(i * size, (i + 1) * size);
+    o[key + '_n'] = String(n);
+    CacheService.getScriptCache().putAll(o, ttl || 3600);
+  } catch (e) {}
+}
+function foCacheGet_(key) {
+  try {
+    const c = CacheService.getScriptCache(), n = Number(c.get(key + '_n') || 0); if (!n) return null;
+    const keys = []; for (let i = 0; i < n; i++) keys.push(key + '_' + i);
+    const got = c.getAll(keys); let s = '';
+    for (const k of keys) { if (got[k] == null) return null; s += got[k]; }
+    return JSON.parse(s);
+  } catch (e) { return null; }
+}
+function foDataBuild_() {
   const strip = r => { delete r._row; return r; };
   const ex = foRows_('Exceptions');
   return Object.assign({

@@ -53,22 +53,40 @@
   }
 
   // ------------------------------------------------------------ API ------------------------------------------------------------
-  function api(action, body) {
+  // Every call: a time limit (so nothing can hang forever), one automatic retry for read-only calls, and a progress bar.
+  var READS = { 'f.data': 1, 'f.ga4': 1, 'f.report.get': 1, 'f.booking.history': 1, 'f.sessions': 1, 'f.audit': 1 }, inFlight = 0;
+  function busyBar(d) {
+    inFlight = Math.max(0, inFlight + d);
+    var b = document.getElementById('fo-busy');
+    if (!b) { b = document.createElement('div'); b.id = 'fo-busy'; b.className = 'fo-busy'; b.setAttribute('role', 'progressbar'); b.setAttribute('aria-label', 'Loading'); document.body.appendChild(b); }
+    b.classList.toggle('is-on', inFlight > 0);
+  }
+  function api(action, body, attempt) {
     var payload = Object.assign({ action: action }, body || {});
     if (S.token && action.indexOf('f.login.') !== 0) payload.token = S.token;
-    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' })
+    var ctl = window.AbortController ? new AbortController() : null, limit = action === 'f.sync' || action === 'f.report.run' || action === 'f.import.rows' ? 120000 : 60000;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, limit);
+    busyBar(1);
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined })
       .then(function (r) { if (!r.ok) throw new Error('Network error ' + r.status); return r.json(); })
       .then(function (j) {
         if (j.rotate) { S.token = j.rotate; ss('set', 'fo_t', S.token); }
         if (j.auth === false) { signedOut('Your session has ended. Please sign in again.'); throw new Error('signed out'); }
         return j;
-      });
+      }, function (err) {
+        if (err && err.message === 'signed out') throw err;
+        if (READS[action] && !attempt) return new Promise(function (res) { setTimeout(res, 800); }).then(function () { return api(action, body, 1); });
+        throw new Error(err && err.name === 'AbortError' ? 'The server took too long to answer. Please try again in a moment.' : 'Could not reach the server. Check your connection and try again.');
+      })
+      .then(function (j) { clearTimeout(timer); busyBar(-1); return j; }, function (e) { clearTimeout(timer); busyBar(-1); throw e; });
   }
   function load(quiet) {
     if (!quiet) { root.innerHTML = '<div class="fo-loading"><div class="fo-spin"></div><div>Loading your business data…</div></div>'; }
+    var keepY = quiet ? window.scrollY : 0, keepView = location.hash;
     return api('f.data').then(function (j) {
       if (!j.ok) throw new Error(j.error || 'Could not load data');
       S.data = j; S.loadedAt = Date.now(); render();
+      if (quiet && location.hash === keepView && keepY) window.scrollTo(0, keepY);   // stay where you were after a save
     }).catch(function (e) { if (e.message !== 'signed out') { if (!S.data) root.innerHTML = '<div class="fo-loading"><b>Could not load data.</b><div>' + esc(e.message) + '</div><button class="btn btn--primary" id="fo-retry">Try again</button></div>'; var b = $('#fo-retry'); if (b) b.onclick = function () { load(); }; toast(e.message, true); } });
   }
   function signedOut(msg) { S.token = null; S.user = null; S.data = null; ss('del', 'fo_t'); ss('del', 'fo_u'); renderLogin(msg); }

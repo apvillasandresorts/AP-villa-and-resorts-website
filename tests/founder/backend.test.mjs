@@ -290,3 +290,35 @@ test('server errors are caught, logged and never leak internals', async () => {
   assert.equal(r.ok, false);
   assert.ok(!/boom/.test(r.error));
 });
+
+// ---------------------------------------------------------------- speed ----------------
+test('speed: one spreadsheet open per request; a repeat load is served from the cache with zero sheet reads', async () => {
+  const env = ready(); const token = await env.login();
+  env.countReads();
+  env.stats.openById = 0; env.stats.reads = 0;
+  const a = env.api({ action: 'f.data', token });
+  assert.equal(a.ok, true); assert.equal(a.cached, false);
+  assert.ok(env.stats.openById <= 1, 'opened ' + env.stats.openById + ' times');
+  const firstReads = env.stats.reads; assert.ok(firstReads <= 25, firstReads + ' reads');
+  env.stats.openById = 0; env.stats.reads = 0;
+  const b = env.api({ action: 'f.data', token });
+  assert.equal(b.cached, true); assert.equal(env.stats.reads, 0); assert.equal(env.stats.openById, 0);
+  assert.deepEqual(b.bookings, a.bookings);
+});
+
+test('cache is never stale: any change (booking, payment, sync, settings) shows on the next load', async () => {
+  const env = ready(); const token = await env.login();
+  env.api({ action: 'f.data', token });
+  const bk = env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'Cache Test', checkin: '2027-03-01', checkout: '2027-03-02', status: 'confirmed', gross_amount: 4200 } }).booking;
+  let d = env.api({ action: 'f.data', token });
+  assert.equal(d.cached, false); assert.ok(d.bookings.some(x => x.booking_id === bk.booking_id));
+  env.api({ action: 'f.payment.add', token, booking_id: bk.booking_id, amount: 1000 });
+  d = env.api({ action: 'f.data', token });
+  assert.ok(d.payments.some(p => p.booking_id === bk.booking_id));
+  env.addCheckin({ 'Submitted at': '2026-10-05T10:00:00', Reference: 'ECI-9', 'Booked through': 'Airbnb', 'Booking ID': 'HMNEW', Villa: 'Villa Aranya', 'Check-in': '2026-12-01', 'Check-out': '2026-12-03', 'Main guest': 'New Guest', 'Total ₹': 9000 });
+  env.fo.foHourly();
+  d = env.api({ action: 'f.data', token });
+  assert.ok(d.bookings.some(x => x.external_id === 'HMNEW'), 'hourly sync invalidates the cache');
+  env.api({ action: 'f.settings.save', token, settings: { report_email: 'daily' } });
+  assert.equal(env.api({ action: 'f.data', token }).settings.report_email, 'daily');
+});

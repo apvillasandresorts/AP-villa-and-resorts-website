@@ -234,3 +234,9 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
   .fo-side, .fo-top, .fo-card__tools, .btn { display: none !important; }
   .fo-shell { display: block; } .fo-card { break-inside: avoid; box-shadow: none; }
 }
+
+/* global progress bar (any request in flight) */
+.fo-busy { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity .2s;
+  background: linear-gradient(90deg, transparent, var(--gold-2), transparent); background-size: 40% 100%; background-repeat: no-repeat; }
+.fo-busy.is-on { opacity: 1; animation: fo-busy 1.1s linear infinite; }
+@keyframes fo-busy { from { background-position: -40% 0; } to { background-position: 140% 0; } }

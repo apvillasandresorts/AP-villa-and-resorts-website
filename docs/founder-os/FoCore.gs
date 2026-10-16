@@ -71,15 +71,15 @@ function foSetup() {
   foSeedReference_();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'foHourly').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('foHourly').timeBased().everyHours(1).create();
-  const r = foSyncCheckins_('setup');
+  const r = foSyncCheckins_('setup'); foFlush_();
   foAudit_('system', 'setup', 'Founder OS ready; e-check-in sync: ' + JSON.stringify(r), 'ok');
   Logger.log('Founder OS ready. Data sheet: ' + ss.getUrl() + ' · sync: ' + JSON.stringify(r));
 }
 /** Hourly: pull new e-check-ins into the booking ledger and re-check reconciliation. Runs without anyone signed in. */
 function foHourly() {
   const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) return;
-  try { foSyncCheckins_('schedule'); } finally { lock.releaseLock(); }
-  if (typeof foDailyIfDue_ === 'function') foDailyIfDue_();   // snapshot, scheduled reports, chart refresh: once a day after 07:00 IST
+  try { foSyncCheckins_('schedule'); foFlush_(); } finally { lock.releaseLock(); }
+  if (typeof foDailyIfDue_ === 'function') { foDailyIfDue_(); foFlush_(); }   // snapshot, scheduled reports, chart refresh: once a day after 07:00 IST
 }
 
 function foSeedReference_() {
@@ -98,12 +98,17 @@ function foSeedReference_() {
 }
 
 // ---------------------------------------------------------------- data store helpers ----------------
+// Speed: everything a request touches is opened once and read once per execution (Sheets calls cost ~100-300 ms each).
+// Rows are handed out as copies, so callers can never corrupt the in-memory copy; every write updates/invalidates it.
+var FO_MEMO = { ss: null, tabs: {}, rows: {}, last: {}, dirty: false };
 function foSS_() {
+  if (FO_MEMO.ss) return FO_MEMO.ss;
   const id = PropertiesService.getScriptProperties().getProperty('FO_DATA_ID');
   if (!id) throw new Error('Founder OS is not set up yet (run foSetup).');
-  return SpreadsheetApp.openById(id);
+  return (FO_MEMO.ss = SpreadsheetApp.openById(id));
 }
 function foTab_(name) {
+  if (FO_MEMO.tabs[name]) return FO_MEMO.tabs[name];
   const ss = foSS_(), cols = FO_TABS[name];
   let sh = ss.getSheetByName(name);
   if (!sh) {
@@ -114,26 +119,44 @@ function foTab_(name) {
   } else if (sh.getLastColumn() < cols.length) {
     sh.getRange(1, 1, 1, cols.length).setValues([cols]);
   }
-  return sh;
+  return (FO_MEMO.tabs[name] = sh);
 }
+function foLastRow_(name) { if (FO_MEMO.last[name] == null) FO_MEMO.last[name] = foTab_(name).getLastRow(); return FO_MEMO.last[name]; }
 function foRows_(name) {
-  const sh = foTab_(name), n = sh.getLastRow() - 1, cols = FO_TABS[name];
-  if (n < 1) return [];
-  return sh.getRange(2, 1, n, cols.length).getValues().map((r, i) => {
-    const o = { _row: i + 2 };
-    cols.forEach((c, j) => { const v = r[j]; o[c] = v instanceof Date ? Utilities.formatDate(v, FO.TZ, "yyyy-MM-dd'T'HH:mm:ss") : (v == null ? '' : String(v)); });
-    return o;
-  });
+  if (!FO_MEMO.rows[name]) {
+    const sh = foTab_(name), n = foLastRow_(name) - 1, cols = FO_TABS[name];
+    FO_MEMO.rows[name] = n < 1 ? [] : sh.getRange(2, 1, n, cols.length).getValues().map((r, i) => {
+      const o = { _row: i + 2 };
+      cols.forEach((c, j) => { const v = r[j]; o[c] = v instanceof Date ? Utilities.formatDate(v, FO.TZ, "yyyy-MM-dd'T'HH:mm:ss") : (v == null ? '' : String(v)); });
+      return o;
+    });
+  }
+  return FO_MEMO.rows[name].map(o => Object.assign({}, o));
 }
 function foCell_(v) { const s = v == null ? '' : String(v).slice(0, 5000); return /^[=+@]/.test(s) || /^-[^\d]/.test(s) ? "'" + s : s; }   // no formula injection
+/** Marks the founder data as changed: the cached data bundle is dropped now and again when the request ends. */
+function foTouch_() { if (!FO_MEMO.dirty) { FO_MEMO.dirty = true; foBumpVersion_(); } }
+function foBumpVersion_() { PropertiesService.getScriptProperties().setProperty('FO_DATA_VER', String(Date.now()) + Math.floor(Math.random() * 1000)); }
+function foFlush_() { if (FO_MEMO.dirty) { foBumpVersion_(); FO_MEMO.dirty = false; } }
 function foAppend_(name, obj) {
-  const sh = foTab_(name), cols = FO_TABS[name];
-  if (sh.getMaxRows() <= sh.getLastRow() + 1) { sh.insertRowsAfter(sh.getMaxRows(), 200); sh.getRange(sh.getLastRow() + 1, 1, 200, cols.length).setNumberFormat('@'); }
-  sh.getRange(sh.getLastRow() + 1, 1, 1, cols.length).setValues([cols.map(c => foCell_(obj[c]))]);
+  const sh = foTab_(name), cols = FO_TABS[name], last = foLastRow_(name), vals = cols.map(c => foCell_(obj[c]));
+  if (sh.getMaxRows() <= last + 1) { sh.insertRowsAfter(sh.getMaxRows(), 200); sh.getRange(last + 1, 1, 200, cols.length).setNumberFormat('@'); }
+  sh.getRange(last + 1, 1, 1, cols.length).setValues([vals]);
+  FO_MEMO.last[name] = last + 1;
+  if (FO_MEMO.rows[name]) { const o = { _row: last + 1 }; cols.forEach((c, j) => { o[c] = String(vals[j]).replace(/^'/, ''); }); FO_MEMO.rows[name].push(o); }
+  if (name !== 'Audit' && name !== 'Jobs') foTouch_();
 }
 function foUpdate_(name, row, obj) {
-  const sh = foTab_(name), cols = FO_TABS[name];
-  sh.getRange(row, 1, 1, cols.length).setValues([cols.map(c => foCell_(obj[c]))]);
+  const sh = foTab_(name), cols = FO_TABS[name], vals = cols.map(c => foCell_(obj[c]));
+  sh.getRange(row, 1, 1, cols.length).setValues([vals]);
+  const r = FO_MEMO.rows[name] && FO_MEMO.rows[name].find(x => x._row === row);
+  if (r) cols.forEach((c, j) => { r[c] = String(vals[j]).replace(/^'/, ''); });
+  foTouch_();
+}
+function foDeleteRow_(name, row) {
+  foTab_(name).deleteRow(row);
+  delete FO_MEMO.rows[name]; delete FO_MEMO.last[name];
+  foTouch_();
 }
 function foNow_() { return Utilities.formatDate(new Date(), FO.TZ, "yyyy-MM-dd'T'HH:mm:ssXXX"); }
 function foToday_() { return Utilities.formatDate(new Date(), FO.TZ, 'yyyy-MM-dd'); }
@@ -167,6 +190,14 @@ function foOtp_() {
 
 // ---------------------------------------------------------------- sign-in: factor 1 (passphrase) + factor 2 (email OTP) ----------------
 function foUser_(email) { return foRows_('Users').find(u => u.email === String(email || '').trim().toLowerCase() && u.status === 'active'); }
+/** Name/role/status only (no passphrase hash), cached per data version so ordinary requests skip the Users sheet read. */
+function foUserLite_(email) {
+  const c = CacheService.getScriptCache(), key = 'FO_U_' + (PropertiesService.getScriptProperties().getProperty('FO_DATA_VER') || '0') + '_' + foHmac_(email).slice(0, 16);
+  const hit = c.get(key); if (hit) return hit === '-' ? null : JSON.parse(hit);
+  const u = foUser_(email), lite = u ? { email: u.email, name: u.name, role: u.role, status: u.status } : null;
+  c.put(key, lite ? JSON.stringify(lite) : '-', 120);   // direct edits in the Users sheet take effect within 2 minutes
+  return lite;
+}
 function foMask_(email) { const [a, d] = String(email).split('@'); return a.slice(0, 2) + '•••@' + d; }
 function foCounter_(key, ttl) { const c = CacheService.getScriptCache(), n = Number(c.get(key) || 0) + 1; c.put(key, String(n), ttl); return n; }
 
@@ -269,7 +300,7 @@ function foAuth_(token) {
   const s = JSON.parse(raw), now = Date.now();
   if (s.graceUntil && now > s.graceUntil) { p.deleteProperty(key); return { ok: false }; }
   if (now - s.last > FO.SESSION_IDLE_MIN * 60000 || now - s.created > FO.SESSION_MAX_H * 3600000) { p.deleteProperty(key); return { ok: false, expired: true }; }
-  const u = foUser_(s.email); if (!u) { p.deleteProperty(key); return { ok: false }; }
+  const u = foUserLite_(s.email); if (!u) { p.deleteProperty(key); return { ok: false }; }
   let rotate = null;
   if (!s.graceUntil && now - s.rotated > FO.SESSION_ROTATE_MIN * 60000) {
     rotate = foRandom_() + foRandom_();
@@ -336,6 +367,7 @@ function foApi_(b) {
     const r = foRoutes_()[a]; if (!r) return { ok: false, error: 'Unknown action.' };
     if ((FO.ROLES[sess.user.role] || 0) < FO.ROLES[r[1]]) { foAudit_(sess.user.email, 'forbidden', a, 'denied'); return { ok: false, error: 'Your role cannot do this.' }; }
     const out = r[0](b, sess.user, sess) || {};
+    foFlush_();
     if (out.ok === undefined) out.ok = true;
     if (sess.rotate) out.rotate = sess.rotate;
     return out;

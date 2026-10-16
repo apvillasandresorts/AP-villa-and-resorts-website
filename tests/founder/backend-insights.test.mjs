@@ -107,27 +107,28 @@ test('GA4: honest "not connected" when the Data API service is off; never fakes 
 test('GA4: server-side report with the live hostname filter; funnel and purchase dedupe data; cached; errors reported', async () => {
   const calls = [];
   const rows = (dims, mets, vals) => ({ rows: vals.map(v => ({ dimensionValues: dims.map((_, i) => ({ value: String(v[i]) })), metricValues: mets.map((_, i) => ({ value: String(v[dims.length + i]) })) })) });
-  const analytics = { Properties: { runReport(req, prop) {
+  const analytics = { Properties: { batchRunReports(b, prop) { return { reports: b.requests.map(r => this.runReport(r, prop)) }; }, runReport(req, prop) {
     calls.push({ req, prop });
     const d = req.dimensions.map(x => x.name), m = req.metrics.map(x => x.name);
     if (!d.length) return rows([], m, [[40, 52, 70, 45, 0.64, 12, 300]]);
     if (d[0] === 'date') return rows(d, m, [['20261002', 5, 7, 4], ['20261001', 4, 6, 3]]);
-    if (d[0] === 'eventName') return rows(d, m, [['whatsapp_click', 9, 8], ['enquiry_sheet_open', 6, 5], ['enquiry_form_submit', 3, 3], ['phone_click', 1, 1]]);
+    if (d[0] === 'eventName') return rows(d, m, [['whatsapp_click', 9, 8], ['enquiry_sheet_open', 6, 5], ['enquiry_form_submit', 3, 3], ['phone_click', 1, 1], ['purchase', 2, 1]]);
     if (d[0] === 'pagePath') return rows(d, m, [['/villas/divinestay.html', 20, 15], ['/villas/ap-suite.html', 10, 8]]);
-    if (d[0] === 'transactionId') return rows(d, m, []);
+    if (d[0] === 'transactionId') return rows(d, m, [['T1', 2, 5000]]);
     return rows(d, m, [['x', 10, 5, 1]].map(r => r.slice(0, d.length + m.length)));
   } } };
   const { env, token } = await ready({ analytics });
   const g = env.api({ action: 'f.ga4', token, from: '2026-10-01', to: '2026-10-15' }).ga;
   assert.equal(g.connected, true); assert.equal(g.totals.sessions, 70);
   assert.deepEqual(g.daily.map(x => x.date), ['2026-10-01', '2026-10-02']);
-  assert.deepEqual(g.funnel.map(f => f[1]), [70, 30, 6, 3, 10, 0]);
+  assert.deepEqual(g.funnel.map(f => f[1]), [70, 30, 6, 3, 10, 2]);
+  assert.equal(g.purchases[0].eventCount, 2, 'duplicate purchase for one transaction is visible');
   assert.equal(g.intent, 13);
   assert.equal(calls[0].prop, 'properties/558430227');
   assert.ok(calls.every(c => JSON.stringify(c.req.dimensionFilter).includes('www.apvillasandresorts.in')), 'localhost/test traffic excluded');
   const n = calls.length; env.api({ action: 'f.ga4', token, from: '2026-10-01', to: '2026-10-15' });
   assert.equal(calls.length, n, 'cached for 30 minutes');
-  const { env: env2, token: t2 } = await ready({ analytics: { Properties: { runReport() { throw new Error('User does not have sufficient permissions (403)'); } } } });
+  const { env: env2, token: t2 } = await ready({ analytics: { Properties: { batchRunReports() { throw new Error('User does not have sufficient permissions (403)'); } } } });
   const bad = env2.api({ action: 'f.ga4', token: t2, from: '2026-10-01', to: '2026-10-15' }).ga;
   assert.equal(bad.connected, false); assert.match(bad.reason, /refused access/);
   assert.ok(env2.tab('Audit').some(a => a.action === 'ga4_error'));
@@ -155,4 +156,13 @@ test('daily work never runs twice at once (another execution holding the lock ma
   assert.equal(env.fo.foDailyIfDue_(), 'done');
   assert.equal(env.fo.foDailyIfDue_(), 'not due');
   assert.equal(env.tab('Reports').filter(r => r.type === 'daily').length, 1);
+});
+
+test('a daily run already in progress (another execution) makes a second one skip, without holding the lock', async () => {
+  const { env } = await ready();
+  env.props.set('FO_DAILY_RUN', String(env.clock.now()));
+  assert.equal(env.fo.foDailyIfDue_(), 'busy');
+  env.clock.advance(16 * 60000);   // a crashed run's flag expires after 15 minutes
+  assert.equal(env.fo.foDailyIfDue_(), 'done');
+  assert.equal(env.props.has('FO_DAILY_RUN'), false);
 });
