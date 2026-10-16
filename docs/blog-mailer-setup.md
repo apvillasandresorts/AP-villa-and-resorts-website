@@ -22,9 +22,13 @@ email link-scanners can't unsubscribe anyone by accident).
    (do NOT paste the whole repo file: the live script holds the real caretaker number and Wi-Fi details).
 3. Add a new script file **BlogMailer** with the contents of `docs/blog-mailer.gs`.
 4. Deploy → Manage deployments → edit the web app → Version: **New version** → Deploy (the URL stays the same).
-5. Run `setupBlogMailer` once (approve the permissions). Optionally run `testBlogMail` to get a sample in your inbox.
+5. Run `setupBlogMailer` once (approve the permissions). It also adds the Newsletter column (`setupNewsletterColumn` re-does just that). Optionally run `testBlogMail` to get a sample in your inbox.
 
 ## Everyday
 - Nothing to do: publish a post as usual and the email goes out.
+- **Who gets it: the Newsletter column** (last column of the E-Check-in tab). Each guest row shows
+  **Subscribed** (green) or **Unsubscribed** (red). Change it from the dropdown on any row of a guest and all
+  their rows follow (logged in the Email updates tab as "Owner set"). Guests who unsubscribe by email turn red
+  here, and you can switch them back if they ask.
+- New check-ins get a status within 15 minutes: Subscribed, unless they unticked the box or unsubscribed before.
 - Turn it off: run `stopBlogMailer`. Turn it on again: run `setupBlogMailer` (it never re-sends old posts).
-- Remove someone: add a row in the **Email updates** tab with Type `Unsubscribed` and their email.

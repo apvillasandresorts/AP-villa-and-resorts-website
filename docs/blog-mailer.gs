@@ -3,8 +3,10 @@
  * (Apps Script editor → + next to Files → Script → name it "BlogMailer"), then run setupBlogMailer() once.
  *
  * Every 15 minutes it looks at www.apvillasandresorts.in/blog.html. When a new post appears at the top,
- * it emails that post to every guest who ticked "Email me new Ujjain travel guides" during e-check-in
- * (the "Email updates" column of the E-Check-in sheet). Each email has a one-click unsubscribe.
+ * it emails that post to every guest marked "Subscribed" in the "Newsletter" column of the E-Check-in tab.
+ * That column is the owner's control: pick Subscribed / Unsubscribed on any row and every row with the same
+ * email follows. New check-ins are filled in automatically (unticked box or an earlier unsubscribe → Unsubscribed),
+ * and the unsubscribe link in each email sets it to Unsubscribed.
  * Sends from this Google account (free; MailApp allows about 100 emails a day on a normal Gmail account,
  * a bigger list continues automatically the next day). Log: the "Email updates" tab of the same Sheet.
  * Setup guide: docs/blog-mailer-setup.md
@@ -15,6 +17,8 @@ const MAILER_TAB = 'Email updates';
 const MAILER_COLS = ['Time', 'Type', 'Email', 'Name', 'Post'];
 const MAIL_LOGO = SITE + '/assets/brand/logo-full-720.png';
 const KEEP_FOR_CHECKINS = 10;   // daily emails kept free for check-in welcome emails
+const STATUS_COL = 'Newsletter';   // column in the E-Check-in tab: Subscribed / Unsubscribed
+const SUBSCRIBED = 'Subscribed', UNSUBSCRIBED = 'Unsubscribed';
 
 /** Run once from the editor: grants permission, makes the log tab, remembers today's newest post, starts the 15-minute check. */
 function setupBlogMailer() {
@@ -25,6 +29,7 @@ function setupBlogMailer() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'checkNewBlogPost').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('checkNewBlogPost').timeBased().everyMinutes(15).create();
   mailerSheet_();
+  setupNewsletterColumn();
   Logger.log('Blog mailer is on. Newest post now: ' + (posts[0] ? posts[0].title : 'none found') + '. Subscribers: ' + subscribers_().length);
 }
 
@@ -36,6 +41,32 @@ function testBlogMail() {
   MailApp.sendEmail({ to: me, subject: '[Test] ' + m.subject, htmlBody: m.html, body: m.text, name: 'AP Villas & Resorts', replyTo: 'apvillasandresorts@gmail.com' });
 }
 
+/** Adds the Newsletter column (dropdown + colours) to the E-Check-in tab, fills it for every guest, and syncs edits. Safe to re-run. */
+function setupNewsletterColumn() {
+  const sh = sheet_(), c = statusCol_(sh), rows = Math.max(sh.getMaxRows() - 1, 1), range = sh.getRange(2, c, rows, 1);
+  range.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([SUBSCRIBED, UNSUBSCRIBED], true).setAllowInvalid(false).build());
+  const rules = sh.getConditionalFormatRules().filter(r => !r.getRanges().some(g => g.getColumn() === c));
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(SUBSCRIBED).setBackground('#DCEFE2').setFontColor('#1F4D3A').setRanges([range]).build());
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(UNSUBSCRIBED).setBackground('#F6DEDA').setFontColor('#8A2E1F').setRanges([range]).build());
+  sh.setConditionalFormatRules(rules);
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'newsletterEdited').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('newsletterEdited').forSpreadsheet(SHEET_ID).onEdit().create();
+  const st = syncNewsletter_();
+  Logger.log('Newsletter column ready. Subscribed: ' + [...st.status.values()].filter(v => v === SUBSCRIBED).length + ', Unsubscribed: ' + [...st.status.values()].filter(v => v === UNSUBSCRIBED).length);
+}
+
+/** Runs by itself when the owner edits the sheet: a Newsletter change on one row is copied to every row with that email. */
+function newsletterEdited(e) {
+  const r = e && e.range; if (!r || r.getNumColumns() !== 1) return;
+  const sh = r.getSheet(); if (sh.getName() !== sheet_().getName() || r.getColumn() !== statusCol_(sh)) return;
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], ei = head.indexOf('Email'); if (ei < 0) return;
+  for (let i = 0; i < r.getNumRows(); i++) {
+    const row = r.getRow() + i; if (row < 2) continue;
+    const v = String(sh.getRange(row, r.getColumn()).getValue()).trim(), email = String(sh.getRange(row, ei + 1).getValue()).trim().toLowerCase();
+    if (email && (v === SUBSCRIBED || v === UNSUBSCRIBED) && setStatus_(email, v)) mailerSheet_().appendRow([new Date(), 'Owner set: ' + v, email, '', '']);
+  }
+}
+
 /** Turn the automation off (run from the editor). */
 function stopBlogMailer() { ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'checkNewBlogPost').forEach(t => ScriptApp.deleteTrigger(t)); }
 
@@ -44,6 +75,7 @@ function checkNewBlogPost() {
   const lock = LockService.getScriptLock(); if (!lock.tryLock(5000)) return;
   try {
     const p = PropertiesService.getScriptProperties();
+    try { syncNewsletter_(); } catch (err) {}   // new check-ins get their Newsletter status within 15 minutes
     const queued = p.getProperty('MAIL_QUEUE');
     if (queued) { sendQueue_(JSON.parse(queued)); return; }   // finish a list that ran out of daily emails
     const posts = journalPosts_(); if (!posts.length) return;
@@ -72,18 +104,42 @@ function sendQueue_(q) {
   p.deleteProperty('MAIL_QUEUE');
 }
 
-// ---- who gets it: every guest who gave an email at check-in, except anyone who unticked "Email updates" (latest choice counts); an unsubscribe always wins ----
+// ---- who gets it: guests marked Subscribed in the Newsletter column (latest row per email counts) ----
 function subscribers_() {
-  const data = sheet_().getDataRange().getValues(), head = data[0] || [];
+  const st = syncNewsletter_();
+  return [...st.status].filter(([, v]) => v === SUBSCRIBED).map(([email]) => ({ email, name: st.names.get(email) || '' }));
+}
+function statusCol_(sh) {   // 1-based column of "Newsletter"; added after the last column the first time
+  const last = Math.max(sh.getLastColumn(), 1), head = sh.getRange(1, 1, 1, last).getValues()[0];
+  let i = head.indexOf(STATUS_COL);
+  if (i < 0) { i = head[last - 1] === '' ? last - 1 : last; sh.getRange(1, i + 1).setValue(STATUS_COL).setFontWeight('bold').setBackground('#F3EEE3'); }
+  return i + 1;
+}
+/** Fills empty Newsletter cells (rows with an email) and returns every email's current status. Filled cells are never changed. */
+function syncNewsletter_() {
+  const sh = sheet_(), c = statusCol_(sh), data = sh.getDataRange().getValues(), head = data[0] || [];
   const ei = head.indexOf('Email'), ni = head.indexOf('Main guest'), oi = head.indexOf('Email updates');
-  if (ei < 0) return [];
-  const list = new Map(), gone = unsubscribed_();
+  const status = new Map(), names = new Map(); if (ei < 0) return { status, names };
+  const gone = unsubscribed_();   // unsubscribes logged before this column existed
   for (let i = 1; i < data.length; i++) {
     const email = String(data[i][ei] || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
-    if (oi < 0 || String(data[i][oi]).trim() !== 'No') list.set(email, String(data[i][ni] || '').trim()); else list.delete(email);
+    let v = String(data[i][c - 1] || '').trim();
+    if (v !== SUBSCRIBED && v !== UNSUBSCRIBED) {
+      const before = status.get(email);
+      v = (before === UNSUBSCRIBED || (!before && gone.has(email)) || (oi >= 0 && String(data[i][oi]).trim() === 'No')) ? UNSUBSCRIBED : SUBSCRIBED;
+      sh.getRange(i + 1, c).setValue(v);
+    }
+    status.set(email, v); const n = String(data[i][ni] || '').trim(); if (n) names.set(email, n);
   }
-  return [...list].filter(([e]) => !gone.has(e)).map(([email, name]) => ({ email, name }));
+  return { status, names };
+}
+/** Sets every row of one email to Subscribed / Unsubscribed. Returns true if anything changed. */
+function setStatus_(email, v) {
+  const sh = sheet_(), c = statusCol_(sh), data = sh.getDataRange().getValues(), ei = (data[0] || []).indexOf('Email'); let changed = false;
+  if (ei < 0) return false;
+  for (let i = 1; i < data.length; i++) if (String(data[i][ei] || '').trim().toLowerCase() === email && String(data[i][c - 1]).trim() !== v) { sh.getRange(i + 1, c).setValue(v); changed = true; }
+  return changed;
 }
 function unsubscribed_() {
   const sh = mailerSheet_(), out = new Set(); if (sh.getLastRow() < 2) return out;
@@ -198,6 +254,6 @@ function unsubscribe_(q) {
     const url = WEBAPP_URL + '?unsub=1&c=1&e=' + encodeURIComponent(email) + '&t=' + encodeURIComponent(q.t);
     return page('Stop Journal emails?', `We will stop emailing new guides to <b>${email.replace(/[<>&"]/g, '')}</b>.`, `<a href="${url}" target="_top" style="display:inline-block;margin-top:6px;background:#B5532A;color:#fff;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:999px">Yes, unsubscribe me</a>`);
   }
-  if (!unsubscribed_().has(email)) mailerSheet_().appendRow([new Date(), 'Unsubscribed', email, '', '']);
+  if (setStatus_(email, UNSUBSCRIBED)) mailerSheet_().appendRow([new Date(), 'Unsubscribed', email, '', '']);
   return page('You are unsubscribed', 'You will not get any more Journal emails from us. Har Har Mahadev, and we hope to host your family again.');
 }
