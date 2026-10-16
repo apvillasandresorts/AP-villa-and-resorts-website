@@ -136,6 +136,21 @@
         "https://www.ujjaindarshan.com/bhasma-aarti-online-booking.html",
         "https://www.ujjaindarshan.com/?p=1867"
       ]
+    },
+    {
+      "slug": "ujjain-stay-with-kitchen",
+      "title": "Ujjain Stay with a Kitchen: Cook Satvik Food on Pilgrimage",
+      "url": "blog/ujjain-stay-with-kitchen.html",
+      "date": "2026-10-12",
+      "cluster": "where-to-stay",
+      "keyword": "ujjain stay with kitchen",
+      "source": "ai-pipeline",
+      "hero": "images/blog/ujjain-stay-with-kitchen/harsiddhimatatemple.jpg",
+      "sources": [
+        "https://ujjain.nic.in/culinary-delights/",
+        "https://www.ujjaindarshan.com/what-to-eat-in-ujjain/",
+        "https://www.etvbharat.com/en/state/ragi-laddu-to-be-offered-as-prasad-at-mahakal-temple-this-diwali-enn25101603193"
+      ]
     }
   ]
 }

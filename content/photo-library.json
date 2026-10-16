@@ -1182,6 +1182,25 @@
       "license": "CC BY-SA 3.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
       "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-stay-with-kitchen/harsiddhimatatemple.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "food",
+        "prasad",
+        "bhog",
+        "harsiddhi"
+      ],
+      "alt": "Chappan Bhog, 56 varieties of vegetarian food offerings laid out as prasad at Harsiddhi Mata Temple, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:HarsiddhiMataTemple.jpg",
+      "author": "Priyank.bh",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Priyank.bh / Wikimedia Commons, CC BY-SA 4.0"
     }
   ]
 }
