@@ -72,16 +72,16 @@ function sendQueue_(q) {
   p.deleteProperty('MAIL_QUEUE');
 }
 
-// ---- who gets it: guests who ticked "Email updates" at check-in; their latest choice counts; an unsubscribe always wins ----
+// ---- who gets it: every guest who gave an email at check-in, except anyone who unticked "Email updates" (latest choice counts); an unsubscribe always wins ----
 function subscribers_() {
   const data = sheet_().getDataRange().getValues(), head = data[0] || [];
   const ei = head.indexOf('Email'), ni = head.indexOf('Main guest'), oi = head.indexOf('Email updates');
-  if (ei < 0 || oi < 0) return [];
+  if (ei < 0) return [];
   const list = new Map(), gone = unsubscribed_();
   for (let i = 1; i < data.length; i++) {
     const email = String(data[i][ei] || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
-    if (String(data[i][oi]).trim() === 'Yes') list.set(email, String(data[i][ni] || '').trim()); else list.delete(email);
+    if (oi < 0 || String(data[i][oi]).trim() !== 'No') list.set(email, String(data[i][ni] || '').trim()); else list.delete(email);
   }
   return [...list].filter(([e]) => !gone.has(e)).map(([email, name]) => ({ email, name }));
 }

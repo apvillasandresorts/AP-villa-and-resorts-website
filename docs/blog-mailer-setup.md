@@ -1,13 +1,12 @@
 # Journal emails to guests (BlogMailer)
 
-When a new post goes live on the Journal (www.apvillasandresorts.in/blog.html), every guest who ticked
-**"Email me new Ujjain travel guides from the AP Villas Journal"** on the e-check-in form gets it by email,
+When a new post goes live on the Journal (www.apvillasandresorts.in/blog.html), every guest who gave an email
+at e-check-in gets it by email (except anyone who unticked **"Email me new Ujjain travel guides"**),
 from apvillasandresorts@gmail.com, within about 15 minutes. Free: it runs inside the same Google Apps Script
 as the e-check-in, using the Gmail sending allowance of that account (about 100 emails a day; a longer list
 continues automatically the next day, keeping 10 a day free for check-in welcome emails).
 
-Only guests who ticked the box are emailed (the check-in form promises their details are used for the guest
-register, so guests who did not opt in are never added). Every email has an unsubscribe link (two steps, so
+Owner's choice (2026-10-16): past guests are included too; the box is ticked by default and the privacy notice says so. Every email has an unsubscribe link (two steps, so
 email link-scanners can't unsubscribe anyone by accident).
 
 ## Where things are
