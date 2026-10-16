@@ -406,7 +406,11 @@ var FoInsights = (function () {
   function buildReport(type, data, period, extra) {
     extra = extra || {};
     var Mx = M(), from = period.from, to = period.to, cur = Mx.compute(data, from, to), pr = Mx.previous(from, to), prev = Mx.compute(data, pr.from, pr.to);
-    var ly = Mx.lastYear(from, to), lyM = Mx.compute(data, ly.from, ly.to);
+    var ly = Mx.lastYear(from, to);
+    function hasDataBy(d) { return (data.bookings || []).some(function (b) { return b.status !== 'void' && (b.checkin <= d || (Mx.dateOf(b.created_at) && Mx.dateOf(b.created_at) <= d)); }); }
+    var NONE = {};   // no ledger data that far back: comparisons are left blank instead of showing ±100%
+    if (!hasDataBy(pr.to)) prev = NONE;
+    var lyM = hasDataBy(ly.to) ? Mx.compute(data, ly.from, ly.to) : NONE;
     function pctv(v) { return v == null ? '—' : (v * 100).toFixed(1) + '%'; }
     function chg(a, b, kind) { if (a == null || b == null) return ''; var d = a - b; if (kind === 'pct') return (d >= 0 ? '+' : '') + (d * 100).toFixed(1) + ' pts'; return b ? (d >= 0 ? '+' : '') + Math.round(d / Math.abs(b) * 100) + '%' : ''; }
     var kpi = [['Gross booking value', inr(cur.gross_booking_value), chg(cur.gross_booking_value, prev.gross_booking_value), chg(cur.gross_booking_value, lyM.gross_booking_value)],
@@ -422,7 +426,7 @@ var FoInsights = (function () {
     if (type !== 'daily') {
       var bp = Mx.byProperty(data, from, to);
       sections.push({ heading: 'Villas', table: { head: ['Villa', 'Occupancy', 'ADR', 'RevPAR', 'Revenue'], rows: bp.map(function (p) { return [p.name, pctv(p.occupancy), p.adr == null ? '—' : inr(p.adr), p.revpar == null ? '—' : inr(p.revpar), inr(p.revenue)]; }) } });
-      var dec = decompose(cur, prev);
+      var dec = prev === NONE ? { method: 'unavailable', note: 'No ledger data for the previous period yet.' } : decompose(cur, prev);
       sections.push({ heading: 'Why revenue changed', bullets: dec.method === 'unavailable' ? [dec.note] : ['Change vs previous period: ' + inr(dec.change), 'From availability: ' + inr(dec.availability), 'From occupancy: ' + inr(dec.occupancy), 'From ADR (price): ' + inr(dec.adr), 'Method: ' + dec.method] });
       var fin = finance(data, from, to);
       sections.push({ heading: 'Financials', bullets: ['Recorded operating costs: ' + inr(fin.expenses_total) + (fin.expenses_estimate ? ' (incl. ' + inr(fin.expenses_estimate) + ' estimates)' : ''), 'Contribution margin: ' + (fin.contribution == null ? 'unavailable' : inr(fin.contribution)), 'Operating profit: ' + (fin.operating_profit == null ? 'unavailable' : inr(fin.operating_profit)), fin.status_note].filter(Boolean) });

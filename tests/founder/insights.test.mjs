@@ -164,3 +164,10 @@ test('reports: every type builds, includes definitions and freshness, HTML escap
     assert.doesNotMatch(html, /<script>x/); assert.match(html, /Metric definitions/);
   });
 });
+
+test('reports never compare against periods with no data (no fake "+40 pts vs last year")', () => {
+  const D = { today: '2026-10-16', properties: props, channels, payments: [], blocks: [], bookings: [{ booking_id: 'A', property_id: 'v1', channel: 'Direct · WhatsApp', checkin: '2026-10-15', checkout: '2026-10-16', nights: 1, gross_amount: 4000, status: 'confirmed', created_at: '2026-10-10T10:00:00+05:30' }] };
+  const r = I.buildReport('daily', D, I.reportPeriod('daily', '2026-10-16'));
+  const occ = r.sections[0].table.rows.find(x => x[0] === 'Occupancy');
+  assert.equal(occ[1], '20.0%'); assert.equal(occ[3], '', 'no last-year data → blank');
+});
