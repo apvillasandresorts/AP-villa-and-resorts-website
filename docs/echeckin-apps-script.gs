@@ -48,6 +48,7 @@ const COLUMNS = [
   ['purpose', 'Purpose'], ['heard_from', 'Found us via'], ['first_visit', 'First visit to Ujjain'], ['requests', 'Special requests'],
   ['consent_data', 'Data consent'], ['consent_offers', 'Offers on WhatsApp'], ['signature', 'Signature (typed)'],
   ['payment_proof', 'Payment screenshot'], ['booking_voucher', 'Booking voucher'],   // files are in the guest's Drive folder
+  ['consent_email', 'Email updates'],   // ticked "Email me new Ujjain travel guides" (used by BlogMailer.gs)
 ];
 
 function doPost(e) {
@@ -173,6 +174,7 @@ function testGuestEmail() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.unsub) return unsubscribe_(e.parameter);   // Journal email unsubscribe (BlogMailer.gs)
   if (e && e.parameter && e.parameter.action === 'leaderboard') return json_({ ok: true, top: gameTop_() });
   return json_({ ok: true, service: 'AP Villas e-check-in' });
 }

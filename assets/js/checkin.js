@@ -185,7 +185,7 @@
       payment_proof: q('payment_proof').disabled ? '' : (q('payment_proof').files.length ? q('payment_proof').files.length + ' file(s) uploaded' : ''),
       booking_voucher: q('booking_voucher').disabled ? '' : (q('booking_voucher').files.length ? q('booking_voucher').files.length + ' file(s) uploaded' : ''),
       purpose: v('purpose'), heard_from: v('heard_from'), first_visit: v('first_visit'), requests: v('requests'),
-      consent_data: q('consent_data').checked ? 'Yes' : 'No', consent_offers: q('consent_offers').checked ? 'Yes' : 'No', signature: v('signature'),
+      consent_data: q('consent_data').checked ? 'Yes' : 'No', consent_offers: q('consent_offers').checked ? 'Yes' : 'No', consent_email: q('consent_email').checked ? 'Yes' : 'No', signature: v('signature'),
     };
     return fields;
   }
