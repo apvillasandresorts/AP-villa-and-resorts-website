@@ -58,6 +58,11 @@ This repo is the whole public website. Claude Code in this folder is the permane
 ## Research workflow (local, never deployed)
 `/research india|ujjain|competitors|<topic>`, `/analyse-bookings <export>`, `/analyse-ga4`, `/exec-summary`. Rules: `content/research-rules.md` (label FACT/ESTIMATE/HYPOTHESIS/RECOMMENDATION, never invent figures, no guest data). Output goes to `research/` (git-ignored: this repo is public). MCP servers (Free Search, Google Analytics, Trends) are user-scope on the owner's Mac: status and setup in `docs/research-stack.md`.
 
+## Business advisor (claude.ai Project) ↔ this console
+Strategy happens in the claude.ai Project "AP Villas — Business Advisor"; execution happens here.
+- `/advisor-pack [--summary]` → `node scripts/build-advisor-pack.mjs` writes research/advisor-pack/ (00 instructions, 01 business, 02 website/systems, 03 content, 04 market, 05 performance, 06 decision log); the owner uploads it to the Project. Rebuild monthly and after big changes.
+- `/decision <DECISION BRIEF>` implements a brief from that chat under the rules above, ships it, and appends it to research/decisions.md (which feeds 06-decision-log.md).
+
 ## Common tasks
 - **Change a price / amenity / villa detail:** update `content/business-facts.json`, then `node scripts/build-villa-pages.mjs`, and update the villas.html/index.html cards + compare table. `/ship`.
 - **New blog post now:** `/new-post [topic]` (runs the GitHub workflow). **Publish one:** `/publish <PR number or slug>`.
