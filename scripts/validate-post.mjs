@@ -61,7 +61,9 @@ const related = [...new Set(bodyHrefs.filter(h => /^[a-z0-9-]+\.html$/.test(h) &
 if (related.length < 2) fail(`Need links to ≥2 related posts (e.g. href="mahakaleshwar.html"), found ${related.length}`);
 for (const h of hrefs) {
   if (/^(https?:|mailto:|tel:|#|data:)/.test(h)) continue;
-  const p = normalize(join(dirname(file), h.split('#')[0].split('?')[0]));
+  const u = h.split('#')[0].split('?')[0];
+  let p = u.startsWith('/') ? normalize('.' + u) : normalize(join(dirname(file), u)); // root-absolute links resolve from the site root
+  if (p && u.endsWith('/')) p = join(p, 'index.html');
   if (p && !existsSync(p)) fail(`Broken local link: ${h}`);
 }
 const externalSources = [...new Set(bodyHrefs)].filter(h => /^https?:/.test(h) && !h.includes('wa.me') && !h.includes('apvillasandresorts.in'));
@@ -182,10 +184,11 @@ if (!sitemap.includes(`<loc>${SITE}/blog/${slug}.html</loc>`)) fail('sitemap.xml
 const summary = { slug, title: title.replace(/ — AP Villas Journal$/, ''), keyword: same[0]?.keyword ?? '', words, h2: h2s, sources: externalSources, related, errors, warnings };
 if (summaryPath) writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 for (const w of warnings) console.log(`⚠ ${w}`);
-// Hindi narration (Listen button): optional, but if present it must line up with the page blocks
+// Hindi narration (Listen button): required, and it must line up with the page blocks
 {
   const nf = `blog/narration/${slug}.hi.json`;
-  if (existsSync(nf)) {
+  if (!existsSync(nf)) fail(`${nf} is missing: write the Hindi narration (one translation per block of node scripts/narration-blocks.mjs ${slug})`);
+  else {
     const { blocks } = await import("./narration-blocks.mjs");
     let n = -1; try { n = JSON.parse(readFileSync(nf, "utf8")).blocks.length; } catch {}
     const want = blocks(html).length;
