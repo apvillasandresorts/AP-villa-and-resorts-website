@@ -328,6 +328,14 @@
       "intent": "commercial",
       "cluster": "where-to-stay",
       "status": "published"
+    },
+    {
+      "slug": "diwali-in-ujjain-2026",
+      "title": "Diwali in Ujjain 2026: Mahakal Darshan, Dates and Where to Stay",
+      "keyword": "diwali in ujjain 2026",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
     }
   ]
 }
