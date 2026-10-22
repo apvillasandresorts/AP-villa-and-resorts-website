@@ -68,6 +68,11 @@ if (!isTouch) {
     requestAnimationFrame(loop);
   }
   loop();
+  // Click: soft gold glow (restart the animation on every click)
+  document.addEventListener('mousedown', () => {
+    [cursorRing, cursorDot].forEach(el => { el.classList.remove('click'); void el.offsetWidth; el.classList.add('click'); });
+  });
+  [cursorRing, cursorDot].forEach(el => el.addEventListener('animationend', () => el.classList.remove('click')));
   // Hover state
   document.querySelectorAll('a, button, .villa-card, .blog-card, .review-card, .cat-card, .amenity, .car-card, .stat-card, .contact-card, .nav__menu a, .fab, .chatbot-toggle').forEach(el => {
     el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
