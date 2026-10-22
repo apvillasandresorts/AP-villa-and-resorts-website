@@ -75,11 +75,12 @@
     document.getElementById('ci-members-count').textContent = total > 0 ? `(${total} more)` : '(none)';
     membersBox.innerHTML = Array.from({ length: Math.min(total, 39) }, (_, i) => {
       const o = old[i] || {}, kid = i >= adults - 1;
-      return `<div class="ci-member"><span class="ci-member__n">${i + 2}</span>
-        <input data-k="name" type="text" maxlength="80" placeholder="Full name${kid ? ' (child)' : ''}" value="${(o.name || '').replace(/"/g, '&quot;')}" required aria-label="Guest ${i + 2} name">
-        <input data-k="age" type="text" inputmode="decimal" maxlength="8" autocomplete="off" placeholder="Age" value="${(o.age || '').replace(/"/g, '&quot;')}" required data-age="any" aria-label="Guest ${i + 2} age">
-        <select data-k="gender" required aria-label="Guest ${i + 2} gender"><option value="">Gender</option>${['Male', 'Female', 'Other'].map(g => `<option${o.gender === g ? ' selected' : ''}>${g}</option>`).join('')}</select>
-        <input data-k="relation" type="text" maxlength="30" placeholder="Relation (e.g. wife, son)" value="${(o.relation || '').replace(/"/g, '&quot;')}" aria-label="Guest ${i + 2} relation"></div>`;
+      const esc = v => (v || '').replace(/"/g, '&quot;'), n = i + 2;
+      return `<div class="ci-member"><div class="ci-member__head"><span class="ci-member__n">${n}</span>Guest ${n} <small>${kid ? 'child' : 'adult'}</small></div>
+        <label class="ci-m-name"><span class="ci-l">Full name <b>*</b></span><input data-k="name" type="text" maxlength="80" placeholder="As on ID" value="${esc(o.name)}" required aria-label="Guest ${n} name"></label>
+        <label class="ci-m-age"><span class="ci-l">Age <b>*</b></span><span class="ci-age"><input data-k="age" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="${kid ? 'e.g. 8' : 'e.g. 32'}" value="${esc(o.age)}" required data-age="any" aria-label="Guest ${n} age"><i aria-hidden="true">yrs</i></span><small class="ci-fieldmsg" aria-live="polite"></small></label>
+        <label class="ci-m-gender"><span class="ci-l">Gender <b>*</b></span><select data-k="gender" required aria-label="Guest ${n} gender"><option value="">Choose</option>${['Male', 'Female', 'Other'].map(g => `<option${o.gender === g ? ' selected' : ''}>${g}</option>`).join('')}</select></label>
+        <label class="ci-m-rel"><span class="ci-l">Relation <small>(optional)</small></span><input data-k="relation" type="text" maxlength="30" placeholder="e.g. wife, son, mother" value="${esc(o.relation)}" aria-label="Guest ${n} relation"></label></div>`;
     }).join('') || '<p class="ci-hint">Just you. Change the number of adults or children in step 1 if more people are coming.</p>';
   }
   q('adults').addEventListener('change', renderMembers);
@@ -107,6 +108,18 @@
     if (adult && n < 18) return 'The main guest must be 18 or older. If you are under 18, please ask an adult in your group to fill in this form as the main guest.';
     return '';
   }
+  const ageMsgEl = el => el.closest('label')?.querySelector('.ci-fieldmsg');
+  form.addEventListener('input', e => {
+    const el = e.target; if (!el.dataset || !el.dataset.age) return;
+    const clean = toAscii(el.value);
+    if (clean !== el.value) el.value = clean;   // Hindi / other-script digits become 0-9 as you type
+    el.classList.remove('is-bad'); const m = ageMsgEl(el); if (m) m.textContent = '';
+  });
+  form.addEventListener('focusout', e => {
+    const el = e.target; if (!el.dataset || !el.dataset.age || !el.value.trim()) return;
+    const msg = checkAge(el), m = ageMsgEl(el);
+    el.classList.toggle('is-bad', !!msg); if (m) m.textContent = msg;
+  });
   function validate(i) {
     err.textContent = '';
     const fields = [...steps[i].querySelectorAll('input, select, textarea')].filter(el => !el.disabled && el.type !== 'hidden' && !el.classList.contains('ci-hp'));
@@ -120,7 +133,8 @@
       if (!ok) {
         el.classList.add('is-bad'); el.focus({ preventScroll: true });
         el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        const label = (el.closest('label')?.childNodes[0]?.textContent || el.getAttribute('aria-label') || el.placeholder || 'This field').trim().replace(/\s+\*$/, '');
+        const label = (el.getAttribute('aria-label') || el.closest('label')?.querySelector('.ci-l')?.textContent || el.closest('label')?.childNodes[0]?.textContent || el.placeholder || 'This field').trim().replace(/\s*\*$/, '');
+        if (el.dataset.age) { const m = ageMsgEl(el); if (m) m.textContent = ageMsg || (el.value.trim() ? 'Please type the age in numbers, e.g. 35.' : 'Please enter the age in years.'); }
         err.textContent = ageMsg ? (el.dataset.age === 'any' ? `${label}: ${ageMsg}` : ageMsg) : el.name === 'phone' ? 'Please enter a valid mobile number.' : el.value && el.type !== 'file' && el.type !== 'checkbox' && el.tagName !== 'SELECT' ? `Please check: ${label}.` : el.type === 'checkbox' ? 'Please tick the required declarations.' : el.name === 'phone' ? 'Please enter a valid mobile number.' : el.type === 'file' ? `Please upload: ${label}.` : `Please fill: ${label}.`;
         return false;
       }

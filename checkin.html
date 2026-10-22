@@ -65,7 +65,16 @@
 .ci-balance b { color: var(--saffron); }
 .ci-hint { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
 .ci-foreign { margin-top: 18px; }
-.ci-member { display: grid; grid-template-columns: 28px 2fr 0.8fr 1fr 1.4fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ci-member { display: grid; grid-template-columns: 2fr 0.9fr 1fr 1.4fr; gap: 8px 10px; align-items: end; margin-bottom: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #FDFBF6; }
+.ci-member__head { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--navy); }
+.ci-member__head small { font-weight: 500; color: var(--muted); }
+.ci .ci-member label { gap: 4px; font-size: 12.5px; }
+/* age: a clear box with the unit inside, number keypad on phones */
+.ci-age { position: relative; display: block; }
+.ci .ci-age input { padding-right: 52px; }
+.ci-age i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font: 500 13px 'Inter', 'Inter Fallback', sans-serif; font-style: normal; color: var(--muted); pointer-events: none; }
+.ci-fieldmsg { display: block; min-height: 0; font-size: 12.5px; font-weight: 600; line-height: 1.4; color: #B03A2E; }
+.ci-fieldmsg:empty { display: none; }
 .ci-member__n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #F3EEE3; font-size: 12px; font-weight: 700; color: var(--navy); }
 .ci-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .ci .ci-drop { position: relative; border: 2px dashed #D9CBAA; border-radius: 14px; padding: 16px; background: #FDFBF6; cursor: pointer; transition: border-color .2s, background .2s; }
@@ -106,8 +115,8 @@ body.ci-page.has-m-bar { padding-bottom: 0 !important; }
   .ci-steps { gap: 4px; }
   .ci-steps li { flex-direction: column; font-size: 11px; text-align: center; padding: 6px 2px; gap: 4px; }
   .ci-grid, .ci-files { grid-template-columns: 1fr; }
-  .ci-member { grid-template-columns: 26px 1fr 1fr; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
-  .ci-member [data-k="name"], .ci-member [data-k="relation"] { grid-column: 2 / 4; }
+  .ci-member { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+  .ci-member .ci-m-name, .ci-member .ci-m-rel { grid-column: 1 / -1; }
   .ci-nav .btn { flex: 1; min-width: 0 !important; }
   /* phones: inputs at 16px so iPhone does not zoom in (zoom pushed the Next button off-screen) */
   .ci input:not([type=checkbox]):not([type=file]), .ci select, .ci textarea { font-size: 16px; min-height: 50px; }
@@ -206,7 +215,7 @@ body.ci-page.has-m-bar { padding-bottom: 0 !important; }
           <label><span class="ci-l">Email <b>*</b></span>
             <input enterkeyhint="next" name="email" type="email" maxlength="80" autocomplete="email" required placeholder="We email your stay details, menu &amp; Wi-Fi"></label>
           <label><span class="ci-l">Age <b>*</b></span>
-            <input enterkeyhint="next" name="age" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="e.g. 35" required data-age="adult"></label>
+            <span class="ci-age"><input enterkeyhint="next" name="age" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="e.g. 35" required data-age="adult" aria-describedby="age-msg"><i aria-hidden="true">years</i></span><small class="ci-fieldmsg" id="age-msg" aria-live="polite"></small></label>
           <label><span class="ci-l">Gender <b>*</b></span>
             <select name="gender" required><option value="">Choose</option><option>Male</option><option>Female</option><option>Other</option></select></label>
           <label class="ci-wide"><span class="ci-l">Home address <b>*</b></span>
