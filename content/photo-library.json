@@ -1201,6 +1201,45 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Priyank.bh / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/diwali-in-ujjain-2026/lamp-stand-shipra-river-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "shipra",
+        "lamp",
+        "deepstambh",
+        "ujjain",
+        "ghat"
+      ],
+      "alt": "Giant stone lamp stand (deepstambh) on the banks of the Shipra River, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Lamp_stand,_Shipra_River,_Ujjain.jpg",
+      "author": "J P Dutt",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: J P Dutt / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/diwali-in-ujjain-2026/shri-mahakaleshwer-temple-at-night-ujjain-panoramio.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakaleshwar",
+        "temple",
+        "night",
+        "ujjain"
+      ],
+      "alt": "Shri Mahakaleshwar Temple complex lit at night, Ujjain, photographed in 2010",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Shri_Mahakaleshwer_Temple_at_Night_ujjain_-_panoramio.jpg",
+      "author": "Gyanendra_Singh_Chau…",
+      "license": "CC BY 3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0",
+      "credit": "Photo: Gyanendra_Singh_Chau… / Wikimedia Commons, CC BY 3.0"
     }
   ]
 }
