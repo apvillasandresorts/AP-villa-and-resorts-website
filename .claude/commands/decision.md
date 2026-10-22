@@ -13,7 +13,7 @@ $ARGUMENTS
    - Pricing changes: website "from" prices live in business-facts.json; reference-rate behaviour lives in the Founder OS pricing settings (portal → Pricing & market → Engine settings), which only the owner can save; OTA rates are owner-only.
    - Blog topics go into content/topics.json (queued) or run /new-post.
    Show me a short plan: each change → files touched, and anything you will NOT do and why (conflicts with facts or rules). Proceed unless something conflicts; if it does, ask.
-3. Make the changes, preview anything visible (dev server / mobile width), run `node --test tests/`, then follow the deploy flow (/ship): asset-version, commit "Decision: <Title>", push, wait for Vercel, verify live with curl.
+3. Make the changes, preview anything visible (dev server / mobile width), run `node --test tests/`, asset-version, and commit "Decision: <Title>" locally. Then STOP and ask me to approve publishing; only after a yes: push, wait for Vercel, verify live with curl.
 4. Append to research/decisions.md (create with a "# Decision log" heading if missing): date, title, decision, why, what was changed (commit hash + live URLs), owner-only steps still open, success metric + review date.
 5. If the brief has a review date, offer to schedule a reminder.
 6. Report: what is live (URLs), what is pending for the owner, and remind me to run /advisor-pack so the advisor chat sees the new state.

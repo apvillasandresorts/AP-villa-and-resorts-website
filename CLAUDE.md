@@ -46,6 +46,7 @@ This repo is the whole public website. Claude Code in this folder is the permane
 - No paid services or plans without asking the owner. Never commit secrets. Never force-push.
 
 ## Deploy flow (use for every change; `/ship` does this)
+**Owner rule: never publish (push to `main`, merge a PR, or trigger a deploy) unless the owner asked for that publish or approved it. Commit locally, then ask.**
 1. Edit files.
 2. Preview locally: `npx serve . -l 3000` and open http://localhost:3000 (check desktop + mobile width).
 3. `node scripts/build-sitemap.mjs` if pages were added/removed. Always run `node scripts/asset-version.mjs` last (adds ?v=hash to CSS/JS links so browsers never use a stale stylesheet).
