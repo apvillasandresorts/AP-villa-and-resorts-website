@@ -59,7 +59,7 @@ class Spreadsheet {
   getSheets() { return this.sheets; }
 }
 
-export function makeEnv({ checkins = [], analytics = null } = {}) {
+export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
   let now = Date.parse('2026-10-16T06:30:00Z');   // 12:00 IST
   const clock = { now: () => now, advance: ms => { now += ms; } };
   const stats = { openById: 0, reads: 0 };
@@ -71,6 +71,9 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
   }
   const folder = { getId: () => 'FOLDER1', createFile: b => { const id = 'F' + (files.size + 1); files.set(id, b); return { getId: () => id }; } };
   const checkinSheet = new Sheet('E-Check-in');
+  // UrlFetchApp: a handler(request) → { code, body } set per test (Search Console, the live site); default = permission not granted yet
+  const net = { handler: http, calls: [] };
+  const respond = r => { net.calls.push(r); const o = net.handler ? net.handler(r) : { code: 403, body: JSON.stringify({ error: { message: 'Request had insufficient authentication scopes.' } }) }; return { getResponseCode: () => o.code, getContentText: () => o.body }; };
   const ctx = {
     console, JSON, Math, Number, String, Array, Object, Boolean, RegExp, isFinite, isNaN, parseInt, parseFloat, Error, Set, Map, encodeURIComponent,
     Logger: { log() {} },
@@ -100,7 +103,8 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
       openById: id => { stats.openById++; const s = books.get(id); if (!s) throw new Error('no spreadsheet ' + id); return s; },
     },
     MailApp: { sendEmail: (a, subj, body) => { mails.push(typeof a === 'object' ? a : { to: a, subject: subj, body }); }, getRemainingDailyQuota: () => 100 },
-    ScriptApp: { getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => { const t = { timeBased: () => t, everyHours: () => t, everyMinutes: () => t, create: () => t }; return t; } },
+    UrlFetchApp: { fetchAll: reqs => reqs.map(respond), fetch: (url, o) => respond(Object.assign({ url }, o || {})) },
+    ScriptApp: { getOAuthToken: () => 'test-token', getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => { const t = { timeBased: () => t, everyHours: () => t, everyMinutes: () => t, create: () => t }; return t; } },
     sheet_: () => checkinSheet,
     DriveApp: { createFolder: () => folder, getFolderById: () => folder, getFileById: id => ({ getBlob: () => files.get(id) }) },
     ...(analytics ? { AnalyticsData: analytics } : {}),
@@ -108,8 +112,8 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
   vm.createContext(ctx);
   vm.runInContext('Date.now = () => __now(); const __RealDate = Date; Date = class extends __RealDate { constructor(...a) { if (a.length) super(...a); else super(__now()); } static now() { return __now(); } };', Object.assign(ctx, { __now: () => now }));
   const root = new URL('../../', import.meta.url);
-  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
-  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_ };', ctx);
+  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs', 'docs/founder-os/FoSearch.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
+  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_, foGsc_, foGscOpportunities_, foSeoCheckPage_, foSeoRanks_ };', ctx);
 
   // the e-check-in tab, with the real column titles from docs/echeckin-apps-script.gs
   const head = ['Submitted at', 'Reference', 'Booked through', 'Booking ID', 'Villa', 'Check-in', 'Check-out', 'Nights', 'Adults', 'Children', 'Main guest', 'Mobile', 'Email', 'City', 'State',
@@ -137,5 +141,5 @@ export function makeEnv({ checkins = [], analytics = null } = {}) {
   }
   books.forEach = books.forEach;
   const countReads = () => { books.forEach(b => b.sheets.forEach(sh => { sh.onRead = () => { stats.reads++; }; })); };
-  return { fo, api, clock, files, lock, stats, countReads, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); cache.clear(); } };
+  return { fo, api, net, clock, files, lock, stats, countReads, props, cache, mails, lastOtp, tab, dataSheet, checkinSheet, addCheckin, login, setUserRole(role) { const s = dataSheet().getSheetByName('Users'); s.set(2, 3, role); cache.clear(); } };
 }

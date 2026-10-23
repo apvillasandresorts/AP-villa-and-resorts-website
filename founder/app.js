@@ -54,7 +54,7 @@
 
   // ------------------------------------------------------------ API ------------------------------------------------------------
   // Every call: a time limit (so nothing can hang forever), one automatic retry for read-only calls, and a progress bar.
-  var READS = { 'f.data': 1, 'f.ga4': 1, 'f.report.get': 1, 'f.booking.history': 1, 'f.sessions': 1, 'f.audit': 1 }, inFlight = 0;
+  var READS = { 'f.data': 1, 'f.ga4': 1, 'f.gsc': 1, 'f.campaign.report': 1, 'f.report.get': 1, 'f.booking.history': 1, 'f.sessions': 1, 'f.audit': 1 }, inFlight = 0;
   function busyBar(d) {
     inFlight = Math.max(0, inFlight + d);
     var b = document.getElementById('fo-busy');
@@ -172,6 +172,7 @@
     { id: 'properties', label: 'Property Performance', ic: 'home' },
     { id: 'guests', label: 'Guest Intelligence', ic: 'guest' },
     { id: 'website', label: 'Website Analytics', ic: 'web' },
+    { id: 'seo', label: 'SEO & Marketing', ic: 'search' },
     { id: 'trends', label: 'Trends & Events', ic: 'trend' },
     { id: 'forecast', label: 'Forecasting & Scenarios', ic: 'forecast' },
     { id: 'studio', label: 'Analytics Studio', ic: 'studio' },
@@ -872,6 +873,7 @@
         ['OTA exports (CSV)', 'on', 'Booking management → Import', 'Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda. Re-imports never duplicate. OTA live APIs are partner-only, so they are not connected.']]],
       ['Website & demand', [
         ['Google Analytics 4 (server-side)', ga && ga.connected ? 'on' : ga && !ga.connected ? 'off' : 'part', ga ? (ga.connected ? 'Connected · live site only' : ga.reason) : 'Open Website analytics to check', 'Traffic, sources, booking-intent funnel; daily traffic-growth signal for pricing.'],
+        ['Google Search Console', S.gsc && S.gsc.connected ? 'on' : S.gsc ? 'off' : 'part', S.gsc ? (S.gsc.connected ? 'Connected · ' + S.gsc.site : S.gsc.reason) : 'Site verified on 23 Oct 2026. Open SEO & marketing to check the connection', 'Google searches, clicks and positions; opportunities; keyword positions every morning. Needs the one-time "View Search Console data" permission in Apps Script.'],
         ['Demand signals', (S.data.demand_signals || []).length ? 'on' : 'part', (S.data.demand_signals || []).length + ' signals', 'Website traffic growth (daily) and search/news signals from the research job.']]],
       ['Market intelligence', [
         ['Automation key', a.active ? 'on' : 'off', a.active ? 'Active · last used ' + (a.last_used ? ago(a.last_used) : 'never') : 'Not set: Settings → Automation', 'Lets the research job send market data and reports.'],

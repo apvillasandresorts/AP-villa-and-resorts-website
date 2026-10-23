@@ -18,7 +18,7 @@ function foSettingSet_(key, value) {
   if (row) foUpdate_('Settings', row._row, rec); else foAppend_('Settings', rec);
 }
 function foSettingsSave_(b, user) {
-  const allowed = { report_email: v => String(v).split(',').map(s => s.trim()).filter(s => FoInsights.REPORT_TYPES[s]).join(','), ga4_property: v => String(v).replace(/\D/g, '').slice(0, 15), ga4_host: v => String(v).replace(/[^a-z0-9.-]/gi, '').slice(0, 80) };
+  const allowed = { report_email: v => String(v).split(',').map(s => s.trim()).filter(s => FoInsights.REPORT_TYPES[s]).join(','), ga4_property: v => String(v).replace(/\D/g, '').slice(0, 15), ga4_host: v => String(v).replace(/[^a-z0-9.-]/gi, '').slice(0, 80), gsc_site: v => /^(https:\/\/[a-z0-9.-]+\/|sc-domain:[a-z0-9.-]+)$/i.test(String(v).trim()) ? String(v).trim() : 'https://www.apvillasandresorts.in/' };
   const changed = {};
   Object.keys(b.settings || {}).forEach(k => { if (allowed[k]) { const v = allowed[k](b.settings[k]); foSettingSet_(k, v); changed[k] = v; } });
   foAudit_(user.email, 'settings', JSON.stringify(changed), 'ok');
@@ -135,6 +135,7 @@ function foDailyIfDue_() {
     ok = foJob_('reports', () => foRunDueReports_(today)) && ok;
     ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
     foJob_('ga_signal', () => foGaSignal_(today));   // optional: never blocks the day being marked done
+    foJob_('seo_ranks', () => foSeoRanks_(today));   // optional: keyword positions from Search Console
     if (ok) foSettingSet_('last_daily', today);
     return ok ? 'done' : 'retry later';
   } finally { p.deleteProperty('FO_DAILY_RUN'); }
