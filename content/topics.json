@@ -352,6 +352,14 @@
       "intent": "informational",
       "cluster": "itineraries",
       "status": "published"
+    },
+    {
+      "slug": "gajalakshmi-temple-ujjain-diwali",
+      "title": "Gajalakshmi Temple Ujjain Diwali 2026: Lakshmi and Ganesh Temples",
+      "keyword": "gajalakshmi temple ujjain diwali",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
     }
   ]
 }
