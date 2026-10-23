@@ -1,0 +1,110 @@
+// SEO & marketing: Search Console, keyword watchlist, topic requests, campaigns, site audit (docs/founder-os/FoSearch.gs).
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { makeEnv } from './gas-mock.mjs';
+
+// a fake Search Console: answers by the requested dimensions
+function gscHandler(r) {
+  if (!/searchconsole\.googleapis\.com/.test(r.url)) return { code: 404, body: '' };
+  const q = JSON.parse(r.payload), d = (q.dimensions || []).join(',');
+  const rows = {
+    '': [{ keys: [], clicks: 71, impressions: 1270, ctr: 0.0559, position: 7.5 }],
+    date: [{ keys: ['2026-10-12'], clicks: 5, impressions: 90, ctr: 0.055, position: 8 }, { keys: ['2026-10-11'], clicks: 3, impressions: 60, ctr: 0.05, position: 9 }],
+    query: [{ keys: ['hari har milan ujjain 2026 date'], clicks: 2, impressions: 71, ctr: 0.028, position: 8.2 }, { keys: ['ap villas'], clicks: 3, impressions: 7, ctr: 0.43, position: 1.2 },
+      { keys: ['mahakal evening aarti time'], clicks: 0, impressions: 40, ctr: 0, position: 14 }, { keys: ['villa near mahakal'], clicks: 0, impressions: 3, ctr: 0, position: 30 }],
+    page: [{ keys: ['https://www.apvillasandresorts.in/blog/ujjain-in-november-kartik.html'], clicks: 1, impressions: 300, ctr: 0.003, position: 6 }, { keys: ['https://www.apvillasandresorts.in/'], clicks: 20, impressions: 100, ctr: 0.2, position: 2 }],
+    device: [{ keys: ['MOBILE'], clicks: 60, impressions: 1000, ctr: 0.06, position: 7 }],
+    country: [{ keys: ['ind'], clicks: 70, impressions: 1200, ctr: 0.058, position: 7.4 }],
+    'query,page': [{ keys: ['hari har milan ujjain 2026 date', 'https://www.apvillasandresorts.in/blog/ujjain-in-november-kartik.html'], clicks: 2, impressions: 71, ctr: 0.028, position: 8.2 }],
+  }[d] || [];
+  return { code: 200, body: JSON.stringify({ rows: q.endDate <= '2026-09-30' && !d ? [{ keys: [], clicks: 30, impressions: 600, ctr: 0.05, position: 9 }] : rows }) };
+}
+async function ready(http) { const env = makeEnv({ http }); env.fo.foSetup(); return { env, token: await env.login() }; }
+
+test('search console: honest "not connected" until the permission is approved', async () => {
+  const { env, token } = await ready();
+  const r = env.api({ action: 'f.gsc', token, from: '2026-09-25', to: '2026-10-14' });
+  assert.equal(r.ok, true); assert.equal(r.gsc.connected, false);
+  assert.match(r.gsc.reason, /permission not approved/);
+});
+
+test('search console: totals, comparison, queries, pages and opportunities; cached', async () => {
+  const { env, token } = await ready(gscHandler);
+  const g = env.api({ action: 'f.gsc', token, from: '2026-10-01', to: '2026-10-14' }).gsc;
+  assert.equal(g.connected, true);
+  assert.equal(g.totals.clicks, 71); assert.equal(g.previous.clicks, 30, 'previous period of the same length');
+  assert.equal(g.daily[0].date, '2026-10-11', 'sorted by date');
+  assert.equal(g.pages[0].path, '/blog/ujjain-in-november-kartik.html');
+  const st = g.opportunities.striking.map(o => o.query);
+  assert.deepEqual(st, ['hari har milan ujjain 2026 date', 'mahakal evening aarti time'], 'positions 4–20 with real impressions, biggest first');
+  assert.equal(g.opportunities.striking[0].page, '/blog/ujjain-in-november-kartik.html');
+  assert.equal(g.opportunities.low_ctr[0].path, '/blog/ujjain-in-november-kartik.html', 'shown 300 times at #6 but 0.3% CTR');
+  assert.ok(g.opportunities.questions.some(q => /aarti time/.test(q.query)));
+  const n = env.net.calls.length;
+  env.api({ action: 'f.gsc', token, from: '2026-10-01', to: '2026-10-14' });
+  assert.equal(env.net.calls.length, n, 'second call served from cache');
+  assert.match(env.net.calls[0].headers.Authorization, /^Bearer /);
+  assert.match(env.net.calls[0].url, /sites\/https%3A%2F%2Fwww\.apvillasandresorts\.in%2F\/searchAnalytics/);
+});
+
+test('keyword watchlist: no duplicates; daily positions from Search Console', async () => {
+  const { env, token } = await ready(gscHandler);
+  assert.equal(env.api({ action: 'f.seo.keyword.save', token, record: { keyword: 'Hari Har Milan Ujjain 2026 Date' } }).ok, true);
+  assert.match(env.api({ action: 'f.seo.keyword.save', token, record: { keyword: 'hari har milan ujjain 2026 date' } }).error, /already/);
+  env.api({ action: 'f.seo.keyword.save', token, record: { keyword: 'villa near mahakaleshwar' } });
+  assert.equal(env.fo.foSeoRanks_('2026-10-16'), '2 keywords');
+  assert.equal(env.fo.foSeoRanks_('2026-10-16'), 'exists', 'once a day');
+  const ranks = env.tab('SeoRanks');
+  assert.equal(Number(ranks.find(r => r.keyword === 'hari har milan ujjain 2026 date').position), 8.2);
+  assert.equal(ranks.find(r => r.keyword === 'villa near mahakaleshwar').position, '', 'not ranking = blank, not zero');
+});
+
+test('topic requests: the blog pipeline takes the next one (high priority first) with the automation key', async () => {
+  const { env, token } = await ready(gscHandler);
+  env.api({ action: 'f.seo.topic.save', token, record: { title: 'Ujjain winter trip', keyword: 'ujjain in december', priority: 'normal' } });
+  env.clock.advance(60000);
+  env.api({ action: 'f.seo.topic.save', token, record: { title: 'Mahakal evening aarti time', keyword: 'mahakal evening aarti time', priority: 'high', source: 'search console' } });
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const a = env.api({ action: 'f.m.seo.next', key });
+  assert.equal(a.topic.keyword, 'mahakal evening aarti time');
+  const b = env.api({ action: 'f.m.seo.next', key });
+  assert.equal(b.topic.keyword, 'ujjain in december', 'in-progress topics are not handed out twice');
+  assert.equal(env.api({ action: 'f.m.seo.next', key }).topic, null);
+  env.api({ action: 'f.m.seo.done', key, topic_id: a.topic.topic_id, slug: 'mahakal-evening-aarti-time' });
+  env.api({ action: 'f.m.seo.done', key, topic_id: b.topic.topic_id, status: 'failed' });
+  const t = env.tab('SeoTopics');
+  assert.equal(t.find(x => x.topic_id === a.topic.topic_id).status, 'published');
+  assert.equal(t.find(x => x.topic_id === b.topic.topic_id).status, 'queued', 'a failed run returns the topic to the queue');
+  assert.match(env.api({ action: 'f.seo.topic.save', key, record: { title: 'x' } }).error, /not allowed/);
+});
+
+test('campaigns: UTM codes from the channel, landing page limited to the site', async () => {
+  const { env, token } = await ready();
+  const r = env.api({ action: 'f.campaign.save', token, record: { name: 'Diwali WhatsApp offer', channel: 'whatsapp', landing_url: 'https://evil.example.com/x', budget: '0' } }).record;
+  assert.equal(r.utm_campaign, 'diwali_whatsapp_offer'); assert.equal(r.utm_source, 'whatsapp'); assert.equal(r.utm_medium, 'social');
+  assert.equal(r.landing_url, 'https://www.apvillasandresorts.in/');
+  assert.equal(env.api({ action: 'f.data', token }).campaigns.length, 1);
+});
+
+test('SEO audit: flags missing title, description, H1, canonical, alt text and duplicate titles', async () => {
+  const good = '<html><head><title>Villas near Mahakaleshwar for families | AP Villas</title><meta name="description" content="' + 'x'.repeat(120) + '"><link rel="canonical" href="https://www.apvillasandresorts.in/"><meta property="og:image" content="https://www.apvillasandresorts.in/a.jpg"><script type="application/ld+json">{}</script></head><body><h1>Hi</h1><img src="a.jpg" alt="Villa"></body></html>';
+  const bad = '<html><head></head><body><img src="b.jpg"><p>text</p></body></html>';
+  const { env, token } = await ready(r => /sitemap\.xml/.test(r.url) ? { code: 200, body: '<urlset><url><loc>https://www.apvillasandresorts.in/</loc></url><url><loc>https://www.apvillasandresorts.in/a.html</loc></url><url><loc>https://www.apvillasandresorts.in/b.html</loc></url></urlset>' }
+    : /robots\.txt/.test(r.url) ? { code: 200, body: 'Sitemap: https://www.apvillasandresorts.in/sitemap.xml' } : /b\.html/.test(r.url) ? { code: 200, body: bad } : { code: 200, body: good });
+  const a = env.api({ action: 'f.seo.audit', token, refresh: true }).audit;
+  assert.equal(a.summary.pages, 3); assert.equal(a.sitemap_ok, true); assert.equal(a.robots_ok, true);
+  const b = a.pages.find(p => p.path === '/b.html').issues.map(i => i[1]).join(' | ');
+  assert.match(b, /No <title>/); assert.match(b, /No meta description/); assert.match(b, /No H1/); assert.match(b, /No canonical/); assert.match(b, /without alt/);
+  assert.match(a.pages.find(p => p.path === '/').issues.map(i => i[1]).join(), /Same title/, 'duplicate titles across pages');
+  env.setUserRole('viewer');
+  assert.match(env.api({ action: 'f.seo.audit', token, refresh: true }).error, /role/);
+});
+
+test('advisor summary carries search figures and SEO counts, still no guest data', async () => {
+  const { env, token } = await ready(gscHandler);
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const s = env.api({ action: 'f.m.summary', key }).summary;
+  assert.equal(s.search.connected, true); assert.equal(s.search.totals.clicks, 71);
+  assert.ok(s.search.striking.length >= 1);
+  assert.equal(s.seo.topics_queued, 0);
+});

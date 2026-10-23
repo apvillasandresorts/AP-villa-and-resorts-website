@@ -397,5 +397,6 @@ function foDataBuild_() {
     exceptions: ex.filter(e => e.status === 'open').concat(ex.filter(e => e.status !== 'open').slice(-100)).map(strip),
     imports: foRows_('Imports').slice(-50).map(strip),
     competitors: foRows_('Competitors').map(strip), market_rates: foRows_('MarketRates').slice(-1500).map(strip), demand_signals: foRows_('DemandSignals').slice(-600).map(strip),
+    seo_keywords: foRows_('SeoKeywords').map(strip), seo_ranks: foRows_('SeoRanks').slice(-3000).map(strip), seo_topics: foRows_('SeoTopics').map(strip), campaigns: foRows_('Campaigns').map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }

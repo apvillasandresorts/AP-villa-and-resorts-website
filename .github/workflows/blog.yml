@@ -73,6 +73,16 @@ jobs:
           fi
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
+      - name: Next requested topic (Founder OS → SEO & marketing → Blog topics)
+        id: req
+        if: steps.guard.outputs.skip != 'true' && github.event.inputs.topic == ''
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+        run: |
+          [ -z "$FOUNDER_OS_KEY" ] && { echo "No automation key: Claude picks a timely topic."; exit 0; }
+          node scripts/push-market.mjs --seo-next "$RUNNER_TEMP/topic.json" || exit 0
+          node -e "const t=require(process.argv[1]); if(!t.topic_id) process.exit(0); const s=[t.title,t.keyword&&('Keyword: '+t.keyword),t.intent&&('Search intent: '+t.intent),t.notes&&('Owner notes: '+t.notes)].filter(Boolean).join('. ').replace(/[\r\n\"\$\`]/g,' ').slice(0,600); require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'topic='+s+'\ntopic_id='+t.topic_id+'\n')" "$RUNNER_TEMP/topic.json"
+
       - name: Write the post with Claude
         if: steps.guard.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
@@ -83,7 +93,7 @@ jobs:
             Follow content/blog-writer-instructions.md exactly and write ONE new blog post.
 
             Today's date (IST): ${{ steps.guard.outputs.today }}
-            Topic override from the owner (empty means pick one yourself): "${{ github.event.inputs.topic }}"
+            Topic override from the owner (empty means pick one yourself): "${{ github.event.inputs.topic || steps.req.outputs.topic }}"
             Slugs already waiting in open pull requests (do not reuse or duplicate these): "${{ steps.guard.outputs.pending_slugs }}"
 
             Hard rules: property claims only from content/business-facts.json; only photos from
@@ -120,11 +130,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           git add "blog/$slug.html" blog.html sitemap.xml content/published.json content/topics.json content/photo-library.json
+          [ -f "blog/narration/$slug.hi.json" ] && git add "blog/narration/$slug.hi.json"   # the Hindi "Listen" text (was left out before, so posts arrived without it)
           [ -d "images/blog/$slug" ] && git add "images/blog/$slug"
           git commit -m "New post: $slug"
           git push origin "$branch"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Mark the requested topic as written
+        if: steps.guard.outputs.skip != 'true' && steps.req.outputs.topic_id != ''
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+          TOPIC_ID: ${{ steps.req.outputs.topic_id }}
+          SLUG: ${{ steps.detect.outputs.slug }}
+        run: node scripts/push-market.mjs --seo-done "$TOPIC_ID" "${SLUG:--}" $([ -z "$SLUG" ] && echo failed) || true
 
   check:
     name: Check post
@@ -207,6 +226,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "blog/${{ needs.write.outputs.slug }}.html" content/published.json content/photo-library.json
+          [ -f "blog/narration/${{ needs.write.outputs.slug }}.hi.json" ] && git add "blog/narration/${{ needs.write.outputs.slug }}.hi.json"
           [ -d "images/blog/${{ needs.write.outputs.slug }}" ] && git add "images/blog/${{ needs.write.outputs.slug }}"
           git diff --cached --quiet && { echo "No changes from auto-fix"; exit 0; }
           git commit -m "Auto-fix review issues: ${{ needs.write.outputs.slug }}"

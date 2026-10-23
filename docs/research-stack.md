@@ -25,7 +25,7 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
 | Trends MCP (optional) | Not installed | Free tier 100 requests/month, no card, pauses at the limit | Needs your account: `read -s "TRENDS_KEY?Key: "; claude mcp add --scope user --transport http trends-mcp https://api.trendsmcp.ai/mcp --header "Authorization: Bearer $TRENDS_KEY"; unset TRENDS_KEY` |
 | Exa / Tavily MCP (optional) | Not installed | Free tiers need an account + API key | Not needed: Free Search covers keyless search and extraction. Add only if Free Search coverage proves too thin. |
 | Google Analytics MCP (local) | Removed | — | Redundant: the Founder OS already reads GA4 on the server (use /analyse-ga4). |
-| Google Search Console | Not connected | Free | Needs adding the Search Console API to the Apps Script project and approving `webmasters.readonly`; ask Claude to add it. |
+| Google Search Console | Site verified 23 Oct 2026 (URL prefix https://www.apvillasandresorts.in/, via GA4 + domain provider); sitemap read by Google | Free | Founder OS → SEO & marketing reads it on the server (FoSearch.gs) once the Apps Script manifest has `webmasters.readonly` and the owner approves it. Feeds opportunities, keyword positions (daily) and the advisor summary. |
 
 ## One-time steps for the founder
 1. Portal → Settings → Automation → **Create key**, copy it.

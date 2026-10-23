@@ -13,6 +13,8 @@ const FO_MACHINE_ROUTES = {
   'f.m.report.upload': b => foReportUpload_(b),
   'f.m.ga4': b => foGa4Api_(b),
   'f.m.summary': b => foMachineSummary_(b),
+  'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
+  'f.m.seo.done': b => foSeoTopicDone_(b),
 };
 
 // ---------------------------------------------------------------- automation key ----------------
@@ -134,5 +136,7 @@ function foMachineSummary_() {
   const fwd = M.compute(D, today, M.addDays(today, 29)); out.next_30_on_books = { occupancy: fwd.occupancy, nights: fwd.occupied_nights, available: fwd.available_nights };
   out.pricing_next_30 = D.properties.map(p => { const r = FoInsights.pricing(D, p.property_id, today, 30); return r ? { villa: p.name, avg: r.summary.avg && Math.round(r.summary.avg), min: r.summary.min, max: r.summary.max, open_nights: r.summary.open_nights } : null; }).filter(Boolean);
   out.competitors = D.competitors.length; out.market_rates = D.market_rates.length; out.latest_market_rate = D.market_rates.map(r => r.observed_at).sort().pop() || null;
+  try { out.search = foSearchSummary_(today); } catch (e) { out.search = { connected: false, reason: String(e.message || e).slice(0, 160) }; }
+  out.seo = { keywords: D.seo_keywords.length, topics_queued: D.seo_topics.filter(t => t.status === 'queued').length, campaigns: D.campaigns.map(c => ({ name: c.name, channel: c.channel, status: c.status, budget: c.budget, spent: c.spent })) };
   return { summary: out };
 }
