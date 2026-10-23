@@ -344,6 +344,14 @@
       "intent": "informational",
       "cluster": "festivals",
       "status": "published"
+    },
+    {
+      "slug": "diwali-holiday-trip-ujjain-omkareshwar",
+      "title": "Diwali Holiday Trip: Ujjain and Omkareshwar Itinerary (2026)",
+      "keyword": "diwali holiday trip ujjain omkareshwar",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "published"
     }
   ]
 }
