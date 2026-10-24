@@ -181,7 +181,7 @@ const sitemap = existsSync('sitemap.xml') ? readFileSync('sitemap.xml', 'utf8') 
 if (!sitemap.includes(`<loc>${SITE}/blog/${slug}.html</loc>`)) fail('sitemap.xml does not list the new post (run node scripts/build-sitemap.mjs)');
 
 // --- report
-const summary = { slug, title: title.replace(/ — AP Villas Journal$/, ''), keyword: same[0]?.keyword ?? '', words, h2: h2s, sources: externalSources, related, errors, warnings };
+const summary = { slug, title: title.replace(/ (— AP Villas Journal|\| AP Villas)$/, ''), keyword: same[0]?.keyword ?? '', words, h2: h2s, sources: externalSources, related, errors, warnings };
 if (summaryPath) writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 for (const w of warnings) console.log(`⚠ ${w}`);
 // Hindi narration (Listen button): required, and it must line up with the page blocks

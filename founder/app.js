@@ -54,7 +54,7 @@
 
   // ------------------------------------------------------------ API ------------------------------------------------------------
   // Every call: a time limit (so nothing can hang forever), one automatic retry for read-only calls, and a progress bar.
-  var READS = { 'f.data': 1, 'f.ga4': 1, 'f.report.get': 1, 'f.booking.history': 1, 'f.sessions': 1, 'f.audit': 1 }, inFlight = 0;
+  var READS = { 'f.data': 1, 'f.health': 1, 'f.ga4': 1, 'f.gsc': 1, 'f.campaign.report': 1, 'f.report.get': 1, 'f.booking.history': 1, 'f.sessions': 1, 'f.audit': 1 }, inFlight = 0;
   function busyBar(d) {
     inFlight = Math.max(0, inFlight + d);
     var b = document.getElementById('fo-busy');
@@ -172,6 +172,7 @@
     { id: 'properties', label: 'Property Performance', ic: 'home' },
     { id: 'guests', label: 'Guest Intelligence', ic: 'guest' },
     { id: 'website', label: 'Website Analytics', ic: 'web' },
+    { id: 'seo', label: 'SEO & Marketing', ic: 'search' },
     { id: 'trends', label: 'Trends & Events', ic: 'trend' },
     { id: 'forecast', label: 'Forecasting & Scenarios', ic: 'forecast' },
     { id: 'studio', label: 'Analytics Studio', ic: 'studio' },
@@ -872,6 +873,7 @@
         ['OTA exports (CSV)', 'on', 'Booking management → Import', 'Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda. Re-imports never duplicate. OTA live APIs are partner-only, so they are not connected.']]],
       ['Website & demand', [
         ['Google Analytics 4 (server-side)', ga && ga.connected ? 'on' : ga && !ga.connected ? 'off' : 'part', ga ? (ga.connected ? 'Connected · live site only' : ga.reason) : 'Open Website analytics to check', 'Traffic, sources, booking-intent funnel; daily traffic-growth signal for pricing.'],
+        ['Google Search Console', S.gsc && S.gsc.connected ? 'on' : S.gsc ? 'off' : 'part', S.gsc ? (S.gsc.connected ? 'Connected · ' + S.gsc.site : S.gsc.reason) : 'Site verified on 23 Oct 2026. Open SEO & marketing to check the connection', 'Google searches, clicks and positions; opportunities; keyword positions every morning. Needs the one-time "View Search Console data" permission in Apps Script.'],
         ['Demand signals', (S.data.demand_signals || []).length ? 'on' : 'part', (S.data.demand_signals || []).length + ' signals', 'Website traffic growth (daily) and search/news signals from the research job.']]],
       ['Market intelligence', [
         ['Automation key', a.active ? 'on' : 'off', a.active ? 'Active · last used ' + (a.last_used ? ago(a.last_used) : 'never') : 'Not set: Settings → Automation', 'Lets the research job send market data and reports.'],
@@ -881,7 +883,19 @@
         ['Reports', 'on', 'Archived as HTML + PDF in Drive', 'Daily/weekly/monthly/quarterly/annual and monthly market reports. Email only for types you choose.'],
         ['Data store', 'on', 'Private Google Sheet', 'All Founder OS data; never published.']]],
     ];
-    page.innerHTML = hello('Integrations & automation', 'What is connected, what runs on its own, and what still needs you.') + items.map(function (g) { return '<h3 style="margin:18px 2px 8px">' + esc(g[0]) + '</h3><div class="fo-grid fo-grid--2">' + g[1].map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>'; }).join('');
+    page.innerHTML = hello('Integrations & automation', 'What is connected, what runs on its own, and what still needs you.') + '<div class="fo-card" id="health" style="margin-bottom:6px"><h3>System health <small>every connection and job, tested live</small><span class="fo-card__tools"><button class="btn btn--sm" id="health-run">Check again</button></span></h3><div id="health-b"><div class="fo-loading"><div class="fo-spin"></div><div>Testing every connection…</div></div></div></div>' + items.map(function (g) { return '<h3 style="margin:18px 2px 8px">' + esc(g[0]) + '</h3><div class="fo-grid fo-grid--2">' + g[1].map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>'; }).join('');
+    function health(refresh) {
+      var hb = $('#health-b'); if (!hb) return;
+      api('f.health', { refresh: !!refresh }).then(function (j) {
+        hb = $('#health-b'); if (!hb) return;
+        if (!j.ok) { hb.innerHTML = '<div class="fo-empty">' + esc(j.error) + '</div>'; return; }
+        var h = j.health, pill = { ok: ['on', 'OK'], warn: ['part', 'Check'], fail: ['off', 'Problem'] };
+        hb.innerHTML = '<p style="margin:0 0 10px"><b>' + h.summary.ok + ' OK</b> · ' + h.summary.warn + ' to check · ' + h.summary.fail + ' problem' + (h.summary.fail === 1 ? '' : 's') + ' <span class="fo-hint">· tested ' + esc(when(h.at)) + ' in ' + Math.round(h.ms / 100) / 10 + ' s</span></p>' +
+          '<div class="fo-tablewrap"><table class="fo-table"><thead><tr><th>Area</th><th>Check</th><th>Status</th><th>Detail</th><th>What to do</th></tr></thead><tbody>' +
+          h.checks.slice().sort(function (a, b) { var o = { fail: 0, warn: 1, ok: 2 }; return o[a.status] - o[b.status]; }).map(function (c) { return '<tr><td>' + esc(c.area) + '</td><td><b>' + esc(c.name) + '</b></td><td><span class="fo-status ' + pill[c.status][0] + '">' + pill[c.status][1] + '</span></td><td><small>' + esc(c.detail) + '</small></td><td><small>' + esc(c.fix || '') + '</small></td></tr>'; }).join('') + '</tbody></table></div>';
+      });
+    }
+    health(false); $('#health-run').onclick = function () { $('#health-b').innerHTML = '<div class="fo-loading"><div class="fo-spin"></div><div>Testing every connection…</div></div>'; health(true); };
   }
 
   // ------------------------------------------------------------ Settings & security ------------------------------------------------------------

@@ -226,6 +226,14 @@
       "status": "published"
     },
     {
+      "slug": "hari-har-milan-ujjain-2026",
+      "title": "Hari Har Milan Ujjain 2026: Date, Procession and Family Tips",
+      "keyword": "hari har milan ujjain 2026",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
+    },
+    {
       "slug": "mahashivratri-in-ujjain",
       "title": "Mahashivratri in Ujjain: Crowds, Darshan and Where to Stay",
       "keyword": "mahashivratri ujjain",
@@ -333,6 +341,30 @@
       "slug": "diwali-in-ujjain-2026",
       "title": "Diwali in Ujjain 2026: Mahakal Darshan, Dates and Where to Stay",
       "keyword": "diwali in ujjain 2026",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
+    },
+    {
+      "slug": "mahakaleshwar-diwali-2026",
+      "title": "Mahakaleshwar Diwali 2026: Rituals, Darshan and Crowd Tips",
+      "keyword": "mahakaleshwar diwali 2026",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
+    },
+    {
+      "slug": "diwali-holiday-trip-ujjain-omkareshwar",
+      "title": "Diwali Holiday Trip: Ujjain and Omkareshwar Itinerary (2026)",
+      "keyword": "diwali holiday trip ujjain omkareshwar",
+      "intent": "informational",
+      "cluster": "itineraries",
+      "status": "published"
+    },
+    {
+      "slug": "gajalakshmi-temple-ujjain-diwali",
+      "title": "Gajalakshmi Temple Ujjain Diwali 2026: Lakshmi and Ganesh Temples",
+      "keyword": "gajalakshmi temple ujjain diwali",
       "intent": "informational",
       "cluster": "festivals",
       "status": "published"

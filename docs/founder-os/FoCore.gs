@@ -57,6 +57,11 @@ const FO_TABS = {
   Competitors: ['competitor_id', 'name', 'type', 'area', 'distance_km', 'bedrooms', 'sleeps', 'segment', 'website', 'listing_urls', 'positioning', 'amenities', 'review_themes', 'notes', 'last_checked', 'source_url', 'created_at', 'updated_at', 'updated_by'],
   MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at'],
   DemandSignals: ['signal_id', 'date', 'source', 'metric', 'keyword', 'value', 'period', 'growth_pct', 'source_url', 'notes', 'collected_by', 'created_at'],
+  // SEO & marketing (FoSearch.gs)
+  SeoKeywords: ['keyword_id', 'keyword', 'target_page', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
+  SeoRanks: ['date', 'keyword', 'clicks', 'impressions', 'ctr', 'position', 'period', 'created_at'],
+  SeoTopics: ['topic_id', 'title', 'keyword', 'intent', 'priority', 'notes', 'status', 'source', 'requested_by', 'slug', 'started_at', 'created_at', 'updated_at', 'updated_by'],
+  Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
   Jobs: ['job', 'started', 'finished', 'status', 'detail'],
 };
 
@@ -362,6 +367,12 @@ function foRoutes_() {
     'f.market.save': [foMarketSave_, 'manager'], 'f.market.delete': [foMarketDelete_, 'manager'], 'f.market.import': [(b, u) => foMarketImport_(b, u.email), 'manager'],
     'f.pricing.settings': [foPricingSettingsSave_, 'founder'],
     'f.automation.create': [foAutomationCreate_, 'founder'], 'f.automation.revoke': [foAutomationRevoke_, 'founder'],
+    // SEO & marketing (FoSearch.gs)
+    'f.health': [foHealth_, 'viewer'],
+    'f.gsc': [foGscApi_, 'viewer'], 'f.seo.audit': [foSeoAudit_, 'manager'], 'f.campaign.report': [foCampaignReport_, 'viewer'],
+    'f.seo.keyword.save': [foSeoKeywordSave_, 'manager'], 'f.seo.keyword.delete': [(b, u) => foDelete_('SeoKeywords', 'keyword_id', b.id, u), 'manager'],
+    'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],
+    'f.campaign.save': [foCampaignSave_, 'manager'], 'f.campaign.delete': [(b, u) => foDelete_('Campaigns', 'campaign_id', b.id, u), 'manager'],
   };
 }
 function foApi_(b) {

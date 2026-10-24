@@ -18,7 +18,27 @@ const SAMPLE = [   // fictional guests, for the local preview only
   ['2026-10-13', 'ECI-S8', 'Direct (WhatsApp / phone / website)', '', 'AP Suite', '2026-10-20', '2026-10-22', 2, 0, 'Test entry', '9999999999', '', '', 'Fully paid', 8400, 8400, 0, 'UPI', ''],
 ].map(r => ({ 'Submitted at': r[0] + 'T10:00:00', Reference: r[1], 'Booked through': r[2], 'Booking ID': r[3], Villa: r[4], 'Check-in': r[5], 'Check-out': r[6], Adults: r[7], Children: r[8], 'Main guest': r[9], Mobile: r[10], City: r[11], State: r[12], 'Payment status': r[13], 'Total ₹': r[14], 'Amount paid ₹': r[15], 'Balance due ₹': r[16], 'Paid through': r[17], 'Found us via': r[18], 'Paid on': r[0] }));
 
-const env = makeEnv({ checkins: SAMPLE });
+// sample Search Console answers (shape of the real API) and a tiny sitemap, so the SEO pages can be previewed locally
+const GSC_Q = [['hari har milan ujjain 2026 date', 2, 71, 8.2], ['ap villas', 3, 7, 1.2], ['hari har milan 2026 date', 0, 37, 9.1], ['kartik mela ujjain 2026 date', 0, 9, 11], ['mahakal evening aarti time', 0, 40, 14], ['महाकाल दर्शन टाइमिंग', 0, 7, 12], ['villa near mahakal', 1, 25, 6.5], ['ujjain family stay', 0, 12, 18]];
+function devHttp(r) {
+  if (/searchconsole/.test(r.url)) {
+    const q = JSON.parse(r.payload), d = (q.dimensions || []).join(','), prev = q.endDate < '2026-10-01';
+    const day = i => { const t = new Date(Date.parse(q.endDate) - i * 864e5).toISOString().slice(0, 10); return t; };
+    const rows = d === '' ? [{ keys: [], clicks: prev ? 40 : 71, impressions: prev ? 800 : 1270, ctr: prev ? 0.05 : 0.056, position: prev ? 9.4 : 7.5 }]
+      : d === 'date' ? Array.from({ length: 20 }, (_, i) => ({ keys: [day(i)], clicks: 1 + (i * 7) % 9, impressions: 30 + (i * 13) % 70, ctr: 0.05, position: 7 + (i % 4) }))
+      : d === 'query' ? GSC_Q.map(x => ({ keys: [x[0]], clicks: x[1], impressions: x[2], ctr: x[1] / x[2], position: x[3] }))
+      : d === 'page' ? [['/blog/ujjain-in-november-kartik.html', 3, 310, 6.1], ['/', 30, 220, 3.2], ['/villas.html', 12, 160, 5.4], ['/blog/mahakaleshwar-darshan-timings.html', 4, 140, 8.8]].map(x => ({ keys: ['https://www.apvillasandresorts.in' + x[0]], clicks: x[1], impressions: x[2], ctr: x[1] / x[2], position: x[3] }))
+      : d === 'device' ? [{ keys: ['MOBILE'], clicks: 58, impressions: 1000, ctr: 0.058, position: 7 }, { keys: ['DESKTOP'], clicks: 13, impressions: 270, ctr: 0.048, position: 8.5 }]
+      : d === 'country' ? [{ keys: ['ind'], clicks: 70, impressions: 1240, ctr: 0.056, position: 7.4 }]
+      : d === 'query,page' ? [{ keys: ['hari har milan ujjain 2026 date', 'https://www.apvillasandresorts.in/blog/ujjain-in-november-kartik.html'], clicks: 2, impressions: 71, ctr: 0.028, position: 8.2 }] : [];
+    return { code: 200, body: JSON.stringify({ rows }) };
+  }
+  if (/sitemap\.xml/.test(r.url)) return { code: 200, body: '<urlset>' + ['', 'villas.html', 'blog.html', 'contact.html'].map(p => '<url><loc>https://www.apvillasandresorts.in/' + p + '</loc></url>').join('') + '</urlset>' };
+  if (/robots\.txt/.test(r.url)) return { code: 200, body: 'Sitemap: https://www.apvillasandresorts.in/sitemap.xml' };
+  if (/apvillasandresorts\.in/.test(r.url)) { const p = r.url.replace(/^https:\/\/www\.apvillasandresorts\.in\//, ''); try { return { code: 200, body: readFileSync(new URL('../../' + (p || 'index.html'), import.meta.url), 'utf8') }; } catch (e) { return { code: 404, body: '' }; } }
+  return { code: 404, body: '' };
+}
+const env = makeEnv({ checkins: SAMPLE, http: devHttp });
 env.fo.foSetup();
 // ~7 months of generated SAMPLE OTA history (local preview only) so trends, forecasts and finance views have data
 {
