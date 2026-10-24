@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/checkin",
+      "destination": "/checkin.html"
+    }
+  ],
   "headers": [
     {
       "source": "/founder/(.*)",
