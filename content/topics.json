@@ -255,7 +255,7 @@
       "keyword": "ujjain in winter",
       "intent": "informational",
       "cluster": "festivals",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "ujjain-in-summer",

@@ -1240,6 +1240,45 @@
       "license": "CC BY 3.0",
       "license_url": "https://creativecommons.org/licenses/by/3.0",
       "credit": "Photo: Gyanendra_Singh_Chau… / Wikimedia Commons, CC BY 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-in-winter/bank-of-shipra-with-devotees-ram-ghat-ujjain-on-a-bright-sun.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "ram ghat",
+        "shipra",
+        "winter",
+        "devotees"
+      ],
+      "alt": "Devotees on the bank of the Shipra River at Ram Ghat, Ujjain, on a sunny December day in 2023, with a temple on the opposite bank",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Bank_of_Shipra_with_Devotees,_Ram_Ghat_,_Ujjain_on_a_Bright_Sunny_day.jpg",
+      "author": "Suryansharma",
+      "license": "CC0",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "credit": "Photo: Suryansharma / Wikimedia Commons, CC0"
+    },
+    {
+      "path": "images/blog/ujjain-in-winter/ram-ghat-ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "ram ghat",
+        "shipra",
+        "ghat"
+      ],
+      "alt": "Ram Ghat on the Shipra River, Ujjain, photographed in December 2013",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ram_Ghat,_Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }
