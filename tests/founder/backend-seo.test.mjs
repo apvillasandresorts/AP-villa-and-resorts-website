@@ -108,3 +108,20 @@ test('advisor summary carries search figures and SEO counts, still no guest data
   assert.ok(s.search.striking.length >= 1);
   assert.equal(s.seo.topics_queued, 0);
 });
+
+test('system health: every check reported in plain words, problems first-class, cached, viewers allowed', async () => {
+  const { env, token } = await ready(gscHandler);
+  const h = env.api({ action: 'f.health', token, refresh: true }).health;
+  const by = n => h.checks.find(c => c.name.startsWith(n));
+  assert.equal(by('Founder OS data sheet').status, 'ok');
+  assert.equal(by('Search Console').status, 'ok'); assert.match(by('Search Console').detail, /clicks from/);
+  assert.equal(by('Google Analytics 4').status, 'fail', 'GA4 not connected in the test environment: reported, not hidden');
+  assert.equal(by('Hourly trigger').status, 'fail'); assert.match(by('Hourly trigger').fix, /foSetup/);
+  assert.equal(by('Automation key').status, 'warn');
+  assert.equal(h.summary.ok + h.summary.warn + h.summary.fail, h.checks.length);
+  const n = env.net.calls.length;
+  env.api({ action: 'f.health', token });
+  assert.equal(env.net.calls.length, n, 'cached for 10 minutes');
+  env.setUserRole('viewer');
+  assert.equal(env.api({ action: 'f.health', token }).ok, true);
+});

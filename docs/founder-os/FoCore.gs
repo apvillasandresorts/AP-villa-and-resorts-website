@@ -368,6 +368,7 @@ function foRoutes_() {
     'f.pricing.settings': [foPricingSettingsSave_, 'founder'],
     'f.automation.create': [foAutomationCreate_, 'founder'], 'f.automation.revoke': [foAutomationRevoke_, 'founder'],
     // SEO & marketing (FoSearch.gs)
+    'f.health': [foHealth_, 'viewer'],
     'f.gsc': [foGscApi_, 'viewer'], 'f.seo.audit': [foSeoAudit_, 'manager'], 'f.campaign.report': [foCampaignReport_, 'viewer'],
     'f.seo.keyword.save': [foSeoKeywordSave_, 'manager'], 'f.seo.keyword.delete': [(b, u) => foDelete_('SeoKeywords', 'keyword_id', b.id, u), 'manager'],
     'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],

@@ -203,3 +203,58 @@ function foSearchSummary_(today) {
   return { connected: true, from, to, totals: g.totals, previous: g.previous, top_queries: g.queries.slice(0, 25), top_pages: g.pages.slice(0, 15).map(p => ({ path: p.path, clicks: p.clicks, impressions: p.impressions, ctr: p.ctr, position: p.position })),
     striking: g.opportunities.striking.slice(0, 12), low_ctr: g.opportunities.low_ctr.slice(0, 8), devices: g.devices };
 }
+
+// ---------------------------------------------------------------- system health (one click: is everything connected and running?) ----------------
+/**
+ * Checks every moving part and says, in plain words, what is fine, what needs a look and what is broken:
+ * data sheet, e-check-in sync, hourly trigger, daily job, recent job failures, Google Analytics (and whether booking-intent
+ * events are marked as key events), Search Console, automation key, email quota and recent server errors. Cached 10 minutes.
+ */
+function foHealth_(b) {
+  const cacheKey = 'FO_HEALTH'; if (!(b && b.refresh)) { const hit = foCacheGet_(cacheKey); if (hit) return { health: hit }; }
+  const t0 = Date.now(), checks = [], today = foToday_(), now = Date.now();
+  const add = (area, name, status, detail, fix) => checks.push({ area, name, status, detail, fix: fix || '' });
+  const hoursSince = iso => iso ? (now - Date.parse(iso)) / 36e5 : Infinity;
+  const safe = (area, name, fn) => { try { fn(); } catch (e) { add(area, name, 'fail', String(e && e.message || e).slice(0, 200)); } };
+  safe('Data', 'Founder OS data sheet', () => { const n = foRows_('Bookings').length, g = foRows_('Guests').length; add('Data', 'Founder OS data sheet', 'ok', n + ' bookings and ' + g + ' guests readable'); });
+  safe('Data', 'E-check-in sync', () => {
+    const h = hoursSince(PropertiesService.getScriptProperties().getProperty('FO_LAST_SYNC'));
+    add('Data', 'E-check-in sync', h <= 2 ? 'ok' : h <= 26 ? 'warn' : 'fail', h === Infinity ? 'Never ran' : 'Last ran ' + Math.round(h * 10) / 10 + ' hours ago (runs every hour)', h > 2 ? 'Check that the hourly trigger exists (below) and that the last runs in Apps Script → Executions succeeded.' : '');
+  });
+  safe('Automation', 'Hourly trigger', () => {
+    const fns = ScriptApp.getProjectTriggers().map(t => t.getHandlerFunction());
+    add('Automation', 'Hourly trigger', fns.indexOf('foHourly') >= 0 ? 'ok' : 'fail', fns.length ? 'Triggers: ' + fns.join(', ') : 'No triggers found', fns.indexOf('foHourly') >= 0 ? '' : 'Run foSetup once in Apps Script to recreate it.');
+  });
+  safe('Automation', 'Daily job', () => {
+    const s = foSettings_(), hour = Number(Utilities.formatDate(new Date(), FO.TZ, 'H'));
+    add('Automation', 'Daily job (reports, snapshot, signals)', s.last_daily === today || hour < 8 ? 'ok' : s.last_daily === FoMetrics.addDays(today, -1) ? 'warn' : 'fail', 'Last completed: ' + (s.last_daily || 'never'));
+  });
+  safe('Automation', 'Recent job failures', () => {
+    const bad = foRows_('Jobs').filter(j => j.status === 'failed' && hoursSince(j.finished || j.started) <= 48);
+    const by = {}; bad.forEach(j => { by[j.job] = (by[j.job] || 0) + 1; });
+    add('Automation', 'Job failures (last 48 h)', bad.length ? 'warn' : 'ok', bad.length ? Object.keys(by).map(k => k + ' × ' + by[k]).join(', ') + ' · latest: ' + String(bad[bad.length - 1].detail || '').slice(0, 140) : 'None');
+  });
+  safe('Google', 'Google Analytics 4', () => {
+    const to = FoMetrics.addDays(today, -1), g = foGa4_(FoMetrics.addDays(to, -6), to);
+    if (!g.connected) { add('Google', 'Google Analytics 4', 'fail', g.reason); return; }
+    add('Google', 'Google Analytics 4', 'ok', (g.totals.sessions || 0) + ' sessions and ' + (g.totals.activeUsers || 0) + ' users in the last 7 days');
+    const intent = g.intent || 0, key = g.totals.keyEvents || 0;
+    add('Google', 'GA4 key events', key > 0 ? 'ok' : intent > 0 ? 'warn' : 'ok', key > 0 ? key + ' key events in 7 days' : intent > 0 ? intent + ' WhatsApp/call/enquiry actions happened but none is marked as a key event' : 'No booking-intent actions in the last 7 days',
+      key > 0 || !intent ? '' : 'GA4 → Admin → Events: mark whatsapp_click, phone_click, enquiry_form_submit, echeckin_submit and journal_subscribe as key events.');
+  });
+  safe('Google', 'Search Console', () => {
+    const to = FoMetrics.addDays(today, -2), g = foGsc_(FoMetrics.addDays(to, -6), to);
+    add('Google', 'Search Console', g.connected ? 'ok' : 'fail', g.connected ? g.totals.clicks + ' clicks from ' + g.totals.impressions + ' Google impressions (7 days)' : g.reason);
+  });
+  safe('Automation', 'Automation key', () => { const a = foAutomationStatus_(); add('Automation', 'Automation key (research job, blog topics, advisor figures)', a.active ? 'ok' : 'warn', a.active ? 'Active · last used ' + (a.last_used || 'never') : 'Not created yet', a.active ? '' : 'Settings → Automation → Create key, then save it as the GitHub secret FOUNDER_OS_KEY.'); });
+  safe('Email', 'Email quota', () => { const q = MailApp.getRemainingDailyQuota(); add('Email', 'Email quota left today', q > 20 ? 'ok' : q > 0 ? 'warn' : 'fail', q + ' emails (Google free limit: 100 a day)'); });
+  safe('Server', 'Server errors', () => {
+    const errs = foRows_('Audit').filter(a => a.result === 'error' && hoursSince(a.ts) <= 24), by = {};
+    errs.forEach(a => { by[a.action] = (by[a.action] || 0) + 1; });
+    add('Server', 'Errors logged (last 24 h)', !errs.length ? 'ok' : errs.length < 5 ? 'warn' : 'fail', errs.length ? Object.keys(by).map(k => k + ' × ' + by[k]).join(', ') + ' · latest: ' + String(errs[errs.length - 1].detail || '').slice(0, 140) : 'None');
+  });
+  const count = s => checks.filter(c => c.status === s).length;
+  const out = { at: foNow_(), ms: Date.now() - t0, checks, summary: { ok: count('ok'), warn: count('warn'), fail: count('fail') } };
+  foCachePut_(cacheKey, out, 600);
+  return { health: out };
+}
