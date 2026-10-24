@@ -258,3 +258,10 @@ function foHealth_(b) {
   foCachePut_(cacheKey, out, 600);
   return { health: out };
 }
+/** Run from the Apps Script editor (▶ Run) to print the system health check to the execution log. */
+function foHealthCheck() {
+  const h = foHealth_({ refresh: true }).health;
+  h.checks.forEach(c => console.log((c.status === 'ok' ? 'OK      ' : c.status === 'warn' ? 'CHECK   ' : 'PROBLEM ') + c.name + ': ' + c.detail + (c.fix ? ' → ' + c.fix : '')));
+  console.log(h.summary.ok + ' OK, ' + h.summary.warn + ' to check, ' + h.summary.fail + ' problems');
+  return h.summary;
+}
