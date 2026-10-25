@@ -12,7 +12,11 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
    The repo is public, so the job only ever sees public market data; comparison with our own figures happens in the portal.
 2. **Founder OS** stores it (Competitors, MarketRates, DemandSignals tabs), adds a daily GA4 traffic-growth signal, and the pricing
    engine (`founder/insights.js` → `pricing`) turns bookings + pace + season + events + signals + market into reference rates.
-3. **Local Claude Code** (this Mac): `/market-scan [report]` runs the same research with the Free Search MCP; `/research`,
+3. **Live Pricing Desk feeds:** `signals-auto.yml` every 6 h (MET Norway weather, Google public holidays, Hindu calendar from
+   astronomy-engine; no AI, no scraping) and `pricing-intel.yml` daily 06:30 IST (Claude: public news signals, Mon/Thu deep run
+   with StayVista public prices, and the 30-day Outlook in Reports). Airbnb, Booking.com, MakeMyTrip, Google Hotels and IRCTC are never
+   fetched by the jobs: competitor prices come from the owner's Rate check / extranet CSV, or `/pricing-scan` run by the owner on this Mac.
+4. **Local Claude Code** (this Mac): `/market-scan [report]` runs the same research with the Free Search MCP; `/research`,
    `/analyse-bookings`, `/analyse-ga4`, `/exec-summary` for ad-hoc work. Output in `research/` (git-ignored, never deployed).
 
 ## Components
@@ -25,13 +29,19 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
 | Trends MCP (optional) | Not installed | Free tier 100 requests/month, no card, pauses at the limit | Needs your account: `read -s "TRENDS_KEY?Key: "; claude mcp add --scope user --transport http trends-mcp https://api.trendsmcp.ai/mcp --header "Authorization: Bearer $TRENDS_KEY"; unset TRENDS_KEY` |
 | Exa / Tavily MCP (optional) | Not installed | Free tiers need an account + API key | Not needed: Free Search covers keyless search and extraction. Add only if Free Search coverage proves too thin. |
 | Google Analytics MCP (local) | Removed | — | Redundant: the Founder OS already reads GA4 on the server (use /analyse-ga4). |
+| MET Norway Locationforecast | Used by signals-auto | Free, CC BY 4.0 (commercial use with credit) | Open-Meteo rejected: its free tier is non-commercial only |
+| Google public India holidays (iCal) | Used by signals-auto | Free public feed | National holidays + long weekends; state holidays come from the news job |
+| astronomy-engine 2.1.19 | Used by signals-auto | MIT | Tithi at sunrise in Ujjain; festival dates checked against published panchang |
 | Google Search Console | Site verified 23 Oct 2026 (URL prefix https://www.apvillasandresorts.in/, via GA4 + domain provider); sitemap read by Google | Free | Founder OS → SEO & marketing reads it on the server (FoSearch.gs) once the Apps Script manifest has `webmasters.readonly` and the owner approves it. Feeds opportunities, keyword positions (daily) and the advisor summary. |
 
 ## One-time steps for the founder
 1. Portal → Settings → Automation → **Create key**, copy it.
 2. Terminal: `gh secret set FOUNDER_OS_KEY --repo apvillasandresorts/AP-villa-and-resorts-website` (paste when asked; hidden).
 3. Optional, for /market-scan on this Mac: `mkdir -p ~/.config/ap-villas && read -s "K?Key: " && printf %s "$K" > ~/.config/ap-villas/founder-os-key && chmod 600 ~/.config/ap-villas/founder-os-key && unset K`
-4. GitHub → Actions → "Market intelligence" → Run workflow (tick "full report") to try it at once.
+4. GitHub → Actions → "Market intelligence" → Run workflow (tick "full report") to try it at once. The same key also runs
+   "Pricing signals (automatic)" and "Pricing intelligence".
+5. Optional, Trends in the daily job: after creating the free Trends MCP account, `gh secret set TRENDS_MCP_KEY --repo apvillasandresorts/AP-villa-and-resorts-website`.
+6. Twice a week (2 minutes): portal → Pricing & market → **Rate check**: type the prices and sold-outs you see for the comp set.
 
 ## Monthly market-intelligence routine (automatic)
 First Monday 07:30 IST: report generated and archived (Reports → Market Intelligence Report). Then, in the portal:

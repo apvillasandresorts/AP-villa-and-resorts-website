@@ -1,0 +1,85 @@
+# Live Pricing Desk: news-based demand signals and the morning 30-day market outlook (Claude subscription token, no paid APIs).
+# Daily light run 06:30 IST (next 14 days); Monday/Thursday deep run (next 90 days + StayVista + events, footfall, vacations).
+# PUBLIC data only: this repo is public, so the job never sees our bookings, prices or guests. Competitor prices from Airbnb,
+# Booking.com and MakeMyTrip are NOT collected here (their terms forbid automated access): the owner enters them via Rate check.
+# Needs secrets CLAUDE_CODE_OAUTH_TOKEN (already used by the blog) and FOUNDER_OS_KEY. Optional TRENDS_MCP_KEY (free tier) for search trends.
+name: Pricing intelligence
+
+on:
+  workflow_dispatch:
+    inputs:
+      deep:
+        description: "Deep run (90 days, events, footfall, vacations, StayVista)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 1 * * *"   # 06:30 IST daily
+
+concurrency:
+  group: pricing-intel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  INTEL_MODEL: ${{ vars.INTEL_MODEL || 'sonnet' }}
+
+jobs:
+  intel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Plan
+        id: plan
+        env:
+          HAS_KEY: ${{ secrets.FOUNDER_OS_KEY != '' }}
+          HAS_TRENDS: ${{ secrets.TRENDS_MCP_KEY != '' }}
+          MANUAL_DEEP: ${{ github.event.inputs.deep }}
+        run: |
+          echo "today=$(TZ=Asia/Kolkata date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          dow=$(TZ=Asia/Kolkata date +%u); deep=false
+          if [ "$MANUAL_DEEP" = "true" ] || [ "$dow" = "1" ] || [ "$dow" = "4" ]; then deep=true; fi
+          echo "deep=$deep" >> "$GITHUB_OUTPUT"
+          echo "trends=$HAS_TRENDS" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_KEY" != "true" ]; then echo "::warning::FOUNDER_OS_KEY not set. Skipping."; echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+          mkdir -p research
+      - name: MCP config (Trends free tier, only if the key exists)
+        if: steps.plan.outputs.skip != 'true' && steps.plan.outputs.trends == 'true'
+        env:
+          TRENDS_MCP_KEY: ${{ secrets.TRENDS_MCP_KEY }}
+        run: |
+          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP + "/mcp.json", JSON.stringify({ mcpServers: { trends: { type: "http", url: "https://api.trendsmcp.ai/mcp", headers: { Authorization: "Bearer " + process.env.TRENDS_MCP_KEY } } } }))'
+      - name: Research with Claude
+        if: steps.plan.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Follow content/pricing-intel-instructions.md and content/research-rules.md exactly.
+            Today's date (IST): ${{ steps.plan.outputs.today }}
+            DEEP: "${{ steps.plan.outputs.deep }}"
+            TRENDS_AVAILABLE: "${{ steps.plan.outputs.trends }}"
+            Write research/signals.json and research/outlook.html. Finish only when `node scripts/market-validate.mjs research/signals.json` prints OK.
+            Do not run git. Do not print or look for any secret or key.
+          claude_args: >-
+            --model ${{ env.INTEL_MODEL }}
+            --max-turns ${{ steps.plan.outputs.deep == 'true' && 60 || 30 }}
+            ${{ steps.plan.outputs.trends == 'true' && format('--mcp-config {0}/mcp.json', runner.temp) || '' }}
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node scripts/market-validate.mjs:*),mcp__trends"
+      - name: Validate
+        if: steps.plan.outputs.skip != 'true'
+        run: node scripts/market-validate.mjs research/signals.json
+      - name: Send to the Founder OS
+        if: steps.plan.outputs.skip != 'true'
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+        run: |
+          node scripts/push-market.mjs --signals research/signals.json
+          [ -f research/outlook.html ] && node scripts/push-market.mjs --outlook research/outlook.html || true
+          if [ -f research/signals.json ] && node -e 'process.exit((require("./research/signals.json").rates||[]).length?0:1)'; then node scripts/push-market.mjs research/signals.json; fi

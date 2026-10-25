@@ -55,12 +55,18 @@ const FO_TABS = {
   Settings: ['key', 'value', 'updated_at'],
   // market intelligence + pricing (FoMarket.gs)
   Competitors: ['competitor_id', 'name', 'type', 'area', 'distance_km', 'bedrooms', 'sleeps', 'segment', 'website', 'listing_urls', 'positioning', 'amenities', 'review_themes', 'notes', 'last_checked', 'source_url', 'created_at', 'updated_at', 'updated_by'],
-  MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at'],
+  MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at', 'availability', 'group_size', 'target_property', 'platform'],
   DemandSignals: ['signal_id', 'date', 'source', 'metric', 'keyword', 'value', 'period', 'growth_pct', 'source_url', 'notes', 'collected_by', 'created_at'],
   // SEO & marketing (FoSearch.gs)
   SeoKeywords: ['keyword_id', 'keyword', 'target_page', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
   SeoRanks: ['date', 'keyword', 'clicks', 'impressions', 'ctr', 'position', 'period', 'created_at'],
   SeoTopics: ['topic_id', 'title', 'keyword', 'intent', 'priority', 'notes', 'status', 'source', 'requested_by', 'slug', 'started_at', 'created_at', 'updated_at', 'updated_by'],
+  // Live Pricing Desk (FoSignals.gs + FoDesk.gs)
+  Signals: ['signal_row', 'signal_id', 'property', 'for_date', 'raw_value', 'index', 'source_url', 'fetched_at', 'status', 'run_id', 'notes', 'imported_by'],
+  CompSet: ['property', 'key', 'name', 'competitor_id', 'platforms', 'score', 'hotel', 'why', 'in_set', 'since', 'challenger_weeks', 'pinned', 'updated_at'],
+  CompChanges: ['change_id', 'date', 'property', 'action', 'key', 'name', 'score', 'reason'],
+  Recommendations: ['rec_id', 'computed_at', 'property', 'for_date', 'price', 'low', 'high', 'confidence', 'channels', 'factors', 'inputs', 'run_id'],
+  PriceDecisions: ['decision_id', 'decided_at', 'decided_by', 'property', 'for_date', 'channel', 'recommended', 'set_price', 'accepted', 'reason', 'slot'],
   Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
   Jobs: ['job', 'started', 'finished', 'status', 'detail'],
 };
@@ -89,6 +95,11 @@ function foHourly() {
   const lock = LockService.getScriptLock(); if (!lock.tryLock(20000)) return;
   try { foSyncCheckins_('schedule'); foFlush_(); } finally { lock.releaseLock(); }
   if (typeof foDailyIfDue_ === 'function') { foDailyIfDue_(); foFlush_(); }   // snapshot, scheduled reports, chart refresh: once a day after 07:00 IST
+  if (typeof foDeskHourly_ === 'function') {   // Live Pricing Desk: recompute, alerts, 07:00 brief (failures are logged, never block the sync)
+    try { const r = foDeskHourly_(); if (/brief sent/.test(r)) foAppend_('Jobs', { job: 'desk', started: foNow_(), finished: foNow_(), status: 'ok', detail: r }); }
+    catch (e) { foAppend_('Jobs', { job: 'desk', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e && e.message || e).slice(0, 900) }); }
+    foFlush_();
+  }
 }
 
 function foSeedReference_() {
@@ -369,6 +380,11 @@ function foRoutes_() {
     'f.automation.create': [foAutomationCreate_, 'founder'], 'f.automation.revoke': [foAutomationRevoke_, 'founder'],
     // SEO & marketing (FoSearch.gs)
     'f.health': [foHealth_, 'viewer'],
+    // Live Pricing Desk (FoSignals.gs)
+    'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
+    'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],
+    'f.pricing.decide': [foDeskDecide_, 'manager'], 'f.ratecheck.save': [foRateCheckSave_, 'manager'], 'f.signals.import': [(b, u) => foSignalsImport_(b, u.email), 'manager'],
+    'f.comp.rerank': [(b, u) => ({ result: foCompRerank_(foToday_()) }), 'manager'], 'f.desk.settings': [foDeskSettingsSave_, 'founder'],
     'f.gsc': [foGscApi_, 'viewer'], 'f.seo.audit': [foSeoAudit_, 'manager'], 'f.campaign.report': [foCampaignReport_, 'viewer'],
     'f.seo.keyword.save': [foSeoKeywordSave_, 'manager'], 'f.seo.keyword.delete': [(b, u) => foDelete_('SeoKeywords', 'keyword_id', b.id, u), 'manager'],
     'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],

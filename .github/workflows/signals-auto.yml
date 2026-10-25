@@ -1,0 +1,38 @@
+# Live Pricing Desk: code-only signals (no Claude, no paid services). Weather every 6 hours; holidays and the Hindu calendar each run.
+# Sources: MET Norway (CC BY 4.0, commercial use allowed with credit), Google's public India holidays calendar, astronomy-engine (MIT).
+# Sends public signals only, with the automation key (secret FOUNDER_OS_KEY); skips with a warning until the key exists.
+name: Pricing signals (automatic)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 0,6,12,18 * * *"   # 05:45, 11:45, 17:45, 23:45 IST
+
+concurrency:
+  group: signals-auto
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the astronomy library (MIT)
+        run: npm --prefix scripts install --no-audit --no-fund --silent astronomy-engine@2.1.19
+      - name: Collect weather, holidays and calendar
+        run: node scripts/signals/run.mjs
+      - name: Validate
+        run: node scripts/market-validate.mjs research/signals-auto.json
+      - name: Send to the Founder OS
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+        run: |
+          if [ -z "$FOUNDER_OS_KEY" ]; then echo "::warning::FOUNDER_OS_KEY not set (portal: Settings → Automation). Signals collected but not sent."; exit 0; fi
+          node scripts/push-market.mjs --signals research/signals-auto.json

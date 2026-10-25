@@ -63,6 +63,24 @@ env.fo.foSetup();
   for (let i = 0; i < 40; i++) rates.push({ competitor: comp[i % 4], observed_at: addD('2026-10-16', -(i % 20)), stay_date: addD('2026-10-20', i * 2), nights: 1, unit_type: i % 2 ? '3BHK villa' : '2BHK apartment', bedrooms: i % 2 ? 3 : 2, price_per_night: 4800 + (i % 7) * 450, source_type: i % 3 ? 'ota' : 'website', source_url: 'https://example.com/sample-' + i, confidence: 'medium' });
   env.api({ action: 'f.market.import', token: tok, competitors: comp.map((n, i) => ({ name: n, type: ['hotel', 'villa', 'serviced apartment', 'boutique'][i], area: 'Sample area', distance_km: 0.5 + i, bedrooms: i === 1 ? 3 : 2, website: 'https://example.com/' + i, positioning: 'Sample positioning text', source_url: 'https://example.com/' + i })), rates,
     signals: [{ date: '2026-10-10', source: 'trends', metric: 'search_interest', keyword: 'ujjain', growth_pct: 30, source_url: 'https://example.com/trend' }] });
+  // fictional SAMPLE comp sets + prices/sold-outs for the next 30 nights, and live signals, for the Live Pricing Desk (local preview only)
+  env.clock.advance(Math.max(0, Date.now() - env.clock.now()));
+  const t0 = new Date(env.clock.now() + 330 * 6e4).toISOString().slice(0, 10);
+  const desk = [['Sample 2BHK Temple View', 'villa', 2, 0.6, 3900], ['Sample 2BHK Family Flat', 'serviced apartment', 2, 1.2, 3400], ['Sample 3BHK Garden Villa', 'villa', 3, 1.5, 6200], ['Sample 3BHK Haveli Stay', 'villa', 3, 0.9, 6900],
+    ['Sample 2BHK Homestay', 'homestay', 2, 2.1, 3100], ['Sample 3BHK Corner Villa', 'villa', 3, 2.6, 5600], ['Sample Hotel Shiv Darshan', 'hotel', '', 0.4, 2600], ['Sample Hotel Mahakal Residency', 'hotel', '', 0.7, 3100], ['Sample Hotel Kshipra Inn', 'hotel', '', 1.1, 2300]];
+  const drates = [];
+  desk.forEach(([n, , , , p], i) => { for (let k = 0; k < 30; k += 1 + (i % 3)) { const wk = [5, 6].includes(new Date(addD(t0, k) + 'T00:00:00Z').getUTCDay()); drates.push({ competitor: n, observed_at: addD(t0, -(k % 4)), stay_date: addD(t0, k), nights: 1, price_per_night: Math.round(p * (wk ? 1.25 : 1) * (1 + ((k * 7 + i) % 5 - 2) / 20)), source_type: 'ota', source_url: 'https://example.com/desk-' + i, confidence: 'high' }); } });
+  env.api({ action: 'f.market.import', token: (await env.login('local preview only phrase')), competitors: desk.map(([n, type, bd, km], i) => ({ name: n, type, bedrooms: bd, distance_km: km, sleeps: bd ? bd * 2 + 1 : 3, amenities: i % 2 ? 'kitchen, parking' : 'parking, breakfast', review_themes: 'rating ' + (4.4 + (i % 5) / 10).toFixed(1) + ' from ' + (12 + i * 9) + ' reviews', source_url: 'https://example.com/desk-' + i })), rates: drates });
+  const tok2 = await env.login('local preview only phrase');
+  [0, 1, 6].forEach(k => env.api({ action: 'f.ratecheck.save', token: tok2, property: 'rudrangan-suites', stay_date: addD(t0, k), entries: desk.slice(0, 5).map(([n], i) => (i + k) % 3 === 0 ? { competitor: n, sold_out: true, platform: 'Airbnb' } : null).filter(Boolean) }));
+  const { key } = env.api({ action: 'f.automation.create', token: tok2 });
+  let sig = [];
+  try { sig = JSON.parse(readFileSync(new URL('../../research/signals-auto.json', import.meta.url), 'utf8')).desk_signals || []; } catch (e) { /* run node scripts/signals/run.mjs for real calendar/holiday/weather rows */ }
+  const now = new Date(env.clock.now()).toISOString();
+  sig = sig.map(s => Object.assign({}, s, { fetched_at: now })).concat([{ signal_id: 'school', for_date: addD(t0, 12), index: 1.08, raw_value: 'SAMPLE school break', source_url: 'https://example.com/school', fetched_at: now, notes: 'SAMPLE' },
+    { signal_id: 'temple', index: 1.05, raw_value: 'SAMPLE crowd notice', source_url: 'https://example.com/temple', fetched_at: addD(t0, -9) + 'T06:00:00Z', notes: 'SAMPLE (stale)' }]);
+  env.api({ action: 'f.m.signals.import', key, signals: sig });
+  env.fo.foHourly();
   env.api({ action: 'f.logout', token: tok });
 }
 let shown = 0;

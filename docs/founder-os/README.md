@@ -27,7 +27,7 @@ GA4 tag is installed on the site; GA4 *reporting* is not connected yet (phase 6)
 
 ## Install / update (Apps Script editor, project "AP Villas E-Check-in")
 1. Project Settings → Script properties → add `FO_FOUNDER_EMAIL` = the founder's login email.
-2. Add script files `FoCore`, `FoData`, `FoMetrics`, `FoInsightsLib`, `FoInsights` with the contents of `docs/founder-os/FoCore.gs`, `docs/founder-os/FoData.gs`, `founder/metrics.js`, `founder/insights.js`, `docs/founder-os/FoInsights.gs` (keep this order: libraries before FoInsights).
+2. Add script files `FoCore`, `FoData`, `FoMetrics`, `FoInsightsLib`, `FoDesk`, `FoInsights`, `FoMarket`, `FoSearch`, `FoSignals` with the contents of `docs/founder-os/FoCore.gs`, `docs/founder-os/FoData.gs`, `founder/metrics.js`, `founder/insights.js`, `founder/desk.js`, and `docs/founder-os/FoInsights.gs`, `FoMarket.gs`, `FoSearch.gs`, `FoSignals.gs` (keep this order: libraries before the files that use them).
 3. In `Code.gs` `doPost`, right after `const body = JSON.parse(e.postData.contents);` add
    `if (String(body.action || '').indexOf('f.') === 0) return json_(foApi_(body));`
 4. Save, run `foSetup` once (creates the data sheet, founder user, villas, channels, hourly trigger, first sync).
@@ -50,6 +50,26 @@ daily snapshot (on-the-books 7/30/60/90 days, YTD, receivables), due reports (da
 quarterly on 1 Jan/Apr/Jul/Oct; annual on 1 Jan) saved as HTML + PDF in the private Drive folder "AP Villas Founder OS Reports",
 and chart refresh marks. Idempotent per report type + period; failed steps are logged in the Jobs tab and retried next hour.
 Reports are emailed only for the types the founder ticks in Settings → Report delivery (default: none).
+
+## Live Pricing Desk (Pricing & market)
+Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs`. For Rudrangan Suites (6 adults, 3 BR) and AP Suite (4 adults, 2 BR).
+- **What it gives:** a NET price per night (what AP Villas keeps) for tonight and the next 90 nights, the price to enter on each channel
+  (OTA prices grossed up for commission: Airbnb 15%, Booking.com 15%, MakeMyTrip 18%; direct 5% below the lowest OTA price, never below net),
+  a ₹ waterfall of every step, confidence 0–100, and a time-of-day ladder for unsold nights tonight/tomorrow (S1 00:00–10:30 … S4 20:00–24:00).
+- **Guardrails:** floor 75% and ceiling 3× of the published "from" price (4× in mega events), ±12% per day vs the previous recommendation
+  except hard events, never moves on a single stale signal. Recommendations only: nothing changes OTA prices.
+- **Signals (17):** own data (pace, compression, seasonality), competitor prices/sell-outs/hotel index/reputation (Rate check, extranet CSV,
+  owner-run `/pricing-scan`), Hindu calendar (astronomy-engine, sunrise in Ujjain), Google public holidays, weather (MET Norway, CC BY 4.0),
+  search (Search Console, Trends free tier), website (GA4), and public news (school breaks, events, temple notices, travel, footfall).
+  Each row has source_url, fetched_at and for_date; past its freshness limit a signal fades, at 2× it counts for nothing and shows as expired.
+- **Comp set:** top 10 by similarity (size 30, whole home 15, distance 20, price band 15, rating 10, amenities 10), at least 3 hotels,
+  re-ranked weekly; a member is replaced only after a challenger leads by 10+ points for 2 weeks. Pin/exclude in the portal. Changes logged (CompChanges).
+- **Hourly (`foDeskHourly_` in `foHourly`):** recompute 2 villas × 90 nights, store only changed nights (Recommendations), alerts by email
+  (price move >10%, competitors >60% sold out while unsold, expired signal; de-duplicated), and the 07:00 "Price to set today" brief.
+- **Learning:** Accept/Override in the portal (PriceDecisions, override needs a reason); Performance tab compares past recommendations with what sold.
+- **Feeds:** `.github/workflows/signals-auto.yml` (every 6 h, no AI: weather, holidays, calendar → `f.m.signals.import`),
+  `.github/workflows/pricing-intel.yml` (daily 06:30 IST with Claude: public news signals + 30-day Outlook, see `content/pricing-intel-instructions.md`).
+  Both need the `FOUNDER_OS_KEY` secret and skip without it.
 
 ## GA4 reporting
 Server-side only (Apps Script advanced service **Google Analytics Data API**, identifier `AnalyticsData`), property in Settings

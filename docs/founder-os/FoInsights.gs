@@ -14,7 +14,7 @@ function foSettings_() {
   return o;
 }
 function foSettingSet_(key, value) {
-  const row = foRows_('Settings').find(r => r.key === key), rec = { key, value: String(value == null ? '' : value).slice(0, 500), updated_at: foNow_() };
+  const row = foRows_('Settings').find(r => r.key === key), rec = { key, value: String(value == null ? '' : value).slice(0, 20000), updated_at: foNow_() };
   if (row) foUpdate_('Settings', row._row, rec); else foAppend_('Settings', rec);
 }
 function foSettingsSave_(b, user) {
@@ -136,6 +136,7 @@ function foDailyIfDue_() {
     ok = foJob_('chart_refresh', () => foRefreshCharts_(today)) && ok;
     foJob_('ga_signal', () => foGaSignal_(today));   // optional: never blocks the day being marked done
     foJob_('seo_ranks', () => foSeoRanks_(today));   // optional: keyword positions from Search Console
+    foJob_('desk_signals', () => foDeskOwnSignals_(today) + '; ' + foSignalsPrune_(today));   // GA4 + Search Console demand signals; old signals pruned
     foJob_('health', () => { const h = foHealth_({ refresh: true }).health; return h.summary.fail + ' failing, ' + h.summary.warn + ' to check: ' + h.checks.filter(c => c.status !== 'ok').map(c => c.name).join('; '); });
     if (ok) foSettingSet_('last_daily', today);
     return ok ? 'done' : 'retry later';

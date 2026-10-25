@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Build helpers for the static site (not deployed).",
   "dependencies": {
+    "astronomy-engine": "2.1.19",
     "sharp": "0.33.5"
   }
 }

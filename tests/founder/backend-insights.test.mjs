@@ -81,7 +81,9 @@ test('scheduled reports: Monday adds the weekly review; the 1st adds monthly/qua
   assert.deepEqual(types, ['daily', 'weekly']);
   const weekly = env.tab('Reports').find(r => r.type === 'weekly');
   assert.equal(weekly.period_key, '2026-10-12'); assert.ok(weekly.emailed);
-  assert.equal(env.mails.length, before + 1, 'only the opted-in weekly report was emailed');
+  const reportMails = env.mails.slice(before).filter(m => !/^Price to set today|pricing alert/.test(m.subject || ''));
+  assert.equal(reportMails.length, 1, 'only the opted-in weekly report was emailed');
+  assert.ok(env.mails.slice(before).some(m => /^Price to set today/.test(m.subject || '')), 'the 07:00 pricing brief went out (owner approved alerts)');
   env.clock.advance(13 * 86400000);  // Sunday 1 Nov 2026
   env.fo.foHourly();
   assert.ok(env.tab('Reports').some(r => r.type === 'monthly' && r.period_key === '2026-10'));

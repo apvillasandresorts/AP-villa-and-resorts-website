@@ -3,6 +3,8 @@
 //   node scripts/push-market.mjs research/market.json [--report research/market-report.html --period 2026-10]
 //   node scripts/push-market.mjs --summary research/summary.json     (aggregates only; local use, never in CI logs)
 //   node scripts/push-market.mjs --ga4 2026-09-01 2026-09-30 research/ga4.json
+//   node scripts/push-market.mjs --signals research/signals-auto.json  (pricing-desk signals: weather, holidays, calendar, news)
+//   node scripts/push-market.mjs --outlook research/outlook.html       (morning 30-day market outlook)
 //   node scripts/push-market.mjs --seo-next topic.json            (blog pipeline: next requested blog topic from SEO & marketing)
 //   node scripts/push-market.mjs --seo-done <topic_id> <slug|-> [failed]
 // Key: env FOUNDER_OS_KEY (GitHub secret) or ~/.config/ap-villas/founder-os-key (local, chmod 600).
@@ -20,7 +22,14 @@ async function call(action, body) {
 }
 const write = (f, o) => { mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(o, null, 2)); console.log('Saved ' + f); };
 try {
-  if (a.includes('--summary')) { write(opt('summary'), (await call('f.m.summary', {})).summary); }
+  if (a.includes('--signals')) {
+    const d = JSON.parse(readFileSync(opt('signals'), 'utf8')), rows = d.desk_signals || d.signals || [];
+    let added = 0, skipped = 0, rejected = 0;
+    for (let i = 0; i < rows.length; i += 400) { const r = (await call('f.m.signals.import', { signals: rows.slice(i, i + 400) })).result; added += r.added; skipped += r.skipped; rejected += r.rejected; if (r.errors && r.errors.length) console.log('rejected examples: ' + r.errors.slice(0, 3).join('; ')); }
+    console.log(`Signals: ${added} added, ${skipped} already there, ${rejected} rejected.`);
+  }
+  else if (a.includes('--outlook')) { const u = await call('f.m.report.upload', { type: 'outlook', period_key: new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10), html: readFileSync(opt('outlook'), 'utf8') }); console.log('Outlook: ' + u.status); }
+  else if (a.includes('--summary')) { write(opt('summary'), (await call('f.m.summary', {})).summary); }
   else if (a.includes('--seo-next')) { const t = (await call('f.m.seo.next', {})).topic; write(opt('seo-next'), t || {}); console.log(t ? 'Requested topic: ' + (t.title || t.keyword) : 'No requested topics queued.'); }
   else if (a.includes('--seo-done')) { const i = a.indexOf('--seo-done'); const r = await call('f.m.seo.done', { topic_id: a[i + 1], slug: a[i + 2] === '-' ? '' : a[i + 2], status: a[i + 3] === 'failed' ? 'failed' : 'done' }); console.log('Topic marked ' + r.status); }
   else if (a.includes('--ga4')) { const i = a.indexOf('--ga4'); write(a[i + 3], (await call('f.m.ga4', { from: a[i + 1], to: a[i + 2] })).ga); }

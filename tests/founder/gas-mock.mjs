@@ -112,8 +112,8 @@ export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
   vm.createContext(ctx);
   vm.runInContext('Date.now = () => __now(); const __RealDate = Date; Date = class extends __RealDate { constructor(...a) { if (a.length) super(...a); else super(__now()); } static now() { return __now(); } };', Object.assign(ctx, { __now: () => now }));
   const root = new URL('../../', import.meta.url);
-  const src = ['founder/metrics.js', 'founder/insights.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs', 'docs/founder-os/FoSearch.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
-  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_, foGsc_, foGscOpportunities_, foSeoCheckPage_, foSeoRanks_, foHealth_ };', ctx);
+  const src = ['founder/metrics.js', 'founder/insights.js', 'founder/desk.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs', 'docs/founder-os/FoSearch.gs', 'docs/founder-os/FoSignals.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
+  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_, foGsc_, foGscOpportunities_, foSeoCheckPage_, foSeoRanks_, foHealth_, foDeskHourly_, foCompRerank_, foSignalsImport_ };', ctx);
 
   // the e-check-in tab, with the real column titles from docs/echeckin-apps-script.gs
   const head = ['Submitted at', 'Reference', 'Booked through', 'Booking ID', 'Villa', 'Check-in', 'Check-out', 'Nights', 'Adults', 'Children', 'Main guest', 'Mobile', 'Email', 'City', 'State',

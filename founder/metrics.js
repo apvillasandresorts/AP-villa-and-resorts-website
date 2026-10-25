@@ -296,12 +296,36 @@ var FoMetrics = (function () {
     return { abs: cur - prev, pct: prev ? (cur - prev) / Math.abs(prev) : null };
   }
 
+  // ---------------- pricing time model (Live Pricing Desk): defaults only, every value is overridable in Settings ----------------
+  // Night D = check-in 10:30 on D to check-out 09:30 on D+1. Booking-time slots (IST) split the day before and on the night.
+  var NIGHT = { checkin: '10:30', checkout: '09:30' };
+  var SLOTS = [   // [id, from, to (exclusive), label]
+    ['S1', '00:00', '10:30', 'Night & morning'], ['S2', '10:30', '16:00', 'Day'], ['S3', '16:00', '20:00', 'Evening'], ['S4', '20:00', '24:00', 'Late evening'],
+  ];
+  var LEAD_BANDS = [   // [id, from days, to days (inclusive), label]
+    ['L0', 0, 0, 'Tonight'], ['L1', 1, 3, '1–3 days'], ['L2', 4, 14, '4–14 days'], ['L3', 15, 45, '15–45 days'], ['L4', 46, 90, '46–90 days'],
+  ];
+  function minutes(hm) { var p = String(hm).split(':'); return Number(p[0]) * 60 + Number(p[1] || 0); }
+  /** Slot for an IST time "HH:MM" (or minutes after midnight), using the given slot table (default SLOTS). */
+  function slotAt(hm, slots) {
+    var m = typeof hm === 'number' ? hm : minutes(hm), list = slots || SLOTS;
+    for (var i = 0; i < list.length; i++) if (m >= minutes(list[i][1]) && m < minutes(list[i][2])) return { id: list[i][0], from: list[i][1], to: list[i][2], label: list[i][3], index: i };
+    return { id: list[list.length - 1][0], from: list[list.length - 1][1], to: list[list.length - 1][2], label: list[list.length - 1][3], index: list.length - 1 };
+  }
+  /** Lead-time band for a number of days before the night. */
+  function leadBand(daysAhead, bands) {
+    var list = bands || LEAD_BANDS, d = Math.max(0, Math.round(daysAhead));
+    for (var i = 0; i < list.length; i++) if (d >= list[i][1] && d <= list[i][2]) return { id: list[i][0], label: list[i][3], index: i };
+    return { id: list[list.length - 1][0], label: list[list.length - 1][3], index: list.length - 1 };
+  }
+
   return {
     DEFINITIONS: DEFINITIONS, OCCUPYING: OCCUPYING, COUNTED: COUNTED,
     compute: compute, previous: previous, lastYear: lastYear, range: range, series: series, breakdown: breakdown, byProperty: byProperty,
     nights: nights, available: available, commissionOf: commissionOf, paymentsBy: paymentsBy, isDirect: isDirect, netAmount: netAmount,
     histogram: histogram, leadTimes: leadTimes, stayLengths: stayLengths, weekendSplit: weekendSplit, change: change,
     addDays: addDays, days: days, bucket: bucket, bucketList: bucketList, num: num, has: has, dateOf: dateOf,
+    NIGHT: NIGHT, SLOTS: SLOTS, LEAD_BANDS: LEAD_BANDS, slotAt: slotAt, leadBand: leadBand, minutes: minutes,
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoMetrics;

@@ -170,6 +170,7 @@ function foSyncCheckins_(actor) {
   for (let i = 1; i < data.length; i++) {
     const r = data[i], ref = String(v(r, 'Reference') || '').trim();
     if (!ref) continue;
+    if (/^\s*TEST\s*[–—-]/.test(String(v(r, 'Main guest') || ''))) continue;   // test submissions (e.g. "TEST – please delete") never enter the ledger
     tally.rows++;
     const paid = foNum_(v(r, 'Amount paid ₹')), total = v(r, 'Total ₹'), bal = v(r, 'Balance due ₹'), pstatus = String(v(r, 'Payment status'));
     const submitted = v(r, 'Submitted at');
@@ -386,6 +387,19 @@ function foCacheGet_(key) {
     return JSON.parse(s);
   } catch (e) { return null; }
 }
+/** Recommendations for the bundle: per property and night, the latest row and the latest made before today (for the daily-change limit and backtests). */
+function foDeskRecsForBundle_() {
+  const today = foToday_(), lo = FoMetrics.addDays(today, -180), hi = FoMetrics.addDays(today, 120), latest = {}, before = {};
+  foRows_('Recommendations').forEach(r => {
+    const d = String(r.for_date).slice(0, 10); if (d < lo || d > hi) return;
+    const k = r.property + '|' + d; delete r._row;
+    if (!latest[k] || r.computed_at > latest[k].computed_at) latest[k] = r;
+    if (String(r.computed_at).slice(0, 10) < today && (!before[k] || r.computed_at > before[k].computed_at)) before[k] = r;
+  });
+  const out = Object.keys(latest).map(k => latest[k]);
+  Object.keys(before).forEach(k => { if (before[k] !== latest[k]) out.push(before[k]); });
+  return out;
+}
 function foDataBuild_() {
   const strip = r => { delete r._row; return r; };
   const ex = foRows_('Exceptions');
@@ -398,5 +412,7 @@ function foDataBuild_() {
     imports: foRows_('Imports').slice(-50).map(strip),
     competitors: foRows_('Competitors').map(strip), market_rates: foRows_('MarketRates').slice(-1500).map(strip), demand_signals: foRows_('DemandSignals').slice(-600).map(strip),
     seo_keywords: foRows_('SeoKeywords').map(strip), seo_ranks: foRows_('SeoRanks').slice(-3000).map(strip), seo_topics: foRows_('SeoTopics').map(strip), campaigns: foRows_('Campaigns').map(strip),
+    signals: foRows_('Signals').slice(-3000).map(strip), comp_set: foRows_('CompSet').map(strip), comp_changes: foRows_('CompChanges').slice(-200).map(strip),
+    recommendations: foDeskRecsForBundle_(), price_decisions: foRows_('PriceDecisions').slice(-1500).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }

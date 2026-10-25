@@ -15,6 +15,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.summary': b => foMachineSummary_(b),
   'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
   'f.m.seo.done': b => foSeoTopicDone_(b),
+  'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
 };
 
 // ---------------------------------------------------------------- automation key ----------------
@@ -48,7 +49,7 @@ function foMachineApi_(b) {
 // ---------------------------------------------------------------- market data ----------------
 const FO_MARKET_TABS = { competitor: ['Competitors', 'competitor_id', 'CMP'], rate: ['MarketRates', 'obs_id', 'OBS'], signal: ['DemandSignals', 'signal_id', 'SIG'] };
 function foMarketClean_(kind, r) {
-  const c = v => foClean_(v, 500), url = v => /^https?:\/\//i.test(String(v || '')) ? String(v).slice(0, 500) : '';
+  const c = v => foClean_(v, 500), url = v => /^https?:\/\//i.test(String(v || '')) || /^owner_check(:[\w.-]+)?$/.test(String(v || '')) ? String(v).slice(0, 500) : '';
   if (kind === 'competitor') return { competitor_id: r.competitor_id || '', name: c(r.name).slice(0, 120), type: c(r.type).slice(0, 40), area: c(r.area).slice(0, 80), distance_km: foHasNum_(r.distance_km) ? foNum_(r.distance_km) : '',
     bedrooms: foHasNum_(r.bedrooms) ? foNum_(r.bedrooms) : '', sleeps: foHasNum_(r.sleeps) ? foNum_(r.sleeps) : '', segment: c(r.segment).slice(0, 60), website: url(r.website), listing_urls: foClean_(r.listing_urls, 1000),
     positioning: foClean_(r.positioning, 1000), amenities: foClean_(r.amenities, 1000), review_themes: foClean_(r.review_themes, 1000), notes: foClean_(r.notes, 1000), last_checked: foDate_(r.last_checked) || foToday_(), source_url: url(r.source_url) };
@@ -56,7 +57,8 @@ function foMarketClean_(kind, r) {
     const nights = Math.max(1, foNum_(r.nights) || 1), total = foHasNum_(r.price_total) ? foNum_(r.price_total) : '', per = foHasNum_(r.price_per_night) ? foNum_(r.price_per_night) : (total !== '' ? Math.round(total / nights) : '');
     return { obs_id: r.obs_id || '', competitor: c(r.competitor).slice(0, 120), observed_at: foDate_(r.observed_at) || foToday_(), stay_date: foDate_(r.stay_date), nights, unit_type: c(r.unit_type).slice(0, 60),
       bedrooms: foHasNum_(r.bedrooms) ? foNum_(r.bedrooms) : '', sleeps: foHasNum_(r.sleeps) ? foNum_(r.sleeps) : '', price_total: total, price_per_night: per, taxes_included: ['yes', 'no'].indexOf(r.taxes_included) >= 0 ? r.taxes_included : 'unknown',
-      source_type: ['website', 'ota', 'google', 'phone', 'manual', 'other'].indexOf(r.source_type) >= 0 ? r.source_type : 'other', source_url: url(r.source_url), confidence: ['high', 'medium', 'low'].indexOf(r.confidence) >= 0 ? r.confidence : 'medium', notes: foClean_(r.notes, 500) };
+      source_type: ['website', 'ota', 'google', 'phone', 'manual', 'other'].indexOf(r.source_type) >= 0 ? r.source_type : 'other', source_url: url(r.source_url), confidence: ['high', 'medium', 'low'].indexOf(r.confidence) >= 0 ? r.confidence : 'medium', notes: foClean_(r.notes, 500),
+      availability: /sold|unavail/i.test(r.availability || '') ? 'sold out' : r.availability ? 'available' : '', group_size: foHasNum_(r.group_size) ? foNum_(r.group_size) : '', target_property: c(r.target_property).slice(0, 40), platform: c(r.platform).slice(0, 30) };
   }
   return { signal_id: r.signal_id || '', date: foDate_(r.date) || foToday_(), source: c(r.source).slice(0, 40), metric: c(r.metric).slice(0, 60), keyword: c(r.keyword).slice(0, 120), value: foHasNum_(r.value) ? foNum_(r.value) : '',
     period: c(r.period).slice(0, 20), growth_pct: foHasNum_(r.growth_pct) ? foNum_(r.growth_pct) : '', source_url: url(r.source_url), notes: foClean_(r.notes, 500) };
@@ -115,13 +117,13 @@ function foPricingSettingsSave_(b, user) {
 
 // ---------------------------------------------------------------- reports from the market research job ----------------
 function foReportUpload_(b) {
-  const type = b.type === 'market' ? 'market' : null; if (!type) return { ok: false, error: 'Only market reports can be uploaded.' };
-  const key = String(b.period_key || foToday_().slice(0, 7)).replace(/[^\w-]/g, '').slice(0, 20);
+  const type = b.type === 'market' || b.type === 'outlook' ? b.type : null; if (!type) return { ok: false, error: 'Only market reports and outlooks can be uploaded.' };
+  const key = String(b.period_key || (type === 'outlook' ? foToday_() : foToday_().slice(0, 7))).replace(/[^\w-]/g, '').slice(0, 20);
   const html = String(b.html || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').slice(0, 900000);
   if (html.length < 200) return { ok: false, error: 'Report is empty.' };
   const existing = foRows_('Reports').find(r => r.type === type && r.period_key === key && r.status === 'ok');
   if (existing && !b.force) return { status: 'exists', report_id: existing.report_id };
-  const name = 'AP Villas Market Intelligence ' + key, folder = foReportsFolder_(), file = folder.createFile(Utilities.newBlob(html, 'text/html', name + '.html'));
+  const name = (type === 'outlook' ? 'AP Villas 30-day Market Outlook ' : 'AP Villas Market Intelligence ') + key, folder = foReportsFolder_(), file = folder.createFile(Utilities.newBlob(html, 'text/html', name + '.html'));
   let pdf = ''; try { pdf = folder.createFile(Utilities.newBlob(html, 'text/html', name + '.html').getAs('application/pdf').setName(name + '.pdf')).getId(); } catch (e) {}
   const rec = { report_id: foId_('REP'), type, period_key: key, from: foDate_(b.from) || '', to: foDate_(b.to) || foToday_(), generated_at: foNow_(), data_freshness: foToday_(), status: 'ok', html_id: file.getId(), pdf_id: pdf, emailed: '', actor: 'automation' };
   foAppend_('Reports', rec);
