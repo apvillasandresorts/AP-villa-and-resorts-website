@@ -31,7 +31,8 @@ const names = new Set((d.competitors || []).map(c => String(c.name || '').toLowe
   if (!isUrl(r.source_url)) errs.push(`rates[${i}] ${r.competitor}: source_url (https) required`);
   if (!isDate(r.observed_at) || r.observed_at > today) errs.push(`rates[${i}] ${r.competitor}: observed_at must be a past/today date`);
   if (r.stay_date && !isDate(r.stay_date)) errs.push(`rates[${i}] ${r.competitor}: stay_date must be YYYY-MM-DD or empty`);
-  if (!(p >= 300 && p <= 200000)) errs.push(`rates[${i}] ${r.competitor}: price per night ${p} is not plausible (₹300–₹2,00,000)`);
+  if (/sold/i.test(r.availability || '') && !p) { if (!isDate(r.stay_date)) errs.push(`rates[${i}] ${r.competitor}: a sold-out needs a stay_date`); }
+  else if (!(p >= 300 && p <= 200000)) errs.push(`rates[${i}] ${r.competitor}: price per night ${p} is not plausible (₹300–₹2,00,000)`);
 });
 (d.signals || []).forEach((s, i) => {
   if (!s.source || !s.metric) errs.push(`signals[${i}]: source and metric required`);

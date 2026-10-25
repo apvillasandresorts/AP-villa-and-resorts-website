@@ -1,0 +1,66 @@
+# Competitor price bots (Live Pricing Desk). Runs in GitHub's cloud twice a day; nothing runs on the owner's Mac. No Claude, no paid services.
+# One bot per platform (Airbnb, Booking.com, Agoda, OYO, Cleartrip, EaseMyTrip, Trip.com, StayVista) on robots.txt-allowed public pages only,
+# plus Google Hotels via SerpApi (free plan) for MakeMyTrip / Goibibo / Expedia, and Apify (free plan) for Airbnb discovery and Booking.com fallback.
+# Bots identify themselves (APVillasPriceBot), never log in, never solve CAPTCHAs, and stop a platform at the first challenge or 403/429 ("blocked" in Signal health).
+# Logs show counts only. Prices go to the Founder OS with the automation key (secret FOUNDER_OS_KEY).
+name: Market bots (competitor prices)
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Only these bots (comma list: airbnb,booking,agoda,oyo,cleartrip,easemytrip,tripcom,stayvista,serpapi,apify). Empty = all."
+        required: false
+        default: ""
+      slot:
+        description: "am (tonight, tomorrow, Saturday) or pm (later weekends, high-demand nights). Empty = by time of day."
+        required: false
+        default: ""
+      dry:
+        description: "Dry run: collect and show counts, send nothing"
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    - cron: "40 2 * * *"    # 08:10 IST: tonight, tomorrow, this Saturday, next high-demand night
+    - cron: "40 12 * * *"   # 18:10 IST: coming Friday, next two Saturdays, high-demand nights
+
+concurrency:
+  group: market-bots
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the headless browser (Playwright, Apache-2.0)
+        run: |
+          npm --prefix scripts install --no-audit --no-fund --silent playwright@1.48.2
+          cd scripts && npx playwright install --with-deps chromium > /dev/null
+      - name: Run the bots
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          BOOKING_AFFILIATE_ID: ${{ secrets.BOOKING_AFFILIATE_ID }}
+          BOOKING_API_TOKEN: ${{ secrets.BOOKING_API_TOKEN }}
+          AGODA_SITE_ID: ${{ secrets.AGODA_SITE_ID }}
+          AGODA_API_KEY: ${{ secrets.AGODA_API_KEY }}
+        run: |
+          if [ -z "$FOUNDER_OS_KEY" ]; then echo "::warning::FOUNDER_OS_KEY not set (portal: Settings → Automation)."; exit 0; fi
+          ARGS=""
+          [ -n "${{ inputs.only }}" ] && ARGS="$ARGS --only ${{ inputs.only }}"
+          [ -n "${{ inputs.slot }}" ] && ARGS="$ARGS --slot ${{ inputs.slot }}"
+          [ "${{ inputs.dry }}" = "true" ] && ARGS="$ARGS --dry"
+          node scripts/market-bots/run.mjs $ARGS
+      - name: Validate what was collected
+        if: always()
+        run: for f in research/bots-*.json; do [ -f "$f" ] && node scripts/market-validate.mjs "$f" || true; done

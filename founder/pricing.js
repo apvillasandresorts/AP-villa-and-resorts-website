@@ -67,10 +67,21 @@
       (q.booked || q.blocked ? '<p class="fo-hint">Nothing to set: this villa is ' + (q.booked ? 'booked' : 'blocked') + ' for the night.</p>' :
       '<div class="dk-chan">' + CH.map(function (k) { var x = q.channels[k[0]]; return '<div class="dk-chan__row"><span>' + esc(k[1]) + '</span><b>' + inr(x.price) + '</b>' + copyBtn(x.price) + '<small class="fo-hint">' + (x.commission ? 'you keep ' + inr(x.net) : 'no commission') + '</small></div>'; }).join('') + '</div>' +
       '<div class="fo-hint" style="margin:6px 0">Range ' + inr(q.low) + '–' + inr(q.high) + ' net' + (q.next_step ? ' · <b>from ' + esc(q.next_step.at) + ' drop to ' + inr(q.next_step.price) + '</b> net if still unsold' : '') + '</div>' +
+      marketLine(q) +
       (q.top && q.top.length ? '<ul class="dk-why">' + q.top.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
       (q.reasons.length ? '<p class="fo-hint">' + q.reasons.map(esc).join(' · ') + '</p>' : '') +
       '<div class="fo-toolbar" style="margin-top:8px"><button class="btn btn--primary btn--sm" data-acc="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '">Accept ' + inr(q.price) + '</button><button class="btn btn--sm" data-ovr="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '">Override…</button><button class="btn btn--sm" data-why data-p="' + esc(c.property) + '" data-d="' + q.date + '">Why?</button></div>' +
       (last ? '<p class="fo-hint">Last decision: ' + (last.accepted === 'yes' ? 'accepted ' : 'set ') + inr(num(last.set_price)) + ' (' + esc(last.channel) + ') ' + when(last.decided_at) + '</p>' : '')) + '</div>';
+  }
+  function marketLine(q) {
+    var m = q.market, bits = [];
+    if (m.n >= 3) bits.push('Competitors ' + inr(m.p25) + '–' + inr(m.p75) + ' (median ' + inr(m.median) + ', ' + m.n + ' homes)');
+    else if (m.estimate) bits.push('Competitors ≈ ' + inr(m.estimate.median) + ' (estimated from nearby nights)');
+    if (m.position != null) bits.push('your direct price is above ' + m.position + '% of them');
+    if (m.sellout != null && m.seen >= 3) bits.push(Math.round(m.sellout * 100) + '% sold out');
+    if (m.momentum && Math.abs(m.momentum.change) >= 0.05) bits.push('market ' + (m.momentum.change > 0 ? 'rising' : 'falling') + ' ' + Math.round(Math.abs(m.momentum.change) * 100) + '% since ' + dm(m.momentum.since));
+    if (m.spike) bits.push('<b>market-detected demand</b>');
+    return bits.length ? '<p class="fo-hint" style="margin:4px 0">' + bits.join(' · ') + '</p>' : '<p class="fo-hint" style="margin:4px 0">No competitor prices for this night yet.</p>';
   }
   function decide(pid, date, rec, accepted) {
     if (accepted) return save('f.pricing.decide', { property: pid, for_date: date, channel: 'all', recommended: rec, set_price: rec, accepted: true, slot: K.slotNowId(data()) }, 'Logged: ' + inr(rec) + ' accepted');
@@ -113,9 +124,9 @@
         return '<div class="fo-card dk-month"><h3>' + new Date(m + '-01T00:00:00Z').toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }) + '</h3><div class="dk-heat"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>' +
           new Array(lead + 1).join('<i></i>') + rows.map(function (q) {
             var lvl = hi > lo ? Math.round((q.price - lo) / (hi - lo) * 4) : 2;
-            return '<button class="dk-cell lv' + lvl + (q.booked || q.blocked ? ' is-taken' : '') + (q.confidence < 50 ? ' is-low' : '') + '" data-d="' + q.date + '" title="' + esc(wday(q.date)) + ': ' + inr(q.price) + ', confidence ' + q.confidence + '"><span>' + Number(q.date.slice(8)) + '</span><b>' + (q.booked ? 'booked' : q.blocked ? 'blocked' : (q.price / 1000).toFixed(1) + 'k') + '</b>' + (q.event ? '<em>●</em>' : '') + '</button>';
+            return '<button class="dk-cell lv' + lvl + (q.booked || q.blocked ? ' is-taken' : '') + (q.confidence < 50 ? ' is-low' : '') + '" data-d="' + q.date + '" title="' + esc(wday(q.date)) + ': ' + inr(q.price) + ', confidence ' + q.confidence + '"><span>' + Number(q.date.slice(8)) + '</span><b>' + (q.booked ? 'booked' : q.blocked ? 'blocked' : (q.price / 1000).toFixed(1) + 'k') + '</b>' + (q.market.spike ? '<em title="market-detected demand">▲</em>' : q.event ? '<em>●</em>' : '') + (q.market.estimate && !q.market.n ? '<i class="dk-est" title="no competitor prices for this night yet: estimated from nearby nights">~</i>' : '') + '</button>';
           }).join('') + '</div></div>';
-      }).join('') + '<p class="fo-hint">● event or festival · dotted border = confidence below 50 (missing signals or few competitor prices).</p>';
+      }).join('') + '<p class="fo-hint">● event or festival · ▲ market-detected demand (competitors well above nearby nights or half sold out) · ~ competitor prices estimated from nearby nights · dotted border = confidence below 50.</p>';
     $('#dk-p').onchange = function () { S.dkP = this.value; deskCalendar(body); };
     $$('[data-d]', body).forEach(function (b) { b.onclick = function () { waterfall(pid, b.dataset.d); }; });
     $('#dk-csv').onclick = function () { U.csvDownload('ap-villas-pricing-desk-' + pid + '-' + today(), ['date', 'status', 'net_price', 'low', 'high', 'confidence', 'direct', 'airbnb', 'booking', 'makemytrip', 'comp_median', 'comp_sold_out', 'factors'], cal.rows.map(function (q) { return [q.date, q.booked ? 'booked' : q.blocked ? 'blocked' : 'open', q.price, q.low, q.high, q.confidence, q.channels.direct.price, q.channels.airbnb.price, q.channels.booking.price, q.channels.makemytrip.price, q.market.median == null ? '' : Math.round(q.market.median), q.market.sellout == null ? '' : Math.round(q.market.sellout * 100) + '%', q.steps.map(function (s) { return s.label + ' ' + Math.round(s.delta); }).join(' | ')]; })); };
@@ -129,7 +140,7 @@
     var g = cfg.group[pid] || {}, pins = cfg.comp.pinned.map(K.normName), exc = cfg.comp.excluded.map(K.normName), founder = S.user && S.user.role === 'founder';
     body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">Comp set for a group of ' + (g.adults || '?') + ' adults (' + (g.bedrooms || '?') + ' bedrooms). Chosen weekly by similarity; a member is replaced only after being outscored by ' + cfg.comp.swap_margin + '+ points for ' + cfg.comp.swap_weeks + ' weeks.</span></div>' +
       card('Comp set', set.length + ' of ' + cfg.comp.size, table(['#', 'Competitor', 'Score', 'Why similar', 'Platforms', 'In set since', ''], set.map(function (r, i) {
-        return [String(i + 1), '<b>' + esc(r.name) + '</b>' + (r.hotel === 'yes' ? ' <span class="fo-badge fo-badge--muted">hotel</span>' : '') + (r.pinned === 'yes' ? ' <span class="fo-badge fo-badge--gold">pinned</span>' : ''), '<b>' + esc(r.score) + '</b>', '<small>' + esc(r.why) + '</small>', esc(r.platforms), r.since ? dmy(r.since) : '—',
+        return [String(i + 1), '<a href="#" data-cmp="' + esc(r.name) + '"><b>' + esc(r.name) + '</b></a>' + (r.hotel === 'yes' ? ' <span class="fo-badge fo-badge--muted">hotel</span>' : '') + (r.pinned === 'yes' ? ' <span class="fo-badge fo-badge--gold">pinned</span>' : ''), '<b>' + esc(r.score) + '</b>', '<small>' + esc(r.why) + '</small>', esc(r.platforms), r.since ? dmy(r.since) : '—',
           founder ? '<button class="btn btn--sm" data-pin="' + esc(r.name) + '">' + (pins.indexOf(r.key) >= 0 ? 'Unpin' : 'Pin') + '</button> <button class="btn btn--sm btn--danger" data-exc="' + esc(r.name) + '">Exclude</button>' : ''];
       }), 'No comp set yet: add competitors and at least one dated price each (Rate check or Market prices).', [2])) +
       (cands.length ? '<div class="fo-card" style="margin-top:14px"><h3>Next in line <small>challengers</small></h3>' + table(['Competitor', 'Score', 'Why'], cands.map(function (x) { return [esc(x.c.name) + (founder ? ' <button class="btn btn--sm" data-pin="' + esc(x.c.name) + '">Pin</button>' : ''), esc(x.s.score), '<small>' + esc(x.s.why) + '</small>']; }), '', [1]) + '</div>' : '') +
@@ -146,10 +157,28 @@
       { name: 'Comp highest', values: next.map(function (q) { return q.market.max; }), type: 'line', color: '#B9A58A' }], onClick: function (i) { waterfall(pid, next[i].date); } });
     C.combo($('#dk-sell'), { labels: next.map(function (q) { return dm(q.date); }), kind: 'n', empty: 'No availability checks yet (mark sold-outs in Rate check).', series: [{ name: '% sold out', values: next.map(function (q) { return q.market.sellout == null ? null : Math.round(q.market.sellout * 100); }) }], onClick: function (i) { waterfall(pid, next[i].date); } });
     competitors($('#dk-dir'));
+    $$('[data-cmp]', body).forEach(function (a) { a.onclick = function (e) { e.preventDefault(); compDrawer(pid, a.dataset.cmp); }; });
     function patch(kind, name) { var cmp = JSON.parse(JSON.stringify(cfgDesk().comp)), k = K.normName(name), list = cmp[kind].filter(function (x) { return K.normName(x) !== k; }); if (list.length === cmp[kind].length) list.push(name); cmp[kind] = list; return saveDesk({ comp: { pinned: kind === 'pinned' ? list : cmp.pinned, excluded: kind === 'excluded' ? list : cmp.excluded } }, kind === 'pinned' ? 'Pins updated: applied at the next hourly run' : 'Excluded: applied at the next hourly run'); }
     $$('[data-pin]', body).forEach(function (b) { b.onclick = function () { patch('pinned', b.dataset.pin); }; });
     $$('[data-exc]', body).forEach(function (b) { b.onclick = function () { if (confirm('Exclude ' + b.dataset.exc + ' from every comp set?')) patch('excluded', b.dataset.exc); }; });
     var ue = $('#dk-unexc'); if (ue) ue.onclick = function () { saveDesk({ comp: { pinned: cfgDesk().comp.pinned, excluded: [] } }, 'Exclusions cleared'); };
+  }
+  /** One competitor in depth: links on every platform, distance, rating, its prices per night and platform for the next 30 nights. */
+  function compDrawer(pid, name) {
+    var D = data(), key = K.normName(name), c = (D.competitors || []).filter(function (x) { return K.normName(x.name) === key; })[0] || { name: name }, cfg = cfgDesk();
+    var links = String(c.listing_urls || '').split(/\s+/).concat([c.source_url || '']).filter(function (u, i, a) { return /^https:/.test(u) && a.indexOf(u) === i; });
+    var nights = []; for (var i = 0; i < 30; i++) nights.push(M.addDays(today(), i));
+    var rows = nights.map(function (d) { var m = K.marketAt(D, pid, d, cfg, Date.parse(D.serverTime)), r = m.rows.filter(function (x) { return x.key === key; })[0]; return { d: d, r: r, med: m.median }; }).filter(function (x) { return x.r; });
+    var plats = []; rows.forEach(function (x) { x.r.platforms.forEach(function (p) { if (plats.indexOf(p.platform) < 0) plats.push(p.platform); }); });
+    U.drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">' + esc(c.name) + '</h2><div class="fo-hint">' + esc([c.type, c.bedrooms ? c.bedrooms + ' bedrooms' : '', c.distance_km !== '' && c.distance_km != null ? c.distance_km + ' km to Mahakal' : 'distance unknown', c.review_themes].filter(Boolean).join(' · ')) + '</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + U.icon('x') + '</button></div>' +
+      '<h3 style="margin:6px 0 8px">Listed on</h3><div class="fo-toolbar">' + (links.length ? links.map(function (u) { return '<a class="btn btn--sm" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(K.platformOf ? K.platformOf(u) : u) + ' ↗</a>'; }).join('') : '<span class="fo-hint">No links yet.</span>') + '</div>' +
+      '<h3 style="margin:16px 0 8px">Next 30 nights <small class="fo-hint">price per night as each platform showed it · bold = cheapest for the guest</small></h3>' +
+      table(['Night', 'Comp median'].concat(plats).concat(['Spread']), rows.map(function (x) {
+        return [esc(wday(x.d)), x.med ? inr(x.med) : '—'].concat(plats.map(function (pl) { var p = x.r.platforms.filter(function (y) { return y.platform === pl; })[0]; if (!p) return '<span class="fo-hint">—</span>'; return p.sold_out ? '<span class="fo-badge fo-badge--bad">sold out</span>' : (x.r.platform === pl ? '<b>' + inr(p.price) + '</b>' : inr(p.price)) + ' <small class="fo-hint">' + esc(dm(p.observed_at)) + '</small>'; }))
+          .concat([x.r.parity != null ? Math.round(x.r.parity * 100) + '%' : '—']);
+      }), 'No prices for this competitor in the next 30 nights yet.') +
+      '<div class="fo-chartbox" id="cd-chart" style="margin-top:14px"></div>');
+    C.combo($('#cd-chart'), { labels: rows.map(function (x) { return dm(x.d); }), kind: 'inr', empty: '', series: [{ name: name, values: rows.map(function (x) { return x.r.price || null; }), type: 'line' }, { name: 'Comp median', values: rows.map(function (x) { return x.med; }), type: 'line', color: '#C9A24F' }] });
   }
   function moversOf(D, set) {
     var keys = set.map(function (r) { return r.key; }), by = {}, since = M.addDays(today(), -14);
@@ -194,12 +223,25 @@
     var D = data(), h = K.health(D), jobs = (D.jobs || []).filter(function (j) { return /desk|signal|market/i.test(j.job || j.name || ''); }).slice(-8).reverse();
     var live = h.filter(function (x) { return x.status === 'live'; }).length;
     body.innerHTML = '<div class="fo-grid fo-grid--kpi" style="margin-bottom:14px">' + [['Live', live], ['Stale', h.filter(function (x) { return x.status === 'stale'; }).length], ['Expired / missing', h.filter(function (x) { return x.status === 'expired' || x.status === 'missing'; }).length], ['Blocked', h.filter(function (x) { return x.status === 'blocked'; }).length]].map(function (k) { return '<div class="fo-card fo-kpi"><div class="fo-kpi__label">' + k[0] + '</div><div class="fo-kpi__value">' + k[1] + ' <small class="fo-hint">of ' + h.length + '</small></div></div>'; }).join('') + '</div>' +
+      botsCard(D) +
       card('Signals', 'stale = past its freshness limit (weight fades); expired = 2× the limit (weight 0)', table(['Signal', 'Status', 'Last update', 'Fresh for', 'Rows', 'Source', 'Terms'], h.map(function (x) {
         return ['<b>' + esc(x.label) + '</b><br><small class="fo-hint">' + esc(x.kind) + '</small>', healthBadge(x.status), x.fetched_at ? when(x.fetched_at) : '—', x.sla_h >= 48 ? Math.round(x.sla_h / 24) + ' days' : x.sla_h + ' h', esc(x.rows), esc(x.source) + (/^https/.test(x.source_url || '') ? ' ' + link(x.source_url) : ''), '<small class="fo-hint">' + esc(x.terms) + '</small>'];
       }), '')) +
       (jobs.length ? '<div class="fo-card" style="margin-top:14px"><h3>Recent runs</h3>' + table(['When', 'Job', 'Result'], jobs.map(function (j) { return [when(j.at || j.started_at || j.date), esc(j.job || j.name), '<small>' + esc(String(j.status || '') + ' ' + String(j.detail || j.message || '').slice(0, 160)) + '</small>']; }), '') + '</div>' : '') +
       '<h3 style="margin:22px 0 10px">Manual demand signals <small class="fo-hint">v1 notes (search, news, footfall you add by hand)</small></h3><div id="dk-sg"></div>';
     signals($('#dk-sg'));
+  }
+
+  /** Latest run of each competitor bot / API (GitHub Actions, twice a day). */
+  function botsCard(D) {
+    var last = {}; (D.bot_runs || []).forEach(function (r) { if (!last[r.bot] || r.at > last[r.bot].at) last[r.bot] = r; });
+    var rows = Object.keys(last).map(function (k) { return last[k]; }).sort(function (a, b) { return a.mode === b.mode ? (a.platform < b.platform ? -1 : 1) : a.mode < b.mode ? 1 : -1; });
+    var badge = function (r) { var w = /awaiting|not set/i.test(r.blocked) ? ['fo-badge--muted', 'not connected'] : r.status === 'blocked' ? ['fo-badge--bad', 'blocked'] : r.status === 'error' ? ['fo-badge--warn', 'error'] : ['', 'ok']; return '<span class="fo-badge ' + w[0] + '">' + w[1] + '</span>'; };
+    return '<div class="fo-card" style="margin-bottom:14px"><h3>Market bots <small>competitor prices from every platform, twice a day (08:10 and 18:10)</small></h3>' +
+      table(['Bot', 'How', 'Last run', 'Pages / searches', 'Prices', 'Sold out', 'New competitors', 'Status', 'Note'], rows.map(function (r) {
+        return ['<b>' + esc(r.platform) + '</b>', esc(r.mode === 'api' ? 'API' : 'public pages'), r.at ? when(r.at) : '—', esc(r.pages), esc(r.prices), esc(r.sold_out), esc(r.discovered), badge(r), '<small class="fo-hint">' + esc(r.blocked || r.note || '') + '</small>'];
+      }), 'No bot runs yet: the first run is at 08:10 or 18:10 IST (GitHub → Actions → "Market bots" → Run workflow to start one now).', [3, 4, 5, 6]) +
+      '<p class="fo-hint">Bots read public pages that each site\'s robots.txt allows, identify themselves, never log in or solve CAPTCHAs, and stop at the first challenge ("blocked"). MakeMyTrip, Goibibo and Expedia come through Google Hotels (SerpApi); new Airbnb homes through Apify.</p></div>';
   }
 
   // ---------- outlook (30-day, from the daily intelligence job) ----------

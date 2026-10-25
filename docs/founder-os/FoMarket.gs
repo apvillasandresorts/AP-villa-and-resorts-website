@@ -16,7 +16,8 @@ const FO_MACHINE_ROUTES = {
   'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
   'f.m.seo.done': b => foSeoTopicDone_(b),
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
-  'f.m.compset': b => foCompSetPublic_(b),   // competitor bot: comp-set listings (public names + public listing links only)
+  'f.m.compset': b => foCompSetPublic_(b),
+  'f.m.bots.report': b => foBotsReport_(b),   // competitor bots: one row per bot run (pages, prices, blocked) for Signal health   // competitor bot: comp-set listings (public names + public listing links only)
 };
 
 // ---------------------------------------------------------------- automation key ----------------
@@ -87,14 +88,14 @@ function foMarketImport_(b, actor) {
     (Array.isArray(b.competitors) ? b.competitors.slice(0, 200) : []).forEach(x => {
       const r = foMarketClean_('competitor', x); if (foMarketValid_('competitor', r)) { out.rejected++; return; }
       const ex = byName[r.name.toLowerCase()];
-      if (ex) { Object.keys(r).forEach(k => { if (r[k] !== '' && k !== 'competitor_id') ex[k] = r[k]; }); ex.updated_at = foNow_(); ex.updated_by = actor; foUpdate_('Competitors', ex._row, ex); }
+      if (ex) { Object.keys(r).forEach(k => { if (r[k] !== '' && k !== 'competitor_id') ex[k] = k === 'listing_urls' ? foMergeUrls_(ex[k], r[k]) : r[k]; }); ex.updated_at = foNow_(); ex.updated_by = actor; foUpdate_('Competitors', ex._row, ex); }
       else { r.competitor_id = foId_('CMP'); r.created_at = foNow_(); r.updated_by = actor; foAppend_('Competitors', r); byName[r.name.toLowerCase()] = r; }
       out.competitors++;
     });
-    const seenR = {}; foRows_('MarketRates').forEach(r => { seenR[[r.competitor.toLowerCase(), r.observed_at, r.stay_date, r.price_per_night, r.unit_type].join('|')] = 1; });
-    (Array.isArray(b.rates) ? b.rates.slice(0, 1000) : []).forEach(x => {
+    const seenR = {}; foRows_('MarketRates').forEach(r => { seenR[[r.competitor.toLowerCase(), r.observed_at, r.stay_date, r.price_per_night, r.unit_type, r.platform || ''].join('|')] = 1; });
+    (Array.isArray(b.rates) ? b.rates.slice(0, 1500) : []).forEach(x => {
       const r = foMarketClean_('rate', x); if (foMarketValid_('rate', r)) { out.rejected++; return; }
-      const k = [r.competitor.toLowerCase(), r.observed_at, r.stay_date, String(r.price_per_night), r.unit_type].join('|'); if (seenR[k]) { out.skipped++; return; }
+      const k = [r.competitor.toLowerCase(), r.observed_at, r.stay_date, String(r.price_per_night), r.unit_type, r.platform || ''].join('|'); if (seenR[k]) { out.skipped++; return; }
       seenR[k] = 1; r.obs_id = foId_('OBS'); r.collected_by = actor; r.created_at = foNow_(); foAppend_('MarketRates', r); out.rates++;
     });
     const seenS = {}; foRows_('DemandSignals').forEach(r => { seenS[[r.date, r.source, r.metric, r.keyword].join('|')] = 1; });
@@ -155,5 +156,18 @@ function foCompSetPublic_(b) {
       if (urls.length) out.push({ property: pid, name: r.name, hotel: r.hotel === 'yes', adults: g.adults || 4, url: urls[0].split('?')[0], distance_km: c.distance_km });
     });
   });
-  return { listings: out, today: foToday_() };
+  // every known competitor (public names, links, distance) so bots can merge platforms and skip what is already known
+  const known = comps.map(c => ({ name: c.name, type: c.type, bedrooms: c.bedrooms, distance_km: c.distance_km, listing_urls: String(c.listing_urls || '').split(/\s+/).concat([c.source_url || '']).filter(u => /^https:\/\//.test(u)) }));
+  // nights worth checking: the next 60 days where the calendar, holidays or events lift demand (public signals only)
+  const hot = {}; (D.signals || []).forEach(s => { const d = String(s.for_date || '').slice(0, 10); if (d && d >= foToday_() && foNum_(s.index) >= 1.1 && ['calendar', 'holiday', 'events', 'school'].indexOf(s.signal_id) >= 0) hot[d] = Math.max(hot[d] || 0, foNum_(s.index)); });
+  return { listings: out, known: known, hot_dates: Object.keys(hot).sort().slice(0, 30), today: foToday_() };
+}
+function foMergeUrls_(a, b) { const s = {}; String(a || '').split(/\s+/).concat(String(b || '').split(/\s+/)).forEach(u => { if (u) s[u] = 1; }); return Object.keys(s).slice(0, 12).join('\n'); }
+/** Bot run report (no prices here: prices arrive through f.m.market.import). */
+function foBotsReport_(b) {
+  const runs = (Array.isArray(b.runs) ? b.runs : []).slice(0, 40), id = foClean_(b.run_id, 40) || foId_('RUN');
+  runs.forEach(x => foAppend_('BotRuns', { run_id: id, at: foNow_(), bot: foClean_(x.bot, 40), platform: foClean_(x.platform, 40), mode: foClean_(x.mode, 20), pages: foNum_(x.pages) || 0, prices: foNum_(x.prices) || 0,
+    sold_out: foNum_(x.sold_out) || 0, discovered: foNum_(x.discovered) || 0, blocked: foClean_(x.blocked, 120), status: x.blocked ? 'blocked' : x.error ? 'error' : 'ok', note: foClean_(x.note, 400) }));
+  foTouch_();
+  return { result: { runs: runs.length } };
 }

@@ -410,9 +410,18 @@ function foDataBuild_() {
     guests: foRows_('Guests').map(g => ({ guest_id: g.guest_id, name: g.name, city: g.city, state: g.state, first_seen: g.first_seen, phone: g.phone, email: g.email })),
     exceptions: ex.filter(e => e.status === 'open').concat(ex.filter(e => e.status !== 'open').slice(-100)).map(strip),
     imports: foRows_('Imports').slice(-50).map(strip),
-    competitors: foRows_('Competitors').map(strip), market_rates: foRows_('MarketRates').slice(-1500).map(strip), demand_signals: foRows_('DemandSignals').slice(-600).map(strip),
+    competitors: foRows_('Competitors').map(strip), market_rates: foMarketRatesForBundle_(), demand_signals: foRows_('DemandSignals').slice(-600).map(strip),
     seo_keywords: foRows_('SeoKeywords').map(strip), seo_ranks: foRows_('SeoRanks').slice(-3000).map(strip), seo_topics: foRows_('SeoTopics').map(strip), campaigns: foRows_('Campaigns').map(strip),
     signals: foRows_('Signals').slice(-3000).map(strip), comp_set: foRows_('CompSet').map(strip), comp_changes: foRows_('CompChanges').slice(-200).map(strip),
     recommendations: foDeskRecsForBundle_(), price_decisions: foRows_('PriceDecisions').slice(-1500).map(strip),
+    bot_runs: foRows_('BotRuns').slice(-300).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
+}
+
+/** Competitor prices for the portal and the engines: the last 30 days of observations (newest 6000), lean fields only. */
+function foMarketRatesForBundle_() {
+  const since = foDate_(new Date(Date.now() - 30 * 86400000)) || '';
+  return foRows_('MarketRates').filter(r => !since || String(r.observed_at) >= since).slice(-6000).map(r => ({ competitor: r.competitor, observed_at: r.observed_at, stay_date: r.stay_date, nights: r.nights,
+    unit_type: r.unit_type, bedrooms: r.bedrooms, sleeps: r.sleeps, price_total: r.price_total, price_per_night: r.price_per_night, taxes_included: r.taxes_included, source_type: r.source_type,
+    source_url: r.source_url, confidence: r.confidence, availability: r.availability, group_size: r.group_size, target_property: r.target_property, platform: r.platform, collected_by: r.collected_by, obs_id: r.obs_id }));
 }

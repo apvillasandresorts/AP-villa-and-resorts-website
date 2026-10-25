@@ -201,3 +201,39 @@ test('a realised rate far above the published price (a typo booking) is ignored,
   assert.ok(q.reasons.some(r => /Ignored your realised/.test(r)));
   assert.ok(q.price <= 4200 * 3, 'within the ceiling');
 });
+
+test('market across platforms: cheapest available platform counts; sold out only when every platform is full; parity measured', () => {
+  const d = data(), night = addD(TODAY, 2);
+  d.market_rates = d.market_rates.filter(r => r.stay_date !== night);
+  const add = (competitor, platform, price, availability = '') => d.market_rates.push({ competitor, observed_at: TODAY, stay_date: night, nights: 1, price_per_night: price, platform, availability, source_url: 'https://x/' + platform });
+  add('Mahadev Mansion 2 BHK', 'Airbnb', 3800); add('Mahadev Mansion 2 BHK', 'Booking.com', 3400);
+  add('Kanha Kasturi 2BHK', 'Airbnb', '', 'sold out'); add('Kanha Kasturi 2BHK', 'Booking.com', 4100);
+  add('RamRaj Family Stay', 'Airbnb', '', 'sold out');
+  const m = D.marketAt(d, 'ap-suite', night, D.settings(d), Date.parse(d.serverTime));
+  const row = n => m.rows.find(r => r.name === n);
+  assert.equal(row('Mahadev Mansion 2 BHK').price, 3400); assert.equal(row('Mahadev Mansion 2 BHK').platform, 'Booking.com');
+  assert.ok(Math.abs(row('Mahadev Mansion 2 BHK').parity - (3800 / 3400 - 1)) < 1e-9);
+  assert.equal(row('Kanha Kasturi 2BHK').sold_out, false, 'still bookable on Booking.com');
+  assert.equal(row('RamRaj Family Stay').sold_out, true);
+});
+
+test('unchecked nights use a labelled half-weight estimate from nearby nights of the same kind', () => {
+  const d = data(), far = addD(TODAY, 19);   // market_rates in data() cover TODAY..TODAY+19 only for some; drop this night
+  d.market_rates = d.market_rates.filter(r => r.stay_date !== far);
+  const q = D.quote(d, D.ctxFor(d, 'ap-suite'), far);
+  const st = q.steps.find(s => s.key === 'market');
+  assert.ok(st, 'market step present'); assert.equal(st.label, 'Market (estimated)'); assert.match(st.basis, /nearby/);
+  assert.equal(q.inputs.find(x => x.id === 'comp_price').status, 'estimated');
+});
+
+test('momentum: the same night scanned again 5 days later at +20% nudges the price up (capped at 5%), and a 25% jump is flagged', () => {
+  const d = data(), night = addD(TODAY, 4);
+  const later = d.market_rates.filter(r => r.stay_date === night).map(r => Object.assign({}, r, { observed_at: TODAY, price_per_night: Math.round(r.price_per_night * 1.25) }));
+  d.market_rates = d.market_rates.map(r => r.stay_date === night ? Object.assign({}, r, { observed_at: addD(TODAY, -6) }) : r).concat(later);
+  const q = D.quote(d, D.ctxFor(d, 'ap-suite'), night, { noPrev: true });
+  const mo = q.steps.find(s => s.key === 'momentum'); assert.ok(mo, 'momentum step'); assert.ok(mo.mult <= 1.05 + 1e-9 && mo.mult > 1);
+  assert.equal(q.market.spike, true);
+  assert.ok(q.market.position != null && q.market.position >= 0 && q.market.position <= 100);
+  const al = D.alerts(d, [D.calendar(d, 'ap-suite', 14)], []);
+  assert.ok(al.some(a => a.type === 'spike' && a.text.includes(night)));
+});

@@ -80,6 +80,10 @@ env.fo.foSetup();
   sig = sig.map(s => Object.assign({}, s, { fetched_at: now })).concat([{ signal_id: 'school', for_date: addD(t0, 12), index: 1.08, raw_value: 'SAMPLE school break', source_url: 'https://example.com/school', fetched_at: now, notes: 'SAMPLE' },
     { signal_id: 'temple', index: 1.05, raw_value: 'SAMPLE crowd notice', source_url: 'https://example.com/temple', fetched_at: addD(t0, -9) + 'T06:00:00Z', notes: 'SAMPLE (stale)' }]);
   env.api({ action: 'f.m.signals.import', key, signals: sig });
+  env.api({ action: 'f.m.bots.report', key, run_id: 'SAMPLE', runs: [{ bot: 'airbnb', platform: 'Airbnb', mode: 'pages', pages: 36, prices: 27, sold_out: 6, discovered: 0 }, { bot: 'booking', platform: 'Booking.com', mode: 'pages', pages: 30, prices: 41, sold_out: 2, discovered: 4 },
+    { bot: 'agoda', platform: 'Agoda', mode: 'pages', pages: 12, prices: 0, blocked: 'challenge page' }, { bot: 'serpapi', platform: 'Google Hotels', mode: 'api', pages: 5, prices: 64, discovered: 3 }, { bot: 'apify', platform: 'Apify', mode: 'api', blocked: 'APIFY_TOKEN not set yet' }] });
+  // the same nights scanned again later at higher prices (momentum + spike in the preview)
+  env.api({ action: 'f.m.market.import', key, rates: drates.filter(r => r.stay_date === addD(t0, 5)).map(r => Object.assign({}, r, { observed_at: t0, price_per_night: Math.round(r.price_per_night * 1.3), price_total: '', platform: 'Booking.com', source_url: r.source_url + '?bk' })) });
   env.fo.foHourly();
   env.api({ action: 'f.logout', token: tok });
 }
