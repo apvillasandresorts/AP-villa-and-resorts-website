@@ -83,3 +83,8 @@ test('Booking.com price formats in the cloud page and a room-type sell-out is no
   assert.equal(read.taxLine('Sat, 31 Oct\nDeluxe Room\nSold out\nFamily Room\n₹1711\n+ ₹236 taxes & fee', 'Sat, 31 Oct').price, 1711, 'one room type sold out ≠ hotel sold out');
   assert.equal(read.taxLine('This OYO is sold out for your dates').sold_out, true);
 });
+
+test('OYO room cards: cheapest real room price, not the struck-through original', () => {
+  const t = 'About Property\nChoose your room\nSELECTED CATEGORY\nClassic\nRoom size: 11 sqm approx\nAC\n₹2199\n₹11502\nSELECTED\nDeluxe\nRoom size: 13 sqm approx\n₹2417\n₹12641\nSELECT\nRatings and reviews';
+  assert.deepEqual(read.oyo(t), { price: 2199, sold_out: false, taxes_included: 'no' });
+});

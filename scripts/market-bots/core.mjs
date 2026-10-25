@@ -87,7 +87,13 @@ export function session(platform, opts = {}) {
     finally { await page.close().catch(() => {}); }
   };
   /** Dry-run debugging: keep what an unreadable page showed (public page text only, first 1500 characters). */
-  s.sample = (url, p) => { if (p && s.samples.length < 6) s.samples.push({ url, title: p.title, text: String(p.text || '').slice(0, 1500) }); };
+  s.sample = (url, p) => {
+    if (!p || s.samples.length >= 6) return;
+    const t = String(p.text || ''), wins = [];
+    for (const m of t.matchAll(/₹|Rs\.?\s?\d|INR\s?\d|US\$|sold out|no availability/gi)) { if (wins.length >= 8) break; if (!wins.length || m.index > wins[wins.length - 1] + 250) wins.push(m.index); }
+    const html = String(p.html || ''), hp = [...html.matchAll(/(?:price|prco|bui-price)[^>]{0,80}>[^<]{0,40}₹/gi)].slice(0, 4).map(m => html.slice(Math.max(0, m.index - 80), m.index + 200));
+    s.samples.push({ url, title: p.title, head: t.slice(0, 400), windows: wins.map(i => t.slice(Math.max(0, i - 150), i + 250)), html: hp, length: t.length });
+  };
   s.report = () => ({ platform, pages: s.pages, skipped: s.skipped, errors: s.errors, blocked: s.blocked || '', note: s.log.slice(0, 5).join(' | ') });
   return s;
 }

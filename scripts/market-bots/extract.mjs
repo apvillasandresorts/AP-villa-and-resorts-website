@@ -54,6 +54,18 @@ export const read = {
     if (!m && /(sold out|no rooms available)[^\n]{0,60}(your dates|on these dates)/i.test(t) && !/room types have already sold out/i.test(t)) return r(null, { sold_out: true });
     return r(m ? money(m[1]) : null, { taxes_included: 'unknown' });
   },
+  /** OYO property page: "Choose your room" cards list the price then the struck-through original ("₹1711 / ₹8951 / SELECTED"); cheapest room counts. */
+  oyo(text) {
+    const t = String(text), i = t.search(/Choose your room/i), part = i >= 0 ? t.slice(i, i + 4000) : t;
+    if (/(this oyo|hotel|property) is (fully )?sold out|sold out for (your|these|the selected) dates|no rooms? available for (your|these|the selected) dates/i.test(t) && !/₹\s?\d{3,}/.test(part)) return r(null, { sold_out: true });
+    const lines = part.split('\n').map(x => x.trim()), mins = [];
+    for (let j = 0; j < lines.length; j++) {
+      if (!/^₹\s?[\d,]{3,}$/.test(lines[j])) continue;
+      const run = []; while (j < lines.length && /^₹\s?[\d,]{3,}$/.test(lines[j])) run.push(money(lines[j++]));
+      mins.push(Math.min(...run));
+    }
+    return mins.length ? r(Math.min(...mins), { taxes_included: 'no' }) : read.taxLine(t);
+  },
   /** OYO / Cleartrip / EaseMyTrip style: the first price followed by a "+ ₹X taxes & fees" line, after the requested date label. */
   taxLine(text, dateLabel) {
     let t = String(text); if (dateLabel) { const i = t.indexOf(dateLabel); if (i >= 0) t = t.slice(i); }

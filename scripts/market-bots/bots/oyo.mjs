@@ -16,6 +16,7 @@ export default {
     const p = await s.open(url.split('?')[0] + `?checkin=${dmy(date)}&checkout=${dmy(next)}&rooms=1&guests=${Math.min(adults, 3)}`, 7000);
     if (!p) return null;
     s.last = p;
-    return Object.assign(read.taxLine(p.text, label(date)), { title: (p.title || '').split(',')[0].trim() });
+    void label;
+    return Object.assign(read.oyo(p.text), { title: (p.title || '').split(',')[0].trim() });
   },
 };
