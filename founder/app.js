@@ -5,7 +5,10 @@
  */
 (function () {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';
+  // Requests go through our own domain (/api/fo, a Vercel rewrite to the Apps Script web app) so a browser or network that cannot
+  // reach script.google.com still works; the answer is then read from script.googleusercontent.com. Direct is the fallback.
+  var DIRECT = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';
+  var API = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? DIRECT : '/api/fo';
   if (location.hostname === 'localhost' && location.port === '3100') API = '/api';   // tests/founder/dev-server.mjs (runs the real backend code on test data)
   var M = window.FoMetrics, C = window.FoCharts;
   var root = document.getElementById('fo-root');
@@ -67,7 +70,8 @@
     var ctl = window.AbortController ? new AbortController() : null, limit = action === 'f.sync' || action === 'f.report.run' || action === 'f.import.rows' ? 120000 : 60000;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, limit);
     busyBar(1);
-    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined })
+    var opts = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined };
+    return fetch(API, opts).catch(function (err) { if (API === DIRECT || (err && err.name === 'AbortError')) throw err; return fetch(DIRECT, opts); })   // proxy unreachable: try Google directly
       .then(function (r) { if (!r.ok) throw new Error('Network error ' + r.status); return r.json(); })
       .then(function (j) {
         if (j.rotate) { S.token = j.rotate; ss('set', 'fo_t', S.token); }
