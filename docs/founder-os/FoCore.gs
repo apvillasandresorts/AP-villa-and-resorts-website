@@ -68,6 +68,7 @@ const FO_TABS = {
   Recommendations: ['rec_id', 'computed_at', 'property', 'for_date', 'price', 'low', 'high', 'confidence', 'channels', 'factors', 'inputs', 'run_id'],
   PriceDecisions: ['decision_id', 'decided_at', 'decided_by', 'property', 'for_date', 'channel', 'recommended', 'set_price', 'accepted', 'reason', 'slot'],
   BotRuns: ['run_id', 'at', 'bot', 'platform', 'mode', 'pages', 'prices', 'sold_out', 'discovered', 'blocked', 'status', 'note'],
+  News: ['news_id', 'published_at', 'fetched_at', 'title', 'source', 'url', 'lang', 'category', 'categories', 'impact', 'direction', 'score', 'summary', 'query', 'alerted'],
   Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
   Jobs: ['job', 'started', 'finished', 'status', 'detail'],
 };

@@ -217,12 +217,12 @@ test('market across platforms: cheapest available platform counts; sold out only
   assert.equal(row('RamRaj Family Stay').sold_out, true);
 });
 
-test('unchecked nights use a labelled half-weight estimate from nearby nights of the same kind', () => {
+test('unchecked nights use the labelled comp-set forecast at half weight', () => {
   const d = data(), far = addD(TODAY, 19);   // market_rates in data() cover TODAY..TODAY+19 only for some; drop this night
   d.market_rates = d.market_rates.filter(r => r.stay_date !== far);
   const q = D.quote(d, D.ctxFor(d, 'ap-suite'), far);
   const st = q.steps.find(s => s.key === 'market');
-  assert.ok(st, 'market step present'); assert.equal(st.label, 'Market (estimated)'); assert.match(st.basis, /nearby/);
+  assert.ok(st, 'market step present'); assert.equal(st.label, 'Market (forecast)'); assert.match(st.basis, /forecast median/);
   assert.equal(q.inputs.find(x => x.id === 'comp_price').status, 'estimated');
 });
 
@@ -236,4 +236,27 @@ test('momentum: the same night scanned again 5 days later at +20% nudges the pri
   assert.ok(q.market.position != null && q.market.position >= 0 && q.market.position <= 100);
   const al = D.alerts(d, [D.calendar(d, 'ap-suite', 14)], []);
   assert.ok(al.some(a => a.type === 'spike' && a.text.includes(night)));
+});
+
+test('competitor forecast: normal prices by night type, calendar lift learned or defaulted, sell-out chance, honest accuracy', () => {
+  const d = data();
+  const plain = D.forecast(d, 'ap-suite', addD(TODAY, 40));
+  assert.ok(plain && plain.median > 0 && plain.p25 <= plain.median && plain.median <= plain.p75);
+  assert.ok(['good', 'fair', 'thin'].includes(plain.quality));
+  // a strong calendar night 40 days out lifts the forecast by k × (index − 1)
+  d.signals = [{ signal_id: 'calendar', for_date: addD(TODAY, 40), index: 1.3, source_url: 'https://x', fetched_at: d.serverTime, status: 'live' }];
+  const fest = D.forecast(d, 'ap-suite', addD(TODAY, 40));
+  assert.ok(fest.median > plain.median, 'festival night forecast higher'); assert.equal(fest.calendar, 1.3);
+  const acc = D.forecastAccuracy(data(), 'ap-suite');
+  assert.ok(acc.nights >= 5 && acc.mape != null && acc.mape < 0.5, JSON.stringify(acc).slice(0, 200));
+});
+
+test('market analytics: segments, platforms, weekday and lead profiles, leaderboard', () => {
+  const d = data(); d.market_rates.forEach((r, i) => { r.platform = i % 3 ? 'Airbnb' : 'Booking.com'; });
+  const a = D.marketAnalytics(d, 30);
+  assert.ok(a.observations > 0 && a.competitors > 0);
+  assert.ok(a.segments.some(s => s.segment === 'Hotels') && a.segments.some(s => /BR homes/.test(s.segment)));
+  assert.ok(a.platforms.length >= 2 && a.platforms.every(p => p.cheapest_share >= 0 && p.cheapest_share <= 1));
+  assert.equal(a.weekdays.length, 7); assert.equal(a.lead.length, 4);
+  assert.ok(a.leaderboard[0].nights >= 1 && Array.isArray(a.leaderboard[0].platforms));
 });

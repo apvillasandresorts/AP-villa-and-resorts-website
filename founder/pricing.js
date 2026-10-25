@@ -23,14 +23,14 @@
 
   // ============================================================ view ============================================================
   function viewPricing(page) {
-    var T = U.tabs('pricing', [['today', 'Today'], ['calendar', '90 nights'], ['comp', 'Competitors'], ['ratecheck', 'Rate check'], ['observations', 'Market prices'], ['health', 'Signal health'], ['outlook', 'Outlook'], ['perf', 'Performance'], ['rates', 'Rate guide (v1)'], ['desk', 'Settings']]);
+    var T = U.tabs('pricing', [['today', 'Today'], ['calendar', '90 nights'], ['comp', 'Competitors'], ['forecast', 'Forecast'], ['analytics', 'Analytics'], ['news', 'News'], ['ratecheck', 'Rate check'], ['observations', 'Market prices'], ['health', 'Signal health'], ['outlook', 'Outlook'], ['perf', 'Performance'], ['rates', 'Rate guide (v1)'], ['desk', 'Settings']]);
     var D = data(), obs = D.market_rates || [], latest = obs.map(function (r) { return r.observed_at; }).sort().pop();
     page.innerHTML = U.hello('Pricing desk', 'The price to set on each channel, tonight and for the next 90 nights, from your bookings, the Hindu calendar, holidays, weather, demand and your competitors. Recommendations only: nothing changes your OTA prices. ' +
       (latest ? 'Competitor prices last seen ' + esc(dmy(latest)) + '.' : 'No competitor prices yet: use Rate check.')) + T.html + '<div id="pr"></div>';
     U.wireTabs(page, 'pricing');
     var body = $('#pr');
     if (!K) { body.innerHTML = '<div class="fo-empty">The pricing desk script did not load. Reload the page.</div>'; return; }
-    ({ today: deskToday, calendar: deskCalendar, comp: deskComp, ratecheck: rateCheck, observations: observations, health: deskHealth, outlook: deskOutlook, perf: deskPerf, rates: rates, desk: deskSettings, competitors: deskComp, signals: deskHealth, engine: deskSettings }[T.cur] || deskToday)(body);
+    ({ today: deskToday, calendar: deskCalendar, comp: deskComp, forecast: deskForecast, analytics: deskAnalytics, news: deskNews, ratecheck: rateCheck, observations: observations, health: deskHealth, outlook: deskOutlook, perf: deskPerf, rates: rates, desk: deskSettings, competitors: deskComp, signals: deskHealth, engine: deskSettings }[T.cur] || deskToday)(body);
   }
 
   // ============================================================ Live Pricing Desk (v2, FoDesk) ============================================================
@@ -54,6 +54,7 @@
     var h = K.health(D), down = h.filter(function (x) { return x.kind !== 'own' && x.status !== 'live'; });
     body.innerHTML = '<div class="fo-note" style="margin-bottom:14px"><b>Set these prices on each channel.</b> Direct is the guest’s best deal; each OTA price is grossed up for its commission so you keep the same. ' +
       'Now: <b>' + esc(cards[0] ? cards[0].slot_label : '') + '</b>. ' + (down.length ? '<a href="#" id="dk-h">' + down.length + ' of ' + h.filter(function (x) { return x.kind !== 'own'; }).length + ' outside signals are not live</a>: confidence is lower until they are.' : 'All signals live.') + '</div>' +
+      newsStrip(D) +
       '<div class="dk-today">' + cards.map(function (c) { return '<section class="fo-card dk-prop"><h3>' + esc(c.name) + '</h3>' + night(c, c.tonight, 'Tonight') + night(c, c.tomorrow, 'Tomorrow') + '</section>'; }).join('') + '</div>';
     var hl = $('#dk-h'); if (hl) hl.onclick = function (e) { e.preventDefault(); location.hash = '#/pricing/health'; };
     wireCopy(body);
@@ -242,6 +243,72 @@
         return ['<b>' + esc(r.platform) + '</b>', esc(r.mode === 'api' ? 'API' : 'public pages'), r.at ? when(r.at) : '—', esc(r.pages), esc(r.prices), esc(r.sold_out), esc(r.discovered), badge(r), '<small class="fo-hint">' + esc(r.blocked || r.note || '') + '</small>'];
       }), 'No bot runs yet: the first run is at 08:10 or 18:10 IST (GitHub → Actions → "Market bots" → Run workflow to start one now).', [3, 4, 5, 6]) +
       '<p class="fo-hint">Bots read public pages that each site\'s robots.txt allows, identify themselves, never log in or solve CAPTCHAs, and stop at the first challenge ("blocked"). MakeMyTrip, Goibibo and Expedia come through Google Hotels (SerpApi); new Airbnb homes through Apify.</p></div>';
+  }
+
+  // ---------- news (GDELT + publishers' RSS every 2 hours) ----------
+  var IMPACT = { high: ['fo-badge--bad', 'High impact'], medium: ['fo-badge--gold', 'Medium'], low: ['fo-badge--muted', 'Low'] };
+  var DIR = { up: '▲ demand up', down: '▼ demand down', neutral: '' };
+  function newsItem(n) {
+    var im = IMPACT[n.impact] || IMPACT.low;
+    return '<article class="dk-news"><div class="dk-news__meta"><span class="fo-badge ' + im[0] + '">' + im[1] + '</span> <span class="fo-badge fo-badge--muted">' + esc(n.category) + '</span>' + (DIR[n.direction] ? ' <small class="dk-news__dir dk-news__dir--' + esc(n.direction) + '">' + DIR[n.direction] + '</small>' : '') +
+      ' <small class="fo-hint">' + esc(n.source) + ' · ' + (n.published_at ? when(n.published_at) : 'date unknown') + (n.lang === 'hi' ? ' · हिंदी' : '') + '</small></div>' +
+      '<a class="dk-news__title" href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + ' ↗</a>' + (n.summary ? '<p class="fo-hint" style="margin:4px 0 0">' + esc(n.summary) + '</p>' : '') + '</article>';
+  }
+  function newsSorted(D) { return (D.news || []).slice().sort(function (a, b) { return String(b.published_at || b.fetched_at) < String(a.published_at || a.fetched_at) ? -1 : 1; }); }
+  function newsStrip(D) {
+    var since = new Date(Date.parse(D.serverTime || new Date().toISOString()) - 72 * 3600000).toISOString();
+    var top = newsSorted(D).filter(function (n) { return n.impact !== 'low' && String(n.published_at || n.fetched_at) >= since; }).sort(function (a, b) { return (b.impact === 'high') - (a.impact === 'high') || num(b.score) - num(a.score); }).slice(0, 3);
+    return top.length ? '<div class="fo-card" style="margin-bottom:14px"><h3>News that matters <small>last 72 hours · <a href="#/pricing/news">all news</a></small></h3>' + top.map(newsItem).join('') + '</div>' : '';
+  }
+  function deskNews(body) {
+    var D = data(), f = S.dkNewsF || { impact: '', cat: '', lang: '' }, all = newsSorted(D);
+    var cats = []; all.forEach(function (n) { if (cats.indexOf(n.category) < 0) cats.push(n.category); });
+    var list = all.filter(function (n) { return (!f.impact || n.impact === f.impact) && (!f.cat || n.category === f.cat) && (!f.lang || n.lang === f.lang); });
+    body.innerHTML = '<div class="fo-toolbar">' + sel('nw-i', [['', 'All impact'], ['high', 'High impact'], ['medium', 'Medium'], ['low', 'Low']], f.impact) + sel('nw-c', [['', 'All topics']].concat(cats.map(function (c) { return [c, c]; })), f.cat) + sel('nw-l', [['', 'English + हिंदी'], ['en', 'English'], ['hi', 'हिंदी']], f.lang) +
+      '<span class="fo-hint">' + list.length + ' stories · updated every 2 hours from GDELT (open news database) and publishers\' RSS feeds · headlines and links only</span></div>' +
+      (list.length ? '<div class="fo-card">' + list.slice(0, 120).map(newsItem).join('') + '</div>' : '<div class="fo-empty">No stories yet: the news job runs every 2 hours (GitHub → Actions → "News" → Run workflow to fetch now).</div>') +
+      '<p class="fo-hint">Labels are automatic keyword rules (temple, festival, travel, hospitality, weather, safety, development): read the story before acting. High-impact stories are also emailed to you once.</p>';
+    ['nw-i', 'nw-c', 'nw-l'].forEach(function (id, i) { $('#' + id).onchange = function () { f[['impact', 'cat', 'lang'][i]] = this.value; S.dkNewsF = f; deskNews(body); }; });
+  }
+
+  // ---------- competitor forecast ----------
+  function deskForecast(body) {
+    var D = data(), pid = deskPid(), cal = deskCal(pid), cfg = cfgDesk(), mdl = K.marketModel(D, pid, cfg, Date.parse(D.serverTime)), acc = K.forecastAccuracy(D, pid);
+    var rows = cal ? cal.rows : [], fc = rows.map(function (q) { return q.market.forecast; });
+    var hot = rows.filter(function (q) { return q.market.forecast; }).slice().sort(function (a, b) { return (b.market.forecast.sellout_p || 0) - (a.market.forecast.sellout_p || 0) || b.market.forecast.median - a.market.forecast.median; }).slice(0, 12);
+    body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">What competitors are likely to charge, and the chance they sell out, for each of the next 90 nights. Learned from every price the bots have seen.</span></div>' +
+      '<div class="fo-grid fo-grid--kpi" style="margin-bottom:14px">' + [['Competitors modelled', String(mdl.competitors)], ['Nights seen', mdl.nights], ['Festival reaction', mdl.pairs >= 3 ? Math.round(mdl.k * 100) + '% of calendar strength' : 'default 60% (learning)'], ['Price drift as dates near', mdl.slopes >= 5 ? (mdl.drift >= 0 ? '+' : '') + (mdl.drift * 100).toFixed(2) + '% a day' : 'learning'], ['Forecast accuracy', acc.mape != null ? Math.round((1 - acc.mape) * 100) + '% (' + acc.nights + ' nights tested)' : 'needs more nights']].map(function (k) { return '<div class="fo-card fo-kpi"><div class="fo-kpi__label">' + esc(k[0]) + '</div><div class="fo-kpi__value" style="font-size:18px">' + esc(k[1]) + '</div></div>'; }).join('') + '</div>' +
+      card('Competitor prices, next 90 nights', 'forecast median and range · bars = prices actually seen · blue line = your recommended net price', '<div class="fo-chartbox" id="fc-c"></div>') +
+      '<div class="fo-grid fo-grid--2" style="margin-top:14px">' + card('Chance competitors sell out', 'by night', '<div class="fo-chartbox" id="fc-s"></div>') +
+      card('Nights to watch', 'highest sell-out chance first', table(['Night', 'Forecast', 'Range', 'Sell-out', 'Nearer the date', 'Calendar'], hot.map(function (q) { var f = q.market.forecast; return ['<a href="#" data-d="' + q.date + '">' + esc(wday(q.date)) + '</a>', inr(f.median), inr(f.p25) + '–' + inr(f.p75), f.sellout_p != null ? Math.round(f.sellout_p * 100) + '%' : '—', inr(f.at_stay), f.calendar > 1.01 ? '×' + f.calendar : '—']; }), 'No forecast yet: it needs prices for at least 3 competitors.', [1, 2, 3, 4])) + '</div>' +
+      '<div class="fo-card" style="margin-top:14px"><h3>How good is the forecast? <small>each checked night forecast without its own prices, then compared</small></h3>' + table(['Night', 'Forecast', 'Seen', 'Error'], acc.rows.slice(-20).reverse().map(function (r) { return [dmy(r.date), inr(r.forecast), inr(r.actual), Math.round(r.error * 100) + '%']; }), 'Needs nights with 3+ competitor prices.', [1, 2, 3]) +
+      '<p class="fo-hint">Method: each competitor\'s normal price for weekday and Fri/Sat nights → comp-set median × (1 + reaction × calendar strength from the Hindu calendar, holidays, events and school breaks). Sell-out chance from what the bots saw by night type and lead time. Labelled ESTIMATE; real prices replace it as soon as the bots see a night.</p></div>';
+    $('#dk-p').onchange = function () { S.dkP = this.value; deskForecast(body); };
+    $$('[data-d]', body).forEach(function (a) { a.onclick = function (e) { e.preventDefault(); waterfall(pid, a.dataset.d); }; });
+    C.combo($('#fc-c'), { labels: rows.map(function (q) { return dm(q.date); }), kind: 'inr', height: 280, empty: 'No forecast yet: it needs prices for at least 3 competitors.', series: [
+      { name: 'Forecast median', values: fc.map(function (f) { return f ? f.median : null; }), type: 'line', color: '#C9A24F' },
+      { name: 'Forecast low (25%)', values: fc.map(function (f) { return f ? f.p25 : null; }), type: 'line', color: '#E2D3A6' },
+      { name: 'Forecast high (75%)', values: fc.map(function (f) { return f ? f.p75 : null; }), type: 'line', color: '#B39550' },
+      { name: 'Seen (median)', values: rows.map(function (q) { return q.market.n >= 2 ? q.market.median : null; }), color: '#9BB8A8' },
+      { name: 'Your net price', values: rows.map(function (q) { return q.price; }), type: 'line' }], onClick: function (i) { waterfall(pid, rows[i].date); } });
+    C.combo($('#fc-s'), { labels: rows.map(function (q) { return dm(q.date); }), kind: 'n', empty: 'Needs availability checks.', series: [{ name: 'Sell-out chance %', values: fc.map(function (f) { return f && f.sellout_p != null ? Math.round(f.sellout_p * 100) : null; }) }] });
+  }
+
+  // ---------- market analytics ----------
+  function deskAnalytics(body) {
+    var D = data(), n = S.dkAnDays || 30, a = K.marketAnalytics(D, n), pct0 = function (v) { return v == null ? '—' : Math.round(v * 100) + '%'; }, idx = function (v) { return v == null ? '—' : (v >= 1 ? '+' : '−') + Math.abs(Math.round((v - 1) * 100)) + '%'; };
+    var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    body.innerHTML = '<div class="fo-toolbar">Next ' + sel('an-n', [['14', '14 nights'], ['30', '30 nights'], ['60', '60 nights'], ['90', '90 nights']], String(n)) + '<span class="fo-hint">' + a.observations + ' prices from ' + a.competitors + ' competitors on every platform the bots read · all competitors, not only your comp sets</span></div>' +
+      '<div class="fo-grid fo-grid--2">' + card('Market by segment', 'what each kind of stay charges', table(['Segment', 'Competitors', 'Median', 'Middle half', 'Sold out'], a.segments.map(function (x) { return ['<b>' + esc(x.segment) + '</b>', esc(x.competitors), inr(x.median), x.p25 ? inr(x.p25) + '–' + inr(x.p75) : '—', pct0(x.sellout)]; }), 'No prices yet.', [1, 2, 3, 4])) +
+      card('Platforms', 'where guests find the lowest price', table(['Platform', 'Prices', 'Median', 'Cheapest', 'Premium vs cheapest'], a.platforms.map(function (x) { return ['<b>' + esc(x.platform) + '</b>', esc(x.observations), inr(x.median), pct0(x.cheapest_share), x.premium == null ? '—' : '+' + Math.round(x.premium * 100) + '%']; }), 'No prices yet.', [1, 2, 3, 4])) + '</div>' +
+      '<div class="fo-grid fo-grid--2" style="margin-top:14px">' + card('Price index over time', 'competitor prices vs their own normal, by day seen (1.00 = normal)', '<div class="fo-chartbox" id="an-i"></div>') +
+      card('Day of the week', 'price vs normal and sell-outs by night', '<div class="fo-chartbox" id="an-w"></div>') + '</div>' +
+      '<div class="fo-grid fo-grid--2" style="margin-top:14px">' + card('Booking lead time', 'competitor prices vs normal by how far ahead', table(['Seen', 'Price vs normal', 'Prices'], a.lead.map(function (x) { return [esc(x.label), idx(x.index), esc(x.observations)]; }), '', [1, 2])) +
+      card('Leaderboard', 'competitors with the most data', table(['Competitor', 'Segment', 'Median', 'Sold out', 'Price moves', 'Platforms', 'Spread'], a.leaderboard.slice(0, 15).map(function (x) { return ['<a href="#" data-cmp="' + esc(x.name) + '">' + esc(x.name) + '</a>' + (x.distance_km !== '' && x.distance_km != null ? ' <small class="fo-hint">' + esc(x.distance_km) + ' km</small>' : ''), esc(x.segment), inr(x.median), pct0(x.sellout), esc(x.price_moves), esc(x.platforms.join(', ')), x.spread == null ? '—' : Math.round(x.spread * 100) + '%']; }), 'No competitor data yet.', [2, 3, 4])) + '</div>';
+    $('#an-n').onchange = function () { S.dkAnDays = Number(this.value); deskAnalytics(body); };
+    $$('[data-cmp]', body).forEach(function (el) { el.onclick = function (e) { e.preventDefault(); compDrawer(deskPid(), el.dataset.cmp); }; });
+    C.combo($('#an-i'), { labels: a.index.map(function (x) { return dm(x.date); }), kind: 'n', empty: 'Builds up as the bots check prices twice a day.', series: [{ name: 'Index ×100', values: a.index.map(function (x) { return Math.round(x.index * 100); }), type: 'line' }] });
+    C.combo($('#an-w'), { labels: a.weekdays.map(function (x) { return WD[x.weekday]; }), kind: 'n', empty: 'No prices yet.', series: [{ name: 'Price vs normal ×100', values: a.weekdays.map(function (x) { return x.index == null ? null : Math.round(x.index * 100); }), type: 'line' }, { name: 'Sold out %', values: a.weekdays.map(function (x) { return x.sellout == null ? null : Math.round(x.sellout * 100); }), color: '#9BB8A8' }] });
   }
 
   // ---------- outlook (30-day, from the daily intelligence job) ----------

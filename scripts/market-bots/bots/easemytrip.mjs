@@ -7,6 +7,7 @@ export default {
   async discover(s) {
     const p = await s.open('https://www.easemytrip.com/hotels/hotels-in-ujjain/', 7000, page => harvestCards(page, 'a[href*="/hotels/"]'));
     if (!p) return [];
-    return cards(p.extra).filter(c => /\/hotels\/[a-z0-9-]+-\d+\/?$/.test(c.href)).map(c => Object.assign(c, { price: null }));
+    // only real hotel cards (they show a price); the page also links other cities' hotels and offers
+    return cards(p.extra).filter(c => /\/hotels\/[a-z0-9-]+-\d+\/?$/.test(c.href) && c.price).map(c => Object.assign(c, { price: null }));
   },
 };

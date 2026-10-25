@@ -238,6 +238,7 @@ var FoDesk = (function () {
   }
   /** Where a price sits among the comp set's available prices for the night: 0 = cheapest, 100 = dearest (guest prices vs our direct price). */
   function position(mk, net) { var ps = mk.rows.filter(function (r) { return !r.sold_out && r.price > 0 && !r.hotel; }).map(function (r) { return r.price; }); if (ps.length < 3) return null; return Math.round(ps.filter(function (p) { return p < net; }).length / ps.length * 100); }
+  function forecastSafe(data, id, date) { try { return forecast(data, id, date); } catch (e) { return null; } }
   function quant(sorted, q) { if (!sorted.length) return null; var i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo); }
   function platformOf(u) { u = String(u || ''); return /airbnb/.test(u) ? 'Airbnb' : /booking\.com/.test(u) ? 'Booking.com' : /agoda/.test(u) ? 'Agoda' : /makemytrip/.test(u) ? 'MakeMyTrip' : /goibibo/.test(u) ? 'Goibibo' : /oyorooms/.test(u) ? 'OYO' : /cleartrip/.test(u) ? 'Cleartrip' : /trip\.com/.test(u) ? 'Trip.com' : /easemytrip/.test(u) ? 'EaseMyTrip' : /owner_check/.test(u) ? 'Rate check' : 'Other'; }
   /**
@@ -274,6 +275,114 @@ var FoDesk = (function () {
       if (old.n >= 3 && old.median && old.latest && old.latest <= asOf) return { change: cur.median / old.median - 1, from: old.median, to: cur.median, since: old.latest };
     }
     return null;
+  }
+
+  // ------------------------------------------------------------ competitor forecast ------------------------------------------------------------
+  function isWkend(d) { var w = new Date(t(d)).getUTCDay(); return w === 5 || w === 6; }
+  /** Calendar strength of a night from public signals only (Hindu calendar, holidays, events, school breaks): product of fresh indices. */
+  function calIndex(data, propertyId, date, now) {
+    var x = 1; ['calendar', 'holiday', 'events', 'school'].forEach(function (id) { var s = signalAt(data, id, propertyId, date, now); if (s && s.fresh > 0) x *= 1 + (s.index - 1) * s.fresh; }); return x;
+  }
+  /** What the bots have seen for this comp set: every checked night with its rows (memoised per data load). */
+  function scanned(data, propertyId, cfg, now) {
+    var mm = memo(data), ck = 'sc:' + propertyId; if (mm[ck]) return mm[ck];
+    var keys = compSet(data, propertyId).map(function (r) { return r.key; }), dates = {};
+    (data.market_rates || []).forEach(function (r) { var d = String(r.stay_date || '').slice(0, 10); if (d && keys.indexOf(normName(r.competitor)) >= 0) dates[d] = 1; });
+    return (mm[ck] = Object.keys(dates).sort().map(function (d) { return { date: d, m: marketAt(data, propertyId, d, cfg, now) }; }).filter(function (x) { return x.m.seen > 0; }));
+  }
+  /**
+   * Learned model of the comp set (optionally leaving one night out, for honest accuracy checks):
+   * norms = each competitor's median price on weekday / Fri-Sat nights; k = how much prices rise per unit of calendar strength;
+   * drift = average price change per day as a night gets closer (repeat scans); sellout rates by night type and lead time.
+   */
+  function marketModel(data, propertyId, cfg, now, exclude) {
+    var mm = memo(data), ck = 'mdl:' + propertyId + ':' + (exclude || ''); if (mm[ck]) return mm[ck];
+    var nights = scanned(data, propertyId, cfg, now).filter(function (x) { return x.date !== exclude; }), norms = {};
+    nights.forEach(function (x) { x.m.rows.forEach(function (r) { if (r.sold_out || !(r.price > 0)) return; var k = r.key + '|' + (isWkend(x.date) ? 'we' : 'wd'); (norms[k] = norms[k] || []).push(r.price); }); });
+    Object.keys(norms).forEach(function (k) { norms[k] = median(norms[k]); });
+    var base = { wd: [], we: [] }; Object.keys(norms).forEach(function (k) { base[k.split('|')[1]].push(norms[k]); });
+    base.wd.sort(function (a, b) { return a - b; }); base.we.sort(function (a, b) { return a - b; });
+    // calendar elasticity from nights stronger than normal
+    var pairs = [];
+    nights.forEach(function (x) {
+      var ci = calIndex(data, propertyId, x.date, now); if (ci < 1.02) return;
+      var rel = x.m.rows.filter(function (r) { return !r.sold_out && r.price > 0 && norms[r.key + '|' + (isWkend(x.date) ? 'we' : 'wd')]; }).map(function (r) { return r.price / norms[r.key + '|' + (isWkend(x.date) ? 'we' : 'wd')]; });
+      if (rel.length >= 3) pairs.push((median(rel) - 1) / (ci - 1));
+    });
+    var k = pairs.length >= 3 ? clamp(median(pairs), 0, 1.5) : 0.6;
+    // drift: the same competitor + night + platform seen on two different days
+    var hist = {}, slopes = [];
+    (data.market_rates || []).forEach(function (r) { var pn = num(r.price_per_night); if (!(pn > 0) || /sold/i.test(r.availability || '') || String(r.stay_date || '').slice(0, 10) === exclude) return; var id = normName(r.competitor) + '|' + String(r.stay_date).slice(0, 10) + '|' + (r.platform || platformOf(r.source_url)); (hist[id] = hist[id] || []).push({ at: String(r.observed_at).slice(0, 10), p: pn }); });
+    Object.keys(hist).forEach(function (id) { var a = hist[id].sort(function (x, y) { return x.at < y.at ? -1 : 1; }); for (var i = 1; i < a.length; i++) { var days = (t(a[i].at) - t(a[i - 1].at)) / DAY; if (days >= 1) slopes.push((a[i].p / a[i - 1].p - 1) / days); } });
+    var drift = slopes.length >= 5 ? clamp(median(slopes), -0.01, 0.01) : 0;
+    // sell-out rates by night type and lead time (lead = stay date − day it was seen)
+    var so = { wd: [], we: [], near: [], mid: [], far: [] };
+    nights.forEach(function (x) { if (x.m.seen < 3) return; var lead = Math.round((t(x.date) - t(x.m.latest || x.date)) / DAY), sh = x.m.sellout; so[isWkend(x.date) ? 'we' : 'wd'].push(sh); so[lead <= 3 ? 'near' : lead <= 14 ? 'mid' : 'far'].push(sh); });
+    var avg = function (a) { return a.length ? a.reduce(function (s2, v) { return s2 + v; }, 0) / a.length : null; };
+    var all = avg(so.wd.concat(so.we));
+    var leadF = function (b) { var v = avg(so[b]); return all && v != null && so[b].length >= 3 ? v / all : { near: 1, mid: 0.8, far: 0.5 }[b]; };
+    return (mm[ck] = { norms: norms, base: base, k: k, pairs: pairs.length, drift: drift, slopes: slopes.length, sell: { wd: avg(so.wd), we: avg(so.we), all: all, near: leadF('near'), mid: leadF('mid'), far: leadF('far') }, nights: nights.length, competitors: Object.keys(norms).map(function (x) { return x.split('|')[0]; }).filter(function (x, i, a) { return a.indexOf(x) === i; }).length });
+  }
+  /** Forecast of the comp set for one night: median and range of competitor prices, the expected price nearer the date, and sell-out chance. */
+  function forecast(data, propertyId, date, opts) {
+    opts = opts || {};
+    var cfg = settings(data), now = nowMs(data), today = data.today || iso(now), mdl = marketModel(data, propertyId, cfg, now, opts.exclude), b = isWkend(date) ? 'we' : 'wd';
+    var pool = mdl.base[b].length >= 3 ? mdl.base[b] : mdl.base.wd.concat(mdl.base.we).sort(function (a, c) { return a - c; });
+    if (pool.length < 3) return null;
+    var ci = calIndex(data, propertyId, date, now), lift = 1 + mdl.k * (ci - 1), lead = Math.max(0, Math.round((t(date) - t(today)) / DAY));
+    var med = median(pool) * lift, toStay = clamp(mdl.drift * lead, -0.25, 0.25);
+    var sBase = mdl.sell[b] != null ? mdl.sell[b] : mdl.sell.all, sp = sBase == null ? null : clamp(sBase * (1 + 2 * (ci - 1)) * (lead <= 3 ? mdl.sell.near : lead <= 14 ? mdl.sell.mid : mdl.sell.far), 0, 0.95);
+    return { date: date, median: Math.round(med), p25: Math.round(quant(pool, 0.25) * lift), p75: Math.round(quant(pool, 0.75) * lift), at_stay: Math.round(med * (1 + toStay)), sellout_p: sp == null ? null : Math.round(sp * 100) / 100,
+      calendar: Math.round(ci * 100) / 100, k: Math.round(mdl.k * 100) / 100, drift_per_day: mdl.drift, competitors: pool.length, nights_seen: mdl.nights,
+      quality: pool.length >= 6 && mdl.nights >= 8 ? 'good' : pool.length >= 3 && mdl.nights >= 3 ? 'fair' : 'thin' };
+  }
+  /** Honest accuracy: forecast each checked night without its own prices and compare with what the bots saw (median absolute % error). */
+  function forecastAccuracy(data, propertyId) {
+    var cfg = settings(data), now = nowMs(data), errs = [], rows = [];
+    scanned(data, propertyId, cfg, now).forEach(function (x) { if (x.m.n < 3 || !x.m.median) return; var f = forecast(data, propertyId, x.date, { exclude: x.date }); if (!f) return; var e = Math.abs(f.median / x.m.median - 1); errs.push(e); rows.push({ date: x.date, forecast: f.median, actual: Math.round(x.m.median), error: e }); });
+    return { nights: errs.length, mape: errs.length ? median(errs) : null, rows: rows };
+  }
+
+  // ------------------------------------------------------------ market analytics ------------------------------------------------------------
+  function segOf(c, r) { var bd = num((c || {}).bedrooms), hotel = /hotel|guest ?house|inn|residency|palace|dharamshala/i.test(((c || {}).type || '') + ' ' + ((c || {}).name || r.name || '')) && !/villa|homestay|apartment|bhk/i.test((c || {}).type || ''); return hotel ? 'Hotels' : bd >= 3 ? '3+ BR homes' : bd === 2 ? '2 BR homes' : bd ? '1 BR homes' : 'Other homes'; }
+  /** Market analytics across every competitor the bots know (not only the comp set), for the next `days` nights. */
+  function marketAnalytics(data, days) {
+    days = days || 30;
+    var now = nowMs(data), today = data.today || iso(now), end = add(today, days), comps = {}, byNight = {};
+    (data.competitors || []).forEach(function (c) { comps[normName(c.name)] = c; });
+    (data.market_rates || []).forEach(function (r) {
+      var d = String(r.stay_date || '').slice(0, 10); if (!d || d < today || d > end) return;
+      var k = normName(r.competitor), pl = r.platform || platformOf(r.source_url), id = k + '|' + d + '|' + pl, at = String(r.observed_at).slice(0, 10);
+      if (!byNight[id] || at > byNight[id].at) byNight[id] = { key: k, name: r.competitor, date: d, platform: pl, at: at, price: num(r.price_per_night), sold: /sold/i.test(r.availability || '') };
+    });
+    var obs = Object.keys(byNight).map(function (id) { return byNight[id]; });
+    // per competitor per night: cheapest platform
+    var cn = {}; obs.forEach(function (o) { var id = o.key + '|' + o.date; (cn[id] = cn[id] || []).push(o); });
+    var nightsRows = Object.keys(cn).map(function (id) { var a = cn[id], av = a.filter(function (o) { return !o.sold && o.price > 0; }).sort(function (x, y) { return x.price - y.price; }); return { key: a[0].key, name: a[0].name, date: a[0].date, price: av.length ? av[0].price : null, cheapest: av.length ? av[0].platform : '', sold: !av.length && a.some(function (o) { return o.sold; }), platforms: a, spread: av.length > 1 ? av[av.length - 1].price / av[0].price - 1 : null }; });
+    // segments
+    var segs = {}; nightsRows.forEach(function (n) { var sg = segOf(comps[n.key], n), x = segs[sg] = segs[sg] || { segment: sg, prices: [], sold: 0, seen: 0, comps: {} }; x.seen++; x.comps[n.key] = 1; if (n.sold) x.sold++; else if (n.price) x.prices.push(n.price); });
+    var segments = Object.keys(segs).map(function (k) { var x = segs[k], p = x.prices.sort(function (a, b) { return a - b; }); return { segment: k, competitors: Object.keys(x.comps).length, observations: x.seen, median: median(p), p25: quant(p, 0.25), p75: quant(p, 0.75), sellout: x.seen ? x.sold / x.seen : null }; }).sort(function (a, b) { return b.observations - a.observations; });
+    // platforms: how often each is the guest's cheapest, its typical premium over the cheapest
+    var pls = {}; nightsRows.forEach(function (n) { var av = n.platforms.filter(function (o) { return !o.sold && o.price > 0; }); av.forEach(function (o) { var x = pls[o.platform] = pls[o.platform] || { platform: o.platform, observations: 0, cheapest: 0, premiums: [], prices: [] }; x.observations++; x.prices.push(o.price); if (o.platform === n.cheapest) x.cheapest++; if (av.length > 1) x.premiums.push(o.price / n.price - 1); }); });
+    var platforms = Object.keys(pls).map(function (k) { var x = pls[k]; return { platform: k, observations: x.observations, median: median(x.prices), cheapest_share: x.observations ? x.cheapest / x.observations : null, premium: x.premiums.length ? median(x.premiums) : null }; }).sort(function (a, b) { return b.observations - a.observations; });
+    // weekday profile (price relative to each competitor's own median) and sell-outs
+    var own = {}; nightsRows.forEach(function (n) { if (n.price) (own[n.key] = own[n.key] || []).push(n.price); }); Object.keys(own).forEach(function (k) { own[k] = median(own[k]); });
+    var wk = [0, 1, 2, 3, 4, 5, 6].map(function (w) { return { weekday: w, rel: [], sold: 0, seen: 0 }; });
+    nightsRows.forEach(function (n) { var x = wk[new Date(t(n.date)).getUTCDay()]; x.seen++; if (n.sold) x.sold++; else if (n.price && own[n.key]) x.rel.push(n.price / own[n.key]); });
+    var weekdays = wk.map(function (x) { return { weekday: x.weekday, index: x.rel.length ? median(x.rel) : null, sellout: x.seen ? x.sold / x.seen : null, observations: x.seen }; });
+    // lead-time curve: price relative to the competitor's own median by how far ahead it was seen
+    var buckets = [['0–3 days', 0, 3], ['4–14 days', 4, 14], ['15–45 days', 15, 45], ['46+ days', 46, 999]].map(function (b) { return { label: b[0], from: b[1], to: b[2], rel: [] }; });
+    (data.market_rates || []).forEach(function (r) { var k = normName(r.competitor), p = num(r.price_per_night); if (!(p > 0) || !own[k] || !r.stay_date) return; var lead = Math.round((t(String(r.stay_date).slice(0, 10)) - t(String(r.observed_at).slice(0, 10))) / DAY); var b = buckets.filter(function (x) { return lead >= x.from && lead <= x.to; })[0]; if (b) b.rel.push(p / own[k]); });
+    var lead = buckets.map(function (b) { return { label: b.label, index: b.rel.length ? median(b.rel) : null, observations: b.rel.length }; });
+    // price index over time: each observation day's prices relative to each competitor's own median
+    var days2 = {}; (data.market_rates || []).forEach(function (r) { var k = normName(r.competitor), p = num(r.price_per_night); if (!(p > 0) || !own[k]) return; var a = String(r.observed_at).slice(0, 10); (days2[a] = days2[a] || []).push(p / own[k]); });
+    var index = Object.keys(days2).sort().map(function (d) { return { date: d, index: median(days2[d]), observations: days2[d].length }; });
+    // leaderboard
+    var lb = {}; nightsRows.forEach(function (n) { var x = lb[n.key] = lb[n.key] || { key: n.key, name: n.name, nights: 0, sold: 0, prices: [], spreads: [], platforms: {} }; x.nights++; if (n.sold) x.sold++; else if (n.price) x.prices.push(n.price); if (n.spread != null) x.spreads.push(n.spread); n.platforms.forEach(function (o) { x.platforms[o.platform] = 1; }); });
+    var changes = {}; (data.market_rates || []).forEach(function (r) { var id = normName(r.competitor) + '|' + String(r.stay_date).slice(0, 10) + '|' + (r.platform || ''), p = num(r.price_per_night); if (!(p > 0)) return; (changes[id] = changes[id] || []).push({ at: String(r.observed_at), p: p }); });
+    var moves = {}; Object.keys(changes).forEach(function (id) { var a = changes[id].sort(function (x, y) { return x.at < y.at ? -1 : 1; }), k = id.split('|')[0]; for (var i = 1; i < a.length; i++) if (Math.abs(a[i].p / a[i - 1].p - 1) >= 0.03) moves[k] = (moves[k] || 0) + 1; });
+    var leaderboard = Object.keys(lb).map(function (k) { var x = lb[k], c = comps[k] || {}; return { key: k, name: x.name, segment: segOf(c, x), distance_km: c.distance_km, nights: x.nights, median: median(x.prices), sellout: x.nights ? x.sold / x.nights : null, spread: x.spreads.length ? median(x.spreads) : null, platforms: Object.keys(x.platforms), price_moves: moves[k] || 0 }; }).sort(function (a, b) { return b.nights - a.nights; });
+    return { days: days, observations: obs.length, competitors: Object.keys(own).length, segments: segments, platforms: platforms, weekdays: weekdays, lead: lead, index: index, leaderboard: leaderboard };
   }
 
   // ------------------------------------------------------------ engine v2 ------------------------------------------------------------
@@ -359,6 +468,11 @@ var FoDesk = (function () {
     if (mk.n >= 3 && mk.median && mk.fresh > 0) {
       var target = mk.median * (1 - cfg.market_commission) * (1 + num(cfg.positioning[id])); mkW = cfg.market_weight * weightOf(cfg, 'comp_price') * mk.fresh;
       apply('market', 'Market (comp set)', ((1 - mkW) * price + mkW * target) / price, 'median ₹' + Math.round(mk.median) + ' of ' + mk.n + ' across platforms (net ≈ ₹' + Math.round(mk.median * (1 - cfg.market_commission)) + ')' + (num(cfg.positioning[id]) ? ', positioning ' + Math.round(num(cfg.positioning[id]) * 100) + '%' : '') + ', weight ' + Math.round(mkW * 100) + '%', { source: 'comp set' });
+    } else if ((est = forecast(data, id, date)) && est.quality !== 'thin') {
+      // nobody has checked this night yet: anchor to the comp-set forecast (normal prices × calendar strength), at half weight, clearly labelled
+      var tF = est.median * (1 - cfg.market_commission) * (1 + num(cfg.positioning[id])); mkW = cfg.market_weight * 0.5 * weightOf(cfg, 'comp_price') * (est.quality === 'good' ? 1 : 0.7);
+      apply('market', 'Market (forecast)', ((1 - mkW) * price + mkW * tF) / price, 'no prices for this night yet: forecast median ₹' + est.median + ' (₹' + est.p25 + '–₹' + est.p75 + ') from ' + est.competitors + ' competitors\' normal ' + (isWkend(date) ? 'Fri/Sat' : 'weekday') + ' prices' + (est.calendar > 1.01 ? ' × calendar ' + est.calendar : '') + ', weight ' + Math.round(mkW * 100) + '%', { source: 'comp set (forecast)' });
+      inputs[inputs.length - 3] = Object.assign({}, inputs[inputs.length - 3], { status: 'estimated', fresh: 0.5, note: 'forecast from ' + est.competitors + ' competitors over ' + est.nights_seen + ' checked nights (' + est.quality + ')' });
     } else if ((est = marketEstimate(data, id, date, cfg, cx.now)) && est.fresh > 0) {
       // nobody has checked this night yet: anchor to nearby checked nights of the same kind, at half weight, clearly labelled
       var tEst = est.median * (1 - cfg.market_commission) * (1 + num(cfg.positioning[id])); mkW = cfg.market_weight * 0.5 * weightOf(cfg, 'comp_price') * est.fresh;
@@ -405,7 +519,7 @@ var FoDesk = (function () {
     }
     var net = slotNow ? slotNow.price : night;
     return { date: date, property: id, lead: lead, lead_band: band.id, price: net, night_price: night, low: Math.round(net * (1 - spread) / cfg.round) * cfg.round, high: Math.round(net * (1 + spread) / cfg.round) * cfg.round,
-      confidence: confidence, steps: steps, inputs: inputs, reasons: reasons, market: { n: mk.n, seen: mk.seen, min: mk.min, p25: mk.p25, median: mk.median, p75: mk.p75, max: mk.max, sellout: mk.sellout, hotel_median: mk.hotel_median, latest: mk.latest, rows: mk.rows, estimate: est, momentum: mo, spike: !!spike, relative: rel, position: position(mk, channels(net, cfg).direct.price) },
+      confidence: confidence, steps: steps, inputs: inputs, reasons: reasons, market: { forecast: forecastSafe(data, id, date), n: mk.n, seen: mk.seen, min: mk.min, p25: mk.p25, median: mk.median, p75: mk.p75, max: mk.max, sellout: mk.sellout, hotel_median: mk.hotel_median, latest: mk.latest, rows: mk.rows, estimate: est, momentum: mo, spike: !!spike, relative: rel, position: position(mk, channels(net, cfg).direct.price) },
       channels: channels(net, cfg), slots: slotTable, slot: slotNow ? slotNow.id : null, compression: high ? 'high' : 'low', booked: v1.booked, blocked: v1.blocked, event: eventPresent, hard_event: hardEvent, floor: Math.round(floor), ceiling: Math.round(ceiling),
       demand_index: Math.round((1 + demand + calLift) * 100) / 100, prev: prev ? num(prev.price) : null };
   }
@@ -486,7 +600,7 @@ var FoDesk = (function () {
   }
 
   return { DEFAULTS: DEFAULTS, SIGNALS: SIGNALS, settings: settings, freshness: freshness, signalAt: signalAt, health: health,
-    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, similarity: similarity, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
+    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, forecast: forecast, forecastAccuracy: forecastAccuracy, marketModel: marketModel, marketAnalytics: marketAnalytics, calIndex: calIndex, similarity: similarity, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
     ctxFor: ctxFor, ownCompression: ownCompression, quote: quote, channels: channels, today: today, calendar: calendar, toStore: toStore, alerts: alerts, backtest: backtest, learning: learning, slotNowId: slotNowId };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoDesk;

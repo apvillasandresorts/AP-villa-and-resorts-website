@@ -280,3 +280,9 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
   .dk-rc__row { grid-template-columns: 1fr 1fr; padding-bottom: 10px; border-bottom: 1px solid var(--line); } .dk-rc__row > input:first-child { grid-column: 1 / -1; }
 }
 .dk-cell .dk-est { position: absolute; bottom: 3px; right: 5px; font-style: normal; font-size: 11px; color: #6B5B2E; }
+.dk-news { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.dk-news:last-child { border-bottom: 0; }
+.dk-news__meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin-bottom: 4px; }
+.dk-news__title { font-weight: 600; color: var(--ink); text-decoration: none; line-height: 1.4; }
+.dk-news__title:hover { text-decoration: underline; }
+.dk-news__dir { font-weight: 600; } .dk-news__dir--up { color: var(--good); } .dk-news__dir--down { color: var(--bad); }

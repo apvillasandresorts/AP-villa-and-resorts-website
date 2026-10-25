@@ -36,8 +36,10 @@ export function robotsAllows(txt, path, ua = BOT) {
 const robotsCache = {};
 export async function robotsFor(origin) {
   if (robotsCache[origin] !== undefined) return robotsCache[origin];
-  try { const r = await fetch(origin + '/robots.txt', { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15000) }); robotsCache[origin] = r.ok ? await r.text() : (r.status >= 400 && r.status < 500 && r.status !== 403 && r.status !== 429 ? '' : null); }
-  catch (e) { robotsCache[origin] = null; }
+  for (let attempt = 0; attempt < 3 && robotsCache[origin] === undefined; attempt++) {   // network hiccups are retried; a missing robots.txt (4xx) means no rules
+    try { const r = await fetch(origin + '/robots.txt', { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(20000) }); robotsCache[origin] = r.ok ? await r.text() : (r.status >= 400 && r.status < 500 && r.status !== 403 && r.status !== 429 ? '' : null); }
+    catch (e) { if (attempt === 2) robotsCache[origin] = null; else await sleep(3000); }
+  }
   return robotsCache[origin];   // null = could not read robots.txt: treat the whole site as off-limits
 }
 export async function mayFetch(url) {
@@ -75,6 +77,9 @@ export function session(platform, opts = {}) {
       const status = resp ? resp.status() : 0;
       if (status === 403 || status === 429) { s.blocked = 'HTTP ' + status; return null; }
       await page.waitForTimeout(waitMs);
+      // prices on hotel pages load lazily below the fold: scroll through the page once, then read
+      await page.evaluate(async () => { for (const f of [0.35, 0.7, 1]) { window.scrollTo(0, document.body.scrollHeight * f); await new Promise(r => setTimeout(r, 900)); } window.scrollTo(0, 0); }).catch(() => {});
+      await page.waitForTimeout(1200);
       const [text, html, title] = await Promise.all([page.evaluate(() => document.body ? document.body.innerText : ''), page.content(), page.title()]);
       if (challenged(text, title)) { s.blocked = 'challenge page'; s.samples.push({ url, title, text: text.slice(0, 800) }); return null; }
       return { text, html, title, status, extra: inPage ? await inPage(page) : null };

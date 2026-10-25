@@ -9,7 +9,7 @@ export default {
     return cards(p.extra.map(c => Object.assign(c, { text: c.text || c.name }))).filter(c => /\/hotel\/ujjain-in\.html/.test(c.href)).map(c => Object.assign(c, { price: null }));
   },
   async quote(s, url, date, adults) {
-    const p = await s.open(url.split('?')[0] + `?checkIn=${date}&los=1&rooms=1&adults=${adults}&children=0&currency=INR`, 8000);
+    const p = await s.open(url.split('?')[0] + `?checkIn=${date}&los=1&rooms=1&adults=${adults}&children=0&currency=INR`, 11000);
     if (!p) return null;
     s.last = p;
     const r = read.agoda(p.text), c = coords(p.html);

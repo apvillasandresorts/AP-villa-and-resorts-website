@@ -17,7 +17,8 @@ const FO_MACHINE_ROUTES = {
   'f.m.seo.done': b => foSeoTopicDone_(b),
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
   'f.m.compset': b => foCompSetPublic_(b),
-  'f.m.bots.report': b => foBotsReport_(b),   // competitor bots: one row per bot run (pages, prices, blocked) for Signal health   // competitor bot: comp-set listings (public names + public listing links only)
+  'f.m.bots.report': b => foBotsReport_(b),
+  'f.m.news.import': b => foNewsImport_(b),   // news job: relevant headlines (no article text), high-impact ones emailed once   // competitor bots: one row per bot run (pages, prices, blocked) for Signal health   // competitor bot: comp-set listings (public names + public listing links only)
 };
 
 // ---------------------------------------------------------------- automation key ----------------
@@ -170,4 +171,32 @@ function foBotsReport_(b) {
     sold_out: foNum_(x.sold_out) || 0, discovered: foNum_(x.discovered) || 0, blocked: foClean_(x.blocked, 120), status: x.blocked ? 'blocked' : x.error ? 'error' : 'ok', note: foClean_(x.note, 400) }));
   foTouch_();
   return { result: { runs: runs.length } };
+}
+
+/** News from the news job: headline, source, link, date, short feed summary and labels. New high-impact stories are emailed once. */
+function foNewsImport_(b) {
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const seen = {}; foRows_('News').forEach(r => { seen[r.news_id] = 1; });
+    const out = { added: 0, skipped: 0, rejected: 0, alerted: 0 }, fresh = [];
+    (Array.isArray(b.news) ? b.news.slice(0, 200) : []).forEach(n => {
+      const id = foClean_(n.news_id, 40), url = /^https?:\/\//.test(String(n.url || '')) ? String(n.url).slice(0, 600) : '';
+      if (!id || !url || !n.title) { out.rejected++; return; }
+      if (seen[id]) { out.skipped++; return; }
+      seen[id] = 1;
+      const row = { news_id: id, published_at: foClean_(n.published_at, 30), fetched_at: foClean_(n.fetched_at, 30) || foNow_(), title: foClean_(n.title, 300), source: foClean_(n.source, 80), url: url,
+        lang: n.lang === 'hi' ? 'hi' : 'en', category: foClean_(n.category, 20), categories: foClean_(n.categories, 120), impact: ['high', 'medium', 'low'].indexOf(n.impact) >= 0 ? n.impact : 'low',
+        direction: ['up', 'down', 'neutral'].indexOf(n.direction) >= 0 ? n.direction : 'neutral', score: foNum_(n.score) || 0, summary: foClean_(n.summary, 300), query: foClean_(n.query, 20), alerted: '' };
+      foAppend_('News', row); out.added++; if (row.impact === 'high') fresh.push(row);
+    });
+    if (fresh.length) {
+      try {
+        MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Villas news: ' + fresh.length + ' high-impact ' + (fresh.length === 1 ? 'story' : 'stories'),
+          body: fresh.slice(0, 8).map(n => '• ' + n.title + ' (' + n.source + ', ' + String(n.published_at).slice(0, 10) + ')\n  ' + n.url).join('\n\n') + '\n\nAll news: Founder OS → Pricing & market → News' });
+        out.alerted = fresh.length;
+      } catch (e) { foAppend_('Jobs', { job: 'news_alert', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e).slice(0, 300) }); }
+    }
+    foTouch_();
+    return { result: out };
+  } finally { lock.releaseLock(); }
 }

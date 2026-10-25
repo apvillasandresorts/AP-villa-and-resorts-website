@@ -1,0 +1,29 @@
+# Business news for the Founder OS: every 2 hours, free sources only (GDELT open news API + publishers' own RSS feeds),
+# robots.txt checked at run time, headlines/links/short summaries only. No Claude, no paid services.
+name: News (Ujjain, Mahakal, travel)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 */2 * * *"
+
+concurrency:
+  group: news
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Collect and send news
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+        run: node scripts/news/run.mjs

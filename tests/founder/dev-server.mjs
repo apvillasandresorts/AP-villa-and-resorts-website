@@ -80,6 +80,10 @@ env.fo.foSetup();
   sig = sig.map(s => Object.assign({}, s, { fetched_at: now })).concat([{ signal_id: 'school', for_date: addD(t0, 12), index: 1.08, raw_value: 'SAMPLE school break', source_url: 'https://example.com/school', fetched_at: now, notes: 'SAMPLE' },
     { signal_id: 'temple', index: 1.05, raw_value: 'SAMPLE crowd notice', source_url: 'https://example.com/temple', fetched_at: addD(t0, -9) + 'T06:00:00Z', notes: 'SAMPLE (stale)' }]);
   env.api({ action: 'f.m.signals.import', key, signals: sig });
+  env.api({ action: 'f.m.news.import', key, news: [
+    { news_id: 'S1', title: 'SAMPLE: Mahakal temple aarti timings change from 27 October', url: 'https://example.com/n1', source: 'example.com', published_at: new Date(env.clock.now() - 3 * 3600e3).toISOString(), category: 'temple', impact: 'high', direction: 'neutral', score: 90, lang: 'en' },
+    { news_id: 'S2', title: 'SAMPLE: Special trains to Ujjain for Kartik Purnima', url: 'https://example.com/n2', source: 'example.com', published_at: new Date(env.clock.now() - 20 * 3600e3).toISOString(), category: 'travel', impact: 'medium', direction: 'up', score: 70, lang: 'en' },
+    { news_id: 'S3', title: 'SAMPLE: उज्जैन में सिंहस्थ 2028 के कार्यों की समीक्षा', url: 'https://example.com/n3', source: 'example.com', published_at: new Date(env.clock.now() - 40 * 3600e3).toISOString(), category: 'development', impact: 'low', direction: 'neutral', score: 40, lang: 'hi' }] });
   env.api({ action: 'f.m.bots.report', key, run_id: 'SAMPLE', runs: [{ bot: 'airbnb', platform: 'Airbnb', mode: 'pages', pages: 36, prices: 27, sold_out: 6, discovered: 0 }, { bot: 'booking', platform: 'Booking.com', mode: 'pages', pages: 30, prices: 41, sold_out: 2, discovered: 4 },
     { bot: 'agoda', platform: 'Agoda', mode: 'pages', pages: 12, prices: 0, blocked: 'challenge page' }, { bot: 'serpapi', platform: 'Google Hotels', mode: 'api', pages: 5, prices: 64, discovered: 3 }, { bot: 'apify', platform: 'Apify', mode: 'api', blocked: 'APIFY_TOKEN not set yet' }] });
   // the same nights scanned again later at higher prices (momentum + spike in the preview)

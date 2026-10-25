@@ -85,7 +85,8 @@ async function main() {
         const others = known.concat(Object.values(byName).filter(k => known.indexOf(k) < 0)).filter(k => [...(k.urls || [])].some(u => bot.match(u)) && !mine.some(m => m.name === k.name))
           .sort((a, b) => (b.listing_urls ? 1 : 0) - (a.listing_urls ? 1 : 0)).slice(0, mine.length ? 10 : 16);
         const jobs = [];
-        mine.forEach(l => dates.forEach(d => jobs.push({ name: l.name, url: l.url, date: d, adults: l.adults, target: l.property })));
+        // a hotel is priced for one room of 2 adults (the dashboard compares a villa with 2 hotel rooms); whole homes at the villa's group size
+        mine.forEach(l => dates.forEach(d => jobs.push({ name: l.name, url: l.url, date: d, adults: l.hotel ? 2 : l.adults, target: l.property })));
         others.forEach(k => jobs.push({ name: k.name, url: [...k.urls].find(u => bot.match(u)), date: dates[dates.length > 2 ? 2 : 0], adults: 2, target: '' }));
         const seen = new Set();
         for (const j of jobs) {

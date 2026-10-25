@@ -37,10 +37,15 @@ export const read = {
   /** Booking.com hotel page with dates: cheapest room "₹ 2,883" (+ taxes line) / "no availability" messages. */
   booking(text, html) {
     const t = String(text);
-    if (/no availability|don't have any availability|sold out on our site|We have no availability/i.test(t) && !/₹\s?[\d,]{3,}\s*\n?\s*\+₹/.test(t)) return r(null, { sold_out: true });
-    const prices = [...String(html || '').matchAll(/bui-price-display__value[^>]*>\s*₹\s?([\d,]+)/g)].map(m => money(m[1])).filter(Boolean);
+    const h = String(html || '');
+    const prices = [
+      ...[...h.matchAll(/bui-price-display__value[^>]*>\s*(?:<[^>]+>\s*)*₹\s?([\d,]+)/g)].map(m => money(m[1])),
+      ...[...h.matchAll(/data-testid="price-and-discounted-price"[^>]*>\s*(?:<[^>]+>\s*)*₹\s?([\d,]+)/g)].map(m => money(m[1])),
+      ...[...h.matchAll(/class="prco-valign-middle-helper"[^>]*>\s*₹\s?([\d,]+)/g)].map(m => money(m[1])),
+    ].filter(Boolean);
     if (prices.length) return r(Math.min(...prices), { taxes_included: 'no' });
-    const m = t.match(/Current price ₹\s?([\d,]+)/) || t.match(/₹\s?([\d,]+)\s*\n\s*\+₹\s?[\d,]+ taxes/);
+    const m = t.match(/Current price ₹\s?([\d,]+)/) || t.match(/₹\s?([\d,]+)\s*\n\s*\+\s?₹\s?[\d,]+ taxes/) || t.match(/Price\s*₹\s?([\d,]+)\s*\n?\s*\+\s?₹/);
+    if (!m && /(no availability|don't have any availability|sold out)[^\n]{0,80}(your dates|these dates|on our site)/i.test(t)) return r(null, { sold_out: true });
     return r(m ? money(m[1]) : null, { taxes_included: 'no' });
   },
   /** Agoda hotel page with dates: "from Rs. 9,752" / sold-out banner. */
@@ -52,7 +57,8 @@ export const read = {
   /** OYO / Cleartrip / EaseMyTrip style: the first price followed by a "+ ₹X taxes & fees" line, after the requested date label. */
   taxLine(text, dateLabel) {
     let t = String(text); if (dateLabel) { const i = t.indexOf(dateLabel); if (i >= 0) t = t.slice(i); }
-    if (/sold out|no rooms? (are )?available|not available for (the )?selected dates/i.test(t.slice(0, 2500)) && !/\+\s?₹\s?[\d,]+\s*taxes/i.test(t.slice(0, 2500))) return r(null, { sold_out: true });
+    const hasPrice = /\+\s?₹\s?[\d,]+\s*taxes/i.test(t);
+    if (!hasPrice && /(hotel|property|this oyo|all rooms) (is |are )?(fully )?sold out|no rooms? (are )?available for (your|the selected|these) dates|not available for (the )?selected dates|sold out for (your|these|the selected) dates/i.test(t)) return r(null, { sold_out: true });
     const lines = t.split('\n').map(x => x.trim()).filter(Boolean);
     for (let i = 0; i < lines.length - 1; i++) {
       if (/^₹\s?[\d,]{3,}$/.test(lines[i]) && /^\+\s?(?:₹\s?[\d,]+\s*taxes|taxes)/i.test(lines[i + 1])) {

@@ -415,6 +415,7 @@ function foDataBuild_() {
     signals: foRows_('Signals').slice(-3000).map(strip), comp_set: foRows_('CompSet').map(strip), comp_changes: foRows_('CompChanges').slice(-200).map(strip),
     recommendations: foDeskRecsForBundle_(), price_decisions: foRows_('PriceDecisions').slice(-1500).map(strip),
     bot_runs: foRows_('BotRuns').slice(-300).map(strip),
+    news: foRows_('News').filter(r => String(r.fetched_at) >= (foDate_(new Date(Date.now() - 30 * 86400000)) || '')).slice(-400).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }
 

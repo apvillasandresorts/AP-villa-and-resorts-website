@@ -9,7 +9,7 @@ export default {
   async discover(s) {
     const p = await s.open('https://www.oyorooms.com/hotels-in-ujjain/', 7000, page => harvestCards(page, 'a[href]'));
     if (!p) return [];
-    return cards(p.extra).filter(c => /oyorooms\.com\/\d+\/?$/.test(c.href)).map(c => Object.assign(c, { price: null }));   // city-page prices are for default dates: discovery only
+    return cards(p.extra).filter(c => /oyorooms\.com\/\d+\/?$/.test(c.href) && c.price).map(c => Object.assign(c, { price: null }));   // city-page prices are for default dates: discovery only
   },
   async quote(s, url, date, adults) {
     const next = new Date(Date.parse(date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);

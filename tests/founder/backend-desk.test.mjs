@@ -110,3 +110,15 @@ test('competitor bot: automation key gets comp-set listing links (public only) a
   assert.equal(imp.rates, 1); assert.equal(imp.rejected, 1, 'a sold-out needs a stay date');
   assert.equal(env.tab('MarketRates').find(x => x.stay_date === '2026-10-20').availability, 'sold out');
 });
+
+test('news import: stored once, high-impact stories emailed once, automation key only', async () => {
+  const { env, token } = await ready();
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const n = (id, impact, title) => ({ news_id: id, title, url: 'https://example.in/' + id, source: 'example.in', published_at: '2026-10-24T10:00:00Z', fetched_at: '2026-10-25T10:00:00Z', category: 'temple', impact, direction: 'neutral', score: 80 });
+  const r1 = env.api({ action: 'f.m.news.import', key, news: [n('N1', 'high', 'Mahakal aarti timings change from 27 October'), n('N2', 'low', 'Ujjain news'), { title: 'no id' }] }).result;
+  assert.deepEqual([r1.added, r1.rejected, r1.alerted], [2, 1, 1]);
+  assert.equal(env.mails.filter(m => /high-impact/.test(m.subject || '')).length, 1);
+  const r2 = env.api({ action: 'f.m.news.import', key, news: [n('N1', 'high', 'Mahakal aarti timings change from 27 October')] }).result;
+  assert.equal(r2.skipped, 1); assert.equal(env.mails.filter(m => /high-impact/.test(m.subject || '')).length, 1, 'no second email');
+  assert.equal(env.api({ action: 'f.data', token: await env.login() }).news.length, 2);
+});
