@@ -169,3 +169,25 @@ test('backtest and learning: recommendations vs realised; no suggestions without
   assert.equal(L.backtest.with_rec, 1); assert.equal(L.backtest.booked, 1);
   assert.ok(L.factors.every(f => /not enough/.test(f.suggestion)));
 });
+
+test('a live dated feed with no row for a night counts as a normal night; outside its range it stays missing', () => {
+  const at = TODAY + 'T08:00:00+05:30';
+  const d = data({ signals: [{ signal_id: 'calendar', for_date: addD(TODAY, 3), index: 1.2, source_url: 'https://example.com/cal', fetched_at: at, status: 'live', notes: 'Purnima' },
+    { signal_id: 'calendar', for_date: addD(TODAY, 30), index: 1.1, source_url: 'https://example.com/cal', fetched_at: at, status: 'live', notes: 'Ekadashi' }] });
+  const now = Date.parse(d.serverTime);
+  assert.equal(D.signalAt(d, 'calendar', 'ap-suite', addD(TODAY, 3), now).index, 1.2);
+  const normal = D.signalAt(d, 'calendar', 'ap-suite', addD(TODAY, 5), now);
+  assert.equal(normal.index, 1); assert.equal(normal.status, 'live'); assert.match(normal.note, /normal night/);
+  assert.equal(D.signalAt(d, 'calendar', 'ap-suite', addD(TODAY, 60), now), null, 'beyond the feed horizon: missing');
+  const q = D.quote(d, D.ctxFor(d, 'ap-suite'), addD(TODAY, 5));
+  assert.equal(q.inputs.find(x => x.id === 'calendar').status, 'live');
+});
+
+test('a realised rate far above the published price (a typo booking) is ignored, not used as the base', () => {
+  const b = { booking_id: 'B1', property_id: 'ap-suite', channel: 'Direct', status: 'confirmed', checkin: addD(TODAY, -20), checkout: addD(TODAY, -17), nights: 3, gross_amount: '10000000', created_at: addD(TODAY, -30) };
+  const d = data({ bookings: [b] });
+  const q = D.quote(d, D.ctxFor(d, 'ap-suite'), addD(TODAY, 2));
+  assert.ok(q.steps[0].delta <= 4200 * 2, 'base stays near the published price');
+  assert.ok(q.reasons.some(r => /Ignored your realised/.test(r)));
+  assert.ok(q.price <= 4200 * 3, 'within the ceiling');
+});

@@ -40,6 +40,10 @@ Index scale (1.00 = a normal night). Use these defaults unless the source gives 
 | `search` | Only if TRENDS_AVAILABLE is "true": Google Trends growth for "mahakal darshan", "ujjain hotel", "bhasma aarti booking", "ujjain villa" (last 4 weeks vs previous 4), one horizon-wide row; stop at 80 requests per month | 0.9–1.15 |
 | `calendar` | Weekly (deep run): check the next 60 days of festival dates (Mahashivratri, Shravan Mondays, Navratri, Diwali, Vaikunth Chaturdashi, Kartik Purnima, Nag Panchami, Mahakal Sawari) against a published panchang or the temple; add a row ONLY where a festival date differs from what an astronomical calendar would give, with the source | as listed in scripts/signals/calendar.mjs |
 
+Heartbeat: for every signal id you checked (school, events, temple, travel, footfall, holiday; search only when TRENDS_AVAILABLE)
+and found nothing new, add ONE horizon-wide row (`for_date` empty) with `index` 1.00, `raw_value` "nothing found", and `source_url`
+= the main page you checked. This tells the Founder OS the signal is live and normal, instead of missing.
+
 Light run: next 14 days, news since yesterday. Deep run: next 90 days plus everything above.
 
 ## Output 2: research/outlook.html

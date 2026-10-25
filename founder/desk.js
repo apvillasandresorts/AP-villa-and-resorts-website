@@ -28,6 +28,7 @@ var FoDesk = (function () {
     properties: ['rudrangan-suites', 'ap-suite'],
     group: { 'rudrangan-suites': { adults: 6, bedrooms: 3 }, 'ap-suite': { adults: 4, bedrooms: 2 } },
     floor_pct: 0.75, ceiling_pct: 3.0, mega_ceiling_pct: 4.0, round: 100,
+    adr_cap: 2.0,                        // a realised rate above this × the published price is treated as a data error, not a new base
     max_daily_change: 0.12,              // vs yesterday's recommendation for the same night, unless a hard event
     positioning: { 'rudrangan-suites': 0, 'ap-suite': 0 },   // target vs comp-set median (0.05 = 5% above)
     market_weight: 0.35, market_commission: 0.15,             // competitor asking prices are guest prices: net-equivalent = price × (1 − this)
@@ -80,8 +81,17 @@ var FoDesk = (function () {
   function nowMs(data) { return data && data.serverTime ? Date.parse(data.serverTime) : Date.now(); }
   /** Index for one signal on one night: a row for that date beats a horizon-wide row (for_date empty). Property rows beat all-villa rows. */
   function signalAt(data, id, property, date, now) {
-    var rows = (data.signals || []).filter(function (r) { return r.signal_id === id && (!r.property || r.property === property || r.property === 'all') && (!r.for_date || String(r.for_date).slice(0, 10) === date) && r.status !== 'blocked'; });
-    if (!rows.length) return null;
+    var feed = (data.signals || []).filter(function (r) { return r.signal_id === id && (!r.property || r.property === property || r.property === 'all') && r.status !== 'blocked'; });
+    var rows = feed.filter(function (r) { return !r.for_date || String(r.for_date).slice(0, 10) === date; });
+    if (!rows.length) {
+      // a live dated feed with no row for this night (e.g. no festival, no holiday) means a normal night, not a missing signal
+      var latest = feed.slice().sort(function (a, b) { return a.fetched_at < b.fetched_at ? 1 : -1; })[0];
+      if (!latest) return null;
+      var run = feed.filter(function (r) { return r.fetched_at === latest.fetched_at && r.for_date; }).map(function (r) { return String(r.for_date).slice(0, 10); }).sort();
+      if (!run.length || date < run[0] || date > run[run.length - 1]) return null;
+      var f0 = freshness(latest.fetched_at, BY_ID[id] ? BY_ID[id].sla : 24, now);
+      return { id: id, index: 1, raw: '', note: 'normal night (nothing in this feed for ' + date + ')', source_url: latest.source_url || '', fetched_at: latest.fetched_at, fresh: f0.f, status: f0.status, age_h: f0.age_h };
+    }
     rows.sort(function (a, b) { var sa = (a.for_date ? 2 : 0) + (a.property && a.property !== 'all' ? 1 : 0), sb = (b.for_date ? 2 : 0) + (b.property && b.property !== 'all' ? 1 : 0); return sb - sa || (a.fetched_at < b.fetched_at ? 1 : -1); });
     var r = rows[0], fr = freshness(r.fetched_at, BY_ID[id] ? BY_ID[id].sla : 24, now);
     return { id: id, index: has(r.index) ? num(r.index) : 1, raw: r.raw_value, note: r.notes || '', source_url: r.source_url || '', fetched_at: r.fetched_at, fresh: fr.f, status: fr.status, age_h: fr.age_h };
@@ -230,6 +240,7 @@ var FoDesk = (function () {
     var v1 = Ins.priceFor(data, cx.v1, date), lead = Math.round((t(date) - t(cx.today)) / DAY), wd = new Date(t(date)).getUTCDay(), wkend = wd === 5 || wd === 6;
     // 1. base
     var base = cx.base, adr = wkend ? cx.adr60.weekend : cx.adr60.weekday, baseBasis = cx.v1.baseSrc;
+    if (adr && adr > base * cfg.adr_cap) { reasons.push('Ignored your realised ' + (wkend ? 'weekend' : 'weekday') + ' rate ₹' + Math.round(adr) + ' (over ' + cfg.adr_cap + '× the published price: check the booking amounts)'); adr = null; }
     if (adr && adr > base) { base = adr; baseBasis = 'your realised ' + (wkend ? 'weekend' : 'weekday') + ' rate, last 60 days'; }
     var vs = (cx.v1.cfg.villas || {})[id] || {}; if (has(vs.base)) { base = num(vs.base); baseBasis = 'your base setting'; }
     var price = base; steps.push({ key: 'base', label: 'Base', delta: base, total: true, basis: baseBasis });
