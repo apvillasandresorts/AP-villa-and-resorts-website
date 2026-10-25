@@ -16,6 +16,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
   'f.m.seo.done': b => foSeoTopicDone_(b),
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
+  'f.m.compset': b => foCompSetPublic_(b),   // competitor bot: comp-set listings (public names + public listing links only)
 };
 
 // ---------------------------------------------------------------- automation key ----------------
@@ -65,7 +66,7 @@ function foMarketClean_(kind, r) {
 }
 function foMarketValid_(kind, r) {
   if (kind === 'competitor') return r.name ? null : 'Name the competitor.';
-  if (kind === 'rate') return !r.competitor ? 'Name the competitor.' : !(r.price_per_night > 0) ? 'Enter a price.' : r.price_per_night > 500000 ? 'Price looks wrong.' : null;
+  if (kind === 'rate') return !r.competitor ? 'Name the competitor.' : !(r.price_per_night > 0) && !(r.availability === 'sold out' && r.stay_date) ? 'Enter a price.' : r.price_per_night > 500000 ? 'Price looks wrong.' : null;
   return !r.source || !r.metric ? 'Signal needs a source and a metric.' : null;
 }
 function foMarketSave_(b, user) {
@@ -141,4 +142,18 @@ function foMachineSummary_() {
   try { out.search = foSearchSummary_(today); } catch (e) { out.search = { connected: false, reason: String(e.message || e).slice(0, 160) }; }
   out.seo = { keywords: D.seo_keywords.length, topics_queued: D.seo_topics.filter(t => t.status === 'queued').length, campaigns: D.campaigns.map(c => ({ name: c.name, channel: c.channel, status: c.status, budget: c.budget, spent: c.spent })) };
   return { summary: out };
+}
+
+/** For the competitor price bot: each property's comp set with public listing links and the group size to search for. No own data. */
+function foCompSetPublic_(b) {
+  const D = foDataLoad_(), cfg = FoDesk.settings(D), comps = D.competitors || [], out = [];
+  cfg.properties.forEach(pid => {
+    const g = cfg.group[pid] || {};
+    FoDesk.compSet(D, pid).forEach(r => {
+      const c = comps.find(x => FoDesk.normName(x.name) === r.key) || {};
+      const urls = String(c.listing_urls || '').split(/\s+/).concat([c.source_url || '']).filter(u => /^https:\/\/(www\.)?(airbnb\.[a-z.]+\/rooms\/\d+|booking\.com\/hotel\/)/.test(u));
+      if (urls.length) out.push({ property: pid, name: r.name, hotel: r.hotel === 'yes', adults: g.adults || 4, url: urls[0].split('?')[0], distance_km: c.distance_km });
+    });
+  });
+  return { listings: out, today: foToday_() };
 }

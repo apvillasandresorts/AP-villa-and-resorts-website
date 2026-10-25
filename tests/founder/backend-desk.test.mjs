@@ -93,3 +93,20 @@ test('e-check-in test rows (guest named TEST…) never enter the booking ledger'
   assert.ok(b.some(x => x.guest_name === 'Real Guest'));
   assert.ok(!b.some(x => /^TEST/.test(x.guest_name)), 'test submission skipped');
 });
+
+test('competitor bot: automation key gets comp-set listing links (public only) and can send sold-outs without a price', async () => {
+  const { env, token } = await ready();
+  const comps = ['Mahadev Mansion 2 BHK', 'Kanha Kasturi 2BHK', 'RamRaj Family Stay', 'Nivasa 3BHK Villa', 'Hotel Shreegopal'];
+  env.api({ action: 'f.market.import', token, competitors: comps.map((n, i) => ({ name: n, type: /Hotel/.test(n) ? 'hotel' : 'villa', bedrooms: /Hotel/.test(n) ? '' : /3BHK/.test(n) ? 3 : 2, distance_km: 1,
+    source_url: /Hotel/.test(n) ? 'https://www.booking.com/hotel/in/shreegopal.en-gb.html' : 'https://www.airbnb.co.in/rooms/10' + i })),
+    rates: comps.map((n, i) => ({ competitor: n, observed_at: '2026-10-15', stay_date: '2026-10-18', nights: 1, price_per_night: 3000 + i * 300, source_url: 'https://example.com/' + i })) });
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const r = env.api({ action: 'f.m.compset', key });
+  assert.ok(r.listings.length >= 4, JSON.stringify(r).slice(0, 300));
+  assert.ok(r.listings.every(l => /^https:\/\/(www\.)?(airbnb|booking)/.test(l.url) && l.adults > 0 && ['ap-suite', 'rudrangan-suites'].includes(l.property)));
+  assert.ok(!JSON.stringify(r).match(/guest|phone|email|price/i), 'no own or guest data');
+  const imp = env.api({ action: 'f.m.market.import', key, rates: [{ competitor: 'RamRaj Family Stay', observed_at: '2026-10-16', stay_date: '2026-10-20', nights: 1, availability: 'sold out', source_url: 'https://www.airbnb.co.in/rooms/102', platform: 'Airbnb' },
+    { competitor: 'RamRaj Family Stay', observed_at: '2026-10-16', nights: 1, availability: 'sold out', source_url: 'https://www.airbnb.co.in/rooms/102' }] }).result;
+  assert.equal(imp.rates, 1); assert.equal(imp.rejected, 1, 'a sold-out needs a stay date');
+  assert.equal(env.tab('MarketRates').find(x => x.stay_date === '2026-10-20').availability, 'sold out');
+});
