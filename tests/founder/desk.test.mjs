@@ -133,9 +133,14 @@ test('slot ladder: tonight steps down in S3/S4 on low compression, holds or rise
   assert.ok(low.slots && low.slots.length === 4);
   assert.ok(low.slots[3].price < low.slots[0].price, 'S4 cheaper than S1 when unsold and slack');
   assert.ok(low.slots[3].price >= low.floor, 'never below the floor');
-  const busy = data({ market_rates: [], blocks: ['rudrangan-suites', 'divinestay', 'om-shanti-stay', 'villa-aranya'].map(p => ({ property_id: p, start: TODAY, end: addD(TODAY, 1) })) });
+  const busy = data({ market_rates: data().market_rates.map(r => Object.assign({}, r, { availability: r.stay_date === TODAY ? 'sold out' : '' })) });
   const hi = D.quote(busy, D.ctxFor(busy, 'ap-suite'), TODAY);
-  assert.equal(hi.compression, 'high'); assert.ok(hi.slots[3].price >= hi.slots[0].price, 'holds or steps up');
+  assert.equal(hi.compression, 'high', 'competitors sold out'); assert.ok(hi.slots[3].price >= hi.slots[0].price, 'holds or steps up');
+  const blocks = ['rudrangan-suites', 'divinestay', 'om-shanti-stay', 'villa-aranya'].map(p => ({ property_id: p, start: TODAY, end: addD(TODAY, 1) }));
+  const ownOff = data({ market_rates: [], blocks });
+  assert.equal(D.quote(ownOff, D.ctxFor(ownOff, 'ap-suite'), TODAY).compression, 'low', 'our own sales do not move the price by default');
+  const ownOn = data({ market_rates: [], blocks, settings: { desk: JSON.stringify({ use_own_history: true }) } });
+  assert.equal(D.quote(ownOn, D.ctxFor(ownOn, 'ap-suite'), TODAY).compression, 'high', 'only when booking history is switched on');
   assert.ok(!D.quote(X, cx, addD(TODAY, 3)).slots, 'no ladder beyond tomorrow');
 });
 
@@ -153,11 +158,12 @@ test('today card, calendar, stored rows only on change, alerts de-duplicated by 
   assert.equal(new Set(al.map(a => a.key)).size, al.length);
 });
 
-test('health lists every signal with status; own data live, missing sources missing', () => {
+test('health lists every signal with status; own data off by default, missing sources missing', () => {
   const h = D.health(data());
+  assert.equal(h.find(x => x.id === 'pace').status, 'off');
+  assert.equal(D.health(data({ settings: { desk: JSON.stringify({ use_own_history: true }) } })).find(x => x.id === 'pace').status, 'live');
   assert.equal(h.length, D.SIGNALS.length);
   assert.ok(D.SIGNALS.length >= 16);
-  assert.equal(h.find(x => x.id === 'pace').status, 'live');
   assert.equal(h.find(x => x.id === 'weather').status, 'missing');
   assert.equal(h.find(x => x.id === 'comp_price').status, 'live');
 });
@@ -185,7 +191,10 @@ test('a live dated feed with no row for a night counts as a normal night; outsid
 
 test('a realised rate far above the published price (a typo booking) is ignored, not used as the base', () => {
   const b = { booking_id: 'B1', property_id: 'ap-suite', channel: 'Direct', status: 'confirmed', checkin: addD(TODAY, -20), checkout: addD(TODAY, -17), nights: 3, gross_amount: '10000000', created_at: addD(TODAY, -30) };
-  const d = data({ bookings: [b] });
+  const off = data({ bookings: [b] }), qOff = D.quote(off, D.ctxFor(off, 'ap-suite'), addD(TODAY, 2));
+  assert.equal(qOff.steps[0].delta, 4200, 'default: base is the published price, bookings are not used');
+  assert.ok(!qOff.steps.some(s => s.key === 'pace' || s.key === 'season'));
+  const d = data({ bookings: [b], settings: { desk: JSON.stringify({ use_own_history: true }) } });
   const q = D.quote(d, D.ctxFor(d, 'ap-suite'), addD(TODAY, 2));
   assert.ok(q.steps[0].delta <= 4200 * 2, 'base stays near the published price');
   assert.ok(q.reasons.some(r => /Ignored your realised/.test(r)));

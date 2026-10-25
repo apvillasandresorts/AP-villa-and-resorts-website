@@ -56,6 +56,10 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
 - **What it gives:** a NET price per night (what AP Villas keeps) for tonight and the next 90 nights, the price to enter on each channel
   (OTA prices grossed up for commission: Airbnb 15%, Booking.com 15%, MakeMyTrip 18%; direct 5% below the lowest OTA price, never below net),
   a ₹ waterfall of every step, confidence 0–100, and a time-of-day ladder for unsold nights tonight/tomorrow (S1 00:00–10:30 … S4 20:00–24:00).
+- **Market-only by default (owner rule, 25 Oct 2026):** prices start from the published "from" price (or your base setting) and move only with
+  competitor prices/sell-outs, search and website demand, the calendar, holidays, events and weather. Your booking history (realised rates, season,
+  pace, own compression) is NOT used, because the ledger can hold test or typo entries. Settings → Market → "Use my booking history" turns it back on;
+  even then a realised rate above 2× the published price is ignored as a data error.
 - **Guardrails:** floor 75% and ceiling 3× of the published "from" price (4× in mega events), ±12% per day vs the previous recommendation
   except hard events, never moves on a single stale signal. Recommendations only: nothing changes OTA prices.
 - **Signals (17):** own data (pace, compression, seasonality), competitor prices/sell-outs/hotel index/reputation (Rate check, extranet CSV,

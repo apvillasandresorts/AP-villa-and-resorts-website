@@ -31,7 +31,8 @@ var FoDesk = (function () {
     adr_cap: 2.0,                        // a realised rate above this × the published price is treated as a data error, not a new base
     max_daily_change: 0.12,              // vs yesterday's recommendation for the same night, unless a hard event
     positioning: { 'rudrangan-suites': 0, 'ap-suite': 0 },   // target vs comp-set median (0.05 = 5% above)
-    market_weight: 0.35, market_commission: 0.15,             // competitor asking prices are guest prices: net-equivalent = price × (1 − this)
+    use_own_history: false,              // owner rule 25 Oct 2026: price from the market, demand and calendar only (ledger may hold test/typo entries)
+    market_weight: 0.6, market_commission: 0.15,             // competitor asking prices are guest prices: net-equivalent = price × (1 − this)
     commission: { airbnb: 0.15, booking: 0.15, makemytrip: 0.18 }, direct_discount: 0.05,
     lead: { L0: 0, L1: 0, L2: 0, L3: 0, L4: 0 },
     slots: { tonight: { S1: 0, S2: 0, S3: -0.05, S4: -0.10 }, tomorrow: { S1: 0, S2: 0, S3: -0.02, S4: -0.04 }, high: { S1: 0, S2: 0, S3: 0.03, S4: 0.05 } },
@@ -98,7 +99,8 @@ var FoDesk = (function () {
   }
   /** Health of every signal (latest row of each, own-data signals are live by construction). */
   function health(data) {
-    var now = nowMs(data), out = SIGNALS.map(function (s) {
+    var cfg = settings(data), now = nowMs(data), out = SIGNALS.map(function (s) {
+      if (s.kind === 'own' && !cfg.use_own_history) return { id: s.id, label: s.label, kind: s.kind, source: s.source, terms: s.terms, sla_h: s.sla, status: 'off', fetched_at: null, rows: 0, source_url: 'own_ledger', note: 'switched off: prices use the market, demand and calendar only (Settings → Use my booking history)' };
       if (s.kind === 'own') return { id: s.id, label: s.label, kind: s.kind, source: s.source, terms: s.terms, sla_h: s.sla, status: 'live', fetched_at: data.serverTime || null, rows: (data.bookings || []).length, source_url: 'own_ledger', note: 'computed from your bookings each time' };
       var rows = (data.signals || []).filter(function (r) { return r.signal_id === s.id; });
       if (s.id === 'comp_price' || s.id === 'comp_avail' || s.id === 'hotel_index' || s.id === 'reputation') rows = rows.concat((data.market_rates || []).map(function (r) { return { fetched_at: r.observed_at ? String(r.observed_at).slice(0, 10) + 'T12:00:00+05:30' : '', source_url: r.source_url, status: 'live' }; }));
@@ -215,7 +217,8 @@ var FoDesk = (function () {
     var Ins = I(), ctx = Ins.pricingContext(data, propertyId); if (!ctx) return null;
     var cfg = settings(data), Mx = M();
     // base = max(published from price, realised ADR over the last 60 days for the same day type)
-    var today = data.today || iso(Date.now()), f = { property: propertyId }, wk = Mx.weekendSplit(data, add(today, -60), add(today, -1), f);
+    if (!cfg.use_own_history) ctx = Object.assign({}, ctx, { measured: {}, season: {}, weekend: ctx.cfg.weekend_uplift, weekendBasis: 'your weekend setting', realised: null, realisedNights: 0 });
+    var today = data.today || iso(Date.now()), f = { property: propertyId }, wk = cfg.use_own_history ? Mx.weekendSplit(data, add(today, -60), add(today, -1), f) : {};
     return { v1: ctx, cfg: cfg, today: today, now: nowMs(data), prop: ctx.villa, base: ctx.base, adr60: { weekend: wk.weekend && wk.weekend.occupied >= 3 ? wk.weekend.adr : null, weekday: wk.weekday && wk.weekday.occupied >= 3 ? wk.weekday.adr : null } };
   }
   /** Our compression for a night: villas sold (confirmed/tentative) or blocked, out of all active villas. */
@@ -251,13 +254,15 @@ var FoDesk = (function () {
     // 2. own-data factors from v1 (season, weekend, event, pace); v1's trend and market are replaced by the v2 signals below
     var hardEvent = false, eventPresent = false;
     v1.factors.forEach(function (fct) {
-      if (['season', 'weekend', 'pace'].indexOf(fct.key) >= 0) apply(fct.key, fct.label, fct.mult, fct.basis, { source: 'own_ledger' });
+      if ((cfg.use_own_history ? ['season', 'weekend', 'pace'] : ['weekend']).indexOf(fct.key) >= 0) apply(fct.key, fct.label, fct.mult, fct.basis, { source: 'own_ledger' });
       if (fct.key === 'event') { eventPresent = true; if (/mega|peak/i.test(fct.basis + fct.label) || fct.mult >= 1.35) hardEvent = true; apply('event', fct.label, fct.mult, fct.basis, { source: 'events calendar' }); }
     });
     var ownC = ownCompression(data, date);
-    inputs.push({ id: 'pace', status: 'live', fresh: 1, note: Math.round((v1.portfolio_occupancy || 0) * 100) + '% of available villas booked' });
-    inputs.push({ id: 'compression_own', status: 'live', fresh: 1, note: ownC.taken + ' of ' + ownC.total + ' villas sold or blocked' });
-    inputs.push({ id: 'seasonality', status: 'live', fresh: 1, note: wkend ? 'weekend night' : 'weekday night' });
+    if (cfg.use_own_history) {
+      inputs.push({ id: 'pace', status: 'live', fresh: 1, note: Math.round((v1.portfolio_occupancy || 0) * 100) + '% of available villas booked' });
+      inputs.push({ id: 'compression_own', status: 'live', fresh: 1, note: ownC.taken + ' of ' + ownC.total + ' villas sold or blocked' });
+      inputs.push({ id: 'seasonality', status: 'live', fresh: 1, note: wkend ? 'weekend night' : 'weekday night' });
+    } else ['pace', 'compression_own', 'seasonality'].forEach(function (k) { inputs.push({ id: k, status: 'off', fresh: 0, note: 'not used: your booking history is switched off' }); });
     // 3. calendar signals (skip festival uplift when the events calendar already applied one)
     var activeStale = [], active = 0;
     function sig(idS) { var s = signalAt(data, idS, id, date, cx.now), w = weightOf(cfg, idS); inputs.push({ id: idS, status: s ? s.status : 'missing', fresh: s ? s.fresh : 0, index: s ? s.index : null, note: s ? s.note : '', source_url: s ? s.source_url : '', fetched_at: s ? s.fetched_at : null, weight: w }); return s && s.fresh > 0 && w > 0 ? { s: s, w: w * s.fresh } : null; }
@@ -290,7 +295,7 @@ var FoDesk = (function () {
       var target = mk.median * (1 - cfg.market_commission) * (1 + num(cfg.positioning[id])); mkW = cfg.market_weight * weightOf(cfg, 'comp_price') * mk.fresh;
       apply('market', 'Market (comp set)', ((1 - mkW) * price + mkW * target) / price, 'median ₹' + Math.round(mk.median) + ' of ' + mk.n + ' (net ≈ ₹' + Math.round(mk.median * (1 - cfg.market_commission)) + ')' + (num(cfg.positioning[id]) ? ', positioning ' + Math.round(num(cfg.positioning[id]) * 100) + '%' : '') + ', weight ' + Math.round(mkW * 100) + '%', { source: 'comp set' });
     }
-    var comp = 0, own = ownC.share;
+    var comp = 0, own = cfg.use_own_history ? ownC.share : 0;
     if (mk.sellout != null && mk.seen >= 3 && mk.fresh > 0) {
       var w = weightOf(cfg, 'comp_avail') * mk.fresh;
       comp = mk.sellout >= cfg.compression.high_sellout ? 0.10 * w : mk.sellout >= cfg.compression.mid_sellout ? 0.05 * w : (mk.sellout <= 0.1 && lead <= 3 && own < 0.3 ? -0.03 * w : 0);
@@ -312,7 +317,7 @@ var FoDesk = (function () {
     // 9. confidence 0–100: coverage and freshness of weighted signals, comp sample, own history
     var ext = inputs.filter(function (x) { return BY_ID[x.id] && BY_ID[x.id].kind !== 'own'; }), wAll = 0, wLive = 0;
     ext.forEach(function (x) { var w = has(x.weight) ? x.weight : weightOf(cfg, x.id); wAll += w; wLive += w * (x.fresh || 0); });
-    var confidence = Math.round(clamp(30 + 35 * (wAll ? wLive / wAll : 0) + 20 * Math.min(1, mk.n / 6) + 15 * Math.min(1, (cx.v1.realisedNights || 0) / 30), 0, 100));
+    var confidence = Math.round(clamp(30 + 35 * (wAll ? wLive / wAll : 0) + 20 * Math.min(1, mk.n / 6) + 15 * (cfg.use_own_history ? Math.min(1, (cx.v1.realisedNights || 0) / 30) : Math.min(1, mk.seen / 6)), 0, 100));
     var missing = ext.filter(function (x) { return !x.fresh; }).map(function (x) { return BY_ID[x.id].label; });
     if (confidence < 50) reasons.push('Low confidence: ' + (missing.length ? 'missing ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' and ' + (missing.length - 3) + ' more' : '') : 'little own history'));
     var spread = confidence >= 75 ? 0.06 : confidence >= 50 ? 0.10 : 0.16;

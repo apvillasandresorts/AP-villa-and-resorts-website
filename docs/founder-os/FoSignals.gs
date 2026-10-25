@@ -148,6 +148,7 @@ function foRateCheckSave_(b, user) {
 function foDeskSettingsSave_(b, user) {
   const s = b.desk || {}, out = {}, num = (v, lo, hi) => foHasNum_(v) ? Math.max(lo, Math.min(hi, foNum_(v))) : undefined;
   ['floor_pct', 'ceiling_pct', 'mega_ceiling_pct', 'max_daily_change', 'market_weight', 'market_commission', 'direct_discount'].forEach(k => { const v = num(s[k], 0, k.indexOf('ceiling') >= 0 ? 10 : 1); if (v !== undefined) out[k] = v; });
+  if ('use_own_history' in s) out.use_own_history = s.use_own_history === true || s.use_own_history === 'yes';
   if (foHasNum_(s.round)) out.round = [10, 50, 100, 500].indexOf(foNum_(s.round)) >= 0 ? foNum_(s.round) : 100;
   ['commission', 'positioning', 'weights', 'lead'].forEach(k => { if (s[k] && typeof s[k] === 'object') { out[k] = {}; Object.keys(s[k]).slice(0, 40).forEach(x => { const v = num(s[k][x], k === 'positioning' || k === 'lead' ? -0.5 : 0, k === 'weights' ? 3 : 0.5); if (v !== undefined) out[k][String(x).slice(0, 30)] = v; }); } });
   if (s.slots && typeof s.slots === 'object') { out.slots = {}; ['tonight', 'tomorrow', 'high'].forEach(k => { if (s.slots[k]) { out.slots[k] = {}; ['S1', 'S2', 'S3', 'S4'].forEach(x => { const v = num(s.slots[k][x], -0.4, 0.4); if (v !== undefined) out.slots[k][x] = v; }); } }); }
