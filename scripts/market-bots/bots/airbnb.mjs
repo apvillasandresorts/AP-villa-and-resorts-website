@@ -8,6 +8,7 @@ export default {
     const id = url.match(/rooms\/(\d+)/)[1];
     const p = await s.open(`https://www.airbnb.co.in/rooms/${id}?check_in=${date}&check_out=${addDays(date, 1)}&adults=${adults}&currency=INR`, 6500);
     if (!p) return null;
+    s.last = p;
     const q = read.airbnb(p.text), c = coords(p.html);
     return Object.assign(q, { distance_km: km(c, MAHAKAL), title: p.title.replace(/ - [^-]*Airbnb$/, '').trim() });
   },

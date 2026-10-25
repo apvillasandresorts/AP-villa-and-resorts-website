@@ -7,6 +7,7 @@ export default {
   async quote(s, url, date, adults) {
     const p = await s.open(url.split('?')[0] + `?checkin=${date}&checkout=${addDays(date, 1)}&adult=${adults}&children=0&crn=1&curr=INR`, 8000);
     if (!p) return null;
+    s.last = p;
     const r = read.taxLine(p.text);
     if (r.price == null && !r.sold_out) { const m = p.text.match(/₹\s?([\d,]{3,})\s*(?:\n|\s)*(?:per night|\/night|avg\/night)/i); if (m) r.price = Number(m[1].replace(/,/g, '')); }
     return Object.assign(r, { title: (p.title || '').split(/[|,-]/)[0].trim() });

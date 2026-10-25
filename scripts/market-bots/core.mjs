@@ -60,7 +60,7 @@ export async function closeBrowser() { if (browserP) { try { const b = await bro
  * inPage(page) runs while the page is open (e.g. collecting cards on a list page).
  */
 export function session(platform, opts = {}) {
-  const s = { platform, budget: opts.budget || 40, pages: 0, blocked: null, skipped: 0, errors: 0, log: [] };
+  const s = { platform, budget: opts.budget || 40, pages: 0, blocked: null, skipped: 0, errors: 0, log: [], samples: [] };
   let ctxP = null;
   async function ctx() { if (!ctxP) ctxP = (await browser()).newContext({ userAgent: UA, locale: 'en-IN', timezoneId: 'Asia/Kolkata', viewport: { width: 1280, height: 900 } }); return ctxP; }
   s.open = async function (url, waitMs = 6000, inPage) {
@@ -76,11 +76,13 @@ export function session(platform, opts = {}) {
       if (status === 403 || status === 429) { s.blocked = 'HTTP ' + status; return null; }
       await page.waitForTimeout(waitMs);
       const [text, html, title] = await Promise.all([page.evaluate(() => document.body ? document.body.innerText : ''), page.content(), page.title()]);
-      if (challenged(text, title)) { s.blocked = 'challenge page'; return null; }
+      if (challenged(text, title)) { s.blocked = 'challenge page'; s.samples.push({ url, title, text: text.slice(0, 800) }); return null; }
       return { text, html, title, status, extra: inPage ? await inPage(page) : null };
     } catch (e) { s.errors++; s.log.push(String(e.message || e).slice(0, 160)); return null; }
     finally { await page.close().catch(() => {}); }
   };
+  /** Dry-run debugging: keep what an unreadable page showed (public page text only, first 1500 characters). */
+  s.sample = (url, p) => { if (p && s.samples.length < 6) s.samples.push({ url, title: p.title, text: String(p.text || '').slice(0, 1500) }); };
   s.report = () => ({ platform, pages: s.pages, skipped: s.skipped, errors: s.errors, blocked: s.blocked || '', note: s.log.slice(0, 5).join(' | ') });
   return s;
 }

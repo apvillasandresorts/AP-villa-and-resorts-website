@@ -11,6 +11,7 @@ export default {
   async quote(s, url, date, adults) {
     const p = await s.open(url.split('?')[0] + `?checkIn=${date}&los=1&rooms=1&adults=${adults}&children=0&currency=INR`, 8000);
     if (!p) return null;
+    s.last = p;
     const r = read.agoda(p.text), c = coords(p.html);
     return Object.assign(r, { distance_km: km(c, MAHAKAL), title: (p.title || '').split(/[|,(]/)[0].trim() });
   },

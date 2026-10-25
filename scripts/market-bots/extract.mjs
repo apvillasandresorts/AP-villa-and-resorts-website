@@ -80,3 +80,6 @@ export function cards(list) {
   }
   return out.filter(c => c.name);
 }
+
+/** Bedrooms stated in a listing title or card ("2 BHK", "3BHK villa", "2 bedrooms"), or null. */
+export function bedroomsOf(text) { const m = String(text || '').match(/\b([1-6])\s*-?\s*(?:bhk|bed\s?rooms?|bedrooms?|br)\b/i); return m ? Number(m[1]) : null; }

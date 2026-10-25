@@ -13,6 +13,7 @@ export default {
   async quote(s, url, date, adults) {
     const p = await s.open(url.split('?')[0] + '?' + q(date, adults), 7000);
     if (!p) return null;
+    s.last = p;
     const r = read.booking(p.text, p.html), c = coords(p.html);
     return Object.assign(r, { distance_km: km(c, MAHAKAL), title: p.title.split(',')[0].trim() });
   },

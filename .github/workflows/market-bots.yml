@@ -64,3 +64,10 @@ jobs:
       - name: Validate what was collected
         if: always()
         run: for f in research/bots-*.json; do [ -f "$f" ] && node scripts/market-validate.mjs "$f" || true; done
+      - name: "Keep the run files (dry runs: public page samples for debugging)"
+        if: always() && inputs.dry
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-bots-${{ github.run_id }}
+          path: research/bots-*.json
+          retention-days: 3

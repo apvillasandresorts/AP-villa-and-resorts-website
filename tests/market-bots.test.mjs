@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { read, cards, coords, km, challenged, MAHAKAL } from '../scripts/market-bots/extract.mjs';
+import { read, cards, coords, km, challenged, bedroomsOf, MAHAKAL } from '../scripts/market-bots/extract.mjs';
 import { robotsAllows } from '../scripts/market-bots/core.mjs';
 import { planDates } from '../scripts/market-bots/run.mjs';
 
@@ -67,4 +67,11 @@ test('night planning: tonight/tomorrow/Saturday in the morning, later weekends a
   assert.deepEqual(am, ['2026-10-25', '2026-10-26', '2026-10-31', '2026-11-08']);
   const pm = planDates('2026-10-25', 'pm', ['2026-11-08', '2026-11-23']);
   assert.deepEqual(pm, ['2026-10-30', '2026-11-07', '2026-11-14', '2026-11-23']);
+});
+
+test('bedrooms from listing titles', () => {
+  assert.equal(bedroomsOf('Mahadev Mansion- 2 bhk Pvt home & No sharing'), 2);
+  assert.equal(bedroomsOf('Alphonso by Mango Tree -3bhk Luxury Homestay'), 3);
+  assert.equal(bedroomsOf('Nivasa | Peaceful 3BHK Villa with Terrace'), 3);
+  assert.equal(bedroomsOf('Hotel Shreegopal'), null);
 });

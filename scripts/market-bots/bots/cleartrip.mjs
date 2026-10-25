@@ -15,6 +15,7 @@ export default {
     const next = new Date(Date.parse(date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
     const p = await s.open(url.split('?')[0] + `?c=${c6(date)}|${c6(next)}&r=${Math.min(adults, 3)},0`, 8000);
     if (!p) return null;
+    s.last = p;
     return Object.assign(read.taxLine(p.text, label(date)), { title: (p.title || '').split('|')[0].trim() });
   },
 };

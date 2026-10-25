@@ -12,6 +12,12 @@ async function run(token, actor, input, maxItems) {
 const num = v => { const n = Number(String(v ?? '').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
 export function apify(token) {
   return {
+    /** Spend so far this month in USD and the plan's limit (free plan: $5). The runner stops at $4 so the free credit is never exceeded. */
+    async usage() {
+      const r = await fetch('https://api.apify.com/v2/users/me/limits?token=' + encodeURIComponent(token), { signal: AbortSignal.timeout(20000) });
+      const j = await r.json().catch(() => ({})), d = j.data || {};
+      return { used: Number(d.current && d.current.monthlyUsageUsd) || 0, limit: Number(d.limits && d.limits.maxMonthlyUsageUsd) || 5 };
+    },
     /** Airbnb homes in Ujjain for one night and group size: url, name, coordinates, bedrooms, rating, price for the stay (or sold out = absent). */
     async airbnb(date, next, adults, maxItems = 60) {
       const items = await run(token, ACT.airbnb, { locationQueries: ['Ujjain, Madhya Pradesh, India'], checkIn: date, checkOut: next, adults, currency: 'INR', locale: 'en-IN', maxItems }, maxItems);

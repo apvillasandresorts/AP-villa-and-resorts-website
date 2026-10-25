@@ -8,6 +8,7 @@
 // 4. writes research/bots-<date>-<slot>.json, then sends prices to f.m.market.import and the run report to f.m.bots.report
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { session, closeBrowser, istDate, addDays } from './core.mjs';
+import { bedroomsOf } from './extract.mjs';
 import { serpApi } from './apis/serpapi.mjs';
 import { apify } from './apis/apify.mjs';
 import { affiliates } from './apis/affiliates.mjs';
@@ -49,7 +50,7 @@ async function main() {
   console.log(`Run ${today} ${SLOT}: nights ${dates.join(', ')}; ${cs.listings.length} comp-set listings, ${cs.known.length} known competitors.`);
   const known = cs.known.map(k => Object.assign({}, k, { urls: new Set(k.listing_urls || []) })), byUrl = {}, byName = {};
   known.forEach(k => { k.urls.forEach(u => { byUrl[u.split('?')[0]] = k; }); byName[normName(k.name)] = k; });
-  const rates = [], competitors = {}, runs = [];
+  const rates = [], competitors = {}, runs = [], samples = {};
   const compOf = (name, url, extra) => {   // merge by link, then by name; new ones are created
     const u = (url || '').split('?')[0], k = byUrl[u] || byName[normName(name)];
     const key = k ? k.name : name; const c = competitors[key] = competitors[key] || { name: key, listing_urls: k ? [...k.urls] : [], source_url: u, last_checked: today };
@@ -74,25 +75,30 @@ async function main() {
     try {
       if (bot.discover) {
         const found = await bot.discover(s, dates[0]);
-        found.forEach(f => { const isNew = !(byUrl[f.href] || byName[normName(f.name)]); const c = compOf(f.name, f.href, { type: f.type || (bot.id === 'airbnb' ? 'homestay' : 'hotel'), review_themes: f.rating ? `${bot.platform} rating ${f.rating}${f.reviews ? ' from ' + f.reviews + ' reviews' : ''}` : '' });
+        found.forEach(f => { const isNew = !(byUrl[f.href] || byName[normName(f.name)]); const c = compOf(f.name, f.href, { type: f.type || (bot.id === 'airbnb' ? 'homestay' : 'hotel'), bedrooms: bedroomsOf(f.name), review_themes: f.rating ? `${bot.platform} rating ${f.rating}${f.reviews ? ' from ' + f.reviews + ' reviews' : ''}` : '' });
           if (isNew) st.discovered++; if (f.date && f.price) { obs(c, bot.platform, f.date, f.adults || 2, f.href, { price: f.price, taxes_included: f.taxes_included }, '', 'page') && st.prices++; } });
       }
       if (bot.quote) {
         // comp-set listings first (each at its villa's group size), then other known links on this platform while budget lasts
-        const mine = cs.listings.filter(l => bot.match(l.url)), others = known.filter(k => [...k.urls].some(u => bot.match(u)) && !mine.some(m => m.name === k.name)).slice(0, 10);
+        const mine = cs.listings.filter(l => bot.match(l.url));
+        // other links on this platform: competitors already on file elsewhere first (same property, another platform), then new ones
+        const others = known.concat(Object.values(byName).filter(k => known.indexOf(k) < 0)).filter(k => [...(k.urls || [])].some(u => bot.match(u)) && !mine.some(m => m.name === k.name))
+          .sort((a, b) => (b.listing_urls ? 1 : 0) - (a.listing_urls ? 1 : 0)).slice(0, mine.length ? 10 : 16);
         const jobs = [];
         mine.forEach(l => dates.forEach(d => jobs.push({ name: l.name, url: l.url, date: d, adults: l.adults, target: l.property })));
         others.forEach(k => jobs.push({ name: k.name, url: [...k.urls].find(u => bot.match(u)), date: dates[dates.length > 2 ? 2 : 0], adults: 2, target: '' }));
         const seen = new Set();
         for (const j of jobs) {
           const id = j.url + j.date + j.adults; if (seen.has(id)) continue; seen.add(id);
-          const q = await bot.quote(s, j.url, j.date, j.adults); if (s.blocked) break;
+          s.last = null; const q = await bot.quote(s, j.url, j.date, j.adults); if (s.blocked) break;
           if (!q) continue;
-          const c = compOf(j.name, j.url, { distance_km: q.distance_km });
+          if (q.price == null && !q.sold_out && DRY) s.sample(j.url, s.last);
+          const c = compOf(j.name, j.url, { distance_km: q.distance_km, bedrooms: bedroomsOf(q.title || j.name) });
           if (obs(c, bot.platform, j.date, j.adults, j.url, q, j.target, 'page')) { q.sold_out ? st.sold_out++ : st.prices++; }
         }
       }
     } catch (e) { st.error = String(e.message || e).slice(0, 200); }
+    if (DRY && s.samples.length) samples[bot.id] = s.samples;
     runs.push(Object.assign(st, s.report()));
     console.log(`${bot.platform}: ${st.pages} pages, ${st.prices} prices, ${st.sold_out} sold out, ${st.discovered} new${st.blocked ? ', BLOCKED (' + st.blocked + ')' : ''}${st.error ? ', error: ' + st.error : ''}`);
   }
@@ -131,10 +137,13 @@ async function main() {
   if (process.env.APIFY_TOKEN && (!ONLY.length || ONLY.indexOf('apify') >= 0)) {
     const ap = apify(process.env.APIFY_TOKEN), st = { bot: 'apify', platform: 'Apify', mode: 'api', pages: 0, prices: 0, sold_out: 0, discovered: 0 };
     try {
-      const monday = new Date(today + 'T00:00:00Z').getUTCDay() === 1;
-      if ((monday && SLOT === 'am') || argv.includes('--apify-now')) {
+      // free plan guard: Airbnb listings cost ~$0.004 and Booking results ~$0.005 each; stop at $4 of the month's $5
+      const u = await ap.usage(), room = Math.min(4, u.limit - 1) - u.used;
+      const monday = new Date(today + 'T00:00:00Z').getUTCDay() === 1, dayNo = Math.floor(Date.parse(today) / 86400000);
+      if (room < 0.4) st.blocked = `free credit nearly used ($${u.used.toFixed(2)} of $${u.limit} this month)`;
+      else if ((monday && SLOT === 'am') || argv.includes('--apify-now')) {
         for (const adults of [4, 6]) {
-          const d = dates[2] || dates[0], items = await ap.airbnb(d, addDays(d, 1), adults, 50); st.pages++;
+          const d = dates[2] || dates[0], items = await ap.airbnb(d, addDays(d, 1), adults, 40); st.pages++;
           items.filter(i => i.type === 'homestay' && (i.distance_km == null || i.distance_km <= 6)).forEach(i => {
             const isNew = !(byUrl[i.url] || byName[normName(i.name)]);
             const c = compOf(i.name, i.url, { type: 'homestay', bedrooms: i.bedrooms, distance_km: i.distance_km, review_themes: i.rating ? `Airbnb rating ${i.rating} from ${i.reviews || 0} reviews` : '' });
@@ -144,8 +153,8 @@ async function main() {
         }
       }
       const bk = runs.find(r => r.bot === 'booking');
-      if (bk && bk.blocked) {
-        const d = dates[0], items = await ap.booking(d, addDays(d, 1), 2, 40); st.pages++;
+      if (!st.blocked && bk && bk.blocked && SLOT === 'am' && dayNo % 2 === 0) {   // fallback every other morning, 20 results (≈ $1.5 a month)
+        const d = dates[0], items = await ap.booking(d, addDays(d, 1), 2, 20); st.pages++;
         items.forEach(i => { const c = compOf(i.name, i.url, { distance_km: i.distance_km }); if (i.price) obs(c, 'Booking.com', d, 2, i.url, { price: i.price, taxes_included: 'unknown' }, '', 'api') && st.prices++; });
       }
     } catch (e) { st.error = String(e.message || e).slice(0, 200); }
@@ -159,7 +168,7 @@ async function main() {
   const out = { collected_at: today, slot: SLOT, dates, competitors: Object.values(competitors).map(c => Object.assign({}, c, { listing_urls: c.listing_urls.join('\n') })), rates, runs };
   mkdirSync('research', { recursive: true }); const file = `research/bots-${today}-${SLOT}.json`; writeFileSync(file, JSON.stringify(out, null, 1));
   console.log(`Saved ${file}: ${out.competitors.length} competitors, ${rates.length} observations (${rates.filter(r => r.availability === 'sold out').length} sold out).`);
-  if (DRY) return;
+  if (DRY) { if (Object.keys(samples).length) { writeFileSync(`research/bots-samples-${today}-${SLOT}.json`, JSON.stringify(samples, null, 1)); console.log('Saved unreadable-page samples for: ' + Object.keys(samples).join(', ')); } return; }
   for (let i = 0; i < Math.max(out.competitors.length, rates.length); i += 150) {
     const r = (await call('f.m.market.import', { competitors: out.competitors.slice(i, i + 150), rates: rates.slice(i, i + 150) })).result;
     console.log(`Founder OS: ${r.competitors} competitors, ${r.rates} new observations, ${r.skipped} already there, ${r.rejected} rejected.`);
