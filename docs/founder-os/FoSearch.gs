@@ -249,7 +249,9 @@ function foHealth_(b) {
   safe('Automation', 'Automation key', () => { const a = foAutomationStatus_(); add('Automation', 'Automation key (research job, blog topics, advisor figures)', a.active ? 'ok' : 'warn', a.active ? 'Active · last used ' + (a.last_used || 'never') : 'Not created yet', a.active ? '' : 'Settings → Automation → Create key, then save it as the GitHub secret FOUNDER_OS_KEY.'); });
   safe('Email', 'Email quota', () => { const q = MailApp.getRemainingDailyQuota(); add('Email', 'Email quota left today', q > 20 ? 'ok' : q > 0 ? 'warn' : 'fail', q + ' emails (Google free limit: 100 a day)'); });
   safe('Server', 'Server errors', () => {
-    const errs = foRows_('Audit').filter(a => a.result === 'error' && hoursSince(a.ts) <= 24), by = {};
+    // an error from a service that passes its own check now is resolved (e.g. Search Console errors from before it was connected)
+    const okNow = n => checks.some(c => c.name === n && c.status === 'ok'), resolved = a => (/^gsc/.test(a.action) && okNow('Search Console')) || (/^(ga4|ga_)/.test(a.action) && okNow('Google Analytics 4'));
+    const errs = foRows_('Audit').filter(a => a.result === 'error' && hoursSince(a.ts) <= 24 && !resolved(a)), by = {};
     errs.forEach(a => { by[a.action] = (by[a.action] || 0) + 1; });
     add('Server', 'Errors logged (last 24 h)', !errs.length ? 'ok' : errs.length < 5 ? 'warn' : 'fail', errs.length ? Object.keys(by).map(k => k + ' × ' + by[k]).join(', ') + ' · latest: ' + String(errs[errs.length - 1].detail || '').slice(0, 140) : 'None');
   });

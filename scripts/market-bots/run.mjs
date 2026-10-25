@@ -26,12 +26,37 @@ const BOTS = [airbnb, booking, agoda, oyo, cleartrip, easemytrip, tripcom, stayv
 const argv = process.argv.slice(2), arg = k => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i + 1] : null; };
 const KEY = (process.env.FOUNDER_OS_KEY || '').trim(), DRY = argv.includes('--dry');
 const ONLY = (arg('only') || '').split(',').filter(Boolean);
+const PAGE_BOTS = ['airbnb', 'booking', 'agoda', 'oyo', 'cleartrip'], RETRY_MAX = 5;
+/** Bots to re-run: failed, or no prices / sell-outs, or never reported today; blocked ones only after 3 hours; at most RETRY_MAX runs a day. */
+export function retryList(runs, nowMs) {
+  const by = {}; runs.forEach(r => { (by[r.bot] = by[r.bot] || []).push(r); });
+  return PAGE_BOTS.concat(['serpapi']).filter(b => {
+    const rs = (by[b] || []).sort((x, y) => String(x.at).localeCompare(String(y.at))), last = rs[rs.length - 1];
+    if (!last) return true;
+    if (rs.length >= RETRY_MAX) return false;
+    if (rs.some(r => Number(r.prices) + Number(r.sold_out) > 0)) return false;
+    if (last.status === 'blocked') return nowMs - Date.parse(last.at) >= 3 * 3600000 && !/not set|awaiting|nearly used/i.test(last.blocked || '');
+    return true;
+  });
+}
 const now = Date.now(), today = istDate(now), hourIst = new Date(now + 330 * 60000).getUTCHours();
-const SLOT = arg('slot') || (hourIst < 14 ? 'am' : 'pm');
+const SLOT = arg('slot') || (hourIst < 14 ? 'am' : 'pm');   // 'retry' = only the bots that failed or came back empty today
 
+/** Founder OS call with retries: Google sometimes answers with an HTML error page, a lock timeout or a network error. 5 tries, 5 s → 2 min. */
 async function call(action, body) {
-  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, key: KEY }, body)), redirect: 'follow' });
-  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'request failed'); return j;
+  let last;
+  for (const wait of [0, 5000, 15000, 45000, 120000]) {
+    if (wait) { console.log(`  ${action}: retrying in ${wait / 1000}s (${last})`); await new Promise(r => setTimeout(r, wait)); }
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, key: KEY }, body)), redirect: 'follow', signal: AbortSignal.timeout(120000) });
+      const text = await r.text(); let j;
+      try { j = JSON.parse(text); } catch (e) { last = 'not JSON (HTTP ' + r.status + ')'; continue; }
+      if (j.ok) return j;
+      last = j.error || 'request failed';
+      if (!/lock|timeout|too many|try again|service|internal|unavailable/i.test(last)) throw new Error(last);   // a real refusal: do not retry
+    } catch (e) { if (e.message === last && !/lock|timeout|too many|try again|service|internal|unavailable/i.test(last)) throw e; last = String(e.message || e).slice(0, 120); }
+  }
+  throw new Error(action + ' failed after 5 tries: ' + last);
 }
 const nextDow = (d, dow) => { for (let i = 0; i < 8; i++) { const x = addDays(d, i); if (new Date(x + 'T00:00:00Z').getUTCDay() === dow && i > 0) return x; } return addDays(d, 7); };
 
@@ -46,7 +71,12 @@ const normName = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').
 async function main() {
   if (!KEY && !DRY) { console.log('::warning::FOUNDER_OS_KEY not set. Nothing to do.'); return; }
   const cs = KEY ? await call('f.m.compset', {}) : { listings: [], known: [], hot_dates: [] };   // --dry still reads the comp set; it only skips sending
-  const dates = planDates(today, SLOT, cs.hot_dates);
+  const dates = planDates(today, SLOT === 'retry' ? 'am' : SLOT, cs.hot_dates);
+  if (SLOT === 'retry') {
+    const st = await call('f.m.bots.status', {}), need = retryList(st.runs || [], Date.now());
+    if (!need.length) { console.log('Retry: every bot has data today. Nothing to do.'); return; }
+    console.log('Retry: ' + need.join(', ')); ONLY.splice(0, ONLY.length, ...need);
+  }
   console.log(`Run ${today} ${SLOT}: nights ${dates.join(', ')}; ${cs.listings.length} comp-set listings, ${cs.known.length} known competitors.`);
   const known = cs.known.map(k => Object.assign({}, k, { urls: new Set(k.listing_urls || []) })), byUrl = {}, byName = {};
   known.forEach(k => { k.urls.forEach(u => { byUrl[u.split('?')[0]] = k; }); byName[normName(k.name)] = k; });
@@ -170,8 +200,8 @@ async function main() {
   mkdirSync('research', { recursive: true }); const file = `research/bots-${today}-${SLOT}.json`; writeFileSync(file, JSON.stringify(out, null, 1));
   console.log(`Saved ${file}: ${out.competitors.length} competitors, ${rates.length} observations (${rates.filter(r => r.availability === 'sold out').length} sold out).`);
   if (DRY) { if (Object.keys(samples).length) { writeFileSync(`research/bots-samples-${today}-${SLOT}.json`, JSON.stringify(samples, null, 1)); console.log('Saved unreadable-page samples for: ' + Object.keys(samples).join(', ')); } return; }
-  for (let i = 0; i < Math.max(out.competitors.length, rates.length); i += 150) {
-    const r = (await call('f.m.market.import', { competitors: out.competitors.slice(i, i + 150), rates: rates.slice(i, i + 150) })).result;
+  for (let i = 0; i < Math.max(out.competitors.length, rates.length); i += 75) {
+    const r = (await call('f.m.market.import', { competitors: out.competitors.slice(i, i + 75), rates: rates.slice(i, i + 75) })).result;
     console.log(`Founder OS: ${r.competitors} competitors, ${r.rates} new observations, ${r.skipped} already there, ${r.rejected} rejected.`);
   }
   await call('f.m.bots.report', { run_id: `${today}-${SLOT}`, runs });

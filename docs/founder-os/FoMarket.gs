@@ -18,6 +18,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
   'f.m.compset': b => foCompSetPublic_(b),
   'f.m.bots.report': b => foBotsReport_(b),
+  'f.m.bots.status': b => ({ today: foToday_(), runs: foRows_('BotRuns').filter(r => String(r.at).slice(0, 10) === foToday_()).map(r => ({ bot: r.bot, at: r.at, status: r.status, pages: r.pages, prices: r.prices, sold_out: r.sold_out, blocked: r.blocked })) }),   // retry planner
   'f.m.news.import': b => foNewsImport_(b),   // news job: relevant headlines (no article text), high-impact ones emailed once   // competitor bots: one row per bot run (pages, prices, blocked) for Signal health   // competitor bot: comp-set listings (public names + public listing links only)
 };
 

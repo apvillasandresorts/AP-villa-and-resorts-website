@@ -88,3 +88,18 @@ test('OYO room cards: cheapest real room price, not the struck-through original'
   const t = 'About Property\nChoose your room\nSELECTED CATEGORY\nClassic\nRoom size: 11 sqm approx\nAC\n₹2199\n₹11502\nSELECTED\nDeluxe\nRoom size: 13 sqm approx\n₹2417\n₹12641\nSELECT\nRatings and reviews';
   assert.deepEqual(read.oyo(t), { price: 2199, sold_out: false, taxes_included: 'no' });
 });
+
+test('retry planner: re-runs failed, empty or missing bots; blocked ones only after 3 hours; at most 5 a day', async () => {
+  const { retryList } = await import('../scripts/market-bots/run.mjs');
+  const now = Date.parse('2026-10-26T12:00:00Z'), at = h => new Date(now - h * 3600000).toISOString();
+  const runs = [
+    { bot: 'airbnb', at: at(4), status: 'ok', prices: 30, sold_out: 5 },
+    { bot: 'booking', at: at(4), status: 'ok', prices: 0, sold_out: 0 },
+    { bot: 'agoda', at: at(1), status: 'blocked', prices: 0, sold_out: 0, blocked: 'challenge page' },
+    { bot: 'oyo', at: at(5), status: 'blocked', prices: 0, sold_out: 0, blocked: 'challenge page' },
+    ...[1, 2, 3, 4, 5].map(i => ({ bot: 'cleartrip', at: at(i), status: 'error', prices: 0, sold_out: 0 })),
+    { bot: 'serpapi', at: at(2), status: 'blocked', prices: 0, blocked: 'SERPAPI_KEY not set yet' },
+  ];
+  assert.deepEqual(retryList(runs, now), ['booking', 'oyo']);
+  assert.deepEqual(retryList([], now), ['airbnb', 'booking', 'agoda', 'oyo', 'cleartrip', 'serpapi'], 'a run that never reported: retry everything');
+});

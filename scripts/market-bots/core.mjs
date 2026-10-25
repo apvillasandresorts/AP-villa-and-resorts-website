@@ -65,9 +65,9 @@ export function session(platform, opts = {}) {
   const s = { platform, budget: opts.budget || 40, pages: 0, blocked: null, skipped: 0, errors: 0, log: [], samples: [] };
   let ctxP = null;
   async function ctx() { if (!ctxP) ctxP = (await browser()).newContext({ userAgent: UA, locale: 'en-IN', timezoneId: 'Asia/Kolkata', viewport: { width: 1280, height: 900 } }); return ctxP; }
-  s.open = async function (url, waitMs = 6000, inPage) {
+  s.open = async function (url, waitMs = 6000, inPage, retry) {
     if (s.blocked) return null;
-    if (s.pages >= s.budget) { s.skipped++; return null; }
+    if (s.pages >= s.budget && !retry) { s.skipped++; return null; }
     if (!(await mayFetch(url))) { s.skipped++; s.log.push('robots.txt disallows ' + new URL(url).pathname); return null; }
     if (s.pages > 0) await sleep((opts.delayMs || 5000) + Math.round(Math.random() * 3000));
     s.pages++;
@@ -83,7 +83,11 @@ export function session(platform, opts = {}) {
       const [text, html, title] = await Promise.all([page.evaluate(() => document.body ? document.body.innerText : ''), page.content(), page.title()]);
       if (challenged(text, title)) { s.blocked = 'challenge page'; s.samples.push({ url, title, text: text.slice(0, 800) }); return null; }
       return { text, html, title, status, extra: inPage ? await inPage(page) : null };
-    } catch (e) { s.errors++; s.log.push(String(e.message || e).slice(0, 160)); return null; }
+    } catch (e) {
+      s.errors++; s.log.push(String(e.message || e).slice(0, 160));
+      if (!retry && /timeout|net::|ERR_|closed/i.test(String(e.message || e))) { await sleep(10000); return s.open(url, waitMs, inPage, true); }   // one more try for a load failure
+      return null;
+    }
     finally { await page.close().catch(() => {}); }
   };
   /** Dry-run debugging: keep what an unreadable page showed (public page text only, first 1500 characters). */

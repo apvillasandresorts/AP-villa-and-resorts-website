@@ -71,7 +71,7 @@
       marketLine(q) +
       (q.top && q.top.length ? '<ul class="dk-why">' + q.top.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
       (q.reasons.length ? '<p class="fo-hint">' + q.reasons.map(esc).join(' · ') + '</p>' : '') +
-      '<div class="fo-toolbar" style="margin-top:8px"><button class="btn btn--primary btn--sm" data-acc="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '">Accept ' + inr(q.price) + '</button><button class="btn btn--sm" data-ovr="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '">Override…</button><button class="btn btn--sm" data-why data-p="' + esc(c.property) + '" data-d="' + q.date + '">Why?</button></div>' +
+      '<div class="fo-toolbar" style="margin-top:8px"><button class="btn btn--primary btn--sm" data-acc="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '" title="Logs that you set these channel prices">Accept · you keep ' + inr(q.price) + '</button><button class="btn btn--sm" data-ovr="' + q.price + '" data-p="' + esc(c.property) + '" data-d="' + q.date + '">Override…</button><button class="btn btn--sm" data-why data-p="' + esc(c.property) + '" data-d="' + q.date + '">Why?</button></div>' +
       (last ? '<p class="fo-hint">Last decision: ' + (last.accepted === 'yes' ? 'accepted ' : 'set ') + inr(num(last.set_price)) + ' (' + esc(last.channel) + ') ' + when(last.decided_at) + '</p>' : '')) + '</div>';
   }
   function marketLine(q) {
@@ -139,7 +139,7 @@
     var cands = K.candidates(D).map(function (c) { var s = K.similarity(D, c, pid, cfg); return { c: c, s: s }; }).filter(function (x) { return x.s.score != null && !set.some(function (r) { return r.key === x.c.key; }); }).sort(function (a, b) { return b.s.score - a.s.score; }).slice(0, 5);
     var movers = moversOf(D, set);
     var g = cfg.group[pid] || {}, pins = cfg.comp.pinned.map(K.normName), exc = cfg.comp.excluded.map(K.normName), founder = S.user && S.user.role === 'founder';
-    body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">Comp set for a group of ' + (g.adults || '?') + ' adults (' + (g.bedrooms || '?') + ' bedrooms). Chosen weekly by similarity; a member is replaced only after being outscored by ' + cfg.comp.swap_margin + '+ points for ' + cfg.comp.swap_weeks + ' weeks.</span></div>' +
+    body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">Comp set for a group of ' + (g.adults || '?') + ' adults (' + (g.bedrooms || '?') + ' bedrooms). Re-ranked daily by similarity; a member is replaced only after being outscored by ' + cfg.comp.swap_margin + '+ points on ' + cfg.comp.swap_weeks + ' daily checks in a row.</span></div>' +
       card('Comp set', set.length + ' of ' + cfg.comp.size, table(['#', 'Competitor', 'Score', 'Why similar', 'Platforms', 'In set since', ''], set.map(function (r, i) {
         return [String(i + 1), '<a href="#" data-cmp="' + esc(r.name) + '"><b>' + esc(r.name) + '</b></a>' + (r.hotel === 'yes' ? ' <span class="fo-badge fo-badge--muted">hotel</span>' : '') + (r.pinned === 'yes' ? ' <span class="fo-badge fo-badge--gold">pinned</span>' : ''), '<b>' + esc(r.score) + '</b>', '<small>' + esc(r.why) + '</small>', esc(r.platforms), r.since ? dmy(r.since) : '—',
           founder ? '<button class="btn btn--sm" data-pin="' + esc(r.name) + '">' + (pins.indexOf(r.key) >= 0 ? 'Unpin' : 'Pin') + '</button> <button class="btn btn--sm btn--danger" data-exc="' + esc(r.name) + '">Exclude</button>' : ''];

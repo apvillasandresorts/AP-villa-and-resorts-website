@@ -30,3 +30,15 @@ test('feed parsing (RSS with CDATA and entities) and stable ids that ignore the 
   assert.equal(items.length, 1); assert.equal(items[0].title, 'Ujjain: Mahakal Lok gets new parking'); assert.equal(items[0].summary, 'New parking & shuttle');
   assert.equal(newsId('Ujjain: Mahakal Lok gets new parking - Dainik Bhaskar'), newsId('Ujjain: Mahakal Lok gets new parking'));
 });
+
+test('news → pricing signals: effects when warranted, a live "nothing notable" heartbeat otherwise', async () => {
+  const { newsSignals } = await import('../scripts/news/classify.mjs');
+  const at = '2026-10-25T12:00:00Z';
+  const quiet = newsSignals([], at);
+  assert.deepEqual(quiet.map(s => [s.signal_id, s.index]), [['temple', 1], ['travel', 1], ['events', 1], ['footfall', 1]]);
+  assert.ok(quiet.every(s => s.status === 'live' && /^https:/.test(s.source_url) && s.fetched_at === at));
+  const sig = newsSignals([{ title: 'Darshan closed at Mahakal garbhagriha till Friday', url: 'https://x.in/a', source: 'x.in', published_at: '2026-10-25T08:00:00Z', categories: 'temple,safety', impact: 'high', direction: 'down', score: 90 },
+    { title: 'Railways run special trains to Ujjain', url: 'https://x.in/b', source: 'x.in', published_at: '2026-10-24T20:00:00Z', categories: 'travel', impact: 'medium', direction: 'up', score: 60 }], at);
+  assert.equal(sig.find(s => s.signal_id === 'temple').index, 0.93);
+  assert.equal(sig.find(s => s.signal_id === 'travel').index, 1.02);
+});

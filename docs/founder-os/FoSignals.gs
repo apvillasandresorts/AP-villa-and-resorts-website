@@ -76,7 +76,11 @@ function foDeskHourly_() {
   const t0 = Date.now(), today = foToday_(), s = foSettings_();
   const D = foDataLoad_(); if (!D.properties.length) return 'no properties';
   const cfg = FoDesk.settings(D), runId = 'R' + Utilities.formatDate(new Date(), FO.TZ, 'yyMMddHH');
-  if (!foRows_('CompSet').length || (new Date().getDay() === 1 && s.desk_last_rerank !== today)) foCompRerank_(today);
+  // own demand signals (Search Console, GA4) refreshed whenever the latest is over 20 hours old
+  const lastOwn = foRows_('Signals').filter(r => r.signal_id === 'search' || r.signal_id === 'web').map(r => String(r.fetched_at)).sort().pop() || '';
+  if (!lastOwn || Date.now() - Date.parse(lastOwn) > 20 * 3600000) { try { foDeskOwnSignals_(today); } catch (e) { /* reported by the health check */ } }
+  // comp sets re-ranked once a day (new competitors found by the bots can join; the stability rule still needs repeated wins)
+  if (!foRows_('CompSet').length || s.desk_last_rerank !== today) foCompRerank_(today);
   const D2 = foDataLoad_(), cals = cfg.properties.map(pid => FoDesk.calendar(D2, pid, 90)).filter(Boolean), healthRows = FoDesk.health(D2);
   // alerts are computed BEFORE storing, against the last stored recommendations
   const alerts = FoDesk.alerts(D2, cals, healthRows);

@@ -57,8 +57,8 @@ test('comp set: excludes dorms, far and unpriced listings, keeps ≥3 hotels, si
   assert.ok(r.changes.every(c => c.action === 'added'));
 });
 
-test('comp set stability: a challenger needs +10 points for 2 consecutive weeks; every change is logged', () => {
-  const X = data();
+test('comp set stability: a challenger needs +10 points on consecutive re-ranks (set to 2 here); every change is logged', () => {
+  const X = data({ settings: { desk: JSON.stringify({ comp: { swap_weeks: 2 } }) } });
   const first = D.rerank(X, 'ap-suite', [], TODAY).rows;
   const member = first.filter(x => x.in_set === 'yes' && x.hotel === 'no').sort((a, b) => a.score - b.score)[0];
   // a new, clearly better 2-bedroom competitor appears

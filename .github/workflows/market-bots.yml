@@ -13,7 +13,7 @@ on:
         required: false
         default: ""
       slot:
-        description: "am (tonight, tomorrow, Saturday) or pm (later weekends, high-demand nights). Empty = by time of day."
+        description: "am (tonight, tomorrow, Saturday), pm (later weekends, high-demand nights) or retry (only bots that failed today). Empty = by time of day."
         required: false
         default: ""
       dry:
@@ -24,6 +24,7 @@ on:
   schedule:
     - cron: "40 2 * * *"    # 08:10 IST: tonight, tomorrow, this Saturday, next high-demand night
     - cron: "40 12 * * *"   # 18:10 IST: coming Friday, next two Saturdays, high-demand nights
+    - cron: "10 1-17/2 * * *"   # every 2 hours 06:40–22:40 IST: retry only the bots that failed or came back empty today
 
 concurrency:
   group: market-bots
@@ -59,6 +60,7 @@ jobs:
           ARGS=""
           [ -n "${{ inputs.only }}" ] && ARGS="$ARGS --only ${{ inputs.only }}"
           [ -n "${{ inputs.slot }}" ] && ARGS="$ARGS --slot ${{ inputs.slot }}"
+          [ "${{ github.event.schedule }}" = "10 1-17/2 * * *" ] && ARGS="$ARGS --slot retry"
           [ "${{ inputs.dry }}" = "true" ] && ARGS="$ARGS --dry"
           node scripts/market-bots/run.mjs $ARGS
       - name: Validate what was collected

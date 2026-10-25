@@ -6,7 +6,7 @@
 // Each story: relevance (scripts/news/classify.mjs), category, impact, demand direction. Only headline, source, link, date and a
 // short feed summary are stored (no article text). Sent to f.m.news.import with the automation key.
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { classify, parseFeed, newsId } from './classify.mjs';
+import { classify, parseFeed, newsId, newsSignals } from './classify.mjs';
 import { mayFetch, UA } from '../market-bots/core.mjs';
 
 const API = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';
@@ -74,7 +74,12 @@ async function main() {
   status.forEach(s => console.log(s));
   console.log(`Relevant: ${news.length} of ${found.length} (${news.filter(n => n.impact === 'high').length} high impact).`);
   mkdirSync('research', { recursive: true }); writeFileSync('research/news.json', JSON.stringify({ fetched_at: fetchedAt, news }, null, 1));
+  const deskSignals = newsSignals(news, fetchedAt);
+  writeFileSync('research/news-signals.json', JSON.stringify({ collected_at: fetchedAt.slice(0, 10), desk_signals: deskSignals }, null, 1));
+  console.log('Pricing signals from news: ' + deskSignals.map(x => x.signal_id + ' ' + x.index).join(', '));
   if (DRY || !KEY) { if (!KEY) console.log('::warning::FOUNDER_OS_KEY not set; news not sent.'); return; }
+  const rs = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'f.m.signals.import', key: KEY, signals: deskSignals }), redirect: 'follow' });
+  const js = await rs.json().catch(() => ({})); console.log('Founder OS signals: ' + (js.ok ? js.result.added + ' added, ' + js.result.skipped + ' already there' : (js.error || 'failed')));
   const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'f.m.news.import', key: KEY, news: news.slice(0, 150) }), redirect: 'follow' });
   const j = await r.json(); if (!j.ok) throw new Error(j.error || 'request failed');
   console.log(`Founder OS: ${j.result.added} new stories, ${j.result.skipped} already there, ${j.result.alerted} high-impact alerts emailed.`);

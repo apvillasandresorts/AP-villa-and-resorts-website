@@ -47,3 +47,26 @@ export function parseFeed(xml) {
   }
   return items.filter(i => i.title && /^https?:\/\//.test(i.url));
 }
+
+/**
+ * Pricing-desk signals from the last 48 hours of relevant news (horizon-wide, for_date empty). Every run writes one row per signal:
+ * a measured effect when the news warrants it, otherwise a "checked, nothing notable" heartbeat at 1.00 so the desk knows the
+ * signal is live. Conservative: temple restrictions 0.93, temple record crowds 1.05, new trains / flights 1.02, big events 1.04.
+ */
+export function newsSignals(news, fetchedAt) {
+  const since = Date.parse(fetchedAt) - 48 * 3600000, recent = news.filter(n => !n.published_at || Date.parse(n.published_at) >= since);
+  const pick = (test) => recent.filter(test).sort((a, b) => b.score - a.score)[0];
+  const row = (id, index, n, quiet) => ({ signal_id: id, property: '', for_date: '', index, raw_value: n ? n.title.slice(0, 200) : quiet,
+    source_url: n ? n.url : 'https://api.gdeltproject.org/api/v2/doc/doc', fetched_at: fetchedAt, status: 'live', notes: n ? `news (${n.source}, ${String(n.published_at).slice(0, 10)}); ESTIMATE from headline` : 'news checked: nothing notable in 48 h' });
+  const has = (n, c) => String(n.categories || n.category).split(',').includes(c);
+  const tDown = pick(n => has(n, 'temple') && n.impact === 'high' && n.direction === 'down'), tUp = pick(n => has(n, 'temple') && n.impact === 'high' && n.direction === 'up');
+  const travel = pick(n => has(n, 'travel') && n.direction === 'up'), trDown = pick(n => has(n, 'travel') && n.impact === 'high' && n.direction === 'down');
+  const event = pick(n => has(n, 'festival') && n.direction === 'up' && n.impact !== 'low');
+  const crowd = pick(n => /lakh|record|crowd|भीड़|लाख/i.test(n.title) && (has(n, 'temple') || has(n, 'festival')));
+  return [
+    tDown ? row('temple', 0.93, tDown) : tUp ? row('temple', 1.05, tUp) : row('temple', 1, null, 'no temple restrictions or rush in the news'),
+    trDown ? row('travel', 0.97, trDown) : travel ? row('travel', 1.02, travel) : row('travel', 1, null, 'no travel changes in the news'),
+    event ? row('events', 1.04, event) : row('events', 1, null, 'no new events in the news'),
+    crowd ? row('footfall', 1.05, crowd) : row('footfall', 1, null, 'no crowd reports in the news'),
+  ];
+}

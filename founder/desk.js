@@ -39,7 +39,7 @@ var FoDesk = (function () {
     compression: { high_sellout: 0.6, mid_sellout: 0.4, low_own: 0.6 },
     caps: { demand: 0.10, calendar: 0.15, weather: 0.10, compression: 0.12 },
     weights: {},                         // per-signal weight overrides (0 switches a signal off)
-    comp: { weights: { size: 30, whole: 15, distance: 20, price: 15, rating: 10, amenities: 10 }, size: 10, min_hotels: 3, swap_margin: 10, swap_weeks: 2, max_km: 5, pinned: [], excluded: [] },
+    comp: { weights: { size: 30, whole: 15, distance: 20, price: 15, rating: 10, amenities: 10 }, size: 10, min_hotels: 3, swap_margin: 10, swap_weeks: 3,   /* swap_weeks = consecutive daily re-ranks a challenger must win */ max_km: 5, pinned: [], excluded: [] },
     alerts: { brief: true, rec_move: 0.10, market_move: 0.10, sellout: 0.6, stale: true, jobs: true, events: true },
   };
   function settings(data) {
@@ -175,7 +175,7 @@ var FoDesk = (function () {
         var weeks = num(prevBy[ch.key] && prevBy[ch.key].challenger_weeks) + 1; ch.challenger_weeks = weeks;
         if (weeks >= C.swap_weeks) {
           set.splice(set.indexOf(weakest), 1); set.push(ch); ch.challenger_weeks = 0;
-          changes.push({ date: today, property: propertyId, action: 'replaced', key: ch.key, name: ch.name, score: ch.sim.score, reason: 'outscored ' + weakest.name + ' by ' + (ch.sim.score - weakest.sim.score) + ' points for ' + weeks + ' weeks' });
+          changes.push({ date: today, property: propertyId, action: 'replaced', key: ch.key, name: ch.name, score: ch.sim.score, reason: 'outscored ' + weakest.name + ' by ' + (ch.sim.score - weakest.sim.score) + ' points on ' + weeks + ' daily checks' });
           changes.push({ date: today, property: propertyId, action: 'removed', key: weakest.key, name: weakest.name, score: weakest.sim.score, reason: 'replaced by ' + ch.name });
         }
       });
