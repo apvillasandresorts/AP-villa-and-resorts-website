@@ -37,9 +37,12 @@ async function get(url, json) {
 
 async function main() {
   const fetchedAt = new Date().toISOString(), found = [], status = [];
+  let gdeltOk = false;
   for (const q of GDELT) {
     const u = 'https://api.gdeltproject.org/api/v2/doc/doc?' + new URLSearchParams({ query: q, mode: 'artlist', format: 'json', maxrecords: '150', timespan: '3d', sort: 'datedesc' });
-    const r = await get(u, true); await sleep(6000);   // GDELT asks for one request every few seconds
+    let r = await get(u, true);
+    for (const wait of [20000, 45000]) { if (!r.blocked) break; await sleep(wait); r = await get(u, true); }   // shared CI addresses are often rate-limited (429): back off and retry
+    gdeltOk = !!r.body;
     const arts = (r.body && r.body.articles) || [];
     status.push(`GDELT "${q.slice(0, 40)}": ${r.body ? arts.length : r.skipped || r.blocked || r.error}`);
     arts.forEach(a => found.push({ title: a.title, url: a.url, source: a.domain || '', published_at: gdeltDate(a.seendate), lang: a.language === 'Hindi' ? 'hi' : 'en', summary: '', query: 'gdelt' }));
@@ -48,6 +51,17 @@ async function main() {
     const r = await get(url, false), items = r.body ? parseFeed(r.body) : [];
     status.push(`${name}: ${r.body ? items.length + ' items' : r.skipped || r.blocked || r.error}`);
     items.forEach(i => found.push({ title: i.title, url: i.url, source: i.source || name, published_at: isoOf(i.published), lang: /[ऀ-ॿ]/.test(i.title) ? 'hi' : 'en', summary: i.summary, query: 'rss' }));
+  }
+  // backup when GDELT refused us: Google News through SerpApi (owner-approved free plan), once a day on the 05:55 IST run (≈30 of 250 searches a month)
+  const firstRunOfDay = new Date().getUTCHours() === 0 || process.argv.includes('--serpapi-now');
+  if (!gdeltOk && firstRunOfDay && process.env.SERPAPI_KEY) {
+    try {
+      const u = 'https://serpapi.com/search.json?' + new URLSearchParams({ engine: 'google_news', q: 'Ujjain OR Mahakal OR Mahakaleshwar OR Simhastha', gl: 'in', hl: 'en', api_key: process.env.SERPAPI_KEY });
+      const j = await (await fetch(u, { signal: AbortSignal.timeout(40000) })).json();
+      const items = (j.news_results || []).flatMap(x => x.stories ? x.stories : [x]);
+      status.push('Google News (SerpApi backup): ' + items.length);
+      items.forEach(x => found.push({ title: x.title, url: x.link, source: (x.source && x.source.name) || '', published_at: isoOf(x.iso_date || x.date), lang: 'en', summary: '', query: 'serpapi' }));
+    } catch (e) { status.push('Google News (SerpApi backup): ' + String(e.message || e).slice(0, 80)); }
   }
   const since = Date.now() - 7 * 86400000, seen = new Set(), news = [];
   for (const n of found) {

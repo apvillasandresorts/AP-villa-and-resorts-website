@@ -109,7 +109,7 @@ async function main() {
   if (process.env.SERPAPI_KEY && (!ONLY.length || ONLY.indexOf('serpapi') >= 0)) {
     const sp = serpApi(process.env.SERPAPI_KEY), st = { bot: 'serpapi', platform: 'Google Hotels', mode: 'api', pages: 0, prices: 0, sold_out: 0, discovered: 0 };
     try {
-      const left = await sp.left(), reserve = 20, perRun = SLOT === 'am' ? 5 : 3;   // ≈ 8 searches a day ≈ 240 a month
+      const left = await sp.left(), reserve = 20, perRun = SLOT === 'am' ? 5 : 2;   // ≈ 7 searches a day ≈ 210 a month (the news backup uses ≈ 30)
       if (left - perRun < reserve) st.blocked = `free searches nearly used up (${left} left this month)`;
       else {
         const d = dates[SLOT === 'am' ? 2 : 0] || dates[0], next = addDays(d, 1);
