@@ -286,3 +286,4 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .dk-news__title { font-weight: 600; color: var(--ink); text-decoration: none; line-height: 1.4; }
 .dk-news__title:hover { text-decoration: underline; }
 .dk-news__dir { font-weight: 600; } .dk-news__dir--up { color: var(--good); } .dk-news__dir--down { color: var(--bad); }
+.fo-chk { width: 34px; text-align: center; } .fo-chk input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--em); }

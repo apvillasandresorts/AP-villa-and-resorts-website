@@ -122,3 +122,27 @@ test('news import: stored once, high-impact stories emailed once, automation key
   assert.equal(r2.skipped, 1); assert.equal(env.mails.filter(m => /high-impact/.test(m.subject || '')).length, 1, 'no second email');
   assert.equal(env.api({ action: 'f.data', token: await env.login() }).news.length, 2);
 });
+
+test('bulk delete: founder only, emailed code, records moved to DeletedRecords with payments, never re-imported by the sync', async () => {
+  const rows = [{ 'Submitted at': '2026-10-15T10:00:00', Reference: 'ECI-A1', 'Booked through': 'Direct (WhatsApp / phone / website)', Villa: 'AP Suite', 'Check-in': '2026-10-14', 'Check-out': '2026-10-15', 'Main guest': 'Sneha Rajput', Mobile: '9000000001', 'Total ₹': '10000000', 'Amount paid ₹': '500' },
+    { 'Submitted at': '2026-10-15T11:00:00', Reference: 'ECI-A2', 'Booked through': 'Airbnb', Villa: 'AP Suite', 'Check-in': '2026-11-02', 'Check-out': '2026-11-04', 'Main guest': 'Real Guest', Mobile: '9876500000' }];
+  const env = makeEnv({ checkins: rows }); env.fo.foSetup(); env.fo.foSyncCheckins_('test');
+  const token = await env.login();
+  const typo = env.tab('Bookings').find(b => b.guest_name === 'Sneha Rajput');
+  assert.ok(typo && env.tab('Payments').some(p => p.booking_id === typo.booking_id));
+  const req = env.api({ action: 'f.bookings.delete.request', token, booking_ids: [typo.booking_id], reason: 'typo amount' });
+  assert.ok(req.challenge, JSON.stringify(req)); assert.equal(req.count, 1);
+  const mail = env.mails.filter(m => /approve deleting/.test(m.subject || '')).pop(); assert.ok(mail && /Sneha Rajput/.test(mail.body));
+  const code = mail.body.match(/Code to approve: (\d{6})/)[1];
+  assert.match(env.api({ action: 'f.bookings.delete.confirm', token, challenge: req.challenge, otp: '000000' }).error, /not right/);
+  const ok = env.api({ action: 'f.bookings.delete.confirm', token, challenge: req.challenge, otp: code });
+  assert.deepEqual(ok.result, { deleted: 1, payments: 1 });
+  assert.ok(!env.tab('Bookings').some(b => b.booking_id === typo.booking_id)); assert.ok(!env.tab('Payments').some(p => p.booking_id === typo.booking_id));
+  const del = env.tab('DeletedRecords'); assert.equal(del.length, 1); assert.equal(del[0].reason, 'typo amount'); assert.ok(JSON.parse(del[0].data_json).payments.length === 1);
+  env.fo.foSyncCheckins_('test');
+  assert.ok(!env.tab('Bookings').some(b => b.guest_name === 'Sneha Rajput'), 'not re-imported');
+  assert.ok(env.tab('Bookings').some(b => b.guest_name === 'Real Guest'));
+  assert.match(env.api({ action: 'f.bookings.delete.confirm', token, challenge: req.challenge, otp: code }).error, /expired/, 'code works once');
+  env.setUserRole('manager');
+  assert.match(env.api({ action: 'f.bookings.delete.request', token, booking_ids: ['x'] }).error, /role/);
+});

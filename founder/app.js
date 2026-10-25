@@ -437,12 +437,44 @@
   }
 
   // ------------------------------------------------------------ 2. Booking management ------------------------------------------------------------
+  function isFounder() { return S.user && S.user.role === 'founder'; }
+  /** Bulk delete: list → reason → code emailed to the founder's main address → confirm. Records move to the DeletedRecords sheet. */
+  function deleteFlow(ids, done) {
+    var D = S.data, picked = D.bookings.filter(function (b) { return ids.indexOf(b.booking_id) >= 0; });
+    if (!picked.length) return;
+    var p = drawer('<div class="fo-drawer__head"><h2 class="serif" style="font-size:24px">Delete ' + picked.length + ' booking' + (picked.length === 1 ? '' : 's') + '</h2><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+      '<div class="fo-note" style="margin-bottom:12px">They leave the ledger, every report and the sheets (with their payments). A full copy is kept in the <b>DeletedRecords</b> sheet, and the e-check-in sync will never bring them back. An approval code is emailed to your main founder address.</div>' +
+      '<div class="fo-tablewrap"><table class="fo-table"><thead><tr><th>Booking</th><th>Guest</th><th>Villa</th><th>Stay</th><th class="num">Amount</th></tr></thead><tbody>' + picked.map(function (b) { return '<tr><td>' + esc(b.booking_id) + '</td><td>' + esc(b.guest_name || '—') + '</td><td>' + esc(propName(b.property_id)) + '</td><td class="nw">' + dm(b.checkin) + ' → ' + dm(b.checkout) + '</td><td class="num">' + (has(b.gross_amount) ? inr(num(b.gross_amount)) : '—') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<form class="fo-form" id="dl-f" novalidate style="margin-top:12px"><label class="fo-field full">Reason (kept with the records)<textarea name="reason" rows="2" placeholder="e.g. test entry, typo amount, duplicate"></textarea></label>' +
+      '<div class="full" id="dl-step"><div class="fo-msg" id="dl-msg"></div><button class="btn btn--danger" type="submit">Email me the approval code</button></div></form>');
+    var f = $('#dl-f', p), msg = function (t) { $('#dl-msg', p).textContent = t; };
+    f.onsubmit = function (e) {
+      e.preventDefault(); var b = $('button[type=submit]', f); b.disabled = true;
+      api('f.bookings.delete.request', { booking_ids: picked.map(function (x) { return x.booking_id; }), reason: f.reason.value }).then(function (j) {
+        b.disabled = false; if (!j.ok) return msg(j.error);
+        $('#dl-step', p).innerHTML = '<p>Code sent to <b>' + esc(j.to) + '</b>. It expires in 10 minutes.</p><label class="fo-field">Approval code<input id="dl-otp" class="fo-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digits"></label><div class="fo-msg" id="dl-msg"></div><button class="btn btn--danger" type="button" id="dl-ok">Delete permanently from the ledger</button>';
+        var c = $('#dl-otp', p); c.focus();
+        $('#dl-ok', p).onclick = function () {
+          var ok = this; ok.disabled = true;
+          api('f.bookings.delete.confirm', { challenge: j.challenge, otp: c.value }).then(function (k) {
+            ok.disabled = false; if (!k.ok) { $('#dl-msg', p).textContent = k.error; return; }
+            p.parentNode.remove(); if (done) done(); toast(k.result.deleted + ' booking(s) and ' + k.result.payments + ' payment(s) moved to Deleted records', false, 7000); load(true);
+          });
+        };
+      });
+    };
+  }
+  function deletedView(body) {
+    var rows = (S.data.deleted_records || []).slice().reverse();
+    body.innerHTML = '<p class="fo-hint">Bookings removed with your emailed approval. Full copies (booking and payments) are in the DeletedRecords sheet of the Founder OS data spreadsheet.</p>' +
+      (rows.length ? '<div class="fo-tablewrap"><table class="fo-table"><thead><tr><th>Deleted</th><th>Booking</th><th>What</th><th>Reason</th><th>By</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="nw">' + when(r.deleted_at) + '</td><td>' + esc(r.record_id) + '</td><td>' + esc(r.summary) + '</td><td>' + esc(r.reason || '—') + '</td><td>' + esc(r.deleted_by) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="fo-empty">Nothing deleted yet.</div>');
+  }
   function viewBookings(page) {
-    var T = tabs('bookings', [['list', 'All bookings'], ['calendar', 'Calendar'], ['reconcile', 'Reconciliation center (' + openEx().length + ')'], ['import', 'Import & sync'], ['blocks', 'Maintenance blocks']]);
+    var T = tabs('bookings', [['list', 'All bookings'], ['calendar', 'Calendar'], ['reconcile', 'Reconciliation center (' + openEx().length + ')'], ['import', 'Import & sync'], ['blocks', 'Maintenance blocks'], ['deleted', 'Deleted records']]);
     page.innerHTML = hello('Booking management', 'One ledger for every channel: e-check-in, OTA exports, WhatsApp and phone bookings.') + T.html + '<div id="bk-body"></div>';
     wireTabs(page, 'bookings');
     var body = $('#bk-body');
-    ({ list: bookingList, calendar: bookingCalendar, reconcile: reconcileCenter, import: importView, blocks: blocksView }[T.cur] || bookingList)(body);
+    ({ list: bookingList, calendar: bookingCalendar, reconcile: reconcileCenter, import: importView, blocks: blocksView, deleted: deletedView }[T.cur] || bookingList)(body);
   }
   function bookingList(body) {
     var L2 = S.list, pi = payIndex(), D = S.data;
@@ -452,7 +484,8 @@
       sel('bl-channel', [['all', 'All channels']].concat(channels.map(function (c) { return [c, c]; })), L2.channel) +
       sel('bl-mode', [['all', 'Any dates'], ['stay', 'Staying between'], ['made', 'Booked between']], L2.mode) +
       '<span id="bl-dates"' + (L2.mode === 'all' ? ' hidden' : '') + '><input type="date" id="bl-from" class="fo-input" style="width:auto" value="' + esc(L2.from) + '"> – <input type="date" id="bl-to" class="fo-input" style="width:auto" value="' + esc(L2.to) + '"></span>' +
-      '<button class="btn" id="bl-csv">Export CSV</button><button class="btn btn--primary" id="bl-new">+ New booking</button></div><div id="bl-table"></div>';
+      '<button class="btn" id="bl-csv">Export CSV</button><button class="btn btn--primary" id="bl-new">+ New booking</button>' + (isFounder() ? '<button class="btn btn--danger" id="bl-del" hidden>Delete selected</button>' : '') + '</div><div id="bl-table"></div>';
+    var SEL = S.delSel = S.delSel || {};
     function rows() {
       var q = L2.q.toLowerCase();
       return D.bookings.filter(function (b) {
@@ -477,19 +510,24 @@
       });
       var per = 25, pages = Math.max(1, Math.ceil(r.length / per)); if (L2.page >= pages) L2.page = 0;
       var slice = r.slice(L2.page * per, L2.page * per + per);
-      $('#bl-table').innerHTML = r.length ? '<div class="fo-tablewrap"><table class="fo-table"><thead><tr>' + COLS.map(function (c) { return '<th data-sort="' + c[0] + '" class="' + (c[2] ? 'num' : '') + '">' + esc(c[1]) + (key === c[0] ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      $('#bl-table').innerHTML = r.length ? '<div class="fo-tablewrap"><table class="fo-table"><thead><tr>' + (isFounder() ? '<th class="fo-chk"><input type="checkbox" id="bl-all" aria-label="Select this page"></th>' : '') + COLS.map(function (c) { return '<th data-sort="' + c[0] + '" class="' + (c[2] ? 'num' : '') + '">' + esc(c[1]) + (key === c[0] ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
         slice.map(function (o) {
           var b = o.b, flags = openEx().filter(function (e) { return e.booking_id === b.booking_id; }).length;
-          return '<tr class="fo-row" data-id="' + esc(b.booking_id) + '"><td><b>' + esc(b.booking_id) + '</b>' + (b.external_id ? '<br><small class="fo-hint">' + esc(b.external_id) + '</small>' : '') + (flags ? ' <span class="fo-badge fo-badge--warn" title="Open data issues">⚑ ' + flags + '</span>' : '') + '</td>' +
+          return '<tr class="fo-row" data-id="' + esc(b.booking_id) + '">' + (isFounder() ? '<td class="fo-chk"><input type="checkbox" data-sel="' + esc(b.booking_id) + '"' + (SEL[b.booking_id] ? ' checked' : '') + ' aria-label="Select ' + esc(b.booking_id) + '"></td>' : '') + '<td><b>' + esc(b.booking_id) + '</b>' + (b.external_id ? '<br><small class="fo-hint">' + esc(b.external_id) + '</small>' : '') + (flags ? ' <span class="fo-badge fo-badge--warn" title="Open data issues">⚑ ' + flags + '</span>' : '') + '</td>' +
             '<td>' + esc(b.guest_name || '—') + '</td><td>' + esc(propName(b.property_id)) + '</td><td>' + esc(b.channel) + '</td><td class="nw">' + dm(b.checkin) + ' → ' + dm(b.checkout) + '<br><small class="fo-hint">' + esc(b.nights) + ' nights</small></td>' +
             '<td>' + statusBadge(b) + '</td><td class="num">' + (has(b.gross_amount) ? inr(num(b.gross_amount)) : '<span class="fo-hint">not set</span>') + '</td><td class="num">' + inr(o.paid) + '</td><td class="num">' + (o.balance == null ? '—' : o.balance > 0.5 ? '<b>' + inr(o.balance) + '</b>' : inr(o.balance)) + '</td>' +
             '<td>' + dmy(M.dateOf(b.created_at)) + (/proxy/.test(b.created_basis) ? '<br><small class="fo-hint" title="Real booking date not on the check-in form">≈ e-check-in</small>' : '') + '</td></tr>';
         }).join('') + '</tbody></table></div><div class="fo-pager">' + r.length + ' bookings · page ' + (L2.page + 1) + ' of ' + pages + ' <button class="btn btn--sm" id="bl-prev"' + (L2.page ? '' : ' disabled') + '>‹ Prev</button><button class="btn btn--sm" id="bl-next"' + (L2.page < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>'
         : '<div class="fo-empty">No bookings match these filters. ' + (D.bookings.length ? '' : 'Import from e-check-in or an OTA export, or add a WhatsApp booking.') + '</div>';
       $$('#bl-table th[data-sort]').forEach(function (th) { th.onclick = function () { if (L2.sort === th.dataset.sort) L2.dir = -L2.dir; else { L2.sort = th.dataset.sort; L2.dir = 1; } draw(); }; });
-      $$('#bl-table tr.fo-row').forEach(function (tr) { tr.onclick = function () { openBooking(tr.dataset.id); }; });
+      $$('#bl-table tr.fo-row').forEach(function (tr) { tr.onclick = function (e) { if (e.target.closest('.fo-chk')) return; openBooking(tr.dataset.id); }; });
+      $$('#bl-table [data-sel]').forEach(function (c) { c.onchange = function () { if (c.checked) SEL[c.dataset.sel] = 1; else delete SEL[c.dataset.sel]; selCount(); }; });
+      var all = $('#bl-all'); if (all) { all.checked = slice.length && slice.every(function (o) { return SEL[o.b.booking_id]; }); all.onchange = function () { slice.forEach(function (o) { if (all.checked) SEL[o.b.booking_id] = 1; else delete SEL[o.b.booking_id]; }); draw(); }; }
+      selCount();
       var p = $('#bl-prev'), n = $('#bl-next'); if (p) p.onclick = function () { L2.page--; draw(); }; if (n) n.onclick = function () { L2.page++; draw(); };
     }
+    function selCount() { var n = Object.keys(SEL).length, btn = $('#bl-del'); if (btn) { btn.hidden = !n; btn.textContent = 'Delete selected (' + n + ')'; } }
+    var delBtn = $('#bl-del'); if (delBtn) delBtn.onclick = function () { deleteFlow(Object.keys(SEL), function () { S.delSel = {}; }); };
     draw();
     $('#bl-q').oninput = function () { L2.q = this.value; L2.page = 0; draw(); };
     $('#bl-status').onchange = function () { L2.status = this.value; L2.page = 0; draw(); };

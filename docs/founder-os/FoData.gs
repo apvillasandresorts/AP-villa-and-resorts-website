@@ -100,6 +100,7 @@ function foIngest_(rec, ctx) {
     adults: rec.adults || '', children: rec.children || '', status: rec.status || '', gross: rec.gross_amount === '' ? '' : String(rec.gross_amount),
     commission: rec.commission === undefined ? '' : String(rec.commission), paid: rec.payment ? String(rec.payment.amount) : '' };
   const hash = foHash_(snapshot);
+  if (ctx.deleted && ((rec.origin_ref && ctx.deleted['o:' + rec.origin + '|' + rec.origin_ref]) || (rec.external_id && ctx.deleted['x:' + rec.channel + '|' + String(rec.external_id).toLowerCase()]))) return 'unchanged';   // deleted by the founder
 
   // 1) exact match: same source record, or same (channel, account, external ID)
   let match = bookings.find(x => rec.origin_ref && x.origin === rec.origin && x.origin_ref === rec.origin_ref);
@@ -157,7 +158,12 @@ function foSourceSnapshots_() {   // booking_id → the snapshot JSON recorded w
   const o = {}; foRows_('History').forEach(h => { if (h.action === 'imported') { try { o[h.booking_id] = JSON.stringify(JSON.parse(h.detail).source); } catch (e) {} } }); return o;
 }
 function foCtx_(actor) {
-  return { actor, props: foRows_('Properties'), bookings: foRows_('Bookings'), guests: foRows_('Guests'), blocks: foRows_('Blocks'), ex: foOpenExceptionKeys_() };
+  return { actor, props: foRows_('Properties'), bookings: foRows_('Bookings'), guests: foRows_('Guests'), blocks: foRows_('Blocks'), ex: foOpenExceptionKeys_(), deleted: foDeletedKeys_() };
+}
+/** Bookings the founder deleted (with OTP approval): their source record and OTA ID are never imported again. */
+function foDeletedKeys_() {
+  const k = {}; foRows_('DeletedRecords').filter(r => r.kind === 'booking').forEach(r => { if (r.origin && r.origin_ref) k['o:' + r.origin + '|' + r.origin_ref] = 1; if (r.external_id) k['x:' + r.channel + '|' + String(r.external_id).toLowerCase()] = 1; });
+  return k;
 }
 
 // ---------------------------------------------------------------- source 1: the e-check-in sheet (real guest data) ----------------
@@ -415,6 +421,7 @@ function foDataBuild_() {
     signals: foRows_('Signals').slice(-3000).map(strip), comp_set: foRows_('CompSet').map(strip), comp_changes: foRows_('CompChanges').slice(-200).map(strip),
     recommendations: foDeskRecsForBundle_(), price_decisions: foRows_('PriceDecisions').slice(-1500).map(strip),
     bot_runs: foRows_('BotRuns').slice(-300).map(strip),
+    deleted_records: foRows_('DeletedRecords').slice(-300).map(r => ({ deleted_id: r.deleted_id, deleted_at: r.deleted_at, deleted_by: r.deleted_by, kind: r.kind, record_id: r.record_id, summary: r.summary, reason: r.reason })),
     news: foRows_('News').filter(r => String(r.fetched_at) >= (foDate_(new Date(Date.now() - 30 * 86400000)) || '')).slice(-400).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }
@@ -425,4 +432,50 @@ function foMarketRatesForBundle_() {
   return foRows_('MarketRates').filter(r => !since || String(r.observed_at) >= since).slice(-6000).map(r => ({ competitor: r.competitor, observed_at: r.observed_at, stay_date: r.stay_date, nights: r.nights,
     unit_type: r.unit_type, bedrooms: r.bedrooms, sleeps: r.sleeps, price_total: r.price_total, price_per_night: r.price_per_night, taxes_included: r.taxes_included, source_type: r.source_type,
     source_url: r.source_url, confidence: r.confidence, availability: r.availability, group_size: r.group_size, target_property: r.target_property, platform: r.platform, collected_by: r.collected_by, obs_id: r.obs_id }));
+}
+
+// ---------------------------------------------------------------- bulk delete (founder only, emailed code) ----------------
+/** Step 1: the founder picks bookings; a 6-digit code listing them is emailed to the founder's main address (valid 10 minutes). */
+function foBookingsDeleteRequest_(b, user) {
+  const ids = (Array.isArray(b.booking_ids) ? b.booking_ids : []).map(String).filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 100);
+  const all = foRows_('Bookings'), picked = ids.map(id => all.find(x => x.booking_id === id)).filter(Boolean);
+  if (!picked.length) return { ok: false, error: 'Select at least one booking.' };
+  if (foCounter_('FO_DELREQ', 3600) > 6) return { ok: false, error: 'Too many delete requests this hour. Please wait.' };
+  const id = foRandom_(), otp = foOtp_(), to = foDeskRecipient_();
+  CacheService.getScriptCache().put('FO_D_' + id, JSON.stringify({ ids: picked.map(x => x.booking_id), reason: foClean_(b.reason, 300), by: user.email, digest: foHmac_(id + ':' + otp), tries: 0, created: Date.now() }), 630);
+  const lines = picked.map(x => '• ' + x.booking_id + ' · ' + (x.guest_name || 'guest') + ' · ' + x.property_id + ' · ' + x.checkin + ' → ' + x.checkout + (foHasNum_(x.gross_amount) ? ' · ₹' + foNum_(x.gross_amount) : '')).join('\n');
+  MailApp.sendEmail({ to: to, subject: 'AP Villas: approve deleting ' + picked.length + ' booking' + (picked.length === 1 ? '' : 's'),
+    body: 'Code to approve: ' + otp + '\n\nThis deletes these bookings (and their payments) from the Founder OS ledger. A full copy is kept in the DeletedRecords sheet.\n\n' + lines + (b.reason ? '\n\nReason: ' + foClean_(b.reason, 300) : '') + '\n\nRequested by ' + user.email + '. The code expires in 10 minutes. If you did not ask for this, ignore this email.' });
+  foAudit_(user.email, 'delete_requested', picked.length + ' bookings', 'ok');
+  return { challenge: id, count: picked.length, to: foMask_(to) };
+}
+/** Step 2: with the right code, each booking and its payments move to DeletedRecords; source records are remembered so syncs never re-import them. */
+function foBookingsDeleteConfirm_(b, user) {
+  const cache = CacheService.getScriptCache(), key = 'FO_D_' + String(b.challenge || ''), raw = cache.get(key);
+  if (!raw) return { ok: false, error: 'This approval has expired. Select the bookings and request a new code.' };
+  const ch = JSON.parse(raw);
+  if (ch.by !== user.email) return { ok: false, error: 'This approval belongs to another user.' };
+  if (foHmac_(b.challenge + ':' + String(b.otp || '').trim()) !== ch.digest) {
+    ch.tries++; if (ch.tries >= 5) { cache.remove(key); return { ok: false, error: 'Too many wrong codes. Request a new one.' }; }
+    cache.put(key, JSON.stringify(ch), 600); return { ok: false, error: 'That code is not right. ' + (5 - ch.tries) + ' tries left.' };
+  }
+  cache.remove(key);
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const now = foNow_(), bookings = foRows_('Bookings'), payments = foRows_('Payments'), del = [], rowsB = [], rowsP = [];
+    ch.ids.forEach(id => {
+      const x = bookings.find(r => r.booking_id === id); if (!x) return;
+      const pays = payments.filter(p => p.booking_id === id), clean = o => { const c = Object.assign({}, o); delete c._row; return c; };
+      del.push({ deleted_id: foId_('DEL'), deleted_at: now, deleted_by: user.email, kind: 'booking', record_id: id, origin: x.origin || '', origin_ref: x.origin_ref || '', channel: x.channel || '', external_id: x.external_id || '',
+        summary: (x.guest_name || 'guest') + ' · ' + x.property_id + ' · ' + x.checkin + ' → ' + x.checkout + (foHasNum_(x.gross_amount) ? ' · ₹' + foNum_(x.gross_amount) : '') + (pays.length ? ' · ' + pays.length + ' payment(s)' : ''),
+        reason: ch.reason || '', data_json: JSON.stringify({ booking: clean(x), payments: pays.map(clean) }).slice(0, 45000) });
+      rowsB.push(x._row); pays.forEach(p => rowsP.push(p._row));
+    });
+    del.forEach(r => foAppend_('DeletedRecords', r));
+    rowsP.sort((a, c) => c - a).forEach(r => foDeleteRow_('Payments', r));   // bottom-up so row numbers stay valid
+    rowsB.sort((a, c) => c - a).forEach(r => foDeleteRow_('Bookings', r));
+    foAudit_(user.email, 'bookings_deleted', del.map(d => d.record_id).join(', ').slice(0, 500), 'ok');
+    foTouch_();
+    return { result: { deleted: del.length, payments: rowsP.length } };
+  } finally { lock.releaseLock(); }
 }
