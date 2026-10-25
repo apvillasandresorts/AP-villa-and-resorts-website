@@ -32,7 +32,7 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
 | MET Norway Locationforecast | Used by signals-auto | Free, CC BY 4.0 (commercial use with credit) | Open-Meteo rejected: its free tier is non-commercial only |
 | Google public India holidays (iCal) | Used by signals-auto | Free public feed | National holidays + long weekends; state holidays come from the news job |
 | astronomy-engine 2.1.19 | Used by signals-auto | MIT | Tithi at sunrise in Ujjain; festival dates checked against published panchang |
-| Google Search Console | Site verified 23 Oct 2026 (URL prefix https://www.apvillasandresorts.in/, via GA4 + domain provider); sitemap read by Google | Free | Founder OS → SEO & marketing reads it on the server (FoSearch.gs) once the Apps Script manifest has `webmasters.readonly` and the owner approves it. Feeds opportunities, keyword positions (daily) and the advisor summary. |
+| Google Search Console | Site verified 23 Oct 2026 (URL prefix https://www.apvillasandresorts.in/, via GA4 + domain provider); sitemap read by Google | Free | Connected 25 Oct 2026 (Apps Script on the standard Cloud project ap-villas-founder-os with the Search Console API on). Founder OS → SEO & marketing reads it on the server (FoSearch.gs). Feeds opportunities, keyword positions (daily) and the advisor summary. |
 
 ## One-time steps for the founder
 1. Portal → Settings → Automation → **Create key**, copy it.

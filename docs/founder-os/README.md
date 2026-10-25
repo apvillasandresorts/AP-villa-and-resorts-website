@@ -71,6 +71,12 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
   `.github/workflows/pricing-intel.yml` (daily 06:30 IST with Claude: public news signals + 30-day Outlook, see `content/pricing-intel-instructions.md`).
   Both need the `FOUNDER_OS_KEY` secret and skip without it.
 
+## Google Cloud project (since 25 Oct 2026)
+The Apps Script uses its own standard Cloud project **"AP Villas Founder OS"** (ID `ap-villas-founder-os`, number 38817203894, no billing),
+because the hidden default project cannot switch on the Search Console API. Enabled APIs: Google Search Console API, Google Analytics Data API.
+Sign-in screen (Google Auth Platform): External, **In production**, owner account only, home page + policies.html, domain apvillasandresorts.in, no logo
+(a logo would require Google verification). If the project is ever changed again, enable those two APIs there and run `foHealthCheck` → Allow.
+
 ## GA4 reporting
 Server-side only (Apps Script advanced service **Google Analytics Data API**, identifier `AnalyticsData`), property in Settings
 (default 558430227), counting only the live hostname. Until the service is enabled and the read-only Analytics permission approved,
