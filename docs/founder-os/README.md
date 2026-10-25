@@ -96,6 +96,26 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
 - Tests: `tests/market-bots.test.mjs` (page-reading rules on real page text, robots.txt, night planning). Dry run: GitHub → Actions →
   "Market bots" → Run workflow → tick "Dry run".
 
+## Competitor forecast and market analytics (desk.js)
+- **Forecast** (`FoDesk.forecast`): for every night of the next 90, the comp set's likely median price and middle range, the expected price
+  nearer the date, and the chance competitors sell out. Model (`marketModel`): each competitor's normal weekday and Fri/Sat price; reaction to
+  calendar strength (Hindu calendar, holidays, events, school breaks) learned from nights seen (default 60% until 3 strong nights are seen);
+  price drift per day as nights get closer (repeat scans); sell-out rates by night type and lead time. Accuracy (`forecastAccuracy`):
+  each checked night is forecast without its own prices and compared (median absolute error). Unchecked nights are priced against the
+  forecast at half weight, labelled "Market (forecast)". Portal: Pricing & market → Forecast.
+- **Analytics** (`marketAnalytics`, all competitors, next 14–90 nights): segments (2 BR / 3+ BR homes, hotels), platforms (how often each is
+  the guest's cheapest, premium vs cheapest), price index over time, weekday and lead-time profiles, leaderboard (price moves, sell-outs,
+  platform spread). Portal: Pricing & market → Analytics.
+
+## News (live, relevant only)
+`.github/workflows/news.yml` every 2 hours runs `scripts/news/run.mjs`: GDELT DOC 2.0 API (open news database, English + Hindi Indian
+outlets; retried with backoff when rate-limited) and publishers' own RSS feeds (Free Press Journal, Times of India Indore, Dainik Bhaskar),
+robots.txt checked; Google News RSS is not used (its robots.txt disallows /rss). Backup once a day: Google News via SerpApi when GDELT
+refused. `scripts/news/classify.mjs` keeps stories about Ujjain / Mahakal / Simhastha (and Indore/MP travel, weather, festivals, safety),
+drops other Kumbh cities, labels category, impact (temple schedule changes, closures, record crowds = high) and demand direction.
+Only headline, source, link, date and a short feed summary are stored (News tab). New high-impact stories are emailed once.
+Portal: Pricing & market → News, and "News that matters" on Today.
+
 ## Google Cloud project (since 25 Oct 2026)
 The Apps Script uses its own standard Cloud project **"AP Villas Founder OS"** (ID `ap-villas-founder-os`, number 38817203894, no billing),
 because the hidden default project cannot switch on the Search Console API. Enabled APIs: Google Search Console API, Google Analytics Data API.

@@ -33,6 +33,8 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
 | SerpApi Google Hotels | Free plan, 250/month | Free tier (owner approved) | MakeMyTrip / Goibibo / Expedia prices; secret SERPAPI_KEY |
 | Apify | Free plan, $5 credit/month | Free tier (owner approved) | Airbnb discovery, Booking fallback; secret APIFY_TOKEN |
 | Booking.com Demand API / Agoda affiliate API | Applied 25 Oct 2026 | Free partner programmes | Switch on when approved |
+| GDELT DOC 2.0 API | News every 2 hours | Free, open data | Main news source; rate-limits shared CI addresses, so retried with backoff |
+| Publisher RSS (Free Press Journal, TOI Indore, Dainik Bhaskar) | News every 2 hours | Free syndication feeds | robots.txt checked; Google News RSS not used (disallowed) |
 | MET Norway Locationforecast | Used by signals-auto | Free, CC BY 4.0 (commercial use with credit) | Open-Meteo rejected: its free tier is non-commercial only |
 | Google public India holidays (iCal) | Used by signals-auto | Free public feed | National holidays + long weekends; state holidays come from the news job |
 | astronomy-engine 2.1.19 | Used by signals-auto | MIT | Tithi at sunrise in Ujjain; festival dates checked against published panchang |
