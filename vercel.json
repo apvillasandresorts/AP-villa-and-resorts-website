@@ -3,13 +3,22 @@
     {
       "source": "/checkin",
       "destination": "/checkin.html"
-    },
-    {
-      "source": "/api/fo",
-      "destination": "https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec"
     }
   ],
   "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
     {
       "source": "/founder/(.*)",
       "headers": [
@@ -97,5 +106,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/fo.js": {
+      "maxDuration": 60
+    }
+  }
 }
