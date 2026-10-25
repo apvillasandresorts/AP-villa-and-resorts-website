@@ -29,6 +29,10 @@ Intelligence Report), **Website analytics** (GA4), **Integrations & automation**
 | Trends MCP (optional) | Not installed | Free tier 100 requests/month, no card, pauses at the limit | Needs your account: `read -s "TRENDS_KEY?Key: "; claude mcp add --scope user --transport http trends-mcp https://api.trendsmcp.ai/mcp --header "Authorization: Bearer $TRENDS_KEY"; unset TRENDS_KEY` |
 | Exa / Tavily MCP (optional) | Not installed | Free tiers need an account + API key | Not needed: Free Search covers keyless search and extraction. Add only if Free Search coverage proves too thin. |
 | Google Analytics MCP (local) | Removed | — | Redundant: the Founder OS already reads GA4 on the server (use /analyse-ga4). |
+| Market bots (GitHub Actions) | Twice daily | Free (Playwright Apache-2.0) | Airbnb, Booking.com, Agoda, OYO, Cleartrip, EaseMyTrip, Trip.com, StayVista public pages allowed by robots.txt; owner accepted OTA-terms risk 25 Oct 2026 |
+| SerpApi Google Hotels | Free plan, 250/month | Free tier (owner approved) | MakeMyTrip / Goibibo / Expedia prices; secret SERPAPI_KEY |
+| Apify | Free plan, $5 credit/month | Free tier (owner approved) | Airbnb discovery, Booking fallback; secret APIFY_TOKEN |
+| Booking.com Demand API / Agoda affiliate API | Applied 25 Oct 2026 | Free partner programmes | Switch on when approved |
 | MET Norway Locationforecast | Used by signals-auto | Free, CC BY 4.0 (commercial use with credit) | Open-Meteo rejected: its free tier is non-commercial only |
 | Google public India holidays (iCal) | Used by signals-auto | Free public feed | National holidays + long weekends; state holidays come from the news job |
 | astronomy-engine 2.1.19 | Used by signals-auto | MIT | Tithi at sunrise in Ujjain; festival dates checked against published panchang |

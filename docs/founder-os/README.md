@@ -75,6 +75,27 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
   `.github/workflows/pricing-intel.yml` (daily 06:30 IST with Claude: public news signals + 30-day Outlook, see `content/pricing-intel-instructions.md`).
   Both need the `FOUNDER_OS_KEY` secret and skip without it.
 
+## Market bots (competitor prices, every platform, fully automatic)
+`.github/workflows/market-bots.yml` runs `scripts/market-bots/run.mjs` on GitHub at 08:10 and 18:10 IST (nothing on the owner's Mac).
+- **Page bots** (`scripts/market-bots/bots/`): Airbnb (listing pages), Booking.com (dated search + hotel pages), Agoda, OYO, Cleartrip
+  (city page + dated property pages), EaseMyTrip and Trip.com (discovery / known links), StayVista (sitemap watch). Every URL is checked
+  against the site's robots.txt (RFC 9309) first; honest user agent `APVillasPriceBot`; no login; no CAPTCHA solving; 5–8 s between pages;
+  ~40 pages per platform per run; a challenge, 403 or 429 stops that platform and shows "blocked" in Signal health.
+- **APIs** (`scripts/market-bots/apis/`): Google Hotels via SerpApi (free 250 searches/month, secret `SERPAPI_KEY`) for MakeMyTrip,
+  Goibibo, Expedia and every OTA Google compares; Apify (free $5/month, secret `APIFY_TOKEN`) for Airbnb discovery (Mondays) and as the
+  Booking.com fallback; Booking.com Demand API and Agoda affiliate API switch on when approved (secrets `BOOKING_AFFILIATE_ID`,
+  `BOOKING_API_TOKEN`, `AGODA_SITE_ID`, `AGODA_API_KEY`).
+- **Nights checked:** AM = tonight, tomorrow, the coming Saturday, the next high-demand night; PM = the coming Friday, the next two
+  Saturdays, further high-demand nights (from the calendar/holiday/event signals, `f.m.compset`).
+- **Into the Founder OS:** competitors (links on every platform merged, distance from map coordinates, ratings) and dated observations
+  (price or sold out, per platform) via `f.m.market.import`; one row per bot per run in the BotRuns tab via `f.m.bots.report`.
+- **Engine use (desk.js):** a competitor's price = the guest's cheapest available platform; sold out only when every platform is full;
+  parity spread; percentiles; unchecked nights get a labelled half-weight estimate from nearby nights of the same kind; momentum from
+  repeat scans of the same night (±5%); like-for-like demand-spike detection (3+ competitors ≥20% above their own norm, or half sold out)
+  with alerts; our direct price's position in the market.
+- Tests: `tests/market-bots.test.mjs` (page-reading rules on real page text, robots.txt, night planning). Dry run: GitHub → Actions →
+  "Market bots" → Run workflow → tick "Dry run".
+
 ## Google Cloud project (since 25 Oct 2026)
 The Apps Script uses its own standard Cloud project **"AP Villas Founder OS"** (ID `ap-villas-founder-os`, number 38817203894, no billing),
 because the hidden default project cannot switch on the Search Console API. Enabled APIs: Google Search Console API, Google Analytics Data API.
