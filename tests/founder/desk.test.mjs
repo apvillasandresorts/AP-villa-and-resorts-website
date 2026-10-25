@@ -185,6 +185,7 @@ test('a live dated feed with no row for a night counts as a normal night; outsid
   const normal = D.signalAt(d, 'calendar', 'ap-suite', addD(TODAY, 5), now);
   assert.equal(normal.index, 1); assert.equal(normal.status, 'live'); assert.match(normal.note, /normal night/);
   assert.equal(D.signalAt(d, 'calendar', 'ap-suite', addD(TODAY, 60), now), null, 'beyond the feed horizon: missing');
+  assert.equal(D.signalAt(d, 'calendar', 'ap-suite', TODAY, now).index, 1, 'from the fetch day, before the first event: normal');
   const q = D.quote(d, D.ctxFor(d, 'ap-suite'), addD(TODAY, 5));
   assert.equal(q.inputs.find(x => x.id === 'calendar').status, 'live');
 });

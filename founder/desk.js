@@ -89,7 +89,8 @@ var FoDesk = (function () {
       var latest = feed.slice().sort(function (a, b) { return a.fetched_at < b.fetched_at ? 1 : -1; })[0];
       if (!latest) return null;
       var run = feed.filter(function (r) { return r.fetched_at === latest.fetched_at && r.for_date; }).map(function (r) { return String(r.for_date).slice(0, 10); }).sort();
-      if (!run.length || date < run[0] || date > run[run.length - 1]) return null;
+      var from = new Date(Date.parse(latest.fetched_at) + 330 * 60000).toISOString().slice(0, 10);   // the feed covers from the day it was fetched (IST)
+      if (!run.length || date < (from < run[0] ? from : run[0]) || date > run[run.length - 1]) return null;
       var f0 = freshness(latest.fetched_at, BY_ID[id] ? BY_ID[id].sla : 24, now);
       return { id: id, index: 1, raw: '', note: 'normal night (nothing in this feed for ' + date + ')', source_url: latest.source_url || '', fetched_at: latest.fetched_at, fresh: f0.f, status: f0.status, age_h: f0.age_h };
     }
