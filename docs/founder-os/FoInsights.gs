@@ -18,7 +18,8 @@ function foSettingSet_(key, value) {
   if (row) foUpdate_('Settings', row._row, rec); else foAppend_('Settings', rec);
 }
 function foSettingsSave_(b, user) {
-  const allowed = { report_email: v => String(v).split(',').map(s => s.trim()).filter(s => FoInsights.REPORT_TYPES[s]).join(','), ga4_property: v => String(v).replace(/\D/g, '').slice(0, 15), ga4_host: v => String(v).replace(/[^a-z0-9.-]/gi, '').slice(0, 80), gsc_site: v => /^(https:\/\/[a-z0-9.-]+\/|sc-domain:[a-z0-9.-]+)$/i.test(String(v).trim()) ? String(v).trim() : 'https://www.apvillasandresorts.in/' };
+  const allowed = { report_email: v => String(v).split(',').map(s => s.trim()).filter(s => FoInsights.REPORT_TYPES[s]).join(','), ga4_property: v => String(v).replace(/\D/g, '').slice(0, 15), ga4_host: v => String(v).replace(/[^a-z0-9.-]/gi, '').slice(0, 80), gsc_site: v => /^(https:\/\/[a-z0-9.-]+\/|sc-domain:[a-z0-9.-]+)$/i.test(String(v).trim()) ? String(v).trim() : 'https://www.apvillasandresorts.in/',
+    accounts: v => { let o = {}; try { o = JSON.parse(v); } catch (e) {} const n = (x, lo, hi, d) => { const k = Number(x); return isFinite(k) ? Math.max(lo, Math.min(hi, k)) : d; }; return JSON.stringify({ gst_registered: !!o.gst_registered, gstin: String(o.gstin || '').replace(/[^0-9A-Z]/gi, '').toUpperCase().slice(0, 15), prices_include_gst: o.prices_include_gst !== false, slab_limit: n(o.slab_limit, 0, 100000, 7500), rate_low: n(o.rate_low, 0, 0.28, 0.05), rate_high: n(o.rate_high, 0, 0.28, 0.18) }); } };
   const changed = {};
   Object.keys(b.settings || {}).forEach(k => { if (allowed[k]) { const v = allowed[k](b.settings[k]); foSettingSet_(k, v); changed[k] = v; } });
   foAudit_(user.email, 'settings', JSON.stringify(changed), 'ok');

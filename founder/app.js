@@ -169,8 +169,7 @@
     { id: 'bookings', label: 'Booking Management', ic: 'bookings', count: function () { return openEx().length; } },
     { g: 'Revenue & pricing' },
     { id: 'pricing', label: 'Pricing & Market', ic: 'tag' },
-    { id: 'revenue', label: 'Revenue Intelligence', ic: 'revenue' },
-    { id: 'finance', label: 'Financial Intelligence', ic: 'money' },
+    { id: 'finance', label: 'Finance & Accounts', ic: 'money' },
     { g: 'Analytics' },
     { id: 'analytics', label: 'Booking Analytics', ic: 'chart' },
     { id: 'properties', label: 'Property Performance', ic: 'home' },
@@ -179,7 +178,6 @@
     { id: 'seo', label: 'SEO & Marketing', ic: 'search' },
     { id: 'trends', label: 'Trends & Events', ic: 'trend' },
     { id: 'forecast', label: 'Forecasting & Scenarios', ic: 'forecast' },
-    { id: 'studio', label: 'Analytics Studio', ic: 'studio' },
     { g: 'Decisions & reports' },
     { id: 'strategy', label: 'Recommendations', ic: 'idea' },
     { id: 'reports', label: 'Reports & Exports', ic: 'report' },
@@ -212,7 +210,7 @@
       MODULES.map(function (m) {
         if (m.g) return '<div class="fo-nav__group">' + esc(m.g) + '</div>';
         var c = m.count ? m.count() : 0;
-        return '<a href="#/' + m.id + '" class="' + (m.id === S.view ? 'is-on' : '') + '" title="' + esc(m.label) + '">' + icon(m.ic) + '<span>' + esc(m.label) + '</span>' + (c ? '<em class="count">' + c + '</em>' : m.phase ? '<em class="soon">phase ' + m.phase + '</em>' : '') + '</a>';
+        return '<a href="#/' + m.id + '" class="' + (m.id === S.view ? 'is-on' : '') + '" data-ic="' + esc(m.ic) + '" title="' + esc(m.label) + '">' + icon(m.ic) + '<span>' + esc(m.label) + '</span>' + (c ? '<em class="count">' + c + '</em>' : m.phase ? '<em class="soon">phase ' + m.phase + '</em>' : '') + '</a>';
       }).join('') + '</nav><div class="fo-side__foot">Data: Google Sheets ledger · times in IST<br>Signed in as ' + esc(S.user && S.user.email) + '</div></aside>' +
       '<div class="fo-main"><header class="fo-top">' +
       '<button class="fo-iconbtn" id="fo-collapse" aria-label="Toggle menu">' + icon('menu') + '</button>' +
@@ -295,8 +293,22 @@
     var page = $('#fo-page'); if (!page) return;
     var fn = VIEWS[S.view] || viewSoon;
     try { fn(page); } catch (e) { page.innerHTML = '<div class="fo-card"><b>This view hit an error.</b><p class="fo-hint">' + esc(e.message) + '</p></div>'; console.error(e); }
+    animatePage(page);
     $$('[data-act=print]', page).forEach(function (b) { b.onclick = function () { window.print(); }; });
     $$('[data-act=refresh]', page).forEach(function (b) { b.onclick = function () { b.disabled = true; load(true).then(function () { toast('Data refreshed'); }); }; });
+  }
+  /** Page entrance and count-up of headline figures (skipped when the visitor prefers reduced motion). */
+  function animatePage(page) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    page.classList.remove('fo-enter'); void page.offsetWidth; page.classList.add('fo-enter');
+    $$('.fo-kpi__value', page).forEach(function (el, i) {
+      if (el.children.length) return;
+      var txt = el.textContent, m = txt.match(/^(\D*?)(-?[\d,]+(?:\.\d+)?)(.*)$/); if (!m) return;
+      var target = Number(m[2].replace(/,/g, '')), dec = (m[2].split('.')[1] || '').length; if (!isFinite(target) || Math.abs(target) < 2) return;
+      var t0 = null, dur = 650 + Math.min(i, 8) * 40, fmt = function (v) { return m[1] + (dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')) + m[3]; };
+      el.textContent = fmt(0);
+      requestAnimationFrame(function step(ts) { if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(target * e); if (k < 1) requestAnimationFrame(step); else el.textContent = txt; });
+    });
   }
   function tabs(view, list) {
     var cur = S.tab[view] || list[0][0];

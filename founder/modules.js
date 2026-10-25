@@ -338,11 +338,12 @@
 
   // ============================================================ Financial intelligence (phase 8) ============================================================
   function viewFinance(page) {
-    var T = U.tabs('finance', [['overview', 'Overview'], ['expenses', 'Expenses'], ['budget', 'Budget vs actual'], ['receivables', 'Receivables'], ['cashflow', 'Cash-flow outlook']]);
+    var T = U.tabs('finance', [['summary', 'Summary'], ['ledger', 'Monthly ledger'], ['statements', 'P&L & balance sheet'], ['gst', 'GST'], ['expenses', 'Expenses'], ['budget', 'Budget vs actual'], ['receivables', 'Receivables'], ['cashflow', 'Cash-flow outlook'], ['overview', 'Cost analysis']]);
     var r = range();
-    page.innerHTML = U.hello('Financial intelligence', esc(dmy(r.from)) + ' – ' + esc(dmy(r.to)) + ' · accounting figures from your records; estimates are labelled') + T.html + '<div id="fi"></div>';
+    page.innerHTML = U.hello('Finance & accounts', 'Money in, money out, profit, GST and what you are owed. Management accounts from your Founder OS records (not audited); estimates are labelled.') + T.html + '<div id="fi"></div>';
     U.wireTabs(page, 'finance');
     var body = $('#fi'), Dt = D(), F = f();
+    if (['summary', 'ledger', 'statements', 'gst'].indexOf(T.cur) >= 0) { ({ summary: finSummary, ledger: finLedger, statements: finStatements, gst: finGst })[T.cur](body); wireExports(page, 'finance'); return; }
     if (T.cur === 'overview') {
       var x = I.finance(Dt, r.from, r.to, F), status = '<span class="fo-badge ' + (x.status === 'complete' ? '' : x.status === 'partial' ? 'fo-badge--warn' : 'fo-badge--muted') + '">' + esc(x.status) + '</span>';
       body.innerHTML = (x.status_note ? '<div class="fo-note" style="margin-bottom:14px">' + status + ' ' + esc(x.status_note) + (x.status === 'unavailable' ? ' <a href="#/finance/expenses">Record expenses →</a>' : '') + '</div>' : '') +
@@ -384,6 +385,69 @@
     }
     wireExports(page, 'finance');
   }
+  // ---------------------------------------------------------------- Finance & accounts: summary, ledger, statements, GST ----------------
+  var A = window.FoAccounts;
+  function monthPick(id, cur) { return '<input type="month" id="' + id + '" class="fo-input" style="width:auto" value="' + esc(cur) + '">'; }
+  function curMonth() { return S.finMonth || today().slice(0, 7); }
+  function finSummary(body) {
+    var Dt = D(), m = curMonth(), p = A.pnl(Dt, m), bs = A.balanceSheet(Dt, m), g = A.gstSummary(Dt, m), tr = A.trend(Dt, m, 12), rr = A.monthRange(m), cp = I.channelProfit(Dt, rr.from, rr.to, {});
+    var fwd = [30, 60, 90].map(function (n) { var x = M.compute(Dt, today(), M.addDays(today(), n - 1), {}); return [n, x]; });
+    body.innerHTML = '<div class="fo-toolbar">Month ' + monthPick('fs-m', m) + '<span class="fo-hint">Revenue on the nights stayed; cash on payment dates.</span></div>' +
+      '<div class="fo-grid fo-grid--kpi">' + kpi('Revenue (stays)', inr(p.net_revenue), p.gst_in_revenue ? 'after ' + inr(p.gst_in_revenue) + ' GST' : 'nights in ' + m, 'fo-kpi--rev') + kpi('Commission & fees', inr(p.commission + p.fees), 'OTAs and payment gateways', 'fo-kpi--cost') +
+        kpi('Expenses', inr(p.expenses_total), Object.keys(p.expenses).length + ' categories', 'fo-kpi--cost') + kpi('Net profit', inr(p.net_profit), p.margin == null ? '' : Math.round(p.margin * 100) + '% margin', p.net_profit >= 0 ? 'fo-kpi--good' : 'fo-kpi--bad') +
+        kpi('Cash in the month', inr(A.ledger(Dt, m).totals.receipts - A.ledger(Dt, m).totals.refunds), 'received − refunds', 'fo-kpi--cash') + kpi('Owed to you', inr(bs.assets.receivables), 'stays already started', 'fo-kpi--due') +
+        kpi('Advances held', inr(bs.liabilities.advances), 'paid for future stays', 'fo-kpi--cash') + kpi('GST (direct)', g.registered ? inr(g.liable_tax) : 'not registered', g.registered ? 'payable estimate' : 'Settings → Accounts', 'fo-kpi--tax') + '</div>' +
+      '<div class="fo-grid fo-grid--2" style="margin-top:14px">' + chart('fs-tr', 'Last 12 months', 'revenue, costs and profit (stay basis)') +
+        card('Coming up', 'occupancy already on the books', U.kv('Next 30 nights', pct(fwd[0][1].occupancy) + ' · ' + inr(fwd[0][1].net_accommodation_revenue)) + U.kv('Next 60 nights', pct(fwd[1][1].occupancy) + ' · ' + inr(fwd[1][1].net_accommodation_revenue)) + U.kv('Next 90 nights', pct(fwd[2][1].occupancy) + ' · ' + inr(fwd[2][1].net_accommodation_revenue)) + '<p class="fo-hint" style="margin-top:8px">Prices to set for empty nights: Pricing & market → Today.</p>') + '</div>' +
+      '<div class="fo-card" style="margin-top:14px"><h3>By channel <small>' + esc(m) + ' · what each channel really leaves you</small></h3>' + table(['Channel', 'Nights', 'Revenue', 'Commission', 'Fees', 'Keeps', 'Keeps %'], cp.filter(function (x) { return x.revenue; }).map(function (x) { var keep = x.revenue - x.commission - x.payment_fees; return ['<b>' + esc(x.channel) + '</b>', esc(x.nights), inr(x.revenue), inr(x.commission), inr(x.payment_fees), '<b>' + inr(keep) + '</b>', x.revenue ? Math.round(keep / x.revenue * 100) + '%' : '—']; }), { num: [1, 2, 3, 4, 5, 6], empty: 'No stays in this month.' }) + '</div>';
+    $('#fs-m').onchange = function () { S.finMonth = this.value; finSummary(body); };
+    C.combo($('#fs-tr'), { labels: tr.map(function (x) { return x.month.slice(5) + '/' + x.month.slice(2, 4); }), kind: 'inr', series: [{ name: 'Revenue', values: tr.map(function (x) { return x.revenue; }) }, { name: 'Costs', values: tr.map(function (x) { return x.costs; }), color: '#C98B5B' }, { name: 'Net profit', values: tr.map(function (x) { return x.profit; }), type: 'line', color: '#C9A24F' }] });
+  }
+  function finLedger(body) {
+    var Dt = D(), m = curMonth(), L = A.ledger(Dt, m), q = S.finLq || '';
+    var lines = L.lines.filter(function (l) { return !q || l.type === q; });
+    body.innerHTML = '<div class="fo-toolbar">Month ' + monthPick('fl-m', m) + sel('fl-q', [['', 'All entries'], ['revenue', 'Revenue'], ['receipt', 'Cash received'], ['refund', 'Refunds'], ['commission', 'Commission'], ['fee', 'Payment fees'], ['expense', 'Expenses']], q) +
+      '<button class="btn btn--primary" id="fl-x">Download ledger (Excel)</button><button class="btn" id="fl-c">CSV</button></div>' +
+      '<div class="fo-grid fo-grid--kpi" style="margin-bottom:12px">' + kpi('Revenue', inr(L.totals.revenue)) + kpi('Cash received', inr(L.totals.receipts)) + kpi('Refunds', inr(L.totals.refunds)) + kpi('Commission', inr(L.totals.commission)) + kpi('Payment fees', inr(L.totals.fees)) + kpi('Expenses', inr(L.totals.expenses)) + '</div>' +
+      table(['Date', 'Account', 'Description', 'Villa', 'Ref', 'In (₹)', 'Out (₹)', 'Running', 'Basis'], lines.map(function (l) { return [dmy(l.date), esc(l.account), esc(l.description), esc(l.villa), '<small class="fo-hint">' + esc(l.ref) + '</small>', l.credit ? inr(l.credit) : '', l.debit ? inr(l.debit) : '', inr(l.balance), '<small class="fo-hint">' + esc(l.basis) + '</small>']; }), { num: [5, 6, 7], empty: 'No entries in this month.' });
+    $('#fl-m').onchange = function () { S.finMonth = this.value; finLedger(body); };
+    $('#fl-q').onchange = function () { S.finLq = this.value; finLedger(body); };
+    var head = ['date', 'account', 'description', 'villa', 'channel', 'reference', 'in', 'out', 'running_balance', 'basis'], rows = L.lines.map(function (l) { return [l.date, l.account, l.description, l.villa, l.channel, l.ref, l.credit || '', l.debit || '', l.balance, l.basis]; });
+    $('#fl-c').onclick = function () { U.csvDownload('ap-villas-ledger-' + m, head, rows); };
+    $('#fl-x').onclick = function () { var p = A.pnl(Dt, m), bs = A.balanceSheet(Dt, m), g = A.gstSummary(Dt, m); C.exportExcel('ap-villas-accounts-' + m, [{ name: 'Ledger ' + m, head: head, rows: rows }, { name: 'P&L', head: ['line', 'amount'], rows: plRows(p) }, { name: 'Balance sheet', head: ['line', 'amount'], rows: bsRows(bs) }, { name: 'GST', head: ['via', 'rate', 'nights', 'bookings', 'taxable value', 'CGST', 'SGST', 'total GST'], rows: g.rows.map(function (x) { return [x.via, x.rate * 100 + '%', x.nights, x.bookings, x.taxable, x.cgst, x.sgst, x.tax]; }) }]); };
+  }
+  function plRows(p) { var r = [['Revenue (stays)', p.revenue]]; if (p.gst_in_revenue) r.push(['less GST included in prices', -p.gst_in_revenue]); r.push(['Net revenue', p.net_revenue], ['OTA commission', -p.commission], ['Payment fees', -p.fees], ['Gross profit', p.gross_profit]); Object.keys(p.expenses).forEach(function (k) { r.push([k, -p.expenses[k]]); }); r.push(['Total expenses', -p.expenses_total], ['Net profit', p.net_profit]); return r; }
+  function bsRows(b) { return [['ASSETS', ''], ['Cash & bank (net of recorded expenses)', b.assets.cash], ['Receivables (stays started, unpaid)', b.assets.receivables], ['Total assets', b.assets.total], ['LIABILITIES', ''], ['Advances (paid for future stays)', b.liabilities.advances], ['GST payable (estimate)', b.liabilities.gst_payable], ['Total liabilities', b.liabilities.total], ["Owner's equity (assets − liabilities)", b.equity]]; }
+  function finStatements(body) {
+    var Dt = D(), m = curMonth(), p = A.pnl(Dt, m), b = A.balanceSheet(Dt, m);
+    var rowsHtml = function (rows) { return '<table class="fo-table fo-stmt">' + rows.map(function (r) { var head = r[1] === '', total = /^(Net|Gross|Total|Owner)/.test(r[0]); return '<tr class="' + (head ? 'h' : total ? 't' : '') + '"><td>' + esc(r[0]) + '</td><td class="num">' + (head ? '' : (r[1] < -0.005 ? '(' + inr(-r[1]) + ')' : inr(Math.abs(r[1]) < 0.005 ? 0 : r[1]))) + '</td></tr>'; }).join('') + '</table>'; };
+    body.innerHTML = '<div class="fo-toolbar">Month ' + monthPick('st-m', m) + '<button class="btn btn--primary" id="st-x">Download P&L + balance sheet (Excel)</button><span class="fo-hint">' + (p.estimates ? p.estimates + ' estimated lines (commission or fee rates)' : 'all lines from records') + '</span></div>' +
+      '<div class="fo-grid fo-grid--2">' + card('Profit & loss', esc(m) + ' · stay basis', rowsHtml(plRows(p))) + card('Balance sheet', 'as of ' + dmy(b.as_of) + ' · management estimate', rowsHtml(bsRows(b)) + '<ul class="fo-hint" style="margin:10px 0 0;padding-left:18px">' + b.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>') + '</div>';
+    $('#st-m').onchange = function () { S.finMonth = this.value; finStatements(body); };
+    $('#st-x').onclick = function () { C.exportExcel('ap-villas-statements-' + m, [{ name: 'P&L ' + m, head: ['line', 'amount'], rows: plRows(p) }, { name: 'Balance sheet', head: ['line', 'amount'], rows: bsRows(b) }]); };
+  }
+  function finGst(body) {
+    var Dt = D(), m = curMonth(), g = A.gstSummary(Dt, m), cfg = A.settings(Dt), founder = S.user && S.user.role === 'founder';
+    body.innerHTML = '<div class="fo-toolbar">Month ' + monthPick('gs-m', m) + '<button class="btn btn--primary" id="gs-x">Download for your CA (Excel)</button></div>' +
+      '<div class="fo-note" style="margin-bottom:12px">' + esc(g.note) + '</div>' +
+      '<div class="fo-grid fo-grid--kpi" style="margin-bottom:12px">' + kpi('GST payable (direct)', inr(g.liable_tax), g.registered ? 'CGST + SGST' : 'not registered') + kpi('GST on platform bookings', inr(g.platform_tax), 'check Section 9(5) with CA') + kpi('SAC', esc(g.sac), 'accommodation') + kpi('Place of supply', esc(g.place_of_supply)) + '</div>' +
+      table(['Booked via', 'Rate', 'Nights', 'Bookings', 'Taxable value', 'CGST', 'SGST', 'Total GST'], g.rows.map(function (x) { return [esc(x.via), Math.round(x.rate * 100) + '%', esc(x.nights), esc(x.bookings), inr(x.taxable), inr(x.cgst), inr(x.sgst), '<b>' + inr(x.tax) + '</b>']; }), { num: [2, 3, 4, 5, 6, 7], empty: 'No stays with amounts in this month.' }) +
+      '<div class="fo-card" style="margin-top:14px"><h3>GST settings <small>' + (founder ? 'founder only' : 'view only') + '</small></h3><div class="fo-form">' +
+        '<label class="fo-field"><span><input type="checkbox" id="gs-reg"' + (cfg.gst_registered ? ' checked' : '') + (founder ? '' : ' disabled') + '> Registered for GST</span></label>' +
+        '<label class="fo-field">GSTIN<input id="gs-in" maxlength="15" value="' + esc(cfg.gstin || '') + '"' + (founder ? '' : ' disabled') + '></label>' +
+        '<label class="fo-field"><span><input type="checkbox" id="gs-inc"' + (cfg.prices_include_gst ? ' checked' : '') + (founder ? '' : ' disabled') + '> Booking amounts include GST</span></label>' +
+        '<label class="fo-field">Slab limit per night (₹)<input id="gs-sl" type="number" value="' + esc(cfg.slab_limit) + '"' + (founder ? '' : ' disabled') + '></label>' +
+        '<label class="fo-field">Rate up to the limit (%)<input id="gs-lo" type="number" step="0.1" value="' + esc(cfg.rate_low * 100) + '"' + (founder ? '' : ' disabled') + '></label>' +
+        '<label class="fo-field">Rate above the limit (%)<input id="gs-hi" type="number" step="0.1" value="' + esc(cfg.rate_high * 100) + '"' + (founder ? '' : ' disabled') + '></label></div>' +
+        (founder ? '<button class="btn btn--primary" id="gs-save" style="margin-top:10px">Save GST settings</button>' : '') + '<p class="fo-hint">Defaults follow the accommodation slabs (5% up to ₹7,500 a night, 18% above). Confirm rates, thresholds and Section 9(5) treatment with your chartered accountant.</p></div>';
+    $('#gs-m').onchange = function () { S.finMonth = this.value; finGst(body); };
+    $('#gs-x').onclick = function () { C.exportExcel('ap-villas-gst-' + m, [{ name: 'GST ' + m, head: ['booked via', 'rate', 'nights', 'bookings', 'taxable value', 'CGST', 'SGST', 'total GST', 'SAC', 'place of supply'], rows: g.rows.map(function (x) { return [x.via, x.rate * 100 + '%', x.nights, x.bookings, x.taxable, x.cgst, x.sgst, x.tax, g.sac, g.place_of_supply]; }) }, { name: 'Ledger ' + m, head: ['date', 'account', 'description', 'villa', 'channel', 'reference', 'in', 'out', 'basis'], rows: A.ledger(Dt, m).lines.map(function (l) { return [l.date, l.account, l.description, l.villa, l.channel, l.ref, l.credit || '', l.debit || '', l.basis]; }) }]); };
+    var sv = $('#gs-save'); if (sv) sv.onclick = function () {
+      var o = { gst_registered: $('#gs-reg').checked, gstin: $('#gs-in').value.trim().toUpperCase(), prices_include_gst: $('#gs-inc').checked, slab_limit: Number($('#gs-sl').value) || 7500, rate_low: (Number($('#gs-lo').value) || 5) / 100, rate_high: (Number($('#gs-hi').value) || 18) / 100 };
+      U.api('f.settings.save', { settings: { accounts: JSON.stringify(o) } }).then(function (j) { if (!j.ok) return toast(j.error, true); toast('GST settings saved'); U.load(true); });
+    };
+  }
+
   function expenseForm(e) {
     e = e || { date: today(), property_id: 'all', category: 'housekeeping', basis: 'actual' };
     var p = U.drawer('<div class="fo-drawer__head"><h2 class="serif" style="font-size:24px">' + (e.expense_id ? 'Edit expense' : 'Add expense') + '</h2><button class="fo-iconbtn" data-close>' + U.icon('x') + '</button></div><div class="fo-form">' +
@@ -540,7 +604,8 @@
 
   // ============================================================ register & start ============================================================
   var V = U.VIEWS;
-  V.revenue = viewRevenue; V.studio = viewStudio; V.trends = viewTrends; V.website = viewWebsite; V.finance = viewFinance; V.forecast = viewForecast; V.strategy = viewStrategy; V.reports = viewReports;
+  // Revenue merged into Finance & accounts (old links redirect); Analytics Studio kept off the menu
+  V.revenue = function () { location.hash = '#/finance/summary'; }; V.studio = viewStudio; V.trends = viewTrends; V.website = viewWebsite; V.finance = viewFinance; V.forecast = viewForecast; V.strategy = viewStrategy; V.reports = viewReports;
   U.MODULES.forEach(function (m) { delete m.phase; });
   U.start();
 })();

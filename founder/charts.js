@@ -4,7 +4,7 @@
  */
 var FoCharts = (function () {
   var NS = 'http://www.w3.org/2000/svg';
-  var PALETTE = ['#0F5C45', '#C9A24F', '#2F8F6B', '#8C6512', '#5B7F95', '#B5532A', '#7A6FA8', '#3C4A45', '#9BB8A8', '#E2C27A'];
+  var PALETTE = ['#0F6B50', '#D4A443', '#2E9C8A', '#E07A3F', '#4C6FBF', '#B8506A', '#7E63B8', '#5E8C3A', '#3C4A45', '#E8C77A'];
   function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
   function txt(parent, x, y, s, attrs) { var t = el('text', Object.assign({ x: x, y: y }, attrs || {}), parent); t.textContent = s; return t; }
   function nice(max) { if (!(max > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log10(max))), f = max / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 4 ? 4 : f <= 8 ? 8 : 10) * p; }   // divisible by 4 → round gridlines
