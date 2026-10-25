@@ -221,12 +221,22 @@ function foUserLite_(email) {
   return lite;
 }
 function foMask_(email) { const [a, d] = String(email).split('@'); return a.slice(0, 2) + '•••@' + d; }
-function foCounter_(key, ttl) { const c = CacheService.getScriptCache(), n = Number(c.get(key) || 0) + 1; c.put(key, String(n), ttl); return n; }
+/** Fixed-window counter: the window starts at the first event and is not extended by later ones (stored as "count|windowEndMs"). */
+function foCounter_(key, ttl) {
+  const c = CacheService.getScriptCache(), now = Date.now(), v = String(c.get(key) || '').split('|');
+  let n = Number(v[0]) || 0, until = Number(v[1]) || 0;
+  if (!until || until <= now) { n = 0; until = now + ttl * 1000; }
+  n++; c.put(key, n + '|' + until, Math.max(1, Math.ceil((until - now) / 1000)));
+  return n;
+}
+function foCounterValue_(key) { const v = String(CacheService.getScriptCache().get(key) || '').split('|'); return Number(v[1]) > Date.now() ? Number(v[0]) || 0 : 0; }
+/** Run from the Apps Script editor if the founder is locked out by the sign-in limits (codes per hour, wrong passphrases). */
+function foResetSignInLimits() { CacheService.getScriptCache().removeAll(['FO_OTPSENDS', 'FO_PASSFAIL']); console.log('Sign-in limits reset: you can request a new code now.'); }
 
 function foLoginStart_(b) {
   const generic = { ok: false, error: 'That email and passphrase do not match.' };
   const cache = CacheService.getScriptCache();
-  if (Number(cache.get('FO_PASSFAIL') || 0) >= FO.PASS_FAILS_PER_HOUR) return { ok: false, error: 'Sign-in is paused for up to an hour after repeated wrong attempts.' };
+  if (foCounterValue_('FO_PASSFAIL') >= FO.PASS_FAILS_PER_HOUR) return { ok: false, error: 'Sign-in is paused for up to an hour after repeated wrong attempts.' };
   const email = String(b.email || '').trim().toLowerCase().slice(0, 120), u = foUser_(email);
   const pass = String(b.passphrase || '');
   let purpose = 'login';
