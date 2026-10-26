@@ -3705,12 +3705,13 @@ const CUTSCENE_REGISTRY = [
   { key: 'bless-lakshmi', portrait: 'videos/game/bless-lakshmi.mp4', status: 'verified' },
   { key: 'bless-mahakal', portrait: 'videos/game/bless-mahakal.mp4', status: 'verified' },
   { key: 'bless-sarva', portrait: 'videos/game/bless-sarva.mp4', status: 'verified' },   // montage of the six blessing clips (Sarva Devta Ashirvaad)
+  { key: 'boss-ravana', landscape: 'videos/game/boss-ravana.mp4', wide: true, status: 'verified' },   // the owner's 20 s Ravana reveal (16:9), before the final boss
   { key: 'finale', portrait: 'videos/game/finale.mp4', status: 'verified' },
   // landscape (16:9) versions for desktop are pending; desktop plays the portrait clip over a blurred backdrop
 ];
 const CUTSCENES = Object.fromEntries(CUTSCENE_REGISTRY.filter(c => c.status === 'verified').map(c => [c.key, { portrait: c.portrait, landscape: c.landscape, wide: c.wide }]));
 const CUT_TITLES = { trailer: ['', ''],   // the trailer carries its own boss names and end title
-  intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], 'bless-sarva': ['सर्व देवता', 'Ashirvaad of all the gods'], finale: ['हर हर महादेव', 'Victory'] };
+  intro: ['पथ दर्शन', 'Path to Darshan'], 'boss-mahisha': ['महिषासुर', 'Boss 1 of 3'], 'boss-rakta': ['रक्तबीज', 'Boss 2 of 3'], 'boss-andhaka': ['अंधकासुर', 'The final battle'], 'boss-ravana': ['रावण', 'The final boss'], 'bless-ganesh': ['श्री गणेश', 'Ashirvaad'], 'bless-hanuman': ['हनुमान जी', 'Ashirvaad'], 'bless-durga': ['माँ दुर्गा', 'Ashirvaad'], 'bless-vishnu': ['श्री विष्णु', 'Ashirvaad'], 'bless-lakshmi': ['माँ लक्ष्मी', 'Ashirvaad'], 'bless-mahakal': ['महाकाल', 'Ashirvaad'], 'bless-sarva': ['सर्व देवता', 'Ashirvaad of all the gods'], finale: ['हर हर महादेव', 'Victory'] };
 let cutTok = 0;
 // widescreen clips: full screen + landscape while they play (Android / desktop), the iPhone's own player on iPhone
 const CFS = { on: false };
