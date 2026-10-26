@@ -44,7 +44,11 @@ export const read = {
       ...[...h.matchAll(/class="prco-valign-middle-helper"[^>]*>\s*₹\s?([\d,]+)/g)].map(m => money(m[1])),
     ].filter(Boolean);
     if (prices.length) return r(Math.min(...prices), { taxes_included: 'no' });
-    const m = t.match(/Current price ₹\s?([\d,]+)/) || t.match(/₹\s?([\d,]+)\s*\n\s*\+\s?₹\s?[\d,]+ taxes/) || t.match(/Price\s*₹\s?([\d,]+)\s*\n?\s*\+\s?₹/);
+    // room table: every "Current price Rs. 1,987" (Booking India writes Rs./INR as well as ₹); the cheapest room for 2 counts, single-guest rates are skipped
+    const cur = [...t.matchAll(/Current price (?:₹|Rs\.?|INR)[\s\u00a0]?([\d,]+)/g)]
+      .filter(x => !/Only for 1 guest|Max persons: 1\b/.test(t.slice(Math.max(0, x.index - 260), x.index))).map(x => money(x[1])).filter(Boolean);
+    if (cur.length) return r(Math.min(...cur), { taxes_included: 'no' });
+    const m = t.match(/(?:₹|Rs\.?|INR)[\s\u00a0]?([\d,]+)\s*\n\s*\+\s?(?:₹|Rs\.?|INR)[\s\u00a0]?[\d,]+ taxes/) || t.match(/Price\s*(?:₹|Rs\.?|INR)[\s\u00a0]?([\d,]+)\s*\n?\s*\+\s?(?:₹|Rs)/);
     if (!m && /(no availability|don't have any availability|sold out)[^\n]{0,80}(your dates|these dates|on our site)/i.test(t)) return r(null, { sold_out: true });
     return r(m ? money(m[1]) : null, { taxes_included: 'no' });
   },

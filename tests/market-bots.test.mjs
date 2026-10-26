@@ -80,6 +80,8 @@ test('Booking.com price formats in the cloud page and a room-type sell-out is no
   assert.equal(read.booking('', '<div data-testid="price-and-discounted-price" class="x"><span>₹ 4,120</span></div>').price, 4120);
   assert.equal(read.booking('Price ₹ 3,950\n+ ₹ 220 taxes and charges', '').price, 3950);
   assert.equal(read.booking('Sorry, we have no availability on our site for your dates', '').sold_out, true);
+  const rs = 'Max persons: 2\nRs.\u00a01,987 per night\nOriginal price Rs.\u00a02,484 Current price Rs.\u00a01,987\n\nMax persons: 1\nOnly for 1 guest\nNon-refundable\nRs.\u00a01,944 per night\nOriginal price Rs.\u00a02,430 Current price Rs.\u00a01,944\nDeluxe Room\n We have 1 left\nMax persons: 2\nNon-refundable\nPay the property before arrival\nNo credit card needed\n discount may be available\nRs.\u00a01,920 per night\nOriginal price Rs.\u00a02,400 Current price Rs.\u00a01,920';
+  assert.equal(read.booking(rs, '').price, 1920, 'Booking India "Rs." prices (real page, 26 Oct 2026): cheapest room for 2, single-guest rate skipped');
   assert.equal(read.taxLine('Sat, 31 Oct\nDeluxe Room\nSold out\nFamily Room\n₹1711\n+ ₹236 taxes & fee', 'Sat, 31 Oct').price, 1711, 'one room type sold out ≠ hotel sold out');
   assert.equal(read.taxLine('This OYO is sold out for your dates').sold_out, true);
 });
