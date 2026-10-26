@@ -67,7 +67,7 @@
   function api(action, body, attempt) {
     var payload = Object.assign({ action: action }, body || {});
     if (S.token && action.indexOf('f.login.') !== 0) payload.token = S.token;
-    var ctl = window.AbortController ? new AbortController() : null, limit = action === 'f.sync' || action === 'f.report.run' || action === 'f.import.rows' ? 120000 : 60000;
+    var ctl = window.AbortController ? new AbortController() : null, limit = action === 'f.sync' || action === 'f.report.run' || action === 'f.import.rows' || action === 'f.brain.ask' ? 120000 : 60000;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, limit);
     busyBar(1);
     var opts = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined };
@@ -566,10 +566,11 @@
   // ---------- AP Brain: questions about the business, answered by a free AI model from totals and prices only (docs/founder-os/FoBrain.gs) ----------
   var BRAIN = { history: [] };
   function brainPanel() {
-    var ideas = ['What price should I set for tonight and why?', 'Which nights in the next 2 weeks look weak, and what should I do?', 'How is occupancy this month compared with last month?', 'What do the news and Google searches say about demand this week?'];
+    var ideas = ['Give me the 5 sharpest insights about my business today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
     var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI (Groq, Gemini as backup) that reads your totals, prices, competitors and news. It never sees guest names, phones or emails, and it cannot change anything.</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
       '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
-      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything about AP Villas… (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>');
+      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything about AP Villas… (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
+      '<label class="fo-hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Search Google for fresh market information when it helps (competitors, events, Simhastha, travel)</label>');
     var log = $('#br-log', p);
     // the models answer in Markdown: show headings, bold, bullets and numbered points properly (escaped first, so no HTML gets through)
     function md(t) {
@@ -584,14 +585,15 @@
       close();
       return out.join('').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
     }
-    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
+    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
     function ask(q) {
       q = String(q || '').trim(); if (!q) return;
-      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Thinking…', pending: true }); paint();
+      var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
+      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();
       var hist = BRAIN.history.filter(function (m) { return !m.pending; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
-      api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2) }).then(function (j) {
+      api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2), web: web }).then(function (j) {
         BRAIN.history.pop();
-        BRAIN.history.push(j.ok ? { role: 'assistant', text: j.answer, meta: j.provider + ' · data as of ' + when(j.context_at) } : { role: 'assistant', text: j.error, meta: j.setup ? 'Setup needed (see Integrations & Automation)' : '' }); paint();
+        BRAIN.history.push(j.ok ? { role: 'assistant', text: j.answer, meta: j.provider + ' · data as of ' + when(j.context_at) + (j.searched && j.searched.length ? ' · searched Google: ' + j.searched.join('; ') : ''), sources: j.sources || [] } : { role: 'assistant', text: j.error, meta: j.setup ? 'Setup needed (see Integrations & Automation)' : '' }); paint();
       }).catch(function (e) { BRAIN.history.pop(); BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
     }
     paint();

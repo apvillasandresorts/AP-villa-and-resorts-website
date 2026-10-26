@@ -12,13 +12,14 @@
 const FO_BRAIN = { BUDGET_MS: 35000, PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'llama-3.3-70b-versatile', GEMINI_MODEL: 'gemini-2.5-flash' };
 
 const FO_BRAIN_SYSTEM = [
-  'You are "AP Brain", the business analyst for AP Villas & Resorts: five owner-operated holiday villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain (India).',
-  'The owner, Apoorv, runs it himself. You get a JSON summary of the business (ledger totals, occupancy, pricing desk, competitors, news, website, system health).',
-  'Rules: use only figures in the summary; if something is missing say what data is needed instead of guessing. Never invent revenue, occupancy, competitor or market numbers.',
-  'Label statements FACT (from the data), ESTIMATE (calculated), or RECOMMENDATION. Money in Indian rupees (₹, Indian digit grouping).',
-  'Be short and practical: lead with the answer, then up to 5 bullets, then one next step. Reply in Hindi if the question is in Hindi.',
-  'You only advise; you cannot change prices, bookings or settings. For pricing, the Pricing Desk figure is the starting point: explain it, do not override it without a reason from the data.',
+  'You are "AP Brain", the sharp, practical business analyst for AP Villas & Resorts: five owner-operated holiday villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain (India). The owner, Apoorv, runs it himself; his goal is full occupancy at the best price the market will pay.',
+  'You get: a JSON BUSINESS SUMMARY (ledger totals, occupancy, every one of the next 14 nights with the recommended price, chance to sell, market median and sell-outs, competitors, Google search demand and top/rising Ujjain searches, news, website, forecast accuracy) and sometimes WEB RESEARCH from live Google searches with numbered sources.',
+  'Think like a revenue manager: look for what is NOT obvious: nights where competitors are selling out but we are priced low, weak nights to fill now, rising searches that signal demand before bookings arrive, gaps between weekday and weekend, a competitor or event that changes the picture, channel mix, money left on the table. Quantify the effect in ₹ or nights where the data allows.',
+  'Answer format (Markdown): one bold headline with the answer; then **Why** (2–4 bullets, each with a number from the data or a cited source); then **Do this** (1–3 concrete actions with dates and ₹ figures); then **Watch** (what would change the advice). Keep it under 220 words unless asked for detail.',
+  'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in Hindi if the question is in Hindi.',
+  'You only advise; you cannot change prices, bookings or settings. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
 ].join('\n');
+const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 3 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
 
 /** Route: f.brain.ask { question, history: [{role, text}], page } → { answer, provider, model, context_at }. */
 function foBrainAsk_(b, user) {
@@ -28,11 +29,54 @@ function foBrainAsk_(b, user) {
   const ctx = foBrainContext_(), hist = (Array.isArray(b.history) ? b.history : []).slice(-FO_BRAIN.MAX_HISTORY)
     .map(h => ({ role: h.role === 'assistant' ? 'assistant' : 'user', text: foBrainScrub_(String(h.text || '')).slice(0, 2000) })).filter(h => h.text);
   const page = String(b.page || '').replace(/[^\w\/ -]/g, '').slice(0, 40);
-  const prompt = 'BUSINESS SUMMARY (' + ctx.as_of + '):\n' + JSON.stringify(ctx) + (page ? '\n\nThe owner is looking at: ' + page : '') + '\n\nQUESTION: ' + q;
-  const t0 = Date.now(), r = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt);
+  const t0 = Date.now();
+  // market research of its own: plan up to 3 Google searches, run them in parallel through Gemini with Google Search grounding
+  const research = b.web === false ? null : foBrainResearch_(q, hist);
+  const web = research && research.findings.length ? '\n\nWEB RESEARCH (live Google search, ' + foNow_().slice(0, 16) + '):\n' + research.findings.map(f => 'Q: ' + f.query + '\n' + f.text).join('\n\n') +
+    '\nSOURCES:\n' + research.sources.map((x, i) => '[' + (i + 1) + '] ' + x.title).join('\n') : '';
+  const prompt = 'BUSINESS SUMMARY (' + ctx.as_of + '):\n' + JSON.stringify(ctx) + web + (page ? '\n\nThe owner is looking at: ' + page : '') + '\n\nQUESTION: ' + q;
+  const r = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt);
   foBrainLog_(user.email, q, r, Date.now() - t0);
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
-  return { answer: r.text, provider: r.provider, model: r.model, context_at: ctx.as_of };
+  return { answer: r.text, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [] };
+}
+
+/**
+ * Web research: a quick planner call decides which Google searches (0–3) would help, then Gemini answers each with Google Search
+ * grounding, all in parallel (UrlFetchApp.fetchAll), within a 22 s budget. Returns findings plus de-duplicated sources (title, link).
+ * Free tier: Gemini grounding has a daily allowance; when it is used up or Gemini is busy, the brain answers from the business data alone.
+ */
+function foBrainResearch_(q, hist) {
+  const p = PropertiesService.getScriptProperties(), gem = p.getProperty('GEMINI_API_KEY');
+  if (!gem) return null;
+  const plan = foBrainCall_(FO_BRAIN_PLANNER, hist.slice(-2), 'QUESTION: ' + q + '\nToday: ' + foToday_());
+  let queries = [];
+  if (plan.ok) { try { const m = String(plan.text).match(/\{[\s\S]*\}/); queries = (JSON.parse(m ? m[0] : '{}').search || []).map(x => foBrainScrub_(String(x)).slice(0, 140)).filter(Boolean).slice(0, 3); } catch (e) {} }
+  if (!queries.length) return { queries: [], findings: [], sources: [] };
+  const models = [p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i && !/lite/.test(m));
+  const ask = (model, query) => ({ url: 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': gem }, muteHttpExceptions: true,
+    payload: JSON.stringify({ tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 700 },
+      contents: [{ role: 'user', parts: [{ text: 'Search Google and report the facts that matter for a holiday-villa business near Mahakaleshwar temple, Ujjain, India. Question: ' + query + '\nGive 3–6 short factual bullet points with dates and numbers where available. No advice.' }] }] }) });
+  const out = { queries, findings: [], sources: [] }, seen = {}, t0 = Date.now();
+  let pending = queries.slice();
+  // a second model is tried only when the first round answered quickly (a busy model can take ~50 s to say no; the portal waits 60 s)
+  for (let k = 0; k < Math.min(2, models.length) && pending.length && Date.now() - t0 < (k ? 9000 : 22000); k++) {
+    let res; try { res = UrlFetchApp.fetchAll(pending.map(x => ask(models[k], x))); } catch (e) { break; }
+    const retry = [];
+    res.forEach((r, i) => {
+      if (r.getResponseCode() !== 200) { retry.push(pending[i]); return; }
+      let j; try { j = JSON.parse(r.getContentText()); } catch (e) { return; }
+      const c = (j.candidates || [])[0] || {}, text = ((c.content || {}).parts || []).map(x => x.text || '').join('').trim();
+      if (!text) return;
+      const refs = ((c.groundingMetadata || {}).groundingChunks || []).map(g => g.web).filter(w => w && w.uri).map(w => {
+        const key = String(w.title || w.uri); if (!seen[key]) { seen[key] = out.sources.length + 1; out.sources.push({ title: String(w.title || 'source').slice(0, 120), url: String(w.uri).slice(0, 600) }); } return seen[key];
+      });
+      out.findings.push({ query: pending[i], text: text.slice(0, 1800) + (refs.length ? ' (sources ' + refs.map(n => '[' + n + ']').join('') + ')' : '') });
+    });
+    pending = retry;
+  }
+  out.sources = out.sources.slice(0, 10);
+  return out;
 }
 
 /** Route: f.brain.status → which providers are set up (never the keys). */
@@ -143,8 +187,13 @@ function foBrainContext_() {
     const cfg = FoDesk.settings(D);
     ctx.pricing_desk = cfg.properties.map(pid => { const c = FoDesk.today(D, pid); if (!c) return null; const q = x => x && { date: x.date, recommended_inr: x.price, range_inr: [x.low, x.high], confidence_pct: x.confidence, main_reasons: x.top, direct_inr: x.channels && x.channels.direct && x.channels.direct.price };
       return { villa: c.name, tonight: q(c.tonight), tomorrow: q(c.tomorrow) }; }).filter(Boolean);
-    const cal = cfg.properties.map(pid => FoDesk.calendar(D, pid, 30)).filter(Boolean);
-    ctx.next_30_nights_recommended = cal.map(c => ({ villa: c.name, nights: c.rows.filter((x, i) => i % 3 === 0 || x.confidence < 50).slice(0, 14).map(x => [x.date, x.price, x.confidence]) }));
+    const cal = cfg.properties.map(pid => FoDesk.calendar(D, pid, 60)).filter(Boolean);
+    // every night of the next 14: [date, weekday, status, our net price, chance to sell %, market median (guest price), market sold-out %, comparable stays open, confidence]
+    ctx.next_14_nights = cal.map(c => ({ villa: c.name, columns: 'date, day, status, price_net_inr, chance_to_sell_pct, market_median_inr, market_sold_out_pct, comparable_open, confidence', nights: c.rows.slice(0, 14).map(x => [x.date,
+      new Date(x.date + 'T00:00:00Z').toUTCString().slice(0, 3), x.booked ? 'booked' : x.blocked ? 'blocked' : 'open', x.price, x.fill ? x.fill.chance : null, x.market.median ? Math.round(x.market.median) : (x.fill ? x.fill.median : null),
+      x.market.sellout == null ? null : Math.round(x.market.sellout * 100), x.fill ? x.fill.ladder.length : x.market.n, x.confidence]) }));
+    ctx.nights_15_to_60 = cal.map(c => ({ villa: c.name, weekly: [0, 1, 2, 3, 4, 5].map(w => { const rows = c.rows.slice(14 + w * 7, 21 + w * 7); return rows.length ? { from: rows[0].date, open: rows.filter(x => !x.booked && !x.blocked).length, avg_price: Math.round(rows.reduce((a, x) => a + x.price, 0) / rows.length), festival_or_event_nights: rows.filter(x => x.event).map(x => x.date) } : null; }).filter(Boolean) }));
+    try { const acc = FoDesk.forecastAccuracy(D, cfg.properties[0]); ctx.forecast_accuracy = { nights_checked: acc.nights, typical_error_pct: acc.mape == null ? null : Math.round(acc.mape * 1000) / 10 }; } catch (e) {}
     try { ctx.market = FoDesk.marketAnalytics(D, cfg.properties[0]); ctx.market = JSON.parse(JSON.stringify(ctx.market, (k, v) => Array.isArray(v) && v.length > 20 ? v.slice(0, 20) : v)); } catch (e) {}
     ctx.alerts = FoDesk.alerts(D, cal, []).map(a => a.text).slice(0, 10);
   } catch (e) { ctx.pricing_desk_error = String(e.message || e).slice(0, 120); }
@@ -154,6 +203,15 @@ function foBrainContext_() {
     .map(n => ({ date: String(n.published_at).slice(0, 10), headline: String(n.title).slice(0, 160), category: n.category, impact: n.impact, demand: n.direction }));
   ctx.expenses_this_month = (D.expenses || []).filter(x => String(x.date).slice(0, 7) === today.slice(0, 7)).reduce((o, x) => { o[x.category] = (o[x.category] || 0) + r0(x.amount); return o; }, {});
   ctx.website = (D.demand_signals || D.demandSignals || []).filter(s => s.source === 'ga4' || s.source === 'gsc').slice(-6).map(s => ({ date: s.date, source: s.source, metric: s.metric, value: s.value, growth_pct: s.growth_pct }));
+  // Google search demand around Ujjain (whole market): the pricing signal, today's top and rising searches, Wikipedia readers
+  try {
+    const sm = (D.signals || []).filter(x => x.signal_id === 'search_market').sort((a, b) => a.fetched_at < b.fetched_at ? 1 : -1)[0];
+    const kw = D.search_keywords || [], last = kw.map(x => String(x.date)).sort().pop(), day = kw.filter(x => String(x.date) === last);
+    const wiki = (D.search_extra || []).filter(x => x.kind === 'wiki').map(x => { let s2 = []; try { s2 = JSON.parse(x.data); } catch (e) {} const v = s2.map(z => Number(z[1])), a7 = v.slice(-7), a30 = v.slice(-37, -7), m = a => a.length ? a.reduce((q, w) => q + w, 0) / a.length : 0; return { article: x.key, avg_7d: Math.round(m(a7)), vs_30d_pct: m(a30) ? Math.round((m(a7) / m(a30) - 1) * 100) : null }; });
+    ctx.search_demand = { signal: sm ? { index: Number(sm.index), detail: sm.raw_value, as_of: String(sm.fetched_at).slice(0, 10) } : null, report_date: last || null,
+      top_searches: day.filter(x => x.avg7 !== '').sort((a, b) => Number(b.avg7) - Number(a.avg7)).slice(0, 12).map(x => ({ q: x.keyword, interest_7d: Number(x.avg7), change_vs_30d_pct: x.change === '' ? null : Number(x.change) })),
+      rising_searches: day.filter(x => x.rising).slice(0, 10).map(x => ({ q: x.keyword, growth: x.rising })), interest_scale: 'Google Trends, "ujjain hotel" average = 100', wikipedia_readers: wiki };
+  } catch (e) {}
   ctx.open_data_issues = (D.exceptions || []).filter(e => e.status === 'open').length;
   foCachePut_('FO_BRAIN_CTX', ctx, 600);
   return ctx;

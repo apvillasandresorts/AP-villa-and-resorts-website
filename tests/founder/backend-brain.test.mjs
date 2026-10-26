@@ -39,13 +39,13 @@ test('Groq over its free limit → Gemini answers (after one retry); both failin
   let mode = 'fallback';
   const { env, token } = await ready(r => /groq/.test(r.url) ? { code: 429, body: '{}' } : mode === 'fallback' ? geminiOk('Gemini says hold prices.') : { code: 503, body: '' });
   env.props.set('GROQ_API_KEY', 'gsk_test'); env.props.set('GEMINI_API_KEY', 'AIza_test');
-  const r = env.api({ action: 'f.brain.ask', token, question: 'Price for Saturday?' });
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Price for Saturday?', web: false });
   assert.equal(r.provider, 'Gemini'); assert.equal(r.answer, 'Gemini says hold prices.');
   assert.equal(env.net.calls.filter(c => /groq/.test(c.url)).length, 2, 'Groq retried once on 429');
   const g = env.net.calls.find(c => /generativelanguage/.test(c.url));
   assert.equal(g.headers['x-goog-api-key'], 'AIza_test'); assert.ok(!/key=/.test(g.url), 'key in a header, never in the URL');
   mode = 'down';
-  const bad = env.api({ action: 'f.brain.ask', token, question: 'Again?' });
+  const bad = env.api({ action: 'f.brain.ask', token, question: 'Again?', web: false });
   assert.equal(bad.ok, false); assert.match(bad.error, /try again/);
   assert.equal(env.tab('Audit').filter(a => a.action === 'brain' && a.result === 'error').length, 1);
 });
@@ -100,10 +100,50 @@ test('Gemini busy (503) on one model: the next model answers; the one that worke
     return { code: 503, body: '{"error":{"message":"high demand"}}' };
   });
   env.props.set('GEMINI_API_KEY', 'AIza_test');
-  const r = env.api({ action: 'f.brain.ask', token, question: 'Tonight?' });
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Tonight?', web: false });
   assert.equal(r.ok, true, r.error); assert.equal(r.model, 'gemini-3.7-flash');
   assert.equal(env.props.get('GEMINI_MODEL_AUTO'), 'gemini-3.7-flash');
   const ranked = env.fo.foBrainRankModels_('gemini', { models: ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-pro'].map(n => ({ name: 'models/' + n, supportedGenerationMethods: ['generateContent'] })) });
   assert.deepEqual(ranked.slice(0, 3), ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-3.8-flash'], 'newest (busiest) after the stable ones; lite last');
   assert.equal(ranked[ranked.length - 1], 'gemini-2.5-flash-lite');
+});
+
+test('market research: the planner picks Google searches, Gemini answers them with Google Search grounding (in parallel), the answer cites numbered sources', async () => {
+  const sent = [];
+  const { env, token } = await ready(r => {
+    const body = JSON.parse(r.payload || '{}'); sent.push({ url: r.url, body });
+    if (/groq/.test(r.url)) {
+      const sys = body.messages[0].content;
+      if (/decide whether a question/.test(sys)) return groqOk('{"search": ["new hotels near Mahakal Lok Ujjain 2026", "Simhastha 2028 preparations Ujjain"]}');
+      return groqOk('**Hold prices** [1]\n- New hotel opened [1]');
+    }
+    if (/generateContent/.test(r.url) && body.tools) return { code: 200, body: JSON.stringify({ candidates: [{ content: { parts: [{ text: '- A 120-room hotel opened near Mahakal Lok in Sept 2026.' }] }, groundingMetadata: { groundingChunks: [{ web: { uri: 'https://example.com/hotel', title: 'freepressjournal.in' } }, { web: { uri: 'https://example.com/hotel', title: 'freepressjournal.in' } }] } }] }) };
+    if (/v1beta\/models\?/.test(r.url)) return { code: 200, body: JSON.stringify({ models: [] }) };
+    return { code: 500, body: '' };
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test'); env.props.set('GEMINI_API_KEY', 'AIza_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Is there new competition near the temple?' });
+  assert.equal(r.ok, true, r.error);
+  assert.deepEqual(r.searched, ['new hotels near Mahakal Lok Ujjain 2026', 'Simhastha 2028 preparations Ujjain']);
+  assert.deepEqual(r.sources, [{ title: 'freepressjournal.in', url: 'https://example.com/hotel' }], 'sources de-duplicated');
+  const grounded = sent.filter(x => /generateContent/.test(x.url) && x.body.tools);
+  assert.equal(grounded.length, 2); assert.deepEqual(grounded[0].body.tools, [{ google_search: {} }]);
+  const final = sent.filter(x => /groq/.test(x.url)).pop().body.messages.pop().content;
+  assert.match(final, /WEB RESEARCH/); assert.match(final, /\[1\] freepressjournal\.in/); assert.match(final, /next_14_nights/);
+  assert.match(r.answer, /Hold prices/);
+});
+
+test('market research: no search when the planner says the business data is enough, or when the owner switches it off', async () => {
+  let grounded = 0;
+  const { env, token } = await ready(r => {
+    const body = JSON.parse(r.payload || '{}');
+    if (/groq/.test(r.url)) return /decide whether a question/.test(body.messages[0].content) ? groqOk('{"search": []}') : groqOk('Fine.');
+    if (/generateContent/.test(r.url) && body.tools) { grounded++; return geminiOk('x'); }
+    return { code: 200, body: JSON.stringify({ models: [] }) };
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test'); env.props.set('GEMINI_API_KEY', 'AIza_test');
+  const a = env.api({ action: 'f.brain.ask', token, question: 'How many nights are open next week?' });
+  assert.equal(a.ok, true); assert.deepEqual(a.searched, []); assert.equal(grounded, 0);
+  const b = env.api({ action: 'f.brain.ask', token, question: 'Any news on Simhastha?', web: false });
+  assert.equal(b.ok, true); assert.equal(grounded, 0);
 });
