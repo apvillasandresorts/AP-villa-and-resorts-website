@@ -155,10 +155,34 @@ with Founder OS jobs, then saves anyway. A photo the phone cannot read or a PDF 
 on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details is offered. Test rows: run `ciDeleteTestEntries` in the editor
 (rows whose main guest starts with "TEST"; ID folders to Drive Trash).
 
-## AP Brain (built, waiting for free keys)
-`docs/founder-os/FoBrain.gs`: `f.brain.ask` (manager+) answers questions from a business summary (totals, prices, competitors, news; never guest
-names, phones, emails or booking IDs; questions scrubbed). Groq first (free tier, `GROQ_API_KEY`), Google Gemini fallback (free tier,
-`GEMINI_API_KEY`), keys only in Script Properties. 150 questions a day; optional morning brief email (Settings `brain_daily`). Log: BrainLog tab.
+## AP Brain (live)
+`docs/founder-os/FoBrain.gs`. Top-bar button "Ask AP Brain" (manager+).
+- **Providers (all free, each optional, keys only in Script Properties):** Groq `GROQ_API_KEY` → Cerebras `CEREBRAS_API_KEY` → OpenRouter
+  `OPENROUTER_API_KEY` (":free" models only) → Mistral `MISTRAL_API_KEY` → Gemini `GEMINI_API_KEY`. Inside each provider the models are tried in
+  turn: a retired model (404) is replaced by the provider's current list and remembered (`<NAME>_MODEL_AUTO`); a used-up daily allowance (429)
+  moves to the next model for this answer only. 35 s budget per answer.
+- **Questions:** business summary (ledger, next 14 nights with price, chance to sell, market median and sell-outs, weeks 3–8, competitors, search
+  demand and top/rising searches, Wikipedia, news, forecast accuracy). Never guest names, phones, emails or booking IDs; questions are scrubbed.
+- **Web research:** a planner picks up to 2 searches; Groq gpt-oss with its `browser_search` tool runs them (small model first: each search costs
+  ~40k tokens of the 200k/day free allowance), then Gemini Google Search grounding (free allowance often used up), then GDELT news. Sources are
+  numbered and shown under the answer. Switch: "Search Google…" in the panel.
+- **Actions (`f.brain.act`):** paste a booking voucher or type "paid Mahesh ₹12,000 salary today" / "electricity bill ₹2,450 AP Suite": the model
+  extracts fields, the server validates them and asks for anything missing, the panel shows a confirmation card, and "Confirm & save" calls the
+  normal route (`f.booking.save`, `f.expense.save`, `f.hr.pay.save`, `f.hr.emp.save`, `f.crm.lead.save`) with all their checks. Guest details go only
+  to Groq, Cerebras or Mistral (never the Gemini free tier or OpenRouter); Aadhaar-style 12-digit numbers are masked; the log keeps only the action type.
+- Editor checks: `foBrainTest` (each provider), `foBrainTestResearch`. Daily AI brief email (Settings `brain_daily`). Log: BrainLog tab.
+
+## People & HR and CRM
+`docs/founder-os/FoPeople.gs`, portal `founder/people.js` (menu: People & guests).
+- **People & HR:** employees of any role (caretaker, sweeper, intern on-site or remote, manager, cook, driver, security, other), salary terms
+  (monthly / weekly / daily / stipend / per task, pay day), pay status this month (paid / due / part paid), salary payments (each one also books an
+  expense "Staff & caretakers" for the person's villa; deleting the payment removes it), reviews and feedback with ratings, messages to staff.
+  Delete is founder-only and keeps a copy in DeletedRecords; payments and reviews stay.
+- **CRM:** one log of every email (sent from the owner's Google account, ~100/day, logged automatically) and WhatsApp message (opened on the phone
+  with wa.me and logged when opened; nothing is sent automatically), calls and notes; guest profiles from bookings with segments (arriving soon,
+  repeat, recent, lapsed, no email) and history; leads board (new → contacted → quoted → booked / lost) with values and follow-up dates; follow-up
+  tasks; templates with {name}, {checkin}, {villa} (6 starter templates).
+- Sheets: Employees, SalaryPayments, EmployeeReviews, CrmMessages, CrmLeads, CrmTasks, CrmTemplates.
 
 ## GA4 reporting
 Server-side only (Apps Script advanced service **Google Analytics Data API**, identifier `AnalyticsData`), property in Settings
