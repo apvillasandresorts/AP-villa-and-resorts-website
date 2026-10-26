@@ -352,3 +352,79 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .fo-brain__msg--user { align-self: flex-end; background: color-mix(in srgb, #2F7D4F 14%, var(--card)); }
 .fo-brain__msg--assistant { align-self: flex-start; background: color-mix(in srgb, #C9A227 12%, var(--card)); border: 1px solid var(--line); }
 .fo-brainbtn { color: #C9A227; }
+
+/* ============================================================ FX: circuits, currents, the brain (founder/fx.js) ============================================================ */
+.fx-wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.fx-base path { fill: none; stroke: rgba(201,162,79,.16); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.fx-flow { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 90 910; stroke-dashoffset: 1000; animation: fx-run 4s linear infinite; }
+.fx-flow--em { stroke-dasharray: 60 940; }
+@keyframes fx-run { to { stroke-dashoffset: 0; } }
+.fx-vias circle { fill: #0F3D2E; stroke: #C9A24F; stroke-width: 2; animation: fx-via 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes fx-via { 0%, 70%, 100% { fill: #0F3D2E; opacity: .55; transform: scale(1); } 80% { fill: #F3D98B; opacity: 1; transform: scale(1.5); } }
+
+/* loading screen */
+.fx-boot { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow: hidden; color: #F2EBDB;
+  background: radial-gradient(ellipse at 50% 45%, #14513E 0%, #0B3326 45%, #061C15 100%); }
+.fx-boot::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 46%, rgba(6,28,21,.0) 0, rgba(6,28,21,.0) 120px, rgba(6,28,21,.55) 260px, transparent 520px); }
+.fx-boot__core { position: relative; z-index: 1; display: grid; justify-items: center; gap: 10px; text-align: center; padding: 34px 40px 30px; border-radius: 28px;
+  background: radial-gradient(circle at 50% 30%, rgba(15,61,46,.92), rgba(6,28,21,.88)); box-shadow: 0 0 0 1px rgba(201,162,79,.22), 0 30px 90px rgba(0,0,0,.45); backdrop-filter: blur(3px); }
+.fx-boot__ring { position: relative; width: 132px; height: 132px; display: grid; place-items: center; margin-bottom: 6px; }
+.fx-boot__ring img { width: 84px; height: 84px; filter: drop-shadow(0 0 14px rgba(243,217,139,.45)); animation: fx-breathe 2.6s ease-in-out infinite; }
+.fx-boot__ring span { position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent; border-top-color: #F3D98B; border-right-color: rgba(243,217,139,.35); animation: fx-spin 1.6s linear infinite; box-shadow: 0 0 22px rgba(243,217,139,.18) inset; }
+.fx-boot__ring span + span { inset: 12px; border-top-color: #5FD3A0; border-right-color: rgba(95,211,160,.3); animation-duration: 2.4s; animation-direction: reverse; }
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+@keyframes fx-breathe { 50% { transform: scale(1.05); filter: drop-shadow(0 0 22px rgba(243,217,139,.7)); } }
+.fx-boot__title { font: 700 26px/1.15 'Cormorant Garamond', Georgia, serif; letter-spacing: .3px; color: #F3D98B; }
+.fx-boot__step { font-size: 13.5px; color: rgba(242,235,219,.78); min-height: 20px; }
+.fx-boot__step.is-in { animation: fx-step .45s ease-out; }
+@keyframes fx-step { from { opacity: 0; transform: translateY(6px); } }
+.fx-boot__bar { width: 220px; height: 3px; border-radius: 99px; background: rgba(201,162,79,.18); overflow: hidden; margin-top: 6px; }
+.fx-boot__bar i { display: block; height: 100%; width: 40%; border-radius: inherit; background: linear-gradient(90deg, transparent, #F3D98B, #5FD3A0, transparent); animation: fx-bar 1.4s ease-in-out infinite; }
+@keyframes fx-bar { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+
+/* sign-in */
+.fo-login { position: relative; overflow: hidden; gap: 40px; background: radial-gradient(ellipse at 30% 40%, #14513E 0%, #0B3326 45%, #061C15 100%); }
+.fo-login .fx-wires { opacity: .55; }
+.fo-login__art { position: relative; z-index: 1; display: none; color: #F2EBDB; max-width: 520px; }
+.fo-login__card { position: relative; z-index: 1; box-shadow: 0 0 0 1px rgba(201,162,79,.25), 0 30px 90px rgba(0,0,0,.5); animation: fx-rise .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes fx-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+.fo-login__art h2 { font: 700 34px/1.1 'Cormorant Garamond', Georgia, serif; color: #F3D98B; margin: 6px 0 8px; }
+.fo-login__art p { margin: 0; color: rgba(242,235,219,.78); font-size: 15px; line-height: 1.55; max-width: 440px; }
+.fo-login__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.fo-login__chips span { font-size: 12px; padding: 5px 11px; border-radius: 99px; border: 1px solid rgba(201,162,79,.35); color: #F2EBDB; background: rgba(15,61,46,.55); }
+.fo-login__chips span::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #5FD3A0; margin-right: 7px; vertical-align: 1px; box-shadow: 0 0 8px #5FD3A0; animation: fx-live 1.8s ease-in-out infinite; }
+@keyframes fx-live { 50% { opacity: .35; } }
+.fo-login__mobile-brain { position: relative; z-index: 1; width: min(190px, 55vw); margin: -6px auto 4px; }
+@media (min-width: 940px) {
+  .fo-login { grid-template-columns: minmax(0, 560px) 410px; justify-content: center; align-items: center; }
+  .fo-login__art { display: block; }
+  .fo-login__mobile-brain { display: none; }
+}
+@media (max-width: 939px) { .fo-login { align-content: center; gap: 0; } }
+
+/* brain */
+.fx-brain { width: 100%; height: auto; display: block; overflow: visible; }
+.fx-brain__shape path { fill: rgba(15,61,46,.55); stroke: rgba(243,217,139,.55); stroke-width: 2.2; stroke-linejoin: round; }
+.fx-brain__shape path:last-child { fill: none; stroke: rgba(243,217,139,.4); stroke-linecap: round; }
+.fx-base--brain path { stroke: rgba(201,162,79,.28); stroke-width: 2.4; }
+.fx-flow--brain { stroke-width: 3.4; stroke-dasharray: 140 860; }
+.fx-flow--rim { stroke-width: 2.6; stroke-dasharray: 220 780; animation-duration: 7s; }
+.fx-flow--stem { stroke-width: 3; stroke-dasharray: 260 740; animation-duration: 1.8s; animation-direction: reverse; }
+.fx-brain__aura { animation: fx-aura 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes fx-aura { 50% { opacity: .65; transform: scale(1.04); } }
+.fx-neurons circle { fill: #F3D98B; opacity: .35; animation: fx-fire 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.fx-neurons circle:nth-child(3n) { fill: #5FD3A0; }
+@keyframes fx-fire { 0%, 60%, 100% { opacity: .3; transform: scale(.8); } 72% { opacity: 1; transform: scale(1.7); } }
+
+/* the Ask AP Brain button */
+.fo-brainbtn.fo-brainpill { width: auto; padding: 0 14px 0 10px; gap: 6px; display: inline-flex; align-items: center; border-radius: 99px; font-weight: 700; font-size: 13px; color: #1C1405;
+  background: linear-gradient(135deg, #F3D98B, #C9A24F); border: 0; box-shadow: 0 0 0 1px rgba(201,162,79,.5), 0 4px 14px rgba(201,162,79,.35); position: relative; overflow: hidden; }
+.fo-brainpill .ic { width: 16px; height: 16px; }
+.fo-brainpill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); transform: translateX(-120%); animation: fx-sheen 3.5s ease-in-out infinite; }
+@keyframes fx-sheen { 60%, 100% { transform: translateX(120%); } }
+@media (max-width: 640px) { .fo-brainpill b { display: none; } .fo-brainbtn.fo-brainpill { padding: 0 9px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-flow, .fx-vias circle, .fx-neurons circle, .fx-brain__aura, .fx-boot__ring img, .fx-boot__ring span, .fx-boot__bar i, .fo-login__chips span::before, .fo-brainpill::after, .fo-login__card { animation: none !important; }
+  .fx-flow { stroke-dashoffset: 300; }
+}

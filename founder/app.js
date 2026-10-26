@@ -85,7 +85,7 @@
       .then(function (j) { clearTimeout(timer); busyBar(-1); return j; }, function (e) { clearTimeout(timer); busyBar(-1); throw e; });
   }
   function load(quiet) {
-    if (!quiet) { root.innerHTML = '<div class="fo-loading"><div class="fo-spin"></div><div>Loading your business data…</div></div>'; }
+    if (!quiet) { if (window.FoFX) { root.innerHTML = FoFX.boot(); FoFX.bootStart(root); } else root.innerHTML = '<div class="fo-loading"><div class="fo-spin"></div><div>Loading your business data…</div></div>'; }
     var keepY = quiet ? window.scrollY : 0, keepView = location.hash;
     return api('f.data').then(function (j) {
       if (!j.ok) throw new Error(j.error || 'Could not load data');
@@ -104,7 +104,12 @@
   function renderLogin(msg) {
     document.title = 'Sign in · Founder OS';
     var otp = L.step === 'otp';
-    root.innerHTML = '<div class="fo-login"><form class="fo-login__card" novalidate autocomplete="on">' +
+    var FX = window.FoFX;
+    root.innerHTML = '<div class="fo-login">' + (FX ? FX.wires({ seed: 23, lanes: 14 }) +
+        '<div class="fo-login__art"><div class="fo-login__brain">' + FX.brain('d') + '</div><h2>Your business, thinking in real time.</h2>' +
+        '<p>Market prices, Google searches, news and every booking flow into one brain that tells you the price that sells, night by night.</p>' +
+        '<div class="fo-login__chips"><span>8 booking platforms</span><span>Google searches daily</span><span>Live news</span><span>AP Brain</span></div></div>' : '') +
+      '<form class="fo-login__card" novalidate autocomplete="on">' + (FX ? '<div class="fo-login__mobile-brain">' + FX.brain('m') + '</div>' : '') +
       '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span>FOUNDER OS</span></div></div>' +
       (otp
         ? '<h1>Check your email</h1><p class="sub">We sent a 6-digit code to <b>' + esc(L.to) + '</b>. It expires in 5 minutes.</p>' +
@@ -220,7 +225,7 @@
         .map(function (o) { return '<option value="' + o[0] + '"' + (S.range === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
       '<span id="fo-custom"' + (S.range === 'custom' ? '' : ' hidden') + '><input type="date" id="fo-from" value="' + esc(r.from) + '"> – <input type="date" id="fo-to" value="' + esc(r.to) + '"></span>' +
       '<select id="fo-prop" aria-label="Villa"><option value="all">All villas</option>' + S.data.properties.map(function (p) { return '<option value="' + esc(p.property_id) + '"' + (S.property === p.property_id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
-      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain (AI)">' + icon('idea') + '</button>' : '') +
+      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn fo-brainpill" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain: questions about your business, answered by AI">' + icon('idea') + '<b>Ask AP Brain</b></button>' : '') +
       '<button class="fo-iconbtn" id="fo-bell" aria-label="Notifications">' + icon('bell') + (ex.length ? '<span class="dot">' + (high || ex.length) + '</span>' : '') + '</button>' +
       '<button class="fo-iconbtn" id="fo-theme" aria-label="Light or dark">' + icon('moon') + '</button>' +
       '<div class="fo-profile" id="fo-prof" tabindex="0"><span class="fo-avatar">' + esc(initials) + '</span><span>' + esc((S.user && S.user.name || 'Founder').split(' ')[0]) + '</span></div>' +
