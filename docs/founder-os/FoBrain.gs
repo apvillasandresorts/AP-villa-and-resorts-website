@@ -259,3 +259,11 @@ function foBrainTestGemini() {
     payload: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Say: AP Brain is working.' }] }], generationConfig: { maxOutputTokens: 50 } }) });
   console.log(model + ': HTTP ' + r.getResponseCode() + ' in ' + (Date.now() - t) + ' ms · ' + r.getContentText().replace(/\s+/g, ' ').slice(0, 300));
 }
+/** Editor check of the research step: what the planner wanted to search and what came back (no business data is sent). */
+function foBrainTestResearch() {
+  const q = 'Any new competition or events in Ujjain I should know about?', t = Date.now();
+  const plan = foBrainCall_(FO_BRAIN_PLANNER, [], 'QUESTION: ' + q + '\nToday: ' + foToday_());
+  console.log('planner: ' + (plan.ok ? plan.provider + ' → ' + String(plan.text).slice(0, 400) : 'FAILED ' + plan.error));
+  const r = foBrainResearch_(q, []);
+  console.log('research in ' + (Date.now() - t) + ' ms: ' + JSON.stringify(r).slice(0, 1500));
+}
