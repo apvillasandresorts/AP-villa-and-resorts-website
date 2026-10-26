@@ -40,6 +40,12 @@ var FoDesk = (function () {
     caps: { demand: 0.10, calendar: 0.15, weather: 0.10, compression: 0.12 },
     weights: {},                         // per-signal weight overrides (0 switches a signal off)
     comp: { weights: { size: 30, whole: 15, distance: 20, price: 15, rating: 10, amenities: 10 }, size: 10, min_hotels: 3, swap_margin: 10, swap_weeks: 3,   /* swap_weeks = consecutive daily re-ranks a challenger must win */ max_km: 5, pinned: [], excluded: [] },
+    // "fill" (default, owner rule 26 Oct 2026): the price is read straight off the market's price ladder for the night, at the point where the chance
+    // of selling reaches the target (higher as the night gets close and through the evening), so it can go to ₹2,000 if that is what sells.
+    // "classic": base price × factors. min_net = the lowest net price the owner accepts per property (0 = 35% of the published price).
+    mode: 'fill',
+    fill: { target: { L0: 0.9, L1: 0.82, L2: 0.72, L3: 0.62, L4: 0.55 }, tonight: { S1: 0.9, S2: 0.93, S3: 0.96, S4: 0.98 }, tomorrow: { S1: 0.82, S2: 0.84, S3: 0.87, S4: 0.9 },
+      min_net: { 'rudrangan-suites': 0, 'ap-suite': 0 }, min_pct: 0.35, size_elasticity: 0.6, max_rise: 0.12 },
     alerts: { brief: true, rec_move: 0.10, market_move: 0.10, sellout: 0.6, stale: true, jobs: true, events: true },
   };
   function settings(data) {
@@ -386,6 +392,46 @@ var FoDesk = (function () {
   }
 
   // ------------------------------------------------------------ engine v2 ------------------------------------------------------------
+  // ------------------------------------------------------------ fill mode: the price that sells ------------------------------------------------------------
+  /** Like-for-like factor for a competitor: (our bedrooms ÷ theirs)^elasticity, when both are known (0.6–1.6). */
+  function sizeFactor(data, cfg, propertyId, key) {
+    var mm = memo(data), ck = 'sz:' + propertyId; if (!mm[ck]) { mm[ck] = {}; (data.competitors || []).forEach(function (c) { mm[ck][normName(c.name)] = num(c.bedrooms); }); }
+    var theirs = mm[ck][key], ours = (cfg.group[propertyId] || {}).bedrooms;
+    return theirs > 0 && ours > 0 && theirs !== ours ? clamp(Math.pow(ours / theirs, cfg.fill.size_elasticity), 0.6, 1.6) : 1;
+  }
+  /**
+   * The market's price ladder for one night: every comparable stay still available (guest prices, size-adjusted, cheapest platform),
+   * or, when fewer than 3 were checked, the forecast ladder (each competitor's normal price for this kind of night × calendar × drift).
+   */
+  function ladder(data, cx, date, mk, cfg) {
+    var id = cx.prop.property_id, obs = mk.rows.filter(function (r) { return !r.sold_out && r.price > 0 && !r.hotel; })
+      .map(function (r) { return Math.round(r.price * sizeFactor(data, cfg, id, r.key)); }).sort(function (a, b) { return a - b; });
+    if (obs.length >= 3 && mk.fresh > 0) return { prices: obs, source: 'observed', fresh: mk.fresh, sellout: mk.seen >= 3 ? mk.sellout : null, seen: mk.seen };
+    var mdl = marketModel(data, id, cfg, cx.now), b = isWkend(date) ? 'we' : 'wd', hotels = {}; compSet(data, id).forEach(function (r) { hotels[r.key] = r.hotel === 'yes'; });
+    var ci = calIndex(data, id, date, cx.now), lift = 1 + mdl.k * (ci - 1), lead = Math.max(0, Math.round((t(date) - t(cx.today)) / DAY)), drift = 1 + clamp(mdl.drift * lead, -0.25, 0.25);
+    var fc = Object.keys(mdl.norms).filter(function (k) { return k.split('|')[1] === b && !hotels[k.split('|')[0]]; })
+      .map(function (k) { return Math.round(mdl.norms[k] * lift * drift * sizeFactor(data, cfg, id, k.split('|')[0])); });
+    // nights the bots saw partly: keep the real prices and fill in the rest from the forecast
+    var merged = obs.concat(fc.slice(0, Math.max(0, fc.length - obs.length))).sort(function (a, c) { return a - c; });
+    if (merged.length < 3) return null;
+    var f = forecastSafe(data, id, date), q = f ? f.quality : 'thin';
+    return { prices: merged, source: obs.length ? 'observed + forecast' : 'forecast', fresh: 0.6 * (q === 'good' ? 1 : q === 'fair' ? 0.8 : 0.5), sellout: mk.seen >= 3 ? mk.sellout : f && f.sellout_p, seen: mk.seen, quality: q };
+  }
+  function extended(prices) { return [prices[0] * 0.93].concat(prices, [prices[prices.length - 1] * 1.07]); }
+  /** Guest price at which the chance of selling reaches target, under demand pressure lambda (1 = normal): share of the market priced above us = target^lambda. */
+  function solveFill(prices, target, lambda) { var q = 1 - Math.pow(clamp(target, 0.05, 0.995), lambda); return { price: quant(extended(prices), clamp(q, 0, 1)), q: q }; }
+  /** Chance of selling at a guest price: (share of comparable available stays priced above it)^(1/lambda). */
+  function chanceAt(prices, price, lambda) {
+    var e = extended(prices), n = e.length - 1, i = 0; if (price <= e[0]) return 1; if (price >= e[n]) return 0;
+    while (i < n && e[i + 1] < price) i++;
+    var cdf = (i + (e[i + 1] > e[i] ? (price - e[i]) / (e[i + 1] - e[i]) : 0)) / n;
+    return Math.pow(1 - cdf, 1 / lambda);
+  }
+  function fillTarget(cfg, lead, slot) {
+    if (lead <= 1 && slot) { var tb = lead === 0 ? cfg.fill.tonight : cfg.fill.tomorrow; if (has(tb[slot])) return num(tb[slot]); }
+    var b = lead <= 0 ? 'L0' : lead <= 3 ? 'L1' : lead <= 14 ? 'L2' : lead <= 45 ? 'L3' : 'L4'; return num(cfg.fill.target[b]);
+  }
+  function accuracyOf(data, id) { var mm = memo(data), ck = 'acc:' + id; if (!(ck in mm)) { try { mm[ck] = forecastAccuracy(data, id); } catch (e) { mm[ck] = null; } } return mm[ck]; }
   function ctxFor(data, propertyId) {
     var Ins = I(), ctx = Ins.pricingContext(data, propertyId); if (!ctx) return null;
     var cfg = settings(data), Mx = M();
@@ -490,38 +536,80 @@ var FoDesk = (function () {
       comp = mk.sellout >= cfg.compression.high_sellout ? 0.10 * w : mk.sellout >= cfg.compression.mid_sellout ? 0.05 * w : (mk.sellout <= 0.1 && lead <= 3 && own < 0.3 ? -0.03 * w : 0);
       apply('compression', 'Market compression', 1 + clamp(comp, -cfg.caps.compression, cfg.caps.compression), Math.round(mk.sellout * 100) + '% of the comp set sold out', { source: 'comp set' });
     }
-    // 7. lead-time band
-    var band = Mx.leadBand(lead, cfg.lead_bands); apply('lead', 'Lead time ' + band.label, 1 + num(cfg.lead[band.id]), 'setting for ' + band.label, { source: 'settings' });
+    // 6b. FILL MODE: read the price off the market's ladder at the point where the chance of selling reaches the target
+    var fillInfo = null;
+    if (cfg.mode === 'fill' && !v1.booked && !v1.blocked) {
+      var Lr = ladder(data, cx, date, mk, cfg);
+      if (Lr) {
+        var com = 1 - cfg.market_commission, so0 = (marketModel(data, id, cfg, cx.now).sell || {}).all, P = [];
+        // demand pressure: each factor > 1 means guests are scarcer than rooms (price higher in the ladder), < 1 the opposite
+        if (Lr.sellout != null) P.push(['sellout', 'Market sell-out', clamp(1 + 2 * (Lr.sellout - (so0 != null ? so0 : 0.2)), 0.6, 2.2), Math.round(Lr.sellout * 100) + '% of comparable stays ' + (Lr.source === 'observed' ? 'sold out' : 'expected sold out') + ' (normal ' + Math.round((so0 != null ? so0 : 0.2) * 100) + '%)']);
+        if (Math.abs(calLift) > 0.001) P.push(['calendar', 'Calendar & festivals', clamp(1 + 2 * calLift, 0.7, 1.6), calBasis.join('; ')]);
+        if (Math.abs(demand) > 0.001) P.push(['demand', 'Search, web & news demand', clamp(1 + 3 * demand, 0.7, 1.4), dBasis.join(', ')]);
+        if (wxLift < 0) P.push(['weather', 'Weather', clamp(1 + 2 * wxLift, 0.7, 1), wx.s.note || 'forecast']);
+        if (mo && Math.abs(mo.change) >= 0.03) P.push(['momentum', 'Competitors ' + (mo.change > 0 ? 'raising' : 'cutting') + ' prices', clamp(1 + mo.change, 0.8, 1.25), '₹' + Math.round(mo.from) + ' → ₹' + Math.round(mo.to) + ' since ' + mo.since]);
+        if (rel && rel.index >= 1.1) P.push(['spike', 'Night priced above nearby nights', clamp(rel.index, 1, 1.5), rel.n + ' competitors ' + Math.round((rel.index - 1) * 100) + '% above their usual']);
+        if (ownC.total > 1 && ownC.taken > 0) P.push(['own_sold', 'Our other villas booked', 1 + 0.4 * ownC.taken / ownC.total, ownC.taken + ' of ' + ownC.total + ' villas sold or blocked that night']);
+        P = P.filter(function (x) { return Math.abs(x[2] - 1) >= 0.03; });
+        var lam = 1; P.forEach(function (x) { lam *= x[2]; }); lam = clamp(lam, 0.4, 3);
+        var target = fillTarget(cfg, lead, opts.slot), med = median(Lr.prices), fsteps = [{ key: 'base', label: 'Market median (' + Lr.prices.length + ' comparable stays)', delta: Math.round(med * com), total: true, basis: Lr.source + ' guest prices ₹' + Lr.prices[0] + '–₹' + Lr.prices[Lr.prices.length - 1] + ', net after ' + Math.round(cfg.market_commission * 100) + '% commission' }];
+        var cur = solveFill(Lr.prices, target, 1).price * com, lamC = 1;
+        fsteps.push({ key: 'target', label: 'Sell target ' + Math.round(target * 100) + '% chance', delta: cur - med * com, basis: (lead <= 1 && opts.slot ? 'booking-time ' + opts.slot + ', ' : '') + lead + ' days to the night: priced below ' + Math.round(target * 100) + '% of the open market at normal demand' });
+        P.forEach(function (x) { lamC *= x[2]; var nx = solveFill(Lr.prices, target, clamp(lamC, 0.4, 3)).price * com; fsteps.push({ key: x[0], label: x[1], delta: nx - cur, mult: x[2], basis: x[3], source: 'market' }); cur = nx; });
+        var classic = price; steps = fsteps; price = cur;
+        fillInfo = { ladder: Lr.prices, source: Lr.source, quality: Lr.quality || 'observed', fresh: Lr.fresh, lambda: Math.round(lam * 100) / 100, target: target, pressure: P.map(function (x) { return { key: x[0], label: x[1], mult: Math.round(x[2] * 100) / 100, basis: x[3] }; }), classic_price: Math.round(classic / cfg.round) * cfg.round, median: Math.round(med) };
+      }
+    }
+    // 7. lead-time band (classic mode only: fill mode's sell target already depends on the lead time)
+    var band = Mx.leadBand(lead, cfg.lead_bands); if (!fillInfo) apply('lead', 'Lead time ' + band.label, 1 + num(cfg.lead[band.id]), 'setting for ' + band.label, { source: 'settings' });
     // 8. guardrails: floor/ceiling, max change vs yesterday's recommendation (except hard events)
-    var floor = has(vs.floor) ? num(vs.floor) : cx.base * cfg.floor_pct, mega = v1.factors.some(function (fct) { return fct.key === 'event' && /mega/i.test(fct.basis); });
+    var floor = has(vs.floor) ? num(vs.floor) : fillInfo ? (num(cfg.fill.min_net[id]) > 0 ? num(cfg.fill.min_net[id]) : cx.base * cfg.fill.min_pct) : cx.base * cfg.floor_pct, mega = v1.factors.some(function (fct) { return fct.key === 'event' && /mega/i.test(fct.basis); });
     var ceiling = has(vs.ceiling) ? num(vs.ceiling) : cx.base * (mega ? cfg.mega_ceiling_pct : cfg.ceiling_pct);
     var prev = opts.noPrev ? null : prevRec(data, id, date, cx.today), guarded = price;
     if (prev && num(prev.price) > 0 && !hardEvent) {
-      var lim = num(prev.price) * cfg.max_daily_change, lo = num(prev.price) - lim, hi = num(prev.price) + lim;
-      if (guarded < lo || guarded > hi) { guarded = clamp(guarded, lo, hi); reasons.push('Limited to ±' + Math.round(cfg.max_daily_change * 100) + '% vs yesterday (₹' + num(prev.price) + ')'); }
+      // fill mode: cuts that help sell go through at once; rises are limited (no whiplash for guests who saw yesterday's price)
+      var lim = num(prev.price) * (fillInfo ? cfg.fill.max_rise : cfg.max_daily_change), lo = fillInfo ? -Infinity : num(prev.price) - lim, hi = num(prev.price) + lim;
+      if (guarded < lo || guarded > hi) { guarded = clamp(guarded, lo, hi); reasons.push(fillInfo ? 'Rise limited to +' + Math.round(cfg.fill.max_rise * 100) + '% vs yesterday (₹' + num(prev.price) + ')' : 'Limited to ±' + Math.round(cfg.max_daily_change * 100) + '% vs yesterday (₹' + num(prev.price) + ')'); }
     }
     guarded = clamp(guarded, floor, ceiling);
     if (Math.abs(guarded - price) > 0.5) { steps.push({ key: 'guardrails', label: guarded > price ? 'Floor / limit' : 'Ceiling / limit', delta: guarded - price, basis: 'floor ₹' + Math.round(floor) + ', ceiling ₹' + Math.round(ceiling) }); price = guarded; }
-    var night = Math.round(price / cfg.round) * cfg.round;
+    var night = fillInfo ? Math.max(Math.ceil(floor / cfg.round) * cfg.round, Math.floor(price / cfg.round) * cfg.round) : Math.round(price / cfg.round) * cfg.round;   // fill: round down so the chance never drops below the target
     // 9. confidence 0–100: coverage and freshness of weighted signals, comp sample, own history
     var ext = inputs.filter(function (x) { return BY_ID[x.id] && BY_ID[x.id].kind !== 'own'; }), wAll = 0, wLive = 0;
     ext.forEach(function (x) { var w = has(x.weight) ? x.weight : weightOf(cfg, x.id); wAll += w; wLive += w * (x.fresh || 0); });
     var confidence = Math.round(clamp(30 + 35 * (wAll ? wLive / wAll : 0) + 20 * Math.min(1, mk.n / 6) + 15 * (cfg.use_own_history ? Math.min(1, (cx.v1.realisedNights || 0) / 30) : Math.min(1, mk.seen / 6)), 0, 100));
+    if (fillInfo) {
+      // fill-mode confidence: how deep and fresh the ladder is, how well the market forecast has matched what the bots later saw,
+      // how much the market agrees on price, whether availability was seen, and how many demand signals are live
+      var Lp = fillInfo.ladder, iqr = (quant(Lp, 0.75) - quant(Lp, 0.25)) / (median(Lp) || 1), acc = accuracyOf(data, id);
+      var depth = fillInfo.source === 'observed' ? Math.min(1, Lp.length / 8) : 0.55 * Math.min(1, Lp.length / 8) * (fillInfo.quality === 'good' ? 1 : fillInfo.quality === 'fair' ? 0.8 : 0.5);
+      var accS = acc && acc.nights >= 5 && acc.mape != null ? clamp(1 - acc.mape / 0.3, 0, 1) : 0.5;
+      fillInfo.confidence_parts = { depth: Math.round(depth * 100), freshness: Math.round(fillInfo.fresh * 100), accuracy: Math.round(accS * 100), agreement: Math.round(clamp(1 - iqr, 0, 1) * 100), availability: Math.round(Math.min(1, (mk.seen || 0) / 6) * 100), signals: Math.round((wAll ? wLive / wAll : 0) * 100), accuracy_nights: acc ? acc.nights : 0, mape: acc && acc.mape != null ? Math.round(acc.mape * 1000) / 10 : null };
+      confidence = Math.round(clamp(100 * (0.32 * depth + 0.16 * fillInfo.fresh + 0.16 * accS + 0.12 * clamp(1 - iqr, 0, 1) + 0.12 * Math.min(1, (mk.seen || 0) / 6) + 0.12 * (wAll ? wLive / wAll : 0)), 0, 100));
+    }
     var missing = ext.filter(function (x) { return !x.fresh; }).map(function (x) { return BY_ID[x.id].label; });
-    if (confidence < 50) reasons.push('Low confidence: ' + (missing.length ? 'missing ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' and ' + (missing.length - 3) + ' more' : '') : 'little own history'));
+    if (confidence < 50 && fillInfo) reasons.push('Low confidence: ' + (fillInfo.source === 'observed' ? 'only ' + fillInfo.ladder.length + ' comparable prices checked for this night' : 'no prices checked for this night yet (forecast ladder)'));
+    else if (confidence < 50) reasons.push('Low confidence: ' + (missing.length ? 'missing ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' and ' + (missing.length - 3) + ' more' : '') : 'little own history'));
     var spread = confidence >= 75 ? 0.06 : confidence >= 50 ? 0.10 : 0.16;
     // 10. booking-time slot ladder (tonight and tomorrow, unsold)
     var high = (mk.sellout != null && mk.sellout >= cfg.compression.mid_sellout) || own >= cfg.compression.low_own, slotTable = null, slotNow = null;
     if (lead <= 1 && !v1.booked && !v1.blocked) {
       var tbl = high ? cfg.slots.high : lead === 0 ? cfg.slots.tonight : cfg.slots.tomorrow;
-      slotTable = Mx.SLOTS.map(function (s) { var p = Math.round(clamp(night * (1 + num(tbl[s[0]])), floor, ceiling) / cfg.round) * cfg.round; return { id: s[0], from: s[1], to: s[2], label: s[3], price: p, step: num(tbl[s[0]]) }; });
+      slotTable = Mx.SLOTS.map(function (s) {
+        // fill mode: the sell target climbs through the day, so the price steps down towards the evening (unless the market is selling out)
+        var p = fillInfo ? Math.max(Math.ceil(floor / cfg.round) * cfg.round, Math.floor(clamp(solveFill(fillInfo.ladder, fillTarget(cfg, lead, s[0]), fillInfo.lambda).price * (1 - cfg.market_commission), floor, ceiling) / cfg.round) * cfg.round)
+          : Math.round(clamp(night * (1 + num(tbl[s[0]])), floor, ceiling) / cfg.round) * cfg.round;
+        return { id: s[0], from: s[1], to: s[2], label: s[3], price: p, step: night ? p / night - 1 : 0 };
+      });
       if (opts.slot) slotNow = slotTable.filter(function (s) { return s.id === opts.slot; })[0];
     }
     var net = slotNow ? slotNow.price : night;
     return { date: date, property: id, lead: lead, lead_band: band.id, price: net, night_price: night, low: Math.round(net * (1 - spread) / cfg.round) * cfg.round, high: Math.round(net * (1 + spread) / cfg.round) * cfg.round,
       confidence: confidence, steps: steps, inputs: inputs, reasons: reasons, market: { forecast: forecastSafe(data, id, date), n: mk.n, seen: mk.seen, min: mk.min, p25: mk.p25, median: mk.median, p75: mk.p75, max: mk.max, sellout: mk.sellout, hotel_median: mk.hotel_median, latest: mk.latest, rows: mk.rows, estimate: est, momentum: mo, spike: !!spike, relative: rel, position: position(mk, channels(net, cfg).direct.price) },
       channels: channels(net, cfg), slots: slotTable, slot: slotNow ? slotNow.id : null, compression: high ? 'high' : 'low', booked: v1.booked, blocked: v1.blocked, event: eventPresent, hard_event: hardEvent, floor: Math.round(floor), ceiling: Math.round(ceiling),
-      demand_index: Math.round((1 + demand + calLift) * 100) / 100, prev: prev ? num(prev.price) : null };
+      demand_index: Math.round((1 + demand + calLift) * 100) / 100, prev: prev ? num(prev.price) : null, mode: fillInfo ? 'fill' : 'classic',
+      fill: fillInfo ? Object.assign({}, fillInfo, { chance: Math.round(chanceAt(fillInfo.ladder, net / (1 - cfg.market_commission), fillInfo.lambda) * 100),
+        ladder_prices: [0.5, 0.7, 0.8, 0.9, 0.95].map(function (p) { return { chance: Math.round(p * 100), price: Math.max(Math.ceil(floor / cfg.round) * cfg.round, Math.floor(clamp(solveFill(fillInfo.ladder, p, fillInfo.lambda).price * (1 - cfg.market_commission), floor, ceiling) / cfg.round) * cfg.round) }; }) }) : null };
   }
   /** Prices to enter per channel for a net target, plus what AP Villas keeps on each. Direct is the guest's best deal. */
   function channels(net, cfg) {
@@ -600,7 +688,7 @@ var FoDesk = (function () {
   }
 
   return { DEFAULTS: DEFAULTS, SIGNALS: SIGNALS, settings: settings, freshness: freshness, signalAt: signalAt, health: health,
-    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, forecast: forecast, forecastAccuracy: forecastAccuracy, marketModel: marketModel, marketAnalytics: marketAnalytics, calIndex: calIndex, similarity: similarity, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
+    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, forecast: forecast, forecastAccuracy: forecastAccuracy, marketModel: marketModel, marketAnalytics: marketAnalytics, calIndex: calIndex, similarity: similarity, solveFill: solveFill, chanceAt: chanceAt, ladder: ladder, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
     ctxFor: ctxFor, ownCompression: ownCompression, quote: quote, channels: channels, today: today, calendar: calendar, toStore: toStore, alerts: alerts, backtest: backtest, learning: learning, slotNowId: slotNowId };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoDesk;

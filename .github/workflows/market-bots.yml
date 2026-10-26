@@ -1,4 +1,4 @@
-# Competitor price bots (Live Pricing Desk). Runs in GitHub's cloud twice a day; nothing runs on the owner's Mac. No Claude, no paid services.
+# Competitor price bots (Live Pricing Desk). Runs in GitHub's cloud twice a day plus 2-hourly sweeps (every night 2–45 days out checked 3 times a week); nothing runs on the owner's Mac. No Claude, no paid services.
 # One bot per platform (Airbnb, Booking.com, Agoda, OYO, Cleartrip, EaseMyTrip, Trip.com, StayVista) on robots.txt-allowed public pages only,
 # plus Google Hotels via SerpApi (free plan) for MakeMyTrip / Goibibo / Expedia, and Apify (free plan) for Airbnb discovery and Booking.com fallback.
 # Bots identify themselves (APVillasPriceBot), never log in, never solve CAPTCHAs, and stop a platform at the first challenge or 403/429 ("blocked" in Signal health).
@@ -24,7 +24,7 @@ on:
   schedule:
     - cron: "40 2 * * *"    # 08:10 IST: tonight, tomorrow, this Saturday, next high-demand night
     - cron: "40 12 * * *"   # 18:10 IST: coming Friday, next two Saturdays, high-demand nights
-    - cron: "10 1-17/2 * * *"   # every 2 hours 06:40–22:40 IST: retry only the bots that failed or came back empty today
+    - cron: "10 1-17/2 * * *"   # every 2 hours 06:40–22:40 IST: retry bots that failed today, otherwise sweep nights due for their thrice-weekly check
 
 concurrency:
   group: market-bots
@@ -36,7 +36,7 @@ permissions:
 jobs:
   bots:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

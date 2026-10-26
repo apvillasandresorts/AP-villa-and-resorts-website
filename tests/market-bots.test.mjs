@@ -64,9 +64,16 @@ test('robots.txt: Airbnb listing pages allowed, search and listing sub-pages dis
 
 test('night planning: tonight/tomorrow/Saturday in the morning, later weekends and high-demand nights in the evening', () => {
   const am = planDates('2026-10-25', 'am', ['2026-11-08', '2026-11-23']);
-  assert.deepEqual(am, ['2026-10-25', '2026-10-26', '2026-10-31', '2026-11-08']);
+  assert.deepEqual(am.slice(0, 4), ['2026-10-25', '2026-10-26', '2026-10-31', '2026-11-08']);
   const pm = planDates('2026-10-25', 'pm', ['2026-11-08', '2026-11-23']);
-  assert.deepEqual(pm, ['2026-10-30', '2026-11-07', '2026-11-14', '2026-11-23']);
+  assert.deepEqual(pm.slice(0, 4), ['2026-10-30', '2026-11-07', '2026-11-14', '2026-11-23']);
+  // every night 2–45 days out is checked at least 3 times in any 7 days (morning + evening + nine 2-hourly sweeps)
+  const count = {}; const start = '2026-10-25';
+  for (let i = 0; i < 7; i++) { const d = new Date(Date.parse(start + 'T00:00:00Z') + i * 864e5).toISOString().slice(0, 10);
+    const all = [...planDates(d, 'am', []), ...planDates(d, 'pm', [])]; for (let w = 0; w < 9; w++) all.push(...planDates(d, 'sweep', [], w));
+    new Set(all).forEach(x => { count[x] = (count[x] || 0) + 1; }); }
+  for (let k = 8; k <= 45; k++) { const n = new Date(Date.parse(start + 'T00:00:00Z') + k * 864e5).toISOString().slice(0, 10); assert.ok(count[n] >= 3, n + ' checked ' + (count[n] || 0) + '× in a week'); }
+  assert.ok(planDates('2026-10-25', 'am', []).length <= 7 && planDates('2026-10-25', 'sweep', [], 0).length === 3 && planDates('2026-10-25', 'sweep', [], 8).length === 0);
 });
 
 test('bedrooms from listing titles', () => {

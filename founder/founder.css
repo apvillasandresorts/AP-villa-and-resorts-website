@@ -336,3 +336,11 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 :root[data-theme="dark"] .fo-hello { background: radial-gradient(circle at 92% 0%, rgba(212,164,67,.16), transparent 45%), linear-gradient(135deg, #12201B, var(--card)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fo-hello { background: radial-gradient(circle at 92% 0%, rgba(212,164,67,.16), transparent 45%), linear-gradient(135deg, #12201B, var(--card)); } }
 @media (prefers-reduced-motion: reduce) { .fo-enter > *, .fo-enter .fo-grid--kpi > .fo-card { animation: none !important; } .fo-card, .fo-nav a, .btn { transition: none; } }
+
+/* fill mode: chance to sell and the price ladder */
+.dk-fill { margin: 8px 0 4px; }
+.dk-fill__bar { height: 6px; border-radius: 99px; background: color-mix(in srgb, var(--line) 70%, transparent); overflow: hidden; }
+.dk-fill__bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #C9A227, #2F7D4F); transition: width .6s ease; }
+.dk-ladder { display: flex; flex-wrap: wrap; gap: 6px; }
+.dk-ladder span { font-size: 12px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); white-space: nowrap; }
+.dk-ladder span.is-cur { border-color: #2F7D4F; background: color-mix(in srgb, #2F7D4F 12%, transparent); }

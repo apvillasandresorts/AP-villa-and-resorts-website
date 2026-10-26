@@ -28,7 +28,10 @@ function data(extra = {}) {
   const competitors = comps.map(([name, type, bedrooms, distance_km, review_themes, source_url], i) => ({ competitor_id: 'C' + i, name, type, bedrooms, distance_km, review_themes, source_url, sleeps: type === 'hotel' ? '' : bedrooms * 2, amenities: i % 2 ? 'kitchen, parking' : '', notes: name.includes('Dorm') ? 'dorm beds' : '' }));
   const market_rates = [];
   comps.forEach(([name, type, bedrooms, , , source_url, price]) => { for (let i = 0; i < 20; i++) market_rates.push({ competitor: name, observed_at: addD(TODAY, -1), stay_date: addD(TODAY, i), nights: 1, bedrooms: type === 'hotel' ? 2 : bedrooms, price_per_night: price, source_url, availability: '' }); });
-  return Object.assign({ today: TODAY, serverTime: TODAY + 'T09:00:00+05:30', properties: props, channels: [], bookings: [], payments: [], blocks: [], events: [], settings: {}, competitors, market_rates, signals: [], recommendations: [], price_decisions: [], comp_set: [] }, extra);
+  const d = Object.assign({ today: TODAY, serverTime: TODAY + 'T09:00:00+05:30', properties: props, channels: [], bookings: [], payments: [], blocks: [], events: [], settings: {}, competitors, market_rates, signals: [], recommendations: [], price_decisions: [], comp_set: [] }, extra);
+  // the older engine tests check the base-price method; fill-mode tests pass mode: 'fill'
+  const desk = JSON.parse(d.settings.desk || '{}'); if (!desk.mode) desk.mode = 'classic'; d.settings = Object.assign({}, d.settings, { desk: JSON.stringify(desk) });
+  return d;
 }
 
 test('freshness: live within the SLA, fading to zero at 2× SLA, missing without a timestamp', () => {
@@ -259,4 +262,40 @@ test('market analytics: segments, platforms, weekday and lead profiles, leaderbo
   assert.ok(a.platforms.length >= 2 && a.platforms.every(p => p.cheapest_share >= 0 && p.cheapest_share <= 1));
   assert.equal(a.weekdays.length, 7); assert.equal(a.lead.length, 4);
   assert.ok(a.leaderboard[0].nights >= 1 && Array.isArray(a.leaderboard[0].platforms));
+});
+
+// ------------------------------------------------------------ fill mode (default since 26 Oct 2026): the price that sells ------------------------------------------------------------
+const fillData = (desk = {}, extra = {}) => data(Object.assign({ settings: { desk: JSON.stringify(Object.assign({ mode: 'fill' }, desk)) } }, extra));
+test('fill: the price comes from the market ladder, not the base: an unsold AP Suite can go well below its ₹4,200 published price', () => {
+  const X = fillData(), cx = D.ctxFor(X, 'ap-suite'), q = D.quote(X, cx, addD(TODAY, 5));
+  assert.equal(q.mode, 'fill'); assert.equal(q.fill.source, 'observed');
+  assert.ok(q.price < 4200 * 0.75, 'below the old 75% floor: ' + q.price);
+  assert.ok(q.price >= q.floor && q.floor === Math.round(4200 * 0.35));
+  assert.ok(q.fill.chance >= Math.round(q.fill.target * 100), 'chance ' + q.fill.chance + ' ≥ target ' + q.fill.target);
+  assert.equal(q.steps[0].key, 'base'); assert.match(q.steps[0].label, /Market median/);
+  const sum = q.steps.reduce((a, s) => a + s.delta, 0); assert.ok(Math.abs(sum - q.price) < 100, 'waterfall ≈ price before rounding');
+  const L = q.fill.ladder_prices; assert.ok(L.every((x, i) => !i || x.price <= L[i - 1].price), 'higher chance → lower price');
+});
+test('fill: closer nights and later in the evening need a higher chance, so the price steps down to fill tonight', () => {
+  const X = fillData(), cx = D.ctxFor(X, 'ap-suite');
+  const far = D.quote(X, cx, addD(TODAY, 10)).price, tomorrow = D.quote(X, cx, addD(TODAY, 1), { slot: 'S2' }).price, tonight = D.quote(X, cx, TODAY, { slot: 'S2' });
+  assert.ok(far > tomorrow && tomorrow >= tonight.price, [far, tomorrow, tonight.price].join(' > '));
+  const s = tonight.slots.map(x => x.price); assert.ok(s[3] <= s[0], 'late evening ≤ morning: ' + s.join('/'));
+});
+test('fill: half the market sold out → priced higher in the ladder; owner minimum respected; rises limited, cuts not', () => {
+  const X = fillData(), night = addD(TODAY, 6), base = D.quote(X, D.ctxFor(X, 'ap-suite'), night).price;
+  const sold = fillData({}, { market_rates: X.market_rates.map(r => r.stay_date === night && /Kanha|RamRaj|Spacious|Johari|Avanti/.test(r.competitor) ? Object.assign({}, r, { availability: 'sold out', price_per_night: '' }) : r) });
+  const qs = D.quote(sold, D.ctxFor(sold, 'ap-suite'), night);
+  assert.ok(qs.price > base, qs.price + ' > ' + base); assert.ok(qs.fill.pressure.some(p => p.key === 'sellout' && p.mult > 1));
+  const hi = fillData({ fill: { min_net: { 'ap-suite': 3900 } } }); assert.equal(D.quote(hi, D.ctxFor(hi, 'ap-suite'), night).price, 3900);
+  const plain = addD(TODAY, 3), recs = [{ property: 'ap-suite', for_date: plain, price: 1500, computed_at: addD(TODAY, -1) + 'T10:00:00Z' }, { property: 'ap-suite', for_date: addD(TODAY, 7), price: 9000, computed_at: addD(TODAY, -1) + 'T10:00:00Z' }];
+  const R = fillData({}, { recommendations: recs }), cR = D.ctxFor(R, 'ap-suite');
+  assert.equal(D.quote(R, cR, plain).price, 1600, 'rise limited to +12% of ₹1,500 = ₹1,680, rounded down');
+  assert.ok(D.quote(R, cR, addD(TODAY, 7)).price < 9000 * 0.88, 'a cut goes through at once');
+});
+test('fill: confidence is higher on a night the bots checked than on a forecast-only night, and says why', () => {
+  const X = fillData(), cx = D.ctxFor(X, 'ap-suite');
+  const seen = D.quote(X, cx, addD(TODAY, 5)), unseen = D.quote(X, cx, addD(TODAY, 40));
+  assert.equal(unseen.fill.source, 'forecast'); assert.ok(seen.confidence >= 75 && seen.confidence > unseen.confidence + 20, seen.confidence + ' vs ' + unseen.confidence);
+  assert.ok(seen.fill.confidence_parts.accuracy_nights >= 5); assert.ok(unseen.reasons.some(r => /forecast ladder/.test(r)));
 });

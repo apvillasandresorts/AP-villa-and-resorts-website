@@ -40,7 +40,8 @@ export function retryList(runs, nowMs) {
   });
 }
 const now = Date.now(), today = istDate(now), hourIst = new Date(now + 330 * 60000).getUTCHours();
-const SLOT = arg('slot') || (hourIst < 14 ? 'am' : 'pm');   // 'retry' = only the bots that failed or came back empty today
+const SLOT = arg('slot') || (hourIst < 14 ? 'am' : 'pm');
+const SWEEP = Number(arg('sweep') || Math.max(0, Math.floor((new Date(now).getUTCHours() - 1) / 2)));   // 2-hourly runs at 01, 03 … 17 UTC → sweeps 0–8   // 'retry' = only the bots that failed or came back empty today
 
 /** Founder OS call with retries: Google sometimes answers with an HTML error page, a lock timeout or a network error. 5 tries, 5 s → 2 min. */
 async function call(action, body) {
@@ -61,21 +62,32 @@ async function call(action, body) {
 const nextDow = (d, dow) => { for (let i = 0; i < 8; i++) { const x = addDays(d, i); if (new Date(x + 'T00:00:00Z').getUTCDay() === dow && i > 0) return x; } return addDays(d, 7); };
 
 /** Nights to check this run. AM: tonight, tomorrow, the coming Saturday, the next high-demand night. PM: the coming Friday, Saturday +7, +14, the next two high-demand nights. */
-export function planDates(today, slot, hot) {
+export function planDates(today, slot, hot, sweep) {
   const sat = nextDow(today, 6), fri = nextDow(today, 5), upcoming = (hot || []).filter(d => d > addDays(today, 1));
-  const list = slot === 'am' ? [today, addDays(today, 1), sat, upcoming[0]] : [fri, addDays(sat, 7), addDays(sat, 14), upcoming[1], upcoming[2]];
-  return [...new Set(list.filter(Boolean))].slice(0, 4);
+  const list = slot === 'pm' ? [fri, addDays(sat, 7), addDays(sat, 14), upcoming[1], upcoming[2]] : [today, addDays(today, 1), sat, upcoming[0]];
+  const fixed = slot === 'sweep' ? [] : [...new Set(list.filter(Boolean))].slice(0, 4);
+  // owner rule 26 Oct 2026: every night 2–45 days out gets a real market check 3 times a week. A night is due when its distance from
+  // today is ≡ 0, 3 or 5 (mod 7), about 19 nights a day: the morning run takes 3, the evening run 3, and the 2-hourly sweeps 3 each.
+  const due = [];
+  for (let k = 2; k <= 45; k++) if ([0, 3, 5].indexOf(k % 7) >= 0) due.push(addDays(today, k));
+  const part = slot === 'am' ? due.slice(0, 3) : slot === 'pm' ? due.slice(3, 6) : slot === 'sweep' ? due.slice(6 + 3 * (sweep || 0), 9 + 3 * (sweep || 0)) : [];
+  return [...new Set(fixed.concat(part))];
 }
 const normName = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\b(the|ujjain|near|mahakal|mahakaleshwar|temple|by|stay|stays|hotel)\b/g, ' ').replace(/\s+/g, ' ').trim();
 
 async function main() {
   if (!KEY && !DRY) { console.log('::warning::FOUNDER_OS_KEY not set. Nothing to do.'); return; }
   const cs = KEY ? await call('f.m.compset', {}) : { listings: [], known: [], hot_dates: [] };   // --dry still reads the comp set; it only skips sending
-  const dates = planDates(today, SLOT === 'retry' ? 'am' : SLOT, cs.hot_dates);
+  let dates = planDates(today, SLOT === 'retry' ? 'am' : SLOT, cs.hot_dates, SWEEP);
   if (SLOT === 'retry') {
+    // 2-hourly run: first re-run any bot that failed or came back empty today; otherwise sweep this run's share of the due nights
     const st = await call('f.m.bots.status', {}), need = retryList(st.runs || [], Date.now());
-    if (!need.length) { console.log('Retry: every bot has data today. Nothing to do.'); return; }
-    console.log('Retry: ' + need.join(', ')); ONLY.splice(0, ONLY.length, ...need);
+    if (need.length) { console.log('Retry: ' + need.join(', ')); ONLY.splice(0, ONLY.length, ...need); }
+    else {
+      dates = planDates(today, 'sweep', cs.hot_dates, SWEEP);
+      if (!dates.length) { console.log('Every bot has data today and no nights are due in this sweep. Nothing to do.'); return; }
+      console.log('Sweep ' + SWEEP + ': nights due for their thrice-weekly check'); if (!ONLY.length) ONLY.push(...BOTS.map(b => b.id));   // page bots only: the free API quotas stay for the main runs
+    }
   }
   console.log(`Run ${today} ${SLOT}: nights ${dates.join(', ')}; ${cs.listings.length} comp-set listings, ${cs.known.length} known competitors.`);
   const known = cs.known.map(k => Object.assign({}, k, { urls: new Set(k.listing_urls || []) })), byUrl = {}, byName = {};
@@ -101,7 +113,7 @@ async function main() {
   // ---------------- page bots ----------------
   for (const bot of BOTS) {
     if (ONLY.length && ONLY.indexOf(bot.id) < 0) continue;
-    const s = session(bot.platform, { budget: bot.id === 'airbnb' ? 48 : 36 }), st = { bot: bot.id, platform: bot.platform, mode: 'pages', prices: 0, sold_out: 0, discovered: 0 };
+    const s = session(bot.platform, { budget: bot.id === 'airbnb' ? 80 : 56 }), st = { bot: bot.id, platform: bot.platform, mode: 'pages', prices: 0, sold_out: 0, discovered: 0 };
     try {
       if (bot.discover) {
         const found = await bot.discover(s, dates[0]);
