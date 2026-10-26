@@ -432,3 +432,12 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .fo-brain__msg ul, .fo-brain__msg ol { margin: 4px 0 8px; padding-left: 20px; } .fo-brain__msg li { margin: 2px 0; }
 .fo-brain__h { display: block; margin: 8px 0 4px; color: var(--em-3); } .fo-brain__msg code { font-size: 12.5px; background: var(--em-soft); padding: 0 4px; border-radius: 4px; }
 .fo-brain__src { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; } .fo-brain__src b { font-size: 12px; color: var(--muted); }
+
+/* CRM leads board */
+.crm-board { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.crm-col { background: var(--em-soft); border-radius: 12px; padding: 10px; min-height: 120px; }
+.crm-col h4 { margin: 2px 4px 10px; font-size: 13px; } .crm-col h4 small { color: var(--muted); font-weight: 500; }
+.crm-lead { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; cursor: pointer; font: inherit; color: var(--ink); }
+.crm-lead:hover { border-color: var(--gold-2); } .crm-lead span, .crm-lead small { font-size: 12px; color: var(--muted); } .crm-lead em { font-size: 12px; color: var(--em-3); font-style: normal; }
+.crm-lead.is-late { border-color: #B4402A; } .crm-lead.is-late em { color: #B4402A; font-weight: 700; }
+@media (max-width: 900px) { .crm-board { grid-template-columns: repeat(5, 220px); } }

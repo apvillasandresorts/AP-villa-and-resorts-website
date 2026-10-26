@@ -283,10 +283,16 @@
 
   // ---------- competitor forecast ----------
   function deskForecast(body) {
+    try { deskForecastInner(body); }
+    catch (e) { body.innerHTML = '<div class="fo-card"><h3>The forecast could not be drawn</h3><p>' + esc(e && e.message || e) + '</p><p class="fo-hint">' + esc(K.forecastWhy(data(), deskPid())) + '</p></div>'; if (window.console) console.error(e); }
+  }
+  function deskForecastInner(body) {
     var D = data(), pid = deskPid(), cal = deskCal(pid), cfg = cfgDesk(), mdl = K.marketModel(D, pid, cfg, Date.parse(D.serverTime)), acc = K.forecastAccuracy(D, pid);
     var rows = cal ? cal.rows : [], fc = rows.map(function (q) { return q.market.forecast; });
     var hot = rows.filter(function (q) { return q.market.forecast; }).slice().sort(function (a, b) { return (b.market.forecast.sellout_p || 0) - (a.market.forecast.sellout_p || 0) || b.market.forecast.median - a.market.forecast.median; }).slice(0, 12);
-    body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">What competitors are likely to charge, and the chance they sell out, for each of the next 90 nights. Learned from every price the bots have seen.</span></div>' +
+    var nFc = fc.filter(Boolean).length, mwN = fc.filter(function (f) { return f && f.scope === 'market-wide'; }).length, ferr = K.forecastError(D);
+    var note = ferr ? '<div class="fo-note" style="border-color:#B4402A;margin-bottom:12px"><b>Forecast error:</b> ' + esc(ferr) + '</div>' : !nFc ? '<div class="fo-note" style="margin-bottom:12px"><b>No forecast yet.</b> ' + esc(K.forecastWhy(D, pid)) + '</div>' : mwN ? '<div class="fo-note" style="margin-bottom:12px">' + mwN + ' of ' + rows.length + ' nights use the <b>market-wide</b> forecast (every comparable home the bots know, size-adjusted) because the comp set has fewer than 3 competitors with prices yet. ' + esc(K.forecastWhy(D, pid)) + '</div>' : '';
+    body.innerHTML = '<div class="fo-toolbar">Villa ' + propSel('dk-p') + '<span class="fo-hint">What competitors are likely to charge, and the chance they sell out, for each of the next 90 nights. Learned from every price the bots have seen.</span></div>' + note +
       '<div class="fo-grid fo-grid--kpi" style="margin-bottom:14px">' + [['Competitors modelled', String(mdl.competitors)], ['Nights seen', mdl.nights], ['Festival reaction', mdl.pairs >= 3 ? Math.round(mdl.k * 100) + '% of calendar strength' : 'default 60% (learning)'], ['Price drift as dates near', mdl.slopes >= 5 ? (mdl.drift >= 0 ? '+' : '') + (mdl.drift * 100).toFixed(2) + '% a day' : 'learning'], ['Forecast accuracy', acc.mape != null ? Math.round((1 - acc.mape) * 100) + '% (' + acc.nights + ' nights tested)' : 'needs more nights']].map(function (k) { return '<div class="fo-card fo-kpi"><div class="fo-kpi__label">' + esc(k[0]) + '</div><div class="fo-kpi__value" style="font-size:18px">' + esc(k[1]) + '</div></div>'; }).join('') + '</div>' +
       card('Competitor prices, next 90 nights', 'forecast median and range · bars = prices actually seen · blue line = your recommended net price', '<div class="fo-chartbox" id="fc-c"></div>') +
       '<div class="fo-grid fo-grid--2" style="margin-top:14px">' + card('Chance competitors sell out', 'by night', '<div class="fo-chartbox" id="fc-s"></div>') +

@@ -245,7 +245,9 @@ var FoDesk = (function () {
   }
   /** Where a price sits among the comp set's available prices for the night: 0 = cheapest, 100 = dearest (guest prices vs our direct price). */
   function position(mk, net) { var ps = mk.rows.filter(function (r) { return !r.sold_out && r.price > 0 && !r.hotel; }).map(function (r) { return r.price; }); if (ps.length < 3) return null; return Math.round(ps.filter(function (p) { return p < net; }).length / ps.length * 100); }
-  function forecastSafe(data, id, date) { try { return forecast(data, id, date); } catch (e) { return null; } }
+  // never silently empty: an error is kept on the data object, shown in the Forecast tab and logged in the browser console
+  function forecastSafe(data, id, date) { try { return forecast(data, id, date); } catch (e) { var mm = memo(data); if (!mm.fcErr) { mm.fcErr = String(e && e.message || e); if (typeof console !== 'undefined') console.error('Forecast error', e); } return null; } }
+  function forecastError(data) { return memo(data).fcErr || null; }
   function quant(sorted, q) { if (!sorted.length) return null; var i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo); }
   function platformOf(u) { u = String(u || ''); return /airbnb/.test(u) ? 'Airbnb' : /booking\.com/.test(u) ? 'Booking.com' : /agoda/.test(u) ? 'Agoda' : /makemytrip/.test(u) ? 'MakeMyTrip' : /goibibo/.test(u) ? 'Goibibo' : /oyorooms/.test(u) ? 'OYO' : /cleartrip/.test(u) ? 'Cleartrip' : /trip\.com/.test(u) ? 'Trip.com' : /easemytrip/.test(u) ? 'EaseMyTrip' : /owner_check/.test(u) ? 'Rate check' : 'Other'; }
   /**
@@ -334,14 +336,34 @@ var FoDesk = (function () {
   function forecast(data, propertyId, date, opts) {
     opts = opts || {};
     var cfg = settings(data), now = nowMs(data), today = data.today || iso(now), mdl = marketModel(data, propertyId, cfg, now, opts.exclude), b = isWkend(date) ? 'we' : 'wd';
-    var pool = mdl.base[b].length >= 3 ? mdl.base[b] : mdl.base.wd.concat(mdl.base.we).sort(function (a, c) { return a - c; });
+    var pool = mdl.base[b].length >= 3 ? mdl.base[b] : mdl.base.wd.concat(mdl.base.we).sort(function (a, c) { return a - c; }), scope = 'comp set';
+    // fewer than 3 comp-set competitors with prices: use every comparable home the bots know (size-adjusted), labelled market-wide
+    if (pool.length < 3) { var mw = marketWide(data, propertyId, cfg, b); if (mw.length >= 3) { pool = mw; scope = 'market-wide'; } }
     if (pool.length < 3) return null;
     var ci = calIndex(data, propertyId, date, now), lift = 1 + mdl.k * (ci - 1), lead = Math.max(0, Math.round((t(date) - t(today)) / DAY));
     var med = median(pool) * lift, toStay = clamp(mdl.drift * lead, -0.25, 0.25);
     var sBase = mdl.sell[b] != null ? mdl.sell[b] : mdl.sell.all, sp = sBase == null ? null : clamp(sBase * (1 + 2 * (ci - 1)) * (lead <= 3 ? mdl.sell.near : lead <= 14 ? mdl.sell.mid : mdl.sell.far), 0, 0.95);
     return { date: date, median: Math.round(med), p25: Math.round(quant(pool, 0.25) * lift), p75: Math.round(quant(pool, 0.75) * lift), at_stay: Math.round(med * (1 + toStay)), sellout_p: sp == null ? null : Math.round(sp * 100) / 100,
-      calendar: Math.round(ci * 100) / 100, k: Math.round(mdl.k * 100) / 100, drift_per_day: mdl.drift, competitors: pool.length, nights_seen: mdl.nights,
-      quality: pool.length >= 6 && mdl.nights >= 8 ? 'good' : pool.length >= 3 && mdl.nights >= 3 ? 'fair' : 'thin' };
+      calendar: Math.round(ci * 100) / 100, k: Math.round(mdl.k * 100) / 100, drift_per_day: mdl.drift, competitors: pool.length, nights_seen: mdl.nights, scope: scope,
+      quality: scope === 'market-wide' ? 'fair' : pool.length >= 6 && mdl.nights >= 8 ? 'good' : pool.length >= 3 && mdl.nights >= 3 ? 'fair' : 'thin' };
+  }
+  /** Each known non-hotel competitor's median price for a night type (wd / we), size-adjusted to this property: the market-wide pool. */
+  function marketWide(data, propertyId, cfg, b) {
+    var mm = memo(data), ck = 'mw:' + propertyId + ':' + b; if (mm[ck]) return mm[ck];
+    var comps = {}, by = {}; (data.competitors || []).forEach(function (c) { comps[normName(c.name)] = c; });
+    (data.market_rates || []).forEach(function (r) {
+      var pn = num(r.price_per_night); if (!(pn > 0) || /sold/i.test(r.availability || '') || (isWkend(String(r.stay_date).slice(0, 10)) ? 'we' : 'wd') !== b) return;
+      var k = normName(r.competitor), c = comps[k] || { name: r.competitor }; if (isHotel(c)) return;
+      (by[k] = by[k] || []).push(pn * sizeFactor(data, cfg, propertyId, k));
+    });
+    return (mm[ck] = Object.keys(by).map(function (k) { return median(by[k]); }).filter(function (v) { return v > 0; }).sort(function (x, y) { return x - y; }));
+  }
+  /** Why there is no forecast (for the portal instead of an empty chart). */
+  function forecastWhy(data, propertyId) {
+    try {
+      var cfg = settings(data), mdl = marketModel(data, propertyId, cfg, nowMs(data)), cs = compSet(data, propertyId).length, mw = marketWide(data, propertyId, cfg, 'wd').length;
+      return 'Comp set: ' + cs + ' competitors, ' + mdl.competitors + ' with prices on ' + mdl.nights + ' checked nights; market-wide: ' + mw + ' comparable homes with prices. A forecast needs 3 with prices.';
+    } catch (e) { return 'Forecast error: ' + (e && e.message || e); }
   }
   /** Honest accuracy: forecast each checked night without its own prices and compare with what the bots saw (median absolute % error). */
   function forecastAccuracy(data, propertyId) {
@@ -694,7 +716,7 @@ var FoDesk = (function () {
   }
 
   return { DEFAULTS: DEFAULTS, SIGNALS: SIGNALS, settings: settings, freshness: freshness, signalAt: signalAt, health: health,
-    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, forecast: forecast, forecastAccuracy: forecastAccuracy, marketModel: marketModel, marketAnalytics: marketAnalytics, calIndex: calIndex, similarity: similarity, solveFill: solveFill, chanceAt: chanceAt, ladder: ladder, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
+    normName: normName, platformOf: platformOf, marketEstimate: marketEstimate, momentum: momentum, relativeIndex: relativeIndex, forecast: forecast, forecastAccuracy: forecastAccuracy, marketModel: marketModel, marketAnalytics: marketAnalytics, calIndex: calIndex, similarity: similarity, forecastWhy: forecastWhy, forecastError: forecastError, marketWide: marketWide, solveFill: solveFill, chanceAt: chanceAt, ladder: ladder, candidates: candidates, rerank: rerank, compSet: compSet, marketAt: marketAt,
     ctxFor: ctxFor, ownCompression: ownCompression, quote: quote, channels: channels, today: today, calendar: calendar, toStore: toStore, alerts: alerts, backtest: backtest, learning: learning, slotNowId: slotNowId };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoDesk;

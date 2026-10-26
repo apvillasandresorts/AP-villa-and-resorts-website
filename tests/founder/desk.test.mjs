@@ -308,3 +308,11 @@ test('fill: more Google searches for Ujjain stays than usual push the price up t
   assert.ok(up.fill.pressure.some(x => x.key === 'searches' && x.mult > 1));
   assert.equal(up.inputs.find(x => x.id === 'search_market').status, 'live');
 });
+test('forecast never goes blank: with no comp-set prices it falls back to the market-wide pool (labelled), and explains itself', () => {
+  const X = data(); const stored = [{ property: 'ap-suite', key: 'someone not priced', name: 'Someone', in_set: 'yes', score: 90 }];
+  const Y = Object.assign({}, X, { comp_set: stored });
+  const f = D.forecast(Y, 'ap-suite', addD(TODAY, 30));
+  assert.ok(f, 'a forecast exists'); assert.equal(f.scope, 'market-wide'); assert.ok(f.median > 0 && f.p25 <= f.median && f.median <= f.p75);
+  assert.match(D.forecastWhy(Y, 'ap-suite'), /Comp set: 1 competitors, 0 with prices/);
+  assert.equal(D.forecast(X, 'ap-suite', addD(TODAY, 30)).scope, 'comp set', 'normal case unchanged');
+});

@@ -424,6 +424,8 @@ function foDataBuild_() {
     deleted_records: foRows_('DeletedRecords').slice(-300).map(r => ({ deleted_id: r.deleted_id, deleted_at: r.deleted_at, deleted_by: r.deleted_by, kind: r.kind, record_id: r.record_id, summary: r.summary, reason: r.reason })),
     search_keywords: (() => { const rows = foRows_('SearchKeywords'), d = rows.map(r => String(r.date)).sort(); const keep = d.filter((v, i) => d.indexOf(v) === i).slice(-14); return rows.filter(r => keep.indexOf(String(r.date)) >= 0).map(strip); })(),
     search_extra: (() => { const rows = foRows_('SearchExtra'), last = rows.map(r => String(r.date)).sort().pop(); return rows.filter(r => String(r.date) === last).map(strip); })(),
+    employees: foRows_('Employees').map(strip), salary_payments: foRows_('SalaryPayments').slice(-1500).map(strip), employee_reviews: foRows_('EmployeeReviews').slice(-800).map(strip),
+    crm_messages: foRows_('CrmMessages').slice(-1500).map(strip), crm_leads: foRows_('CrmLeads').map(strip), crm_tasks: foRows_('CrmTasks').map(strip), crm_templates: foRows_('CrmTemplates').map(strip),
     news: foRows_('News').filter(r => String(r.fetched_at) >= (foDate_(new Date(Date.now() - 30 * 86400000)) || '')).slice(-400).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }
