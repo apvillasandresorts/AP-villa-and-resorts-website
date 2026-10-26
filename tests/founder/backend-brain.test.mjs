@@ -184,3 +184,49 @@ test('free allowance used up (429 tokens per day) on the big model → the small
   assert.equal(b.ok, true, b.error); assert.equal(b.provider, 'Cerebras');
   const c = env.net.calls.filter(x => /cerebras/.test(x.url)).pop(); assert.equal(c.headers.Authorization, 'Bearer csk_test');
 });
+
+test('actions: a pasted voucher becomes a booking draft, AP Brain asks for what is missing, then the draft saves through the normal booking route', async () => {
+  const sent = [];
+  const { env, token } = await ready(r => {
+    const body = JSON.parse(r.payload || '{}'); sent.push({ url: r.url, body });
+    const msg = body.messages ? body.messages[body.messages.length - 1].content : '';
+    if (/groq/.test(r.url)) {
+      if (/MESSAGE:\n.*7,800/s.test(msg)) return groqOk('{"intent":"add_booking","fields":{"gross_amount":7800},"note":"Amount added."}');
+      return groqOk('```json\n{"intent":"add_booking","fields":{"property_id":"Rudrangan Suites","guest_name":"Rahul Verma","guest_phone":"+91 98100 00000","checkin":"2026-11-14","checkout":"2026-11-16","adults":4,"channel":"Booking.com","external_id":"5123456789"},"note":"Booking.com voucher read."}\n```');
+    }
+    if (/generativelanguage/.test(r.url)) return geminiOk('{"intent":"none"}');
+    return { code: 500, body: '' };
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test'); env.props.set('GEMINI_API_KEY', 'AIza_test');
+  const voucher = 'Booking.com confirmation 5123456789\nGuest: Rahul Verma +91 98100 00000, Aadhaar 1234 5678 9012\nRudrangan Suites · 14 Nov – 16 Nov 2026 · 4 adults';
+  const a = env.api({ action: 'f.brain.act', token, text: voucher });
+  assert.equal(a.ok, true, a.error); assert.equal(a.result.intent, 'add_booking'); assert.equal(a.result.ready, false);
+  assert.deepEqual(a.result.missing.map(m => m.key), ['gross_amount']); assert.match(a.result.question, /total amount/);
+  assert.equal(a.result.fields.property_id, 'rudrangan-suites', 'villa name matched to its id');
+  assert.ok(!sent.some(x => /generativelanguage/.test(x.url)), 'guest details never go to Gemini');
+  assert.ok(sent.every(x => !JSON.stringify(x.body).includes('1234 5678 9012')), 'ID numbers masked');
+  const b2 = env.api({ action: 'f.brain.act', token, text: 'total was 7,800', draft: { intent: a.result.intent, fields: a.result.fields } });
+  assert.equal(b2.result.ready, true, JSON.stringify(b2.result.missing)); assert.equal(b2.result.route, 'f.booking.save');
+  const saved = env.api(Object.assign({ action: b2.result.route, token }, b2.result.payload));
+  assert.equal(saved.ok, true, saved.error); assert.equal(saved.booking.guest_name, 'Rahul Verma'); assert.equal(Number(saved.booking.gross_amount), 7800); assert.equal(saved.booking.external_id, '5123456789');
+  assert.ok(env.tab('BrainLog').every(l => !/Rahul|98100/.test(l.question)), 'the log keeps only the action type');
+});
+
+test('actions: expense and salary in plain words; the salary defaults to the person\'s pay; questions fall through as "none"', async () => {
+  const { env, token } = await ready(r => {
+    const body = JSON.parse(r.payload || '{}'), msg = body.messages[body.messages.length - 1].content;
+    if (/electricity/.test(msg)) return groqOk('{"intent":"add_expense","fields":{"amount":2450,"category":"utilities","property_id":"ap-suite","vendor":"MPEB","date":"2026-10-15"}}');
+    if (/Mahesh/.test(msg)) return groqOk('{"intent":"record_salary","fields":{"emp_id":"Mahesh","mode":"upi"}}');
+    return groqOk('{"intent":"none"}');
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  env.api({ action: 'f.hr.emp.save', token, employee: { name: 'Mahesh Kumar', role: 'caretaker', salary_amount: 12000 } });
+  const e = env.api({ action: 'f.brain.act', token, text: 'paid electricity bill 2450 for AP Suite to MPEB on 15 Oct' });
+  assert.equal(e.result.intent, 'add_expense'); assert.equal(e.result.ready, true); assert.equal(e.result.route, 'f.expense.save');
+  assert.equal(env.api(Object.assign({ action: e.result.route, token }, e.result.payload)).ok, true);
+  const s = env.api({ action: 'f.brain.act', token, text: 'paid Mahesh salary today by UPI' });
+  assert.equal(s.result.intent, 'record_salary'); assert.equal(s.result.ready, true); assert.equal(Number(s.result.fields.amount), 12000);
+  assert.equal(env.api(Object.assign({ action: s.result.route, token }, s.result.payload)).ok, true);
+  assert.equal(env.tab('Expenses').length, 2, 'electricity + the salary expense');
+  assert.equal(env.api({ action: 'f.brain.act', token, text: 'how is occupancy?' }).result.intent, 'none');
+});

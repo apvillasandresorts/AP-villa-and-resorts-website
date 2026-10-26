@@ -407,7 +407,7 @@ function foRoutes_() {
     'f.hr.review.save': [foHrReviewSave_, 'manager'], 'f.hr.review.delete': [(b, u) => foDelete_('EmployeeReviews', 'review_id', b.review_id, u), 'founder'],
     'f.crm.log': [foCrmLog_, 'manager'], 'f.crm.email': [foCrmEmail_, 'manager'], 'f.crm.lead.save': [foCrmLeadSave_, 'manager'], 'f.crm.lead.delete': [(b, u) => foDelete_('CrmLeads', 'lead_id', b.lead_id, u), 'founder'],
     'f.crm.task.save': [foCrmTaskSave_, 'manager'], 'f.crm.task.delete': [(b, u) => foDelete_('CrmTasks', 'task_id', b.task_id, u), 'manager'],
-    'f.crm.template.save': [foCrmTemplateSave_, 'manager'], 'f.crm.template.delete': [(b, u) => foDelete_('CrmTemplates', 'template_id', b.template_id, u), 'manager'], 'f.brain.ask': [foBrainAsk_, 'manager'], 'f.brain.status': [() => ({ result: foBrainStatus_() }), 'viewer'],
+    'f.crm.template.save': [foCrmTemplateSave_, 'manager'], 'f.crm.template.delete': [(b, u) => foDelete_('CrmTemplates', 'template_id', b.template_id, u), 'manager'], 'f.brain.ask': [foBrainAsk_, 'manager'], 'f.brain.act': [foBrainAct_, 'manager'], 'f.brain.status': [() => ({ result: foBrainStatus_() }), 'viewer'],
     // Live Pricing Desk (FoSignals.gs)
     'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
     'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],

@@ -320,3 +320,93 @@ function foBrainTestResearch() {
   const g = UrlFetchApp.fetch('https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent('Ujjain (Simhastha OR events)') + '&mode=artlist&format=json&maxrecords=5&timespan=1m', { muteHttpExceptions: true });
   console.log('GDELT: HTTP ' + g.getResponseCode() + ' · ' + g.getContentText().replace(/\s+/g, ' ').slice(0, 400));
 }
+
+// ---------------------------------------------------------------- AP Brain actions (fill in, ask, confirm, save) ----------------
+/**
+ * Route f.brain.act { text, draft }: turns a message or a pasted booking voucher into a draft action for the owner to confirm:
+ * add_booking, add_expense, record_salary, add_employee, add_lead. The model only extracts fields; this code validates them, works out
+ * what is still missing and returns the question to ask plus the exact save request. Nothing is saved here: the portal shows a
+ * confirmation card and saves through the normal routes (same checks, double-booking guard and audit log as the forms).
+ * Privacy: vouchers contain guest details, so they go only to providers that do not train on API data (Groq, Cerebras, Mistral),
+ * never to the Gemini free tier or OpenRouter; ID numbers (Aadhaar-style 12 digits) are masked; the log keeps only the action type.
+ */
+const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'none'];
+function foBrainAct_(b, user) {
+  const text = String(b.text || '').replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[id-number]').trim().slice(0, 6000);
+  if (!text) return { ok: false, error: 'Type or paste the details first.' };
+  if (foCounter_('FO_BRAIN_' + foHmac_(user.email).slice(0, 12), 86400) > FO_BRAIN.PER_DAY) return { ok: false, error: 'AP Brain has answered ' + FO_BRAIN.PER_DAY + ' requests in the last 24 hours. Please try again tomorrow.' };
+  const D = foDataLoad_(), today = foToday_(), draft = b.draft && FO_ACT_INTENTS.indexOf(b.draft.intent) >= 0 ? b.draft : null;
+  const villas = (D.properties || []).map(p => p.property_id + ' = ' + p.name).join('; ');
+  const staff = (D.employees || []).filter(e => e.status === 'active').map(e => e.emp_id + ' = ' + e.name + ' (' + e.role + ', ' + (e.salary_amount || '?') + ')').join('; ') || 'none yet';
+  const cats = FoInsights.EXPENSE_CATEGORIES.map(c => c[0]).join(', '), chans = foRows_('Channels').map(c => c.channel).join(', ');
+  const sys = [
+    'You turn the owner\'s message (or a pasted OTA booking voucher / confirmation) into ONE action for AP Villas & Resorts, Ujjain. Reply with ONLY JSON, no prose:',
+    '{"intent": one of ' + JSON.stringify(FO_ACT_INTENTS) + ', "fields": {...}, "note": "one short sentence for the owner"}',
+    'Today is ' + today + ' (Asia/Kolkata). Dates as YYYY-MM-DD. Money as plain numbers in rupees (no symbols or commas). Only fill what the text says; never guess names, phones, amounts or dates.',
+    'add_booking fields: property_id (one of: ' + villas + '), guest_name, guest_phone, guest_email, checkin, checkout, adults, children, channel (one of: ' + chans + '), external_id (OTA booking number), gross_amount (total the guest pays), commission, taxes, status (confirmed|tentative), notes.',
+    'add_expense fields: date, category (one of: ' + cats + '), amount, property_id (a villa id or "all"), vendor, note.',
+    'record_salary fields: emp_id (one of: ' + staff + '), amount, paid_on, period (YYYY-MM), mode (upi|cash|bank|other), kind (salary|advance|bonus|stipend|deduction), ref.',
+    'add_employee fields: name, role (caretaker|sweeper|intern|manager|cook|driver|security|other), work_mode (on-site|remote), phone, email, property_ids, salary_amount, salary_cycle (monthly|weekly|daily|stipend|per-task), pay_day, joined.',
+    'add_lead fields: name, phone, email, source, villa, checkin, nights, guests, value_inr, next_followup, notes.',
+    'If the message is a question or chat, not something to record, use intent "none".',
+    draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
+  ].filter(Boolean).join('\n');
+  const r = foBrainCallSafe_(sys, [], 'MESSAGE:\n' + text);
+  foBrainLog_(user.email, '[action] ' + (r.ok ? 'reply' : 'failed'), r, 0);
+  if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
+  let j = {}; try { const m = String(r.text).match(/\{[\s\S]*\}/); j = JSON.parse(m ? m[0] : '{}'); } catch (e) {}
+  let intent = FO_ACT_INTENTS.indexOf(j.intent) >= 0 ? j.intent : 'none';
+  if (intent === 'none' && draft) intent = draft.intent;
+  if (intent === 'none') return { result: { intent: 'none' } };
+  const fields = Object.assign({}, draft && draft.intent === intent ? draft.fields : {}, foActClean_(j.fields || {}));
+  const out = foActPlan_(intent, fields, D, today);
+  return { result: Object.assign(out, { intent, note: foClean_(j.note, 200), provider: r.provider }) };
+}
+/** Same chain as the brain, minus the providers whose free tiers may use the data (Gemini free, OpenRouter). */
+function foBrainCallSafe_(system, history, prompt) {
+  const p = PropertiesService.getScriptProperties();
+  for (const id of ['groq', 'cerebras', 'mistral']) { if (!p.getProperty(FO_BRAIN_PROVIDERS.find(x => x.id === id).key)) continue; const r = foBrainCall_(system, history, prompt, id); if (r.ok) return r; }
+  return { ok: false, setup: !FO_BRAIN_PROVIDERS.some(x => ['groq', 'cerebras', 'mistral'].indexOf(x.id) >= 0 && p.getProperty(x.key)), error: 'AP Brain could not read that right now (it only uses Groq, Cerebras or Mistral for guest details). Please try again in a minute.' };
+}
+function foActClean_(f) { const o = {}; Object.keys(f || {}).forEach(k => { const v = f[k]; if (v !== null && v !== undefined && v !== '' && !(typeof v === 'object')) o[String(k).slice(0, 40)] = typeof v === 'string' ? v.trim().slice(0, 300) : v; }); return o; }
+/** Validate and complete the draft: defaults, what is still missing, the confirmation lines and the exact save request. */
+function foActPlan_(intent, f, D, today) {
+  const props = D.properties || [], prop = id => props.find(p => p.property_id === id), propByName = s => props.find(p => String(s || '').toLowerCase().indexOf(String(p.name).toLowerCase()) >= 0 || String(p.name).toLowerCase().indexOf(String(s || '').toLowerCase()) >= 0);
+  if (f.property_id && !prop(f.property_id) && f.property_id !== 'all') { const p2 = propByName(f.property_id); f.property_id = p2 ? p2.property_id : ''; }
+  const inr = v => '₹' + Math.round(foNum_(v)).toLocaleString('en-IN'), missing = [], lines = [];
+  const need = (k, label) => { if (f[k] === undefined || f[k] === '' || f[k] === null) missing.push({ key: k, label }); };
+  let route = '', payload = {};
+  if (intent === 'add_booking') {
+    f.status = f.status === 'tentative' ? 'tentative' : 'confirmed';
+    need('property_id', 'which villa'); need('guest_name', 'guest name'); need('checkin', 'check-in date'); need('checkout', 'check-out date'); need('channel', 'booked through (Airbnb, Booking.com, direct…)'); need('gross_amount', 'total amount the guest pays');
+    if (f.checkin && f.checkout && String(f.checkout) <= String(f.checkin)) missing.push({ key: 'checkout', label: 'a check-out date after check-in' });
+    lines.push(['Villa', f.property_id ? (prop(f.property_id) || {}).name : '—'], ['Guest', [f.guest_name, f.guest_phone, f.guest_email].filter(Boolean).join(' · ') || '—'], ['Stay', (f.checkin || '?') + ' → ' + (f.checkout || '?') + (f.adults ? ' · ' + f.adults + ' adults' : '') + (f.children ? ', ' + f.children + ' children' : '')],
+      ['Booked through', (f.channel || '—') + (f.external_id ? ' #' + f.external_id : '')], ['Amount', f.gross_amount ? inr(f.gross_amount) + (f.commission ? ' (commission ' + inr(f.commission) + ')' : '') : '—'], ['Status', f.status]);
+    route = 'f.booking.save'; payload = { booking: { property_id: f.property_id, guest_name: f.guest_name, guest_phone: f.guest_phone || '', guest_email: f.guest_email || '', checkin: f.checkin, checkout: f.checkout, adults: f.adults || '', children: f.children || '', channel: f.channel, external_id: f.external_id || '', gross_amount: f.gross_amount, commission: f.commission || '', taxes: f.taxes || '', status: f.status, notes: (f.notes ? f.notes + ' · ' : '') + 'added by AP Brain' } };
+  } else if (intent === 'add_expense') {
+    f.date = foDate_(f.date) || today; f.property_id = f.property_id || 'all';
+    if (FoInsights.EXPENSE_CATEGORIES.map(c => c[0]).indexOf(f.category) < 0) f.category = '';
+    need('amount', 'amount'); need('category', 'category (utilities, maintenance, repairs, housekeeping…)');
+    lines.push(['Date', f.date], ['Amount', f.amount ? inr(f.amount) : '—'], ['Category', f.category || '—'], ['Villa', f.property_id === 'all' ? 'All / shared' : (prop(f.property_id) || {}).name || '—'], ['Paid to', f.vendor || '—'], ['Note', f.note || '—']);
+    route = 'f.expense.save'; payload = { expense: { date: f.date, category: f.category, amount: f.amount, property_id: f.property_id, vendor: f.vendor || '', basis: 'actual', note: (f.note || '') + ' · added by AP Brain' } };
+  } else if (intent === 'record_salary') {
+    const staff = (D.employees || []).filter(e => e.status === 'active'); let e = staff.find(x => x.emp_id === f.emp_id) || staff.find(x => f.emp_id && String(x.name).toLowerCase().indexOf(String(f.emp_id).toLowerCase()) >= 0);
+    f.emp_id = e ? e.emp_id : ''; f.paid_on = foDate_(f.paid_on) || today; f.period = /^\d{4}-\d{2}$/.test(String(f.period || '')) ? f.period : f.paid_on.slice(0, 7); f.kind = f.kind || 'salary'; f.mode = f.mode || 'upi';
+    if (!f.amount && e && e.salary_amount !== '') f.amount = e.salary_amount;
+    need('emp_id', 'which team member (add them in People & HR first if new)'); need('amount', 'amount paid');
+    lines.push(['Person', e ? e.name + ' (' + e.role + ')' : '—'], ['Amount', f.amount ? inr(f.amount) : '—'], ['For', f.period + ' · ' + f.kind], ['Paid on', f.paid_on + ' by ' + f.mode + (f.ref ? ' · ' + f.ref : '')], ['Finance', 'also booked as an expense (Staff & caretakers)']);
+    route = 'f.hr.pay.save'; payload = { payment: { emp_id: f.emp_id, amount: f.amount, paid_on: f.paid_on, period: f.period, kind: f.kind, mode: f.mode, ref: f.ref || '', note: 'added by AP Brain' } };
+  } else if (intent === 'add_employee') {
+    f.role = FO_HR_ROLES.indexOf(f.role) >= 0 ? f.role : (f.role ? 'other' : ''); f.work_mode = f.work_mode === 'remote' ? 'remote' : 'on-site'; f.salary_cycle = f.salary_cycle || 'monthly';
+    need('name', 'name'); need('role', 'role (caretaker, sweeper, intern…)');
+    lines.push(['Name', f.name || '—'], ['Role', (f.role || '—') + ' · ' + f.work_mode], ['Contact', [f.phone, f.email].filter(Boolean).join(' · ') || '—'], ['Pay', f.salary_amount ? inr(f.salary_amount) + ' ' + f.salary_cycle + (f.pay_day ? ', day ' + f.pay_day : '') : 'not set']);
+    route = 'f.hr.emp.save'; payload = { employee: { name: f.name, role: f.role, work_mode: f.work_mode, phone: f.phone || '', email: f.email || '', property_ids: f.property_ids || 'all', salary_amount: f.salary_amount || '', salary_cycle: f.salary_cycle, pay_day: f.pay_day || '', joined: foDate_(f.joined) || today, notes: 'added by AP Brain' } };
+  } else if (intent === 'add_lead') {
+    if (!f.name && !f.phone && !f.email) missing.push({ key: 'name', label: 'name or phone' });
+    f.stage = 'new'; f.next_followup = foDate_(f.next_followup) || FoMetrics.addDays(today, 1);
+    lines.push(['Enquiry', [f.name, f.phone, f.email].filter(Boolean).join(' · ') || '—'], ['Wants', [f.villa, f.checkin, f.nights ? f.nights + ' nights' : '', f.guests ? f.guests + ' guests' : ''].filter(Boolean).join(' · ') || '—'], ['From', f.source || '—'], ['Follow up', f.next_followup]);
+    route = 'f.crm.lead.save'; payload = { lead: { name: f.name || '', phone: f.phone || '', email: f.email || '', source: f.source || '', villa: f.villa || '', checkin: f.checkin || '', nights: f.nights || '', guests: f.guests || '', value_inr: f.value_inr || '', stage: 'new', next_followup: f.next_followup, notes: (f.notes || '') + ' · added by AP Brain' } };
+  }
+  const question = missing.length ? 'To finish this I still need: ' + missing.map(m => m.label).join(', ') + '.' : '';
+  return { fields: f, missing, question, lines, route, payload, ready: !missing.length };
+}

@@ -441,3 +441,6 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .crm-lead:hover { border-color: var(--gold-2); } .crm-lead span, .crm-lead small { font-size: 12px; color: var(--muted); } .crm-lead em { font-size: 12px; color: var(--em-3); font-style: normal; }
 .crm-lead.is-late { border-color: #B4402A; } .crm-lead.is-late em { color: #B4402A; font-weight: 700; }
 @media (max-width: 900px) { .crm-board { grid-template-columns: repeat(5, 220px); } }
+.fo-brain__act { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--gold-2); font-size: 13px; }
+.fo-brain__act > b { display: block; margin-bottom: 6px; color: var(--em-3); } .fo-brain__act div:not(.fo-toolbar) { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px dotted var(--line); }
+.fo-brain__act div span:first-child { color: var(--muted); } .fo-brain__act div span:last-child { text-align: right; font-weight: 600; } .fo-brain__ok { color: var(--good); font-weight: 700; margin: 8px 0 0; }

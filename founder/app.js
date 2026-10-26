@@ -569,10 +569,10 @@
   // ---------- AP Brain: questions about the business, answered by a free AI model from totals and prices only (docs/founder-os/FoBrain.gs) ----------
   var BRAIN = { history: [] };
   function brainPanel() {
-    var ideas = ['Give me the 5 sharpest insights about my business today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
-    var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI (Groq, Gemini as backup) that reads your totals, prices, competitors and news. It never sees guest names, phones or emails, and it cannot change anything.</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+    var ideas = ['Give me the 5 sharpest insights about my business today', 'Add expense: electricity bill ₹2,450 for AP Suite today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
+    var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI that reads your totals, prices, competitors, news and Google, and can add bookings, expenses, salaries, staff and enquiries. It saves only what you confirm. Questions never include guest details; a pasted voucher is read only by Groq/Cerebras/Mistral (no training on your data).</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
       '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
-      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything about AP Villas… (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
+      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything, paste a booking voucher, or type e.g. paid Mahesh ₹12,000 salary today (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
       '<label class="fo-hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Search Google for fresh market information when it helps (competitors, events, Simhastha, travel)</label>');
     var log = $('#br-log', p);
     // the models answer in Markdown: show headings, bold, bullets and numbered points properly (escaped first, so no HTML gets through)
@@ -588,11 +588,46 @@
       close();
       return out.join('').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
     }
-    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
-    function ask(q) {
+    function card(m, i) {
+      var r = m.action; if (!r) return '';
+      return '<div class="fo-brain__act"><b>' + esc({ add_booking: 'New booking', add_expense: 'New expense', record_salary: 'Salary payment', add_employee: 'New team member', add_lead: 'New enquiry' }[r.intent] || r.intent) + '</b>' +
+        r.lines.map(function (l) { return '<div><span>' + esc(l[0]) + '</span><span>' + esc(l[1]) + '</span></div>'; }).join('') +
+        (r.ready ? (m.done === 'saved' ? '<p class="fo-brain__ok">✓ Saved</p>' : '<div class="fo-toolbar" style="margin:8px 0 0"><button class="btn btn--primary btn--sm" data-confirm="' + i + '"' + (m.done ? ' disabled' : '') + '>' + (m.done === 'saving' ? 'Saving…' : 'Confirm & save') + '</button><button class="btn btn--sm" data-cancel="' + i + '">Cancel</button></div><small class="fo-hint">Wrong detail? Just type the correction.</small>')
+          : '<small class="fo-hint">Reply with the missing details and I will update this.</small>') + '</div>';
+    }
+    function paint() { log.innerHTML = BRAIN.history.map(function (m, i) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + card(m, i) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight;
+      $$('[data-confirm]', log).forEach(function (b) { b.onclick = function () { confirmAct(Number(b.dataset.confirm)); }; });
+      $$('[data-cancel]', log).forEach(function (b) { b.onclick = function () { BRAIN.draft = null; BRAIN.history[Number(b.dataset.cancel)].action.ready = false; BRAIN.history.push({ role: 'assistant', text: 'Cancelled. Nothing was saved.' }); paint(); }; });
+    }
+    // records (bookings from a pasted voucher, expenses, salaries, staff, enquiries) go to f.brain.act; questions to f.brain.ask
+    var ACT = /\b(add|record|log|enter|paid|pay|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b/i;
+    function act(q) {
+      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Reading the details…', pending: true }); paint();
+      api('f.brain.act', { text: q, draft: BRAIN.draft || null }).then(function (j) {
+        BRAIN.history.pop();
+        if (!j.ok) { BRAIN.history.push({ role: 'assistant', text: j.error }); paint(); return; }
+        var r = j.result;
+        if (r.intent === 'none') { BRAIN.draft = null; paint(); return ask(q, true); }   // a question after all: answer it
+        BRAIN.draft = { intent: r.intent, fields: r.fields };
+        BRAIN.history.push({ role: 'assistant', action: r, text: (r.note ? r.note + '\n' : '') + (r.ready ? 'Please check and confirm:' : r.question) }); paint();
+      }).catch(function (e) { BRAIN.history.pop(); BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
+    }
+    function confirmAct(i) {
+      var m = BRAIN.history[i], r = m && m.action; if (!r || !r.ready || m.done) return;
+      m.done = 'saving'; paint();
+      api(r.route, r.payload).then(function (j) {
+        if (!j.ok) { m.done = ''; BRAIN.history.push({ role: 'assistant', text: 'Not saved: ' + j.error + (j.conflicts ? ' (' + j.conflicts.length + ' overlapping booking' + (j.conflicts.length === 1 ? '' : 's') + ')' : '') + '. Tell me what to change.' }); paint(); return; }
+        m.done = 'saved'; BRAIN.draft = null;
+        var id = (j.booking && j.booking.booking_id) || (j.record && (j.record.expense_id || j.record.pay_id || j.record.emp_id || j.record.lead_id)) || '';
+        BRAIN.history.push({ role: 'assistant', text: '✓ Saved' + (id ? ' (' + id + ')' : '') + '. Everything that depends on it (dashboards, finance, pricing) updates now.' }); paint(); load(true);
+      }).catch(function (e) { m.done = ''; BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
+    }
+    function ask(q, skipAct) {
       q = String(q || '').trim(); if (!q) return;
+      if (!skipAct && (BRAIN.draft || ACT.test(q) || q.length > 220)) return act(q);
       var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
-      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();
+      if (!skipAct) BRAIN.history.push({ role: 'user', text: q });
+      BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();
       var hist = BRAIN.history.filter(function (m) { return !m.pending; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
       api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2), web: web }).then(function (j) {
         BRAIN.history.pop();
