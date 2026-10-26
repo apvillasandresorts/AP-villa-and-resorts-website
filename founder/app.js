@@ -220,6 +220,7 @@
         .map(function (o) { return '<option value="' + o[0] + '"' + (S.range === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
       '<span id="fo-custom"' + (S.range === 'custom' ? '' : ' hidden') + '><input type="date" id="fo-from" value="' + esc(r.from) + '"> – <input type="date" id="fo-to" value="' + esc(r.to) + '"></span>' +
       '<select id="fo-prop" aria-label="Villa"><option value="all">All villas</option>' + S.data.properties.map(function (p) { return '<option value="' + esc(p.property_id) + '"' + (S.property === p.property_id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
+      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain (AI)">' + icon('idea') + '</button>' : '') +
       '<button class="fo-iconbtn" id="fo-bell" aria-label="Notifications">' + icon('bell') + (ex.length ? '<span class="dot">' + (high || ex.length) + '</span>' : '') + '</button>' +
       '<button class="fo-iconbtn" id="fo-theme" aria-label="Light or dark">' + icon('moon') + '</button>' +
       '<div class="fo-profile" id="fo-prof" tabindex="0"><span class="fo-avatar">' + esc(initials) + '</span><span>' + esc((S.user && S.user.name || 'Founder').split(' ')[0]) + '</span></div>' +
@@ -231,6 +232,7 @@
     $('#fo-from').onchange = function () { S.from = this.value; S.range = 'custom'; renderPage(); };
     $('#fo-to').onchange = function () { S.to = this.value; S.range = 'custom'; renderPage(); };
     $('#fo-prop').onchange = function () { S.property = this.value; renderPage(); };
+    var bb = $('#fo-brain'); if (bb) bb.onclick = brainPanel;
     $('#fo-theme').onclick = function () { var d = document.documentElement, dark = d.dataset.theme === 'dark' || (!d.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); d.dataset.theme = dark ? 'light' : 'dark'; savePrefs(); renderPage(); };
     $('#fo-bell').onclick = function (e) { e.stopPropagation(); menu('bell'); };
     $('#fo-prof').onclick = function (e) { e.stopPropagation(); menu('profile'); };
@@ -555,6 +557,30 @@
   }
   function sel(id, opts, cur) { return '<select id="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   function uniq(a) { return a.filter(function (x, i) { return x && a.indexOf(x) === i; }).sort(); }
+
+  // ---------- AP Brain: questions about the business, answered by a free AI model from totals and prices only (docs/founder-os/FoBrain.gs) ----------
+  var BRAIN = { history: [] };
+  function brainPanel() {
+    var ideas = ['What price should I set for tonight and why?', 'Which nights in the next 2 weeks look weak, and what should I do?', 'How is occupancy this month compared with last month?', 'What do the news and Google searches say about demand this week?'];
+    var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI (Groq, Gemini as backup) that reads your totals, prices, competitors and news. It never sees guest names, phones or emails, and it cannot change anything.</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+      '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything about AP Villas… (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>');
+    var log = $('#br-log', p);
+    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + esc(m.text).replace(/\n/g, '<br>') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
+    function ask(q) {
+      q = String(q || '').trim(); if (!q) return;
+      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Thinking…', pending: true }); paint();
+      var hist = BRAIN.history.filter(function (m) { return !m.pending; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
+      api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2) }).then(function (j) {
+        BRAIN.history.pop();
+        BRAIN.history.push(j.ok ? { role: 'assistant', text: j.answer, meta: j.provider + ' · data as of ' + when(j.context_at) } : { role: 'assistant', text: j.error, meta: j.setup ? 'Setup needed (see Integrations & Automation)' : '' }); paint();
+      }).catch(function (e) { BRAIN.history.pop(); BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
+    }
+    paint();
+    $$('[data-q]', p).forEach(function (b) { b.onclick = function () { ask(b.dataset.q); }; });
+    $('#br-form', p).onsubmit = function (e) { e.preventDefault(); var t = $('#br-q', p); ask(t.value); t.value = ''; };
+    $('#br-q', p).onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#br-form', p).requestSubmit(); } };
+  }
 
   // ---------- booking detail ----------
   function drawer(html) {
