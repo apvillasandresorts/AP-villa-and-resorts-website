@@ -69,6 +69,7 @@ const FO_TABS = {
   PriceDecisions: ['decision_id', 'decided_at', 'decided_by', 'property', 'for_date', 'channel', 'recommended', 'set_price', 'accepted', 'reason', 'slot'],
   BotRuns: ['run_id', 'at', 'bot', 'platform', 'mode', 'pages', 'prices', 'sold_out', 'discovered', 'blocked', 'status', 'note'],
   DeletedRecords: ['deleted_id', 'deleted_at', 'deleted_by', 'kind', 'record_id', 'origin', 'origin_ref', 'channel', 'external_id', 'summary', 'reason', 'data_json'],
+  BrainLog: ['asked_at', 'user', 'question', 'provider', 'model', 'ms', 'ok', 'error'],
   News: ['news_id', 'published_at', 'fetched_at', 'title', 'source', 'url', 'lang', 'category', 'categories', 'impact', 'direction', 'score', 'summary', 'query', 'alerted'],
   Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
   Jobs: ['job', 'started', 'finished', 'status', 'detail'],
@@ -392,7 +393,7 @@ function foRoutes_() {
     'f.pricing.settings': [foPricingSettingsSave_, 'founder'],
     'f.automation.create': [foAutomationCreate_, 'founder'], 'f.automation.revoke': [foAutomationRevoke_, 'founder'],
     // SEO & marketing (FoSearch.gs)
-    'f.health': [foHealth_, 'viewer'],
+    'f.health': [foHealth_, 'viewer'], 'f.brain.ask': [foBrainAsk_, 'manager'], 'f.brain.status': [() => ({ result: foBrainStatus_() }), 'viewer'],
     // Live Pricing Desk (FoSignals.gs)
     'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
     'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],
