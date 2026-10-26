@@ -131,3 +131,10 @@ function foBrainDailyBrief_(today) {
   p.setProperty('FO_BRAIN_BRIEF', today);
   return 'sent via ' + r.provider;
 }
+
+/** Run from the editor after adding a key: one tiny question with no business data; logs which provider answered. */
+function foBrainTest() {
+  const r = foBrainCall_('You are a test. Reply in five words or fewer.', [], 'Say: AP Brain is working.');
+  console.log(r.ok ? 'OK · ' + r.provider + ' (' + r.model + '): ' + r.text : 'FAILED: ' + r.error);
+  return r.ok;
+}
