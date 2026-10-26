@@ -287,11 +287,11 @@ function foBrainTestResearch() {
   const r = foBrainResearch_(q, []);
   console.log('research in ' + (Date.now() - t) + ' ms: ' + JSON.stringify(r).slice(0, 1500));
   const groq = PropertiesService.getScriptProperties().getProperty('GROQ_API_KEY');
-  ['groq/compound-mini', 'groq/compound'].forEach(model => {
-    const t1 = Date.now(), x = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
-      payload: JSON.stringify({ model, max_tokens: 300, messages: [{ role: 'user', content: 'Upcoming events in Ujjain this month? Search the web.' }] }) });
-    console.log(model + ': HTTP ' + x.getResponseCode() + ' in ' + (Date.now() - t1) + ' ms · ' + x.getContentText().replace(/\s+/g, ' ').slice(0, 700));
-  });
+  const t1 = Date.now(), x = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
+    payload: JSON.stringify({ model: 'openai/gpt-oss-120b', max_tokens: 600, tools: [{ type: 'browser_search' }], tool_choice: 'auto', messages: [{ role: 'user', content: 'Search the web: upcoming events in Ujjain, India this month. 3 bullet points with sources.' }] }) });
+  console.log('gpt-oss-120b + browser_search: HTTP ' + x.getResponseCode() + ' in ' + (Date.now() - t1) + ' ms · ' + x.getContentText().replace(/\s+/g, ' ').slice(0, 900));
+  const ml = UrlFetchApp.fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true });
+  console.log('Groq models: ' + (JSON.parse(ml.getContentText()).data || []).map(m => m.id).join(', '));
   const g = UrlFetchApp.fetch('https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent('Ujjain (Simhastha OR events)') + '&mode=artlist&format=json&maxrecords=5&timespan=1m', { muteHttpExceptions: true });
   console.log('GDELT: HTTP ' + g.getResponseCode() + ' · ' + g.getContentText().replace(/\s+/g, ' ').slice(0, 400));
 }
