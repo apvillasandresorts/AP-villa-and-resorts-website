@@ -115,7 +115,7 @@ test('market research: the planner picks searches, Groq web search answers them 
   const { env, token } = await ready(r => {
     const body = JSON.parse(r.payload || '{}'); sent.push({ url: r.url, body });
     if (/groq/.test(r.url)) {
-      if (/^groq\/compound/.test(body.model)) return { code: 200, body: JSON.stringify({ choices: [{ message: { content: '- A 120-room hotel opened near Mahakal Lok in Sept 2026.', executed_tools: [{ type: 'search', search_results: { results: [{ title: 'freepressjournal.in', url: 'https://example.com/hotel' }, { title: 'freepressjournal.in', url: 'https://example.com/hotel#x' }] } }] } }] }) };
+      if (body.tools) return { code: 200, body: JSON.stringify({ choices: [{ message: { content: '- A 120-room hotel opened near Mahakal Lok in Sept 2026.【5†L13-L18】', executed_tools: [{ type: 'browser.search', search_results: { results: [{ title: 'freepressjournal.in', url: 'https://example.com/hotel' }, { title: 'freepressjournal.in', url: 'https://example.com/hotel#x' }] } }] } }] }) };
       if (/decide whether a question/.test(body.messages[0].content)) return groqOk('{"search": ["new hotels near Mahakal Lok Ujjain 2026", "Simhastha 2028 preparations Ujjain"]}');
       return groqOk('**Hold prices** [1]\n- New hotel opened [1]');
     }
@@ -128,7 +128,9 @@ test('market research: the planner picks searches, Groq web search answers them 
   assert.deepEqual(r.sources, [{ title: 'freepressjournal.in', url: 'https://example.com/hotel' }], 'sources de-duplicated');
   assert.deepEqual(r.research_via, ['Groq web search']);
   assert.equal(sent.filter(x => /generateContent/.test(x.url)).length, 0, 'Gemini not needed when Groq answered');
-  const final = sent.filter(x => /groq/.test(x.url) && !/^groq\/compound/.test(x.body.model)).pop().body.messages.pop().content;
+  assert.deepEqual(sent.find(x => x.body.tools).body.tools, [{ type: 'browser_search' }]);
+  const final = sent.filter(x => /groq/.test(x.url) && !x.body.tools).pop().body.messages.pop().content;
+  assert.ok(!/【/.test(final), 'gpt-oss citation marks removed');
   assert.match(final, /WEB RESEARCH/); assert.match(final, /\[1\] freepressjournal\.in/); assert.match(final, /next_14_nights/);
   assert.match(r.answer, /Hold prices/);
 });
@@ -137,7 +139,7 @@ test('market research falls back: Groq web search down, Gemini over its free quo
   const { env, token } = await ready(r => {
     const body = JSON.parse(r.payload || '{}');
     if (/groq/.test(r.url)) {
-      if (/^groq\/compound/.test(body.model)) return { code: 503, body: '{}' };
+      if (body.tools) return { code: 503, body: '{}' };
       return /decide whether a question/.test(body.messages[0].content) ? groqOk('{"search": ["Simhastha 2028 preparations"]}') : groqOk('Answer.');
     }
     if (/generateContent/.test(r.url)) return { code: 429, body: '{"error":{"status":"RESOURCE_EXHAUSTED"}}' };

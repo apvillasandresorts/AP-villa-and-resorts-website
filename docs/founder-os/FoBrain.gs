@@ -69,13 +69,12 @@ function foBrainResearch_(q, hist) {
     pending = left;
   };
   let pending = queries.slice();
-  // 1. Groq compound: built-in web search
-  if (groq) ['groq/compound-mini', 'groq/compound'].forEach(model => run(query => ({ url: 'https://api.groq.com/openai/v1/chat/completions', method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
-    payload: JSON.stringify({ model, temperature: 0.2, max_tokens: 700, messages: [{ role: 'user', content: brief(query) }] }) }), (query, j) => {
-    const m = ((j.choices || [])[0] || {}).message || {}, text = String(m.content || '').trim(); if (!text) return false;
-    const hits = []; (m.executed_tools || []).forEach(t => { const sr = t.search_results; (Array.isArray(sr) ? sr : (sr && sr.results) || []).forEach(x => hits.push({ title: x.title, url: x.url })); });
-    add(query, text, cite(hits), 'Groq web search'); return true;
-  }, 'groq'));
+  // 1. Groq: the gpt-oss model with its built-in browser_search tool (free key; ~14 s, the searches run in parallel)
+  if (groq) run(query => ({ url: 'https://api.groq.com/openai/v1/chat/completions', method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
+    payload: JSON.stringify({ model: 'openai/gpt-oss-120b', temperature: 0.2, max_tokens: 900, tools: [{ type: 'browser_search' }], tool_choice: 'auto', messages: [{ role: 'user', content: brief(query) }] }) }), (query, j) => {
+    const m = ((j.choices || [])[0] || {}).message || {}, text = foBrainCleanCites_(String(m.content || '')); if (!text) return false;
+    add(query, text, cite(foBrainToolHits_(m.executed_tools)), 'Groq web search'); return true;
+  }, 'groq');
   // 2. Gemini with Google Search grounding
   if (gem && pending.length) {
     const model = [p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].filter(Boolean)[0];
@@ -98,6 +97,18 @@ function foBrainResearch_(q, hist) {
   out.sources = out.sources.slice(0, 10);
   return out;
 }
+
+/** Search results from Groq's executed_tools (structured results, or links found in the tool output). */
+function foBrainToolHits_(tools) {
+  const hits = [];
+  (tools || []).forEach(t => {
+    const sr = t.search_results; (Array.isArray(sr) ? sr : (sr && sr.results) || []).forEach(x => hits.push({ title: x.title, url: x.url }));
+    if (!hits.length && t.output) String(t.output).replace(/\[([^\]]{3,140})\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s"'<>)\]]+)/g, (m0, ti, u1, u2) => { hits.push({ title: ti || (u1 || u2).replace(/^https?:\/\/(www\.)?/, '').split('/')[0], url: u1 || u2 }); return m0; });
+  });
+  return hits.slice(0, 12);
+}
+/** gpt-oss marks citations like 【5†L13-L18】: drop them (the brain cites the numbered source list instead). */
+function foBrainCleanCites_(t) { return String(t).replace(/【[^】]*】/g, '').replace(/[ \t]+\n/g, '\n').trim(); }
 
 /** Route: f.brain.status → which providers are set up (never the keys). */
 function foBrainStatus_() {
