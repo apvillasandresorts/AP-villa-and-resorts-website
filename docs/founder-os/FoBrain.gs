@@ -47,25 +47,51 @@ function foBrainCall_(system, history, prompt) {
   const p = PropertiesService.getScriptProperties(), groq = p.getProperty('GROQ_API_KEY'), gem = p.getProperty('GEMINI_API_KEY'), errs = [];
   if (!groq && !gem) return { ok: false, setup: true, error: 'AP Brain is not switched on yet: add a free Groq or Gemini key in Script Properties (see docs/founder-os/README.md → AP Brain).' };
   const tryTwice = fn => { let r = fn(); if (!r.ok && r.retry) { Utilities.sleep(1500); r = fn(); } return r; };
+  // Free models get retired: a 404 means "model gone", so ask the provider which models it offers now, pick the best and remember it.
+  const withModel = (prop, def, pickNew, call) => {
+    let model = p.getProperty(prop) || p.getProperty(prop + '_AUTO') || def, r = tryTwice(() => call(model));
+    if (!r.ok && /^HTTP 404/.test(r.error)) { const m2 = pickNew(); if (m2 && m2 !== model) { p.setProperty(prop + '_AUTO', m2); model = m2; r = tryTwice(() => call(model)); } }
+    return Object.assign(r, { model });
+  };
   if (groq) {
-    const model = p.getProperty('GROQ_MODEL') || FO_BRAIN.GROQ_MODEL;
-    const r = tryTwice(() => foBrainHttp_('https://api.groq.com/openai/v1/chat/completions', { Authorization: 'Bearer ' + groq },
+    const r = withModel('GROQ_MODEL', FO_BRAIN.GROQ_MODEL, () => foBrainPickModel_('groq', groq), model => foBrainHttp_('https://api.groq.com/openai/v1/chat/completions', { Authorization: 'Bearer ' + groq },
       { model, temperature: 0.3, max_tokens: 1200, messages: [{ role: 'system', content: system }].concat(history.map(h => ({ role: h.role, content: h.text })), [{ role: 'user', content: prompt }]) },
       j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content));
-    if (r.ok) return Object.assign(r, { provider: 'Groq', model });
+    if (r.ok) return Object.assign(r, { provider: 'Groq' });
     errs.push('Groq: ' + r.error);
   }
   if (gem) {
-    const model = p.getProperty('GEMINI_MODEL') || FO_BRAIN.GEMINI_MODEL;
-    const r = tryTwice(() => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
+    const r = withModel('GEMINI_MODEL', FO_BRAIN.GEMINI_MODEL, () => foBrainPickModel_('gemini', gem), model => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
       { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
         contents: history.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.text }] })).concat([{ role: 'user', parts: [{ text: prompt }] }]) },
       j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join('')));
-    if (r.ok) return Object.assign(r, { provider: 'Gemini', model });
+    if (r.ok) return Object.assign(r, { provider: 'Gemini' });
     errs.push('Gemini: ' + r.error);
   }
   foLogError_('brain', errs.join(' | '));
   return { ok: false, error: 'AP Brain could not get an answer right now (' + errs.join('; ') + '). Please try again in a minute.' };
+}
+/** The best chat model a provider offers today (text chat, largest/newest first). Pure ranking in foBrainRankModels_ (tested). */
+function foBrainPickModel_(provider, key) {
+  try {
+    const res = provider === 'groq'
+      ? UrlFetchApp.fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + key }, muteHttpExceptions: true })
+      : UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key }, muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) return null;
+    return foBrainRankModels_(provider, JSON.parse(res.getContentText()))[0] || null;
+  } catch (e) { return null; }
+}
+function foBrainRankModels_(provider, j) {
+  if (provider === 'groq') {
+    const ids = (j.data || []).filter(m => m.active !== false).map(m => String(m.id)).filter(id => !/whisper|tts|guard|embed|vision|audio|playai|compound|orpheus/i.test(id));
+    const size = id => { const m = id.match(/(\d+)b\b/i); return m ? Number(m[1]) : 0; };
+    const fam = id => /gpt-oss/i.test(id) ? 3 : /llama/i.test(id) ? 2 : /qwen|kimi|deepseek/i.test(id) ? 1 : 0;
+    return ids.sort((a, b) => fam(b) - fam(a) || size(b) - size(a) || b.localeCompare(a));
+  }
+  const ms = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0).map(m => String(m.name).replace(/^models\//, ''))
+    .filter(n => /^gemini-/.test(n) && !/embedding|image|tts|audio|live|exp|preview|thinking|vision|lite/i.test(n));
+  const ver = n => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : 0; };
+  return ms.sort((a, b) => (/flash/.test(b) ? 1 : 0) - (/flash/.test(a) ? 1 : 0) || ver(b) - ver(a) || a.length - b.length);
 }
 function foBrainHttp_(url, headers, body, pick) {
   let res;

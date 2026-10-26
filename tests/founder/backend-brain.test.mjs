@@ -78,3 +78,17 @@ test('morning brief: emailed once a day when a key exists; off switch respected'
   env.api({ action: 'f.settings.save', token, settings: { brain_daily: 'off' } });
   assert.equal(env.fo.foBrainDailyBrief_('2026-10-17'), 'off');
 });
+
+test('retired model (404): the brain asks the provider for its models, picks the best chat model and remembers it', async () => {
+  const { env, token } = await ready(r => {
+    if (/openai\/v1\/models$/.test(r.url)) return { code: 200, body: JSON.stringify({ data: [{ id: 'whisper-large-v3' }, { id: 'llama-3.1-8b-instant' }, { id: 'openai/gpt-oss-120b' }, { id: 'openai/gpt-oss-20b' }, { id: 'meta-llama/llama-guard-4-12b' }] }) };
+    const body = JSON.parse(r.payload || '{}');
+    return body.model === 'openai/gpt-oss-120b' ? groqOk('Answer from the new model.') : { code: 404, body: '{"error":{"message":"model decommissioned"}}' };
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Tonight?' });
+  assert.equal(r.ok, true, r.error); assert.equal(r.model, 'openai/gpt-oss-120b');
+  assert.equal(env.props.get('GROQ_MODEL_AUTO'), 'openai/gpt-oss-120b');
+  const n = env.net.calls.length; env.api({ action: 'f.brain.ask', token, question: 'Again?' });
+  assert.equal(env.net.calls.slice(n).filter(c => /models$/.test(c.url)).length, 0, 'remembered: no second model lookup');
+});
