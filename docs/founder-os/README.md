@@ -75,6 +75,29 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
   `.github/workflows/pricing-intel.yml` (daily 06:30 IST with Claude: public news signals + 30-day Outlook, see `content/pricing-intel-instructions.md`).
   Both need the `FOUNDER_OS_KEY` secret and skip without it.
 
+### Fill mode (default since 26 Oct 2026): the price that sells
+Owner goal: 100% occupancy, so the price is no longer "base × factors". For each night the engine builds the **market ladder** (every comparable
+stay still open, guest prices, cheapest platform, size-adjusted by bedrooms^0.6; or the forecast ladder when fewer than 3 were checked) and reads
+off the price where the **chance to sell** reaches a target: 90% tonight, 82% within 3 days, 72% within 2 weeks, 62% within 45 days, 55% beyond;
+tonight climbs 90 → 98% through the day (S1–S4) so the price steps down in the evening. **Demand pressure** (× each): market sell-out vs normal,
+calendar & festivals, search/web/news demand, Google searches for Ujjain stays (Trends), weather, competitors raising/cutting, a night priced above
+nearby nights, our other villas booked. The waterfall shows Market median → Sell target → each pressure factor. Floor = Settings `fill.min_net`
+per villa (0 = 35% of the published price), so ₹2,000 is possible; cuts apply at once, rises are limited to +12%/day. The card shows ≈% chance
+to sell and a price ladder (50/70/80/90/95%). **Confidence** = comparable prices for the night 32%, freshness 16%, measured forecast accuracy 16%,
+market agreement 12%, availability seen 12%, live demand signals 12%. 100% is not possible for a prediction; it rises as the bots check each
+night (now 3× a week) and the accuracy history grows. `mode: 'classic'` in desk settings restores the old method.
+
+## Search demand (Google Trends, Wikipedia, Autocomplete)
+`.github/workflows/search-demand.yml` (06:15 and 18:15 IST, 3 attempts) runs `scripts/search-demand/run.mjs`:
+- **Signal `search_market`** for the next 45 nights: stay-intent searches ("hotels in ujjain", "ujjain hotel"…) 60%, pilgrimage searches
+  ("mahakal darshan", "mahakaleshwar", "ujjain"…) 25%, Wikipedia readers of the Ujjain/Mahakaleshwar articles 15%, last 7 days vs the 8 weeks
+  before; full weight for nights within 7 days, fading to 20% at 45 days; a 3-day rise adds up to 8% for the next week.
+- **SEO & marketing → Ujjain searches:** Trends top and rising searches around Ujjain (24 h and 7 days), each keyword's daily curve on one
+  scale ("ujjain hotel" average = 100), Google Autocomplete phrases, exact Wikipedia readers per day, and estimated searches/day once the
+  Keyword Planner monthly figure for "ujjain hotel" is entered (ESTIMATE). Google publishes no exact daily search counts for any keyword.
+- Sources: trends.google.com data endpoints (robots.txt allows them), suggestqueries.google.com (no robots.txt), Wikimedia REST pageviews
+  API (official); SerpApi google_trends only as a backup. Stored in SearchKeywords / SearchExtra (60 days) via `f.m.searchkw.import`.
+
 ## Market bots (competitor prices, every platform, fully automatic)
 `.github/workflows/market-bots.yml` runs `scripts/market-bots/run.mjs` on GitHub at 08:10 and 18:10 IST (nothing on the owner's Mac).
 - **Page bots** (`scripts/market-bots/bots/`): Airbnb (listing pages), Booking.com (dated search + hotel pages), Agoda, OYO, Cleartrip
@@ -86,7 +109,9 @@ Engine `founder/desk.js` (= `FoDesk.gs`), back end `docs/founder-os/FoSignals.gs
   Booking.com fallback; Booking.com Demand API and Agoda affiliate API switch on when approved (secrets `BOOKING_AFFILIATE_ID`,
   `BOOKING_API_TOKEN`, `AGODA_SITE_ID`, `AGODA_API_KEY`).
 - **Nights checked:** AM = tonight, tomorrow, the coming Saturday, the next high-demand night; PM = the coming Friday, the next two
-  Saturdays, further high-demand nights (from the calendar/holiday/event signals, `f.m.compset`).
+  Saturdays, further high-demand nights (from the calendar/holiday/event signals, `f.m.compset`). Owner rule 26 Oct 2026: every night 2–45 days
+  out gets a real check 3× a week: a night is due when its distance from today ≡ 0, 3 or 5 (mod 7), ~19 a day: 3 in the AM run, 3 in the PM
+  run, the rest in the 2-hourly runs (which first retry any bot that failed today, then "sweep" their share of due nights).
 - **Into the Founder OS:** competitors (links on every platform merged, distance from map coordinates, ratings) and dated observations
   (price or sold out, per platform) via `f.m.market.import`; one row per bot per run in the BotRuns tab via `f.m.bots.report`.
 - **Engine use (desk.js):** a competitor's price = the guest's cheapest available platform; sold out only when every platform is full;
@@ -118,9 +143,22 @@ Portal: Pricing & market → News, and "News that matters" on Today.
 
 ## Google Cloud project (since 25 Oct 2026)
 The Apps Script uses its own standard Cloud project **"AP Villas Founder OS"** (ID `ap-villas-founder-os`, number 38817203894, no billing),
-because the hidden default project cannot switch on the Search Console API. Enabled APIs: Google Search Console API, Google Analytics Data API.
+because the hidden default project cannot switch on the Search Console API. Enabled APIs: Google Search Console API, Google Analytics Data API, **Google Drive API** (needed by the e-check-in ID uploads; missing from
+25 to 26 Oct 2026, which made check-ins with ID photos fail).
 Sign-in screen (Google Auth Platform): External, **In production**, owner account only, home page + policies.html, domain apvillasandresorts.in, no logo
-(a logo would require Google verification). If the project is ever changed again, enable those two APIs there and run `foHealthCheck` → Allow.
+(a logo would require Google verification). If the project is ever changed again, enable those three APIs there and run `foHealthCheck` → Allow.
+
+## E-check-in reliability (26 Oct 2026)
+The guest form (`assets/js/checkin.js`) sends through our own domain (`/api/fo` relay) with script.google.com as fallback, 3 automatic retries,
+the same reference each time (the server answers "duplicate" instead of storing twice). The server waits up to 30 s for the script lock shared
+with Founder OS jobs, then saves anyway. A photo the phone cannot read or a PDF over 2.5 MB is skipped and the guest is asked to send that file
+on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details is offered. Test rows: run `ciDeleteTestEntries` in the editor
+(rows whose main guest starts with "TEST"; ID folders to Drive Trash).
+
+## AP Brain (built, waiting for free keys)
+`docs/founder-os/FoBrain.gs`: `f.brain.ask` (manager+) answers questions from a business summary (totals, prices, competitors, news; never guest
+names, phones, emails or booking IDs; questions scrubbed). Groq first (free tier, `GROQ_API_KEY`), Google Gemini fallback (free tier,
+`GEMINI_API_KEY`), keys only in Script Properties. 150 questions a day; optional morning brief email (Settings `brain_daily`). Log: BrainLog tab.
 
 ## GA4 reporting
 Server-side only (Apps Script advanced service **Google Analytics Data API**, identifier `AnalyticsData`), property in Settings
