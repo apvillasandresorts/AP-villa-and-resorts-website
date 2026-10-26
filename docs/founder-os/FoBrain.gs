@@ -19,7 +19,7 @@ const FO_BRAIN_SYSTEM = [
   'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in Hindi if the question is in Hindi.',
   'You only advise; you cannot change prices, bookings or settings. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
 ].join('\n');
-const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 3 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
+const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 2 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
 
 /** Route: f.brain.ask { question, history: [{role, text}], page } → { answer, provider, model, context_at }. */
 function foBrainAsk_(b, user) {
@@ -53,7 +53,7 @@ function foBrainResearch_(q, hist) {
   if (!groq && !gem) return null;
   const plan = foBrainCall_(FO_BRAIN_PLANNER, hist.slice(-2), 'QUESTION: ' + q + '\nToday: ' + foToday_());
   let queries = [];
-  if (plan.ok) { try { const m = String(plan.text).match(/\{[\s\S]*\}/); queries = (JSON.parse(m ? m[0] : '{}').search || []).map(x => foBrainScrub_(String(x)).slice(0, 140)).filter(Boolean).slice(0, 3); } catch (e) {} }
+  if (plan.ok) { try { const m = String(plan.text).match(/\{[\s\S]*\}/); queries = (JSON.parse(m ? m[0] : '{}').search || []).map(x => foBrainScrub_(String(x)).slice(0, 140)).filter(Boolean).slice(0, 2); } catch (e) {} }
   const out = { queries, findings: [], sources: [], via: [] }, seen = {}, t0 = Date.now();
   if (!queries.length) return out;
   const brief = query => 'Search the web and report the facts that matter for a holiday-villa business near Mahakaleshwar temple, Ujjain, India. Question: ' + query + '\nGive 3–6 short factual bullet points with dates and numbers where available. No advice.';
@@ -70,11 +70,13 @@ function foBrainResearch_(q, hist) {
   };
   let pending = queries.slice();
   // 1. Groq: the gpt-oss model with its built-in browser_search tool (free key; ~14 s, the searches run in parallel)
-  if (groq) run(query => ({ url: 'https://api.groq.com/openai/v1/chat/completions', method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
-    payload: JSON.stringify({ model: 'openai/gpt-oss-120b', temperature: 0.2, max_tokens: 900, tools: [{ type: 'browser_search' }], tool_choice: 'auto', messages: [{ role: 'user', content: brief(query) }] }) }), (query, j) => {
+  // web pages are long: a search costs ~40k tokens of the free daily allowance, so the small model searches first (its own allowance),
+  // the large one only for what is left; at most 2 searches per question
+  if (groq) ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'].forEach(model => run(query => ({ url: 'https://api.groq.com/openai/v1/chat/completions', method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
+    payload: JSON.stringify({ model, temperature: 0.2, max_tokens: 900, tools: [{ type: 'browser_search' }], tool_choice: 'auto', messages: [{ role: 'user', content: brief(query) }] }) }), (query, j) => {
     const m = ((j.choices || [])[0] || {}).message || {}, text = foBrainCleanCites_(String(m.content || '')); if (!text) return false;
     add(query, text, cite(foBrainToolHits_(m.executed_tools)), 'Groq web search'); return true;
-  }, 'groq');
+  }, 'groq'));
   // 2. Gemini with Google Search grounding
   if (gem && pending.length) {
     const model = [p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].filter(Boolean)[0];
@@ -118,23 +120,38 @@ function foBrainStatus_() {
 }
 
 /** Groq, then Gemini. Each provider: one retry on 429/5xx. Returns { ok, text, provider, model } or { ok:false, error }. */
+/**
+ * Free chat providers, tried in this order (each only when its key is in Script Properties). All speak the OpenAI chat format except
+ * Gemini. Within a provider the models are tried in turn: a retired model (404) or a used-up free allowance (429) moves to the next one.
+ * Whatever works is remembered (Script Property <NAME>_MODEL_AUTO). An owner-set <NAME>_MODEL always comes first.
+ */
+const FO_BRAIN_PROVIDERS = [
+  { id: 'groq', name: 'Groq', key: 'GROQ_API_KEY', prop: 'GROQ_MODEL', url: 'https://api.groq.com/openai/v1/chat/completions', models: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'], list: 'https://api.groq.com/openai/v1/models' },
+  { id: 'cerebras', name: 'Cerebras', key: 'CEREBRAS_API_KEY', prop: 'CEREBRAS_MODEL', url: 'https://api.cerebras.ai/v1/chat/completions', models: ['gpt-oss-120b', 'llama-3.3-70b'], list: 'https://api.cerebras.ai/v1/models' },
+  { id: 'openrouter', name: 'OpenRouter', key: 'OPENROUTER_API_KEY', prop: 'OPENROUTER_MODEL', url: 'https://openrouter.ai/api/v1/chat/completions', models: ['openai/gpt-oss-120b:free', 'meta-llama/llama-3.3-70b-instruct:free'], list: 'https://openrouter.ai/api/v1/models', freeOnly: true },
+  { id: 'mistral', name: 'Mistral', key: 'MISTRAL_API_KEY', prop: 'MISTRAL_MODEL', url: 'https://api.mistral.ai/v1/chat/completions', models: ['mistral-small-latest', 'mistral-medium-latest'], list: 'https://api.mistral.ai/v1/models' },
+];
 function foBrainCall_(system, history, prompt, only) {
-  const p = PropertiesService.getScriptProperties(), groq = only === 'gemini' ? null : p.getProperty('GROQ_API_KEY'), gem = only === 'groq' ? null : p.getProperty('GEMINI_API_KEY'), errs = [];
-  const t0 = Date.now();
-  if (!groq && !gem) return { ok: false, setup: true, error: 'AP Brain is not switched on yet: add a free Groq or Gemini key in Script Properties (see docs/founder-os/README.md → AP Brain).' };
-  const tryTwice = fn => { let r = fn(); if (!r.ok && r.retry) { Utilities.sleep(1500); r = fn(); } return r; };
-  // Free models get retired: a 404 means "model gone", so ask the provider which models it offers now, pick the best and remember it.
-  const withModel = (prop, def, pickNew, call) => {
-    let model = p.getProperty(prop) || p.getProperty(prop + '_AUTO') || def, r = tryTwice(() => call(model));
-    if (!r.ok && /^HTTP 404/.test(r.error)) { const m2 = pickNew(); if (m2 && m2 !== model) { p.setProperty(prop + '_AUTO', m2); model = m2; r = tryTwice(() => call(model)); } }
-    return Object.assign(r, { model });
-  };
-  if (groq) {
-    const r = withModel('GROQ_MODEL', FO_BRAIN.GROQ_MODEL, () => foBrainPickModel_('groq', groq), model => foBrainHttp_('https://api.groq.com/openai/v1/chat/completions', { Authorization: 'Bearer ' + groq },
-      { model, temperature: 0.3, max_tokens: 1200, messages: [{ role: 'system', content: system }].concat(history.map(h => ({ role: h.role, content: h.text })), [{ role: 'user', content: prompt }]) },
-      j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content));
-    if (r.ok) return Object.assign(r, { provider: 'Groq' });
-    errs.push('Groq: ' + r.error);
+  const p = PropertiesService.getScriptProperties(), errs = [], t0 = Date.now();
+  const chats = FO_BRAIN_PROVIDERS.filter(x => (!only || only === x.id) && p.getProperty(x.key)), gem = (!only || only === 'gemini') ? p.getProperty('GEMINI_API_KEY') : null;
+  if (!chats.length && !gem) return { ok: false, setup: true, error: 'AP Brain is not switched on yet: add a free Groq or Gemini key in Script Properties (see docs/founder-os/README.md → AP Brain).' };
+  const messages = [{ role: 'system', content: system }].concat(history.map(h => ({ role: h.role, content: h.text })), [{ role: 'user', content: prompt }]);
+  for (const pv of chats) {
+    const key = p.getProperty(pv.key), tried = [];
+    let list = [p.getProperty(pv.prop), p.getProperty(pv.prop + '_AUTO')].concat(pv.models).filter((m, i, a) => m && a.indexOf(m) === i), looked = false;
+    for (let k = 0; k < list.length && k < 5; k++) {
+      if (Date.now() - t0 > FO_BRAIN.BUDGET_MS) { tried.push('no time left'); break; }
+      const model = list[k];
+      let r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.3, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content);
+      if (!r.ok && r.retry && !/^HTTP 429/.test(r.error)) { Utilities.sleep(1200); r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.3, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content); }
+      tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
+      // remember a replacement only for a retired model (404); a used-up daily allowance (429) comes back tomorrow
+      if (r.ok) { if (looked && model !== p.getProperty(pv.prop + '_AUTO') && model !== p.getProperty(pv.prop)) p.setProperty(pv.prop + '_AUTO', model); return Object.assign(r, { provider: pv.name, model }); }
+      if (/key not accepted/.test(r.error)) break;
+      // retired model: ask the provider what it offers today and try the best of those next
+      if (/^HTTP 404/.test(r.error) && !looked) { looked = true; foBrainModelList_(pv, key).forEach((m, n) => { if (list.indexOf(m) < 0) list.splice(k + 1 + n, 0, m); }); }
+    }
+    errs.push(pv.name + ': ' + tried.join(', '));
   }
   if (gem) {
     // Gemini's newest models are often "high demand" (503 after up to a minute): try the remembered/stable model first, then the next
@@ -144,10 +161,9 @@ function foBrainCall_(system, history, prompt, only) {
         contents: history.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.text }] })).concat([{ role: 'user', parts: [{ text: prompt }] }]) },
       j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join(''));
     const tried = [], list = [p.getProperty('GEMINI_MODEL'), p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i);
-    let r = null;
     for (const model of list.slice(0, 4)) {
       if (Date.now() - t0 > FO_BRAIN.BUDGET_MS) break;
-      r = Object.assign(call(model), { model }); tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
+      const r = Object.assign(call(model), { model }); tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
       if (r.ok) { if (model !== p.getProperty('GEMINI_MODEL_AUTO')) p.setProperty('GEMINI_MODEL_AUTO', model); return Object.assign(r, { provider: 'Gemini' }); }
       if (/key not accepted/.test(r.error)) break;
     }
@@ -156,15 +172,13 @@ function foBrainCall_(system, history, prompt, only) {
   foLogError_('brain', errs.join(' | '));
   return { ok: false, error: 'AP Brain could not get an answer right now (' + errs.join('; ') + '). Please try again in a minute.' };
 }
-/** The best chat model a provider offers today (text chat, largest/newest first). Pure ranking in foBrainRankModels_ (tested). */
-function foBrainPickModel_(provider, key) {
-  try {
-    const res = provider === 'groq'
-      ? UrlFetchApp.fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + key }, muteHttpExceptions: true })
-      : UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key }, muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) return null;
-    return foBrainRankModels_(provider, JSON.parse(res.getContentText()))[0] || null;
-  } catch (e) { return null; }
+/** A provider's chat models today, best first (cached 6 hours). */
+function foBrainModelList_(pv, key) {
+  const c = CacheService.getScriptCache(), ck = 'FO_BRAIN_ML_' + pv.id, hit = c.get(ck); if (hit) return JSON.parse(hit);
+  let list = [];
+  try { const res = UrlFetchApp.fetch(pv.list, { headers: { Authorization: 'Bearer ' + key }, muteHttpExceptions: true }); if (res.getResponseCode() === 200) list = foBrainRankModels_(pv.id, JSON.parse(res.getContentText())); } catch (e) {}
+  if (list.length) c.put(ck, JSON.stringify(list.slice(0, 8)), 21600);
+  return list.slice(0, 8);
 }
 /** Gemini chat models to try, stable first (cached 6 hours). */
 function foBrainGeminiList_(key) {
@@ -175,10 +189,10 @@ function foBrainGeminiList_(key) {
   return list;
 }
 function foBrainRankModels_(provider, j) {
-  if (provider === 'groq') {
-    const ids = (j.data || []).filter(m => m.active !== false).map(m => String(m.id)).filter(id => !/whisper|tts|guard|embed|vision|audio|playai|compound|orpheus/i.test(id));
+  if (provider !== 'gemini') {
+    const ids = (j.data || []).filter(m => m.active !== false).map(m => String(m.id)).filter(id => !/whisper|tts|guard|embed|vision|audio|playai|compound|orpheus|safeguard|allam|ocr|moderation|codestral|pixtral|devstral/i.test(id)).filter(id => provider !== 'openrouter' || /:free$/.test(id));
     const size = id => { const m = id.match(/(\d+)b\b/i); return m ? Number(m[1]) : 0; };
-    const fam = id => /gpt-oss/i.test(id) ? 3 : /llama/i.test(id) ? 2 : /qwen|kimi|deepseek/i.test(id) ? 1 : 0;
+    const fam = id => /gpt-oss/i.test(id) ? 3 : /llama|mistral-(medium|large)/i.test(id) ? 2 : /qwen|kimi|deepseek|mistral/i.test(id) ? 1 : 0;
     return ids.sort((a, b) => fam(b) - fam(a) || size(b) - size(a) || b.localeCompare(a));
   }
   const ms = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0).map(m => String(m.name).replace(/^models\//, ''))

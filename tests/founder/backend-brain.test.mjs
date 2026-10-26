@@ -166,3 +166,21 @@ test('market research: no search when the planner says the business data is enou
   const b = env.api({ action: 'f.brain.ask', token, question: 'Any news on Simhastha?', web: false });
   assert.equal(b.ok, true); assert.equal(grounded, 0);
 });
+
+test('free allowance used up (429 tokens per day) on the big model → the smaller model answers; Groq down entirely → Cerebras answers', async () => {
+  let groqDown = false;
+  const { env, token } = await ready(r => {
+    const body = JSON.parse(r.payload || '{}');
+    if (/groq/.test(r.url)) return groqDown ? { code: 503, body: '{}' } : body.model === 'openai/gpt-oss-120b' ? { code: 429, body: '{"error":{"message":"Rate limit reached ... tokens per day (TPD)"}}' } : groqOk('From the small model.');
+    if (/cerebras/.test(r.url)) return groqOk('From Cerebras.');
+    return { code: 500, body: '' };
+  });
+  env.props.set('GROQ_API_KEY', 'gsk_test'); env.props.set('CEREBRAS_API_KEY', 'csk_test');
+  const a = env.api({ action: 'f.brain.ask', token, question: 'Tonight?', web: false });
+  assert.equal(a.ok, true, a.error); assert.equal(a.model, 'openai/gpt-oss-20b'); assert.equal(a.provider, 'Groq');
+  assert.equal(env.props.get('GROQ_MODEL_AUTO') ?? null, null, 'not remembered: the big model is back once its daily allowance resets');
+  groqDown = true;
+  const b = env.api({ action: 'f.brain.ask', token, question: 'Again?', web: false });
+  assert.equal(b.ok, true, b.error); assert.equal(b.provider, 'Cerebras');
+  const c = env.net.calls.filter(x => /cerebras/.test(x.url)).pop(); assert.equal(c.headers.Authorization, 'Bearer csk_test');
+});
