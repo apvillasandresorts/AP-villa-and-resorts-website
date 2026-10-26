@@ -1,0 +1,33 @@
+# Google search demand for the Live Pricing Desk: Google Trends daily interest in India for stay-intent searches ("hotels in ujjain"…)
+# and pilgrimage searches ("mahakal darshan"…). Free; robots.txt checked at run time; SerpApi free plan only as a backup (≤ 2 searches a day).
+# No Claude, no paid services. Twice a day so one failed run never leaves the desk without the signal; a failed run retries 3 times.
+name: Search demand (Google Trends)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 0 * * *"    # 06:15 IST
+    - cron: "45 12 * * *"   # 18:15 IST
+
+concurrency:
+  group: search-demand
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  trends:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Read search demand and send it to the Founder OS
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+        run: |
+          for i in 1 2 3; do node scripts/search-demand/run.mjs && exit 0; echo "Attempt $i failed; retrying in 2 minutes"; sleep 120; done; exit 1

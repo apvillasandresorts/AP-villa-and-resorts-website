@@ -299,3 +299,12 @@ test('fill: confidence is higher on a night the bots checked than on a forecast-
   assert.equal(unseen.fill.source, 'forecast'); assert.ok(seen.confidence >= 75 && seen.confidence > unseen.confidence + 20, seen.confidence + ' vs ' + unseen.confidence);
   assert.ok(seen.fill.confidence_parts.accuracy_nights >= 5); assert.ok(unseen.reasons.some(r => /forecast ladder/.test(r)));
 });
+test('fill: more Google searches for Ujjain stays than usual push the price up the ladder; fewer pull it down', () => {
+  const at = TODAY + 'T03:00:00+05:30', night = addD(TODAY, 4);
+  const withIdx = i => fillData({}, { signals: [{ signal_id: 'search_market', for_date: night, index: i, source_url: 'https://trends.google.com/x', fetched_at: at, raw_value: 'searches ×' + i }] });
+  const p = i => { const X = withIdx(i); return D.quote(X, D.ctxFor(X, 'ap-suite'), night); };
+  const up = p(1.3), flat = p(1), down = p(0.75);
+  assert.ok(up.price > flat.price && flat.price > down.price, [up.price, flat.price, down.price].join(' > '));
+  assert.ok(up.fill.pressure.some(x => x.key === 'searches' && x.mult > 1));
+  assert.equal(up.inputs.find(x => x.id === 'search_market').status, 'live');
+});

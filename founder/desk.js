@@ -66,7 +66,8 @@ var FoDesk = (function () {
     ['holiday', 'Public holidays and long weekends', 'calendar', 24 * 10, 0.8, 'Google public India holidays calendar', 'public feed'],
     ['school', 'School and college vacations (source states)', 'calendar', 24 * 10, 0.5, 'News scan (Claude, public news)', 'public news'],
     ['events', 'Local events (Ujjain, Indore)', 'calendar', 24 * 10, 0.7, 'News and public event listings', 'public news'],
-    ['search', 'Search demand (Search Console, Trends)', 'demand', 72, 0.6, 'Google Search Console; Trends MCP free tier', 'own data / free tier'],
+    ['search', 'Our search visibility (Search Console)', 'demand', 72, 0.6, 'Google Search Console', 'own data'],
+    ['search_market', 'Google searches for stays in Ujjain', 'demand', 48, 1.0, 'Google Trends daily interest, India (stay + pilgrimage searches)', 'public data'],
     ['web', 'Website demand (GA4 sessions, WhatsApp clicks)', 'demand', 36, 0.6, 'Google Analytics 4', 'own data'],
     ['temple', 'Temple notices and crowd control', 'demand', 24 * 8, 0.5, 'News (official site only where permitted)', 'public news'],
     ['travel', 'Travel demand (special trains, flights)', 'demand', 24 * 10, 0.3, 'News', 'public news'],
@@ -497,6 +498,8 @@ var FoDesk = (function () {
     var dSum = 0, dW = 0, dBasis = [];
     ['search', 'web', 'temple', 'travel', 'footfall'].forEach(function (idS) { var x = sig(idS); if (!x) return; dSum += (x.s.index - 1) * x.w; dW += x.w; dBasis.push(idS + ' ' + x.s.index.toFixed(2)); if (x.s.fresh < 1) activeStale.push(idS); });
     var demand = dW ? clamp(dSum / dW * Math.min(1, dW), -cfg.caps.demand, cfg.caps.demand) : 0; if (dW && Math.abs(demand) > 0.001) active++;
+    // 4b. market-wide search demand (Google Trends): people searching for stays in Ujjain more or less than usual for this night's lead time
+    var smk = sig('search_market'), smkLift = smk ? clamp((smk.s.index - 1) * smk.w * 0.5, -0.1, 0.1) : 0; if (Math.abs(smkLift) > 0.001) { active++; if (smk.s.fresh < 1) activeStale.push('search_market'); }
     // 5. weather dampener (only ever downwards)
     var wx = sig('weather'), wxLift = wx ? clamp((Math.min(1, wx.s.index) - 1) * wx.w, -cfg.caps.weather, 0) : 0; if (wxLift < 0) { active++; if (wx.s.fresh < 1) activeStale.push('weather'); }
     sig('reputation');
@@ -504,6 +507,8 @@ var FoDesk = (function () {
     if (active === 1 && activeStale.length === 1) { calLift = 0; demand = 0; wxLift = 0; reasons.push('Ignored a single stale signal (' + activeStale[0] + ')'); }
     apply('calendar', 'Calendar & holidays', 1 + calLift, calBasis.join('; ') || 'calendar signals', { source: 'signals' });
     apply('demand', 'Demand index', 1 + demand, dBasis.join(', '), { source: 'signals' });
+    if (active === 1 && activeStale.length === 1) smkLift = 0;
+    if (cfg.mode !== 'fill') apply('search_market', 'Google searches for Ujjain stays', 1 + smkLift, smk ? smk.s.raw || smk.s.note : '', { source: 'Google Trends' });
     apply('weather', 'Weather', 1 + wxLift, wx ? wx.s.note || 'forecast' : '', { source: 'MET Norway' });
     // 6. market anchor (comp-set median for the night, net-equivalent, positioning target) and compression
     var mk = marketAt(data, id, date, cfg, cx.now), mkW = 0;
@@ -546,6 +551,7 @@ var FoDesk = (function () {
         if (Lr.sellout != null) P.push(['sellout', 'Market sell-out', clamp(1 + 2 * (Lr.sellout - (so0 != null ? so0 : 0.2)), 0.6, 2.2), Math.round(Lr.sellout * 100) + '% of comparable stays ' + (Lr.source === 'observed' ? 'sold out' : 'expected sold out') + ' (normal ' + Math.round((so0 != null ? so0 : 0.2) * 100) + '%)']);
         if (Math.abs(calLift) > 0.001) P.push(['calendar', 'Calendar & festivals', clamp(1 + 2 * calLift, 0.7, 1.6), calBasis.join('; ')]);
         if (Math.abs(demand) > 0.001) P.push(['demand', 'Search, web & news demand', clamp(1 + 3 * demand, 0.7, 1.4), dBasis.join(', ')]);
+        if (smk && Math.abs(smkLift) > 0.001) P.push(['searches', 'Google searches for Ujjain stays', clamp(Math.pow(1 + (smk.s.index - 1) * smk.w, 1.5), 0.7, 1.5), (smk.s.raw ? smk.s.raw + '; ' : '') + (smk.s.note || '')]);
         if (wxLift < 0) P.push(['weather', 'Weather', clamp(1 + 2 * wxLift, 0.7, 1), wx.s.note || 'forecast']);
         if (mo && Math.abs(mo.change) >= 0.03) P.push(['momentum', 'Competitors ' + (mo.change > 0 ? 'raising' : 'cutting') + ' prices', clamp(1 + mo.change, 0.8, 1.25), '₹' + Math.round(mo.from) + ' → ₹' + Math.round(mo.to) + ' since ' + mo.since]);
         if (rel && rel.index >= 1.1) P.push(['spike', 'Night priced above nearby nights', clamp(rel.index, 1, 1.5), rel.n + ' competitors ' + Math.round((rel.index - 1) * 100) + '% above their usual']);
