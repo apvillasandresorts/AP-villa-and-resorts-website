@@ -286,10 +286,12 @@ function foBrainTestResearch() {
   console.log('planner: ' + (plan.ok ? plan.provider + ' → ' + String(plan.text).slice(0, 400) : 'FAILED ' + plan.error));
   const r = foBrainResearch_(q, []);
   console.log('research in ' + (Date.now() - t) + ' ms: ' + JSON.stringify(r).slice(0, 1500));
-  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  [PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL_AUTO'), 'gemini-2.5-flash'].filter(Boolean).forEach(model => {
-    const x = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, muteHttpExceptions: true,
-      payload: JSON.stringify({ tools: [{ google_search: {} }], contents: [{ role: 'user', parts: [{ text: 'Upcoming events in Ujjain this month?' }] }], generationConfig: { maxOutputTokens: 200 } }) });
-    console.log(model + ' with Google Search: HTTP ' + x.getResponseCode() + ' · ' + x.getContentText().replace(/\s+/g, ' ').slice(0, 500));
+  const groq = PropertiesService.getScriptProperties().getProperty('GROQ_API_KEY');
+  ['groq/compound-mini', 'groq/compound'].forEach(model => {
+    const t1 = Date.now(), x = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
+      payload: JSON.stringify({ model, max_tokens: 300, messages: [{ role: 'user', content: 'Upcoming events in Ujjain this month? Search the web.' }] }) });
+    console.log(model + ': HTTP ' + x.getResponseCode() + ' in ' + (Date.now() - t1) + ' ms · ' + x.getContentText().replace(/\s+/g, ' ').slice(0, 700));
   });
+  const g = UrlFetchApp.fetch('https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent('Ujjain (Simhastha OR events)') + '&mode=artlist&format=json&maxrecords=5&timespan=1m', { muteHttpExceptions: true });
+  console.log('GDELT: HTTP ' + g.getResponseCode() + ' · ' + g.getContentText().replace(/\s+/g, ' ').slice(0, 400));
 }
