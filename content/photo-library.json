@@ -1279,6 +1279,42 @@
       "license": "CC BY-SA 3.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
       "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/kal-bhairav-temple-guide/kal-bhairav-temple-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "kal-bhairav",
+        "temple",
+        "ujjain"
+      ],
+      "alt": "Kal Bhairav temple in Ujjain, with its painted shrine and tower of lamps seen from the courtyard",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Kal_Bhairav_temple_Ujjain.jpg",
+      "author": "Utcursch",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Utcursch / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/kal-bhairav-temple-guide/kal-bhairav-ujjain-deepmalika.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "kal-bhairav",
+        "deepmalika",
+        "ujjain"
+      ],
+      "alt": "Deepmalika, the tower of lamps, at the Kal Bhairav temple in Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Kal_Bhairav_Ujjain_-_Deepmalika.jpg",
+      "author": "Utcursch",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Utcursch / Wikimedia Commons, CC BY-SA 4.0"
     }
   ]
 }
