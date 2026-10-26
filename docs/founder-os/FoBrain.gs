@@ -43,8 +43,8 @@ function foBrainStatus_() {
 }
 
 /** Groq, then Gemini. Each provider: one retry on 429/5xx. Returns { ok, text, provider, model } or { ok:false, error }. */
-function foBrainCall_(system, history, prompt) {
-  const p = PropertiesService.getScriptProperties(), groq = p.getProperty('GROQ_API_KEY'), gem = p.getProperty('GEMINI_API_KEY'), errs = [];
+function foBrainCall_(system, history, prompt, only) {
+  const p = PropertiesService.getScriptProperties(), groq = only === 'gemini' ? null : p.getProperty('GROQ_API_KEY'), gem = only === 'groq' ? null : p.getProperty('GEMINI_API_KEY'), errs = [];
   if (!groq && !gem) return { ok: false, setup: true, error: 'AP Brain is not switched on yet: add a free Groq or Gemini key in Script Properties (see docs/founder-os/README.md → AP Brain).' };
   const tryTwice = fn => { let r = fn(); if (!r.ok && r.retry) { Utilities.sleep(1500); r = fn(); } return r; };
   // Free models get retired: a 404 means "model gone", so ask the provider which models it offers now, pick the best and remember it.
@@ -160,7 +160,10 @@ function foBrainDailyBrief_(today) {
 
 /** Run from the editor after adding a key: one tiny question with no business data; logs which provider answered. */
 function foBrainTest() {
-  const r = foBrainCall_('You are a test. Reply in five words or fewer.', [], 'Say: AP Brain is working.');
-  console.log(r.ok ? 'OK · ' + r.provider + ' (' + r.model + '): ' + r.text : 'FAILED: ' + r.error);
-  return r.ok;
+  // each provider on its own, so a broken backup is found before it is needed
+  return ['groq', 'gemini'].map(only => {
+    const r = foBrainCall_('You are a test. Reply in five words or fewer.', [], 'Say: AP Brain is working.', only);
+    console.log(only + ': ' + (r.ok ? 'OK · ' + r.provider + ' (' + r.model + '): ' + r.text : 'FAILED: ' + r.error));
+    return r.ok;
+  }).every(Boolean);
 }
