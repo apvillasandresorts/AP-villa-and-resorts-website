@@ -69,6 +69,8 @@ const FO_TABS = {
   PriceDecisions: ['decision_id', 'decided_at', 'decided_by', 'property', 'for_date', 'channel', 'recommended', 'set_price', 'accepted', 'reason', 'slot'],
   BotRuns: ['run_id', 'at', 'bot', 'platform', 'mode', 'pages', 'prices', 'sold_out', 'discovered', 'blocked', 'status', 'note'],
   DeletedRecords: ['deleted_id', 'deleted_at', 'deleted_by', 'kind', 'record_id', 'origin', 'origin_ref', 'channel', 'external_id', 'summary', 'reason', 'data_json'],
+  SearchKeywords: ['date', 'fetched_at', 'keyword', 'kinds', 'seeds', 'top_24h', 'top_7d', 'rising', 'latest', 'latest_date', 'avg7', 'avg30', 'change', 'series', 'anchor'],
+  SearchExtra: ['date', 'kind', 'key', 'data'],
   BrainLog: ['asked_at', 'user', 'question', 'provider', 'model', 'ms', 'ok', 'error'],
   News: ['news_id', 'published_at', 'fetched_at', 'title', 'source', 'url', 'lang', 'category', 'categories', 'impact', 'direction', 'score', 'summary', 'query', 'alerted'],
   Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],

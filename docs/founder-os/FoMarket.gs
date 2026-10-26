@@ -19,6 +19,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.compset': b => foCompSetPublic_(b),
   'f.m.bots.report': b => foBotsReport_(b),
   'f.m.bots.status': b => ({ today: foToday_(), runs: foRows_('BotRuns').filter(r => String(r.at).slice(0, 10) === foToday_()).map(r => ({ bot: r.bot, at: r.at, status: r.status, pages: r.pages, prices: r.prices, sold_out: r.sold_out, blocked: r.blocked })) }),   // retry planner
+  'f.m.searchkw.import': b => foSearchKwImport_(b),   // search demand job: Ujjain-wide Trends keywords, autocomplete phrases, Wikipedia readers (public data)
   'f.m.news.import': b => foNewsImport_(b),   // news job: relevant headlines (no article text), high-impact ones emailed once   // competitor bots: one row per bot run (pages, prices, blocked) for Signal health   // competitor bot: comp-set listings (public names + public listing links only)
 };
 
@@ -199,5 +200,28 @@ function foNewsImport_(b) {
     }
     foTouch_();
     return { result: out };
+  } finally { lock.releaseLock(); }
+}
+
+/** Ujjain-wide keyword report (public Google Trends / Autocomplete / Wikipedia data): one day replaces that day's rows; 60 days kept. */
+function foSearchKwImport_(b) {
+  const date = foDate_(b.date); if (!date) return { ok: false, error: 'bad date' };
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const cutoff = FoMetrics.addDays(date, -60);
+    ['SearchKeywords', 'SearchExtra'].forEach(t => foRows_(t).filter(r => r.date === date || String(r.date) < cutoff).sort((x, y) => y._row - x._row).forEach(r => foDeleteRow_(t, r._row)));
+    const nums = a => (Array.isArray(a) ? a : []).slice(-95).map(Number).filter(isFinite), at = foClean_(b.fetched_at, 30) || foNow_();
+    let k = 0, x = 0;
+    (Array.isArray(b.keywords) ? b.keywords.slice(0, 80) : []).forEach(r => {
+      const kw = foClean_(r.keyword, 120).toLowerCase().trim(); if (!kw) return;
+      foAppend_('SearchKeywords', { date, fetched_at: at, keyword: kw, kinds: foClean_(r.kinds, 120), seeds: foClean_(r.seeds, 120), top_24h: foNum_(r.top_24h) || '', top_7d: foNum_(r.top_7d) || '', rising: foClean_(r.rising, 20),
+        latest: foHasNum_(r.latest) ? foNum_(r.latest) : '', latest_date: foClean_(r.latest_date, 10), avg7: foHasNum_(r.avg7) ? foNum_(r.avg7) : '', avg30: foHasNum_(r.avg30) ? foNum_(r.avg30) : '', change: foHasNum_(r.change) ? foNum_(r.change) : '',
+        series: JSON.stringify(nums(r.series).slice(-30)), anchor: foClean_(b.anchor, 60) });
+      k++;
+    });
+    (Array.isArray(b.suggestions) ? b.suggestions.slice(0, 150) : []).forEach(r => { const ph = foClean_(r.phrase, 160).toLowerCase(); if (ph) { foAppend_('SearchExtra', { date, kind: 'suggest', key: foClean_(r.seed, 80), data: ph }); x++; } });
+    (Array.isArray(b.wiki) ? b.wiki.slice(0, 10) : []).forEach(w => { foAppend_('SearchExtra', { date, kind: 'wiki', key: foClean_(w.lang, 4) + ':' + foClean_(w.article, 100), data: JSON.stringify((w.series || []).slice(-95).map(p => [foClean_(p.date, 10), foNum_(p.value)])) }); x++; });
+    foTouch_();
+    return { result: { keywords: k, extra: x } };
   } finally { lock.releaseLock(); }
 }

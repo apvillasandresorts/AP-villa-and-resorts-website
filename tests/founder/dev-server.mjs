@@ -88,6 +88,7 @@ env.fo.foSetup();
     { bot: 'agoda', platform: 'Agoda', mode: 'pages', pages: 12, prices: 0, blocked: 'challenge page' }, { bot: 'serpapi', platform: 'Google Hotels', mode: 'api', pages: 5, prices: 64, discovered: 3 }, { bot: 'apify', platform: 'Apify', mode: 'api', blocked: 'APIFY_TOKEN not set yet' }] });
   // the same nights scanned again later at higher prices (momentum + spike in the preview)
   env.api({ action: 'f.m.market.import', key, rates: drates.filter(r => r.stay_date === addD(t0, 5)).map(r => Object.assign({}, r, { observed_at: t0, price_per_night: Math.round(r.price_per_night * 1.3), price_total: '', platform: 'Booking.com', source_url: r.source_url + '?bk' })) });
+  try { const kw = JSON.parse(readFileSync(new URL('../../research/search-keywords.json', import.meta.url), 'utf8')); env.api(Object.assign({ action: 'f.m.searchkw.import', key, date: t0 }, kw)); } catch (e) { /* run node scripts/search-demand/run.mjs --dry for a real keyword report */ }
   env.fo.foHourly();
   env.api({ action: 'f.logout', token: tok });
 }

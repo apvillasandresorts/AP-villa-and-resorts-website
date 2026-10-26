@@ -422,6 +422,8 @@ function foDataBuild_() {
     recommendations: foDeskRecsForBundle_(), price_decisions: foRows_('PriceDecisions').slice(-1500).map(strip),
     bot_runs: foRows_('BotRuns').slice(-300).map(strip),
     deleted_records: foRows_('DeletedRecords').slice(-300).map(r => ({ deleted_id: r.deleted_id, deleted_at: r.deleted_at, deleted_by: r.deleted_by, kind: r.kind, record_id: r.record_id, summary: r.summary, reason: r.reason })),
+    search_keywords: (() => { const rows = foRows_('SearchKeywords'), d = rows.map(r => String(r.date)).sort(); const keep = d.filter((v, i) => d.indexOf(v) === i).slice(-14); return rows.filter(r => keep.indexOf(String(r.date)) >= 0).map(strip); })(),
+    search_extra: (() => { const rows = foRows_('SearchExtra'), last = rows.map(r => String(r.date)).sort().pop(); return rows.filter(r => String(r.date) === last).map(strip); })(),
     news: foRows_('News').filter(r => String(r.fetched_at) >= (foDate_(new Date(Date.now() - 30 * 86400000)) || '')).slice(-400).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }

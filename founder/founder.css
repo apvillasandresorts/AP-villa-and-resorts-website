@@ -344,3 +344,4 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .dk-ladder { display: flex; flex-wrap: wrap; gap: 6px; }
 .dk-ladder span { font-size: 12px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); white-space: nowrap; }
 .dk-ladder span.is-cur { border-color: #2F7D4F; background: color-mix(in srgb, #2F7D4F 12%, transparent); }
+.seo-spark { color: var(--em, #2F7D4F); vertical-align: middle; }

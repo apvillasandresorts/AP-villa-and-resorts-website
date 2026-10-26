@@ -41,16 +41,67 @@
 
   // ============================================================ view ============================================================
   function viewSeo(page) {
-    var T = U.tabs('seo', [['search', 'Google search'], ['opps', 'Opportunities'], ['keywords', 'Keywords'], ['content', 'Blog topics'], ['campaigns', 'Campaigns'], ['audit', 'Site audit'], ['plan', 'Growth checklist']]);
+    var T = U.tabs('seo', [['ujjain', 'Ujjain searches'], ['search', 'Google search'], ['opps', 'Opportunities'], ['keywords', 'Keywords'], ['content', 'Blog topics'], ['campaigns', 'Campaigns'], ['audit', 'Site audit'], ['plan', 'Growth checklist']]);
     page.innerHTML = U.hello('SEO & marketing', 'How people find AP Villas on Google, what to improve, what to write next, and which campaigns bring enquiries. Nothing here changes the website or spends money.') + T.html + '<div id="seo"></div>';
     U.wireTabs(page, 'seo');
-    ({ search: search, opps: opps, keywords: keywords, content: content, campaigns: campaigns, audit: audit, plan: plan }[T.cur] || search)($('#seo'));
+    ({ ujjain: ujjain, search: search, opps: opps, keywords: keywords, content: content, campaigns: campaigns, audit: audit, plan: plan }[T.cur] || search)($('#seo'));
   }
   function rangeBar(body, redraw) {
     var r = gscRange();
     return '<div class="fo-toolbar">Period ' + sel('gsc-n', [['7', 'Last 7 days'], ['28', 'Last 28 days'], ['90', 'Last 90 days'], ['180', 'Last 6 months']], String(r.n)) + '<span class="fo-hint">' + esc(dmy(r.from)) + ' – ' + esc(dmy(r.to)) + ' · Google\'s figures for the last 2–3 days are still filling in</span></div>';
   }
   function wireRange(body, redraw) { var s = $('#gsc-n'); if (s) s.onchange = function () { S.gscDays = Number(this.value); redraw(body); }; }
+
+  // ---------- Ujjain searches (whole market, not only us) ----------
+  function spark(v) {
+    if (!v || v.length < 2) return '<span class="fo-hint">—</span>';
+    var mx = Math.max.apply(null, v) || 1, w = 90, h = 22, pts = v.map(function (x, i) { return (i / (v.length - 1) * w).toFixed(1) + ',' + (h - x / mx * (h - 2) - 1).toFixed(1); }).join(' ');
+    return '<svg class="seo-spark" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+  }
+  function ujjain(body) {
+    var rows = S.data.search_keywords || [], extra = S.data.search_extra || [], dates = rows.map(function (r) { return String(r.date); }).filter(function (d, i, a) { return a.indexOf(d) === i; }).sort().reverse();
+    if (!dates.length) { body.innerHTML = '<div class="fo-empty">No search report yet. The Search demand job runs at 06:15 and 18:15 IST (GitHub Actions → Search demand).</div>'; return; }
+    var day = dates.indexOf(S.seoDay) >= 0 ? S.seoDay : dates[0], list = rows.filter(function (r) { return String(r.date) === day; });
+    var vol = Number(S.data.settings && S.data.settings.seo_anchor_volume) || 0, anchor = (list[0] || {}).anchor || 'ujjain hotel', perDay = vol / 30;
+    var est = function (v) { return vol && v !== '' && v != null ? '≈' + n0(Number(v) / 100 * perDay) : '<span class="fo-hint">—</span>'; };
+    var curve = list.filter(function (r) { return r.avg7 !== ''; }).sort(function (a, b) { return Number(b.avg7) - Number(a.avg7); });
+    var rising = list.filter(function (r) { return r.rising; }).sort(function (a, b) { return (b.rising === 'Breakout' ? 1e6 : parseInt(String(b.rising).replace(/\D/g, ''), 10) || 0) - (a.rising === 'Breakout' ? 1e6 : parseInt(String(a.rising).replace(/\D/g, ''), 10) || 0); });
+    var wiki = extra.filter(function (x) { return x.kind === 'wiki'; }).map(function (x) { var s2 = []; try { s2 = JSON.parse(x.data); } catch (e) {} return { key: x.key, series: s2 }; }).filter(function (w) { return w.series.some(function (p) { return p[1] > 0; }); });
+    var sugg = {}; extra.filter(function (x) { return x.kind === 'suggest'; }).forEach(function (x) { (sugg[x.key] = sugg[x.key] || []).push(x.data); });
+    var wikiTot = function (i) { return wiki.reduce(function (a, w) { var p = w.series[w.series.length - 1 - i]; return a + (p ? Number(p[1]) : 0); }, 0); };
+    var w7 = [0, 1, 2, 3, 4, 5, 6].reduce(function (a, i) { return a + wikiTot(i); }, 0) / 7, w30 = 0; for (var i = 7; i < 37; i++) w30 += wikiTot(i); w30 /= 30;
+    var gU = list.filter(function (r) { return r.keyword === 'ujjain'; })[0], gH = list.filter(function (r) { return r.keyword === anchor; })[0];
+    var tracked = (S.data.seo_keywords || []).map(function (k) { return k.keyword; }), ed = canEdit();
+    body.innerHTML = '<div class="fo-toolbar">Report ' + sel('seo-day', dates.map(function (d) { return [d, dmy(d)]; }), day) + '<button class="btn btn--sm" id="seo-kcsv">Export CSV</button>' +
+      '<span class="fo-hint">Whole-market Google searches in India around Ujjain (not only searches that showed our site). Source: Google Trends, Google Autocomplete, Wikipedia pageviews.</span></div>' +
+      '<div class="fo-grid fo-grid--kpi">' +
+      kpi('"ujjain" searches, last 7 days', gU && gU.change !== '' ? (gU.change > 0 ? '+' : '') + gU.change + '%' : '—', '<span class="flat">vs its 30-day average (Google Trends)</span>') +
+      kpi('"' + anchor + '" searches', gH && gH.change !== '' ? (gH.change > 0 ? '+' : '') + gH.change + '%' : '—', '<span class="flat">stay intent, vs 30-day average</span>') +
+      kpi('People reading about Ujjain', wiki.length ? n0(wikiTot(0)) : '—', '<span class="flat">' + (wiki.length ? 'exact Wikipedia readers, latest day · 7-day avg ' + n0(w7) + (w30 ? ' (' + (w7 >= w30 ? '+' : '') + Math.round((w7 / w30 - 1) * 100) + '% vs 30 days)' : '') : 'no data') + '</span>') +
+      kpi('Rising searches', String(rising.length), '<span class="flat">new or fast-growing on Google</span>') + '</div>' +
+      '<div class="fo-card" style="margin-top:14px"><h3>Most searched around Ujjain <small>daily interest on one scale: "' + esc(anchor) + '" average = 100</small></h3>' +
+      table(['Search', 'Where', 'Latest day', '7-day avg', 'vs 30 days', '30 days', 'Est. searches / day', ''], curve.map(function (r) {
+        var ser = []; try { ser = JSON.parse(r.series || '[]'); } catch (e) {}
+        return ['<b>' + esc(r.keyword) + '</b>', '<small class="fo-hint">' + esc(r.kinds) + '</small>', esc(r.latest) + (r.latest_date ? ' <small class="fo-hint">' + dm(r.latest_date) + '</small>' : ''), '<b>' + esc(r.avg7) + '</b>',
+          r.change === '' ? '—' : '<span class="' + (Number(r.change) > 2 ? 'up' : Number(r.change) < -2 ? 'down' : 'flat') + '">' + (r.change > 0 ? '+' : '') + esc(r.change) + '%</span>', spark(ser), est(r.avg7),
+          ed && tracked.indexOf(r.keyword) < 0 ? '<button class="btn btn--sm" data-track="' + esc(r.keyword) + '">Track</button>' : tracked.indexOf(r.keyword) >= 0 ? '<span class="fo-badge">tracked</span>' : ''];
+      }), 'No daily curves in this report.', [2, 3, 4, 6]) +
+      '<p class="fo-hint">Google does not publish exact search counts for any keyword (not even to advertisers per day). Trends gives each search\'s daily interest relative to the others, so 200 means searched about twice as often as "' + esc(anchor) + '". ' +
+      (vol ? 'Estimates use your Keyword Planner figure of ' + n0(vol) + ' searches a month for "' + esc(anchor) + '" (ESTIMATE).' : 'Add the monthly searches for "' + esc(anchor) + '" from Google Ads Keyword Planner below to see estimated searches per day.') + ' Track sends a keyword to the Keywords tab, where Search Console records your Google position for it daily.</p>' +
+      (S.user && S.user.role === 'founder' ? '<div class="fo-toolbar"><label class="fo-hint">Keyword Planner monthly searches for "' + esc(anchor) + '" <input class="fo-input" id="seo-vol" type="number" min="0" step="10" value="' + (vol || '') + '" style="width:120px"></label><button class="btn btn--sm" id="seo-vol-save">Save</button></div>' : '') + '</div>' +
+      '<div class="fo-grid fo-grid--2" style="margin-top:14px">' +
+      card('Rising searches', 'growth vs the period before (Breakout = more than +5000%)', table(['Search', 'Growth', 'Seen in'], rising.slice(0, 30).map(function (r) { return ['<b>' + esc(r.keyword) + '</b>' + (ed && tracked.indexOf(r.keyword) < 0 ? ' <button class="btn btn--sm" data-track="' + esc(r.keyword) + '">Track</button>' : ''), '<b class="up">' + esc(r.rising) + '</b>', '<small class="fo-hint">' + esc(r.kinds) + '</small>']; }), 'Nothing rising in this report.')) +
+      card('What people type into Google', 'Google Autocomplete, India', Object.keys(sugg).length ? Object.keys(sugg).map(function (k) { return '<p style="margin:6px 0 2px"><b>' + esc(k) + '…</b></p><div class="dk-ladder">' + sugg[k].map(function (p) { return '<span>' + esc(p) + '</span>'; }).join('') + '</div>'; }).join('') : '<div class="fo-empty">No phrases in this report.</div>') + '</div>' +
+      (wiki.length ? '<div class="fo-card" style="margin-top:14px"><h3>People reading about Ujjain each day <small>exact Wikipedia pageviews (official Wikimedia API)</small></h3><div class="fo-chartbox" id="seo-wiki"></div></div>' : '');
+    $('#seo-day').onchange = function () { S.seoDay = this.value; ujjain(body); };
+    $$('[data-track]', body).forEach(function (b) { b.onclick = function () { save('f.seo.keyword.save', { record: { keyword: b.dataset.track, notes: 'from Ujjain searches ' + day } }, 'Now tracking "' + b.dataset.track + '"').then(function () { ujjain(body); }); }; });
+    var vs = $('#seo-vol-save'); if (vs) vs.onclick = function () { save('f.settings.save', { settings: { seo_anchor_volume: $('#seo-vol').value } }, 'Saved').then(function () { ujjain(body); }); };
+    $('#seo-kcsv').onclick = function () { U.csvDownload('ujjain-searches-' + day, ['keyword', 'where', 'latest_day', 'latest', 'avg7', 'change_vs_30d_pct', 'rising', 'est_searches_per_day'], list.map(function (r) { return [r.keyword, r.kinds, r.latest_date, r.latest, r.avg7, r.change, r.rising, vol && r.avg7 !== '' ? Math.round(Number(r.avg7) / 100 * perDay) : '']; })); };
+    if (wiki.length) {
+      var labels = wiki[0].series.slice(-60).map(function (p) { return dm(p[0]); }), cols = ['#2F7D4F', '#C9A227', '#7A5C99', '#C0604A', '#3C7DB0'];
+      C.combo($('#seo-wiki'), { labels: labels, kind: 'n', series: wiki.map(function (w, i) { return { name: w.key.replace(/_/g, ' '), values: w.series.slice(-60).map(function (p) { return p[1]; }), color: cols[i % cols.length], type: 'line' }; }) });
+    }
+  }
 
   // ---------- Google search ----------
   function search(body) {

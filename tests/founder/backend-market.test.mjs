@@ -78,3 +78,20 @@ test('market report upload: sanitised, archived, idempotent per month', async ()
   assert.equal(env.api({ action: 'f.m.report.upload', key, type: 'market', period_key: '2026-10', html }).status, 'exists');
   assert.match(env.api({ action: 'f.m.report.upload', key, type: 'daily', html }).error, /market/);
 });
+
+test('Ujjain keyword report: automation key only, one day replaces itself, bundled for the SEO tab, setting for Keyword Planner volume', async () => {
+  const { makeEnv } = await import('./gas-mock.mjs');
+  const env = makeEnv(); env.fo.foSetup(); const token = await env.login();
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const body = { action: 'f.m.searchkw.import', key, date: '2026-10-16', fetched_at: '2026-10-16T01:00:00Z', anchor: 'ujjain hotel',
+    keywords: [{ keyword: 'Ujjain Hotel', kinds: 'top 24h, top 7d', latest: 92, latest_date: '2026-10-15', avg7: 88, avg30: 100, change: -12, series: [100, 95, 88] }, { keyword: 'nivasam villa ujjain', kinds: 'rising 7d', rising: 'Breakout', series: [] }],
+    suggestions: [{ seed: 'ujjain hotel', phrase: 'ujjain hotel near mahakal temple for family' }], wiki: [{ lang: 'en', article: 'Ujjain', series: [{ date: '2026-10-15', value: 394 }] }] };
+  const r = env.api(body); assert.equal(r.ok, true, r.error); assert.deepEqual(r.result, { keywords: 2, extra: 2 });
+  env.api(body); assert.equal(env.tab('SearchKeywords').length, 2, 'same day replaced, not doubled');
+  assert.equal(env.tab('SearchKeywords')[0].keyword, 'ujjain hotel');
+  assert.match(env.api(Object.assign({}, body, { key: undefined, token })).error || '', /Unknown action|role/);
+  const d = env.api({ action: 'f.data', token: await env.login() });
+  assert.equal(d.search_keywords.length, 2); assert.equal(d.search_extra.length, 2);
+  env.api({ action: 'f.settings.save', token, settings: { seo_anchor_volume: '2400' } });
+  assert.equal(env.api({ action: 'f.data', token: await env.login() }).settings.seo_anchor_volume, '2400');
+});

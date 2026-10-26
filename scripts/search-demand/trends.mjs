@@ -50,9 +50,13 @@ export function demandIndex(byKeyword) {
     const ks = kws.map(k => [k, keywordIndex(byKeyword[k])]).filter(x => x[1]);
     parts[b] = ks.length ? { index: median(ks.map(x => x[1].index)), rising: median(ks.map(x => x[1].rising).filter(v => v != null)), keywords: Object.fromEntries(ks.map(([k, v]) => [k, Math.round(v.index * 100) / 100])) } : null;
   });
-  const st = parts.stay, pg = parts.pilgrim;
+  // Wikipedia readers of the Ujjain / Mahakaleshwar articles: exact daily counts, an independent check on the Trends curve
+  const wk = Object.keys(byKeyword).filter(k => /^wiki:/.test(k)).map(k => keywordIndex(byKeyword[k])).filter(Boolean);
+  parts.wiki = wk.length ? { index: median(wk.map(x => x.index)), rising: median(wk.map(x => x.rising).filter(v => v != null)), keywords: {} } : null;
+  const st = parts.stay, pg = parts.pilgrim, wi = parts.wiki;
   if (!st && !pg) return null;
-  const index = st && pg ? 0.7 * st.index + 0.3 * pg.index : (st || pg).index;
+  const ws = [[st, 0.6], [pg, 0.25], [wi, 0.15]].filter(x => x[0]), tw = ws.reduce((a, x) => a + x[1], 0);
+  const index = ws.reduce((a, x) => a + x[0].index * x[1], 0) / tw;
   const rising = st && st.rising != null ? st.rising : pg && pg.rising;
   return { index: clamp(index, 0.6, 1.6), rising: rising == null ? null : Math.round(rising * 100) / 100, parts };
 }
@@ -72,3 +76,35 @@ export function searchSignals(d, today, fetchedAt, sourceUrl) {
   }
   return out;
 }
+
+// ------------------------------------------------------------ keyword report (SEO & marketing → Ujjain searches) ------------------------------------------------------------
+/** Trends related queries: top (0–100, relative to the most searched) and rising ("+250%" or "Breakout"). */
+export function parseRelated(text) {
+  const j = JSON.parse(String(text).slice(String(text).indexOf('{'))), L = (j.default && j.default.rankedList) || [];
+  const pick = l => ((l && l.rankedKeyword) || []).map(k => ({ query: String(k.query).toLowerCase().trim(), value: Number(k.value), label: String(k.formattedValue || k.value) }));
+  return { top: pick(L[0]), rising: pick(L[1]) };
+}
+/**
+ * Daily series from several Trends requests on one scale: every request carries the same anchor keyword, each request is rescaled so
+ * the anchor's average over its last 30 days = 100. A keyword at 50 is searched about half as often as the anchor.
+ */
+export function onAnchorScale(groups, anchor) {
+  const out = {};
+  groups.forEach(g => {
+    const a = (g[anchor] || []).slice(-30).map(x => x.value), m = a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+    if (!(m > 0)) return;
+    Object.entries(g).forEach(([k, s]) => { if (!out[k] || k !== anchor) out[k] = s.map(x => ({ date: x.date, value: Math.round(x.value * 100 / m * 10) / 10 })); });
+  });
+  return out;
+}
+/** One row per keyword: latest full day, 7-day and 30-day averages, change, and the 30-day series (all on the anchor scale). */
+export function keywordRows(scaled, meta, perDayAnchor) {
+  return Object.entries(scaled).map(([k, s]) => {
+    const v = s.map(x => x.value), last = v[v.length - 1], a7 = mean(v.slice(-7)), a30 = mean(v.slice(-30));
+    const est = perDayAnchor ? x => Math.round(x / 100 * perDayAnchor) : () => null;
+    return Object.assign({ keyword: k, latest_date: (s[s.length - 1] || {}).date || '', latest: last, avg7: a7 == null ? null : Math.round(a7 * 10) / 10, avg30: a30 == null ? null : Math.round(a30 * 10) / 10,
+      change: a30 ? Math.round((a7 / a30 - 1) * 100) : null, est_daily: est(a7 || 0), series: s.slice(-30).map(x => x.value) }, meta[k] || {});
+  }).sort((a, b) => (b.avg7 || 0) - (a.avg7 || 0));
+}
+/** Wikipedia pageviews (official Wikimedia REST API): exact daily readers of an article. */
+export function parseWiki(j) { return ((j && j.items) || []).map(x => ({ date: `${x.timestamp.slice(0, 4)}-${x.timestamp.slice(4, 6)}-${x.timestamp.slice(6, 8)}`, value: Number(x.views) })); }
