@@ -253,3 +253,25 @@ function gameTop_() {
   });
   return Object.values(best).sort((a, c) => c.s - a.s || a.t - c.t).slice(0, 10).map(x => ({ n: x.n, s: x.s, w: x.w, b: x.b }));
 }
+
+/**
+ * Maintenance (run from the editor): removes test check-ins: rows whose main guest starts with "TEST" (e.g. "TEST – please delete").
+ * Their ID folders are moved to Drive's Trash (recoverable for 30 days). Real guests are never touched. Logs what it removed.
+ */
+function ciDeleteTestEntries() {
+  const sh = sheet_(), data = sh.getDataRange().getValues(), head = data[0] || [];
+  const gi = head.indexOf('Main guest'), ri = head.indexOf('Reference'), out = [];
+  if (gi < 0 || ri < 0) throw new Error('columns not found');
+  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (!/^\s*TEST\b/i.test(String(data[i][gi]))) continue;
+      out.push(data[i][ri] + ' · ' + data[i][gi]);
+      sh.deleteRow(i + 1);
+    }
+  } finally { lock.releaseLock(); }
+  const parent = folder_(DriveApp.getRootFolder(), FOLDER_NAME), it = parent.getFolders();
+  while (it.hasNext()) { const f = it.next(); if (/\sTEST\b/i.test(f.getName())) { f.setTrashed(true); out.push('folder → Trash: ' + f.getName()); } }
+  console.log(out.length ? 'Removed:\n' + out.join('\n') : 'No test entries found.');
+  return out;
+}
