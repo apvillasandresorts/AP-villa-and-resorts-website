@@ -169,14 +169,21 @@
 
   // ---- files → compressed base64 ----
   function readAsDataURL(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+  // A photo the phone cannot decode (e.g. some HEIC files) or a very large PDF must never block the whole check-in: it is skipped,
+  // the guest is told, and they can send that one file on WhatsApp.
+  const skipped = [];
   async function packFile(file, label) {
-    if (file.type === 'application/pdf') { const d = await readAsDataURL(file); return { label, name: file.name, type: file.type, data: d.split(',')[1] }; }
+    try { return await packOne(file, label); } catch (x) { skipped.push(label.replace(/-/g, ' ') + ' (' + file.name + ')'); return null; }
+  }
+  async function packOne(file, label) {
+    if (file.type === 'application/pdf') { if (file.size > 2500000) throw new Error('PDF too large'); const d = await readAsDataURL(file); return { label, name: file.name, type: file.type, data: d.split(',')[1] }; }
     const url = await readAsDataURL(file);
     const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+    const max = 1400, k = Math.min(1, max / Math.max(img.width, img.height));
     const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    const d = c.toDataURL('image/jpeg', 0.78);
+    const d = c.toDataURL('image/jpeg', 0.75);
+    if (!/^data:image\/jpeg/.test(d)) throw new Error('could not read the photo');
     return { label, name: file.name.replace(/\.[^.]+$/, '') + '.jpg', type: 'image/jpeg', data: d.split(',')[1] };
   }
 
@@ -223,16 +230,17 @@
     try {
       if (ENDPOINT) {
         const files = [];
-        const add = async (name, label) => { for (const file of q(name) && !q(name).disabled ? q(name).files : []) files.push(await packFile(file, label)); };
+        skipped.length = 0;
+        const add = async (name, label) => { for (const file of q(name) && !q(name).disabled ? q(name).files : []) { const p = await packFile(file, label); if (p) files.push(p); } };
         btn.textContent = 'Preparing your ID photos…';
         await add('id_front', 'ID-front'); await add('id_back', 'ID-back'); await add('other_ids', 'Other-adult-ID');
         await add('passport_page', 'Passport'); await add('visa_page', 'Visa');
         await add('payment_proof', 'Payment-screenshot'); await add('booking_voucher', 'Booking-voucher');
         btn.textContent = 'Sending securely…';
-        const res = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ref: r, submitted_at: new Date().toISOString(), page: location.href, fields: f, files, website: '' }) });
-        const out = await res.json().catch(() => ({}));
-        if (!out.ok) throw new Error(out.error || 'Upload failed');
-        done(f, r, waText, true);
+        if (skipped.length) f.requests = (f.requests ? f.requests + ' | ' : '') + 'Could not attach: ' + skipped.join(', ') + ' (guest will send on WhatsApp)';
+        const out = await send(JSON.stringify({ ref: r, submitted_at: new Date().toISOString(), page: location.href, fields: f, files, website: '' }), btn);
+        if (skipped.length) waText.push('📎 Please attach here: ' + skipped.join(', '));
+        done(f, r, waText, true, skipped);
       } else {
         // Not connected to Google yet: hand the details over on WhatsApp, IDs to be sent in the chat
         waText.push(`🪪 ID: ${f.id_type} ending ${f.id_last4} (I'll send the photo here)`, `🏠 ${f.address}, ${f.city}, ${f.state} ${f.pincode}`, `👥 ${f.members || 'No other guests'}`);
@@ -243,19 +251,50 @@
       }
       if (typeof window.track === 'function') window.track('echeckin_submit', { booking_source: f.booking_source, villa: f.villa, nights: f.nights, adults: f.adults, connected: !!ENDPOINT });
     } catch (x) {
-      err.textContent = 'Sorry, that did not go through. Please check your internet and try again, or send the details on WhatsApp.';
+      // nothing saved after every retry: keep the form (the draft is kept too) and offer WhatsApp with all the details in one tap
+      waText.push(`🪪 ID: ${f.id_type} ending ${f.id_last4} (I'll send the photo here)`, `🏠 ${f.address}, ${f.city}, ${f.state} ${f.pincode}`, `👥 ${f.members || 'No other guests'}`,
+        `💰 ${f.payment_status}${f.amount_paid ? ` · paid ₹${f.amount_paid}` : ''}${f.total_amount ? ` of ₹${f.total_amount}` : ''}`, f.requests ? `📝 ${f.requests}` : '');
+      err.innerHTML = '';
+      err.append('Sorry, we could not send your check-in' + (x && x.message && !/fetch|network|load/i.test(x.message) ? ' (' + x.message + ')' : '') + '. Please tap Submit again in a minute, or send it on WhatsApp instead: ');
+      const a = document.createElement('a'); a.href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(waText.filter(Boolean).join('\n')); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Send on WhatsApp'; a.className = 'ci-wa-fallback';
+      err.append(a);
+      if (typeof window.track === 'function') window.track('echeckin_error', { reason: String(x && x.message || 'network').slice(0, 80) });
       btn.disabled = false; btn.textContent = 'Submit e-check-in';
     }
   });
-  function done(f, r, waText, uploaded) {
+  /**
+   * Send with retries: our own domain first (/api/fo, a Vercel relay: works on mobile networks that cannot reach script.google.com),
+   * Google directly if the relay is unreachable or the upload is too big for it (4 MB). The same reference is sent each time, so a retry
+   * after a slow answer never creates a second check-in. 3 rounds, 2 s → 8 s apart.
+   */
+  async function send(body, btn) {
+    const routes = (location.protocol === 'https:' && body.length < 3800000 ? ['/api/fo'] : []).concat([ENDPOINT]);
+    let last;
+    for (let round = 0; round < 3; round++) {
+      for (const url of routes) {
+        try {
+          const ctl = window.AbortController ? new AbortController() : null, t = setTimeout(() => ctl && ctl.abort(), 90000);
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body, signal: ctl ? ctl.signal : undefined }).finally(() => clearTimeout(t));
+          const out = await res.json().catch(() => ({}));
+          if (out.ok) return out;
+          last = new Error(out.error || 'HTTP ' + res.status);
+          if (/Missing required/i.test(out.error || '')) throw last;   // nothing a retry can fix
+        } catch (x) { last = x; if (/Missing required/i.test(x.message || '')) throw x; }
+      }
+      if (round < 2) { btn.textContent = 'Retrying… (' + (round + 2) + ' of 3)'; await new Promise(r => setTimeout(r, 2000 * Math.pow(2, round))); }
+    }
+    throw last || new Error('network');
+  }
+  function done(f, r, waText, uploaded, skipped) {
     form.hidden = true; clearDraft();
     const box = document.getElementById('ci-done'); box.hidden = false;
     document.getElementById('ci-done-name').textContent = f.guest_name.split(' ')[0];
     document.getElementById('ci-done-ref').textContent = r;
     if (!uploaded) document.getElementById('ci-done-note').textContent = 'Last step: tap the button below to send these details to us on WhatsApp, then attach a photo of each adult\'s ID in the same chat.';
+    else if (skipped && skipped.length) document.getElementById('ci-done-note').textContent = 'Saved. One file could not be attached (' + skipped.join(', ') + '): please send it to us on WhatsApp with the button below.';
     const wa = document.getElementById('ci-done-wa');
     wa.href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(waText.join('\n'));
-    wa.textContent = uploaded ? 'Tell us on WhatsApp (optional)' : 'Send on WhatsApp';
+    wa.textContent = uploaded && !(skipped && skipped.length) ? 'Tell us on WhatsApp (optional)' : 'Send on WhatsApp';
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 

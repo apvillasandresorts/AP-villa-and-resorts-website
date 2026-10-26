@@ -1,4 +1,4 @@
-// Founder OS relay (Vercel serverless function, free tier). The portal posts here (same origin); this calls the Apps Script web app
+// Relay for the Founder OS portal AND the guest e-check-in (Vercel serverless function, free tier). Both post here (same origin); this calls the Apps Script web app
 // from Vercel's servers, follows Google's redirect and returns the JSON answer. It holds no secrets and adds no access: every action is
 // still checked by the Apps Script with the session token, exactly as when the browser calls Google directly.
 const EXEC = 'https://script.google.com/macros/s/AKfycbzmtIwOzGohnjEOfp7RZ1cU8JtwkCb6mEZiHEa8j_gknh-zkVbHz4oEV1Mu5xTaNpo7/exec';

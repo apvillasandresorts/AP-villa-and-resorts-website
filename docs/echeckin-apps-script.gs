@@ -61,6 +61,8 @@ function doPost(e) {
     const f = body.fields || {};
     if (!f.guest_name || !f.phone || !f.checkin_date) return json_({ ok: false, error: 'Missing required details' });
     const ref = String(body.ref || ('ECI-' + Date.now())).replace(/[^A-Z0-9-]/gi, '').slice(0, 30);
+    // a phone that retries after a slow answer sends the same reference again: answer "saved" instead of storing it twice
+    if (refSaved_(ref)) return json_({ ok: true, ref, duplicate: true });
 
     // ID files → private Drive folder
     const parent = folder_(DriveApp.getRootFolder(), FOLDER_NAME);
@@ -71,12 +73,15 @@ function doPost(e) {
     });
 
     // one row in the sheet
-    const lock = LockService.getScriptLock(); lock.waitLock(20000);
+    // The script lock is shared with the Founder OS jobs (price imports, hourly pricing). A guest must never fail because a job holds it:
+    // wait up to 30 s, then save anyway (appendRow is atomic on its own; the lock only keeps rows in order).
+    const lock = LockService.getScriptLock(), locked = lock.tryLock(30000);
     try {
+      if (refSaved_(ref)) return json_({ ok: true, ref, duplicate: true });
       const sheet = sheet_();
       const row = COLUMNS.map(([k]) => k === 'submitted_at' ? new Date() : k === 'ref' ? ref : k === 'id_files' ? (links.length ? sub.getUrl() : '') : TEXT_KEYS.includes(k) && f[k] ? "'" + String(f[k]).slice(0, 100) : clean_(f[k]));
       sheet.appendRow(row);
-    } finally { lock.releaseLock(); }
+    } finally { if (locked) lock.releaseLock(); }
 
     // email the owner
     try {
@@ -93,6 +98,14 @@ function doPost(e) {
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
   }
+}
+
+/** True when a check-in with this reference is already in the sheet (last 300 rows). */
+function refSaved_(ref) {
+  const sh = sheet_(), last = sh.getLastRow(), col = COLUMNS.findIndex(c => c[0] === 'ref') + 1;
+  if (last < 2 || col < 1) return false;
+  const from = Math.max(2, last - 299);
+  return sh.getRange(from, col, last - from + 1, 1).getValues().some(r => String(r[0]) === ref);
 }
 
 function guestEmail_(f, ref) {
