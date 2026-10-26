@@ -9,7 +9,7 @@
  * headlines, system status). Never guest names, phones, emails, ID numbers or booking references. Questions and history are scrubbed
  * of emails/phone/ID-like numbers before they leave Google. Answers are advice only: the brain cannot change data.
  */
-const FO_BRAIN = { PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'llama-3.3-70b-versatile', GEMINI_MODEL: 'gemini-2.5-flash' };
+const FO_BRAIN = { BUDGET_MS: 35000, PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'llama-3.3-70b-versatile', GEMINI_MODEL: 'gemini-2.5-flash' };
 
 const FO_BRAIN_SYSTEM = [
   'You are "AP Brain", the business analyst for AP Villas & Resorts: five owner-operated holiday villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain (India).',
@@ -45,6 +45,7 @@ function foBrainStatus_() {
 /** Groq, then Gemini. Each provider: one retry on 429/5xx. Returns { ok, text, provider, model } or { ok:false, error }. */
 function foBrainCall_(system, history, prompt, only) {
   const p = PropertiesService.getScriptProperties(), groq = only === 'gemini' ? null : p.getProperty('GROQ_API_KEY'), gem = only === 'groq' ? null : p.getProperty('GEMINI_API_KEY'), errs = [];
+  const t0 = Date.now();
   if (!groq && !gem) return { ok: false, setup: true, error: 'AP Brain is not switched on yet: add a free Groq or Gemini key in Script Properties (see docs/founder-os/README.md → AP Brain).' };
   const tryTwice = fn => { let r = fn(); if (!r.ok && r.retry) { Utilities.sleep(1500); r = fn(); } return r; };
   // Free models get retired: a 404 means "model gone", so ask the provider which models it offers now, pick the best and remember it.
@@ -61,12 +62,21 @@ function foBrainCall_(system, history, prompt, only) {
     errs.push('Groq: ' + r.error);
   }
   if (gem) {
-    const r = withModel('GEMINI_MODEL', FO_BRAIN.GEMINI_MODEL, () => foBrainPickModel_('gemini', gem), model => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
+    // Gemini's newest models are often "high demand" (503 after up to a minute): try the remembered/stable model first, then the next
+    // candidates, one attempt each, and stop when the time budget for this answer is used (the portal waits at most 60 s).
+    const call = model => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
       { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
         contents: history.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.text }] })).concat([{ role: 'user', parts: [{ text: prompt }] }]) },
-      j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join('')));
-    if (r.ok) return Object.assign(r, { provider: 'Gemini' });
-    errs.push('Gemini: ' + r.error);
+      j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join(''));
+    const tried = [], list = [p.getProperty('GEMINI_MODEL'), p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i);
+    let r = null;
+    for (const model of list.slice(0, 4)) {
+      if (Date.now() - t0 > FO_BRAIN.BUDGET_MS) break;
+      r = Object.assign(call(model), { model }); tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
+      if (r.ok) { if (model !== p.getProperty('GEMINI_MODEL_AUTO')) p.setProperty('GEMINI_MODEL_AUTO', model); return Object.assign(r, { provider: 'Gemini' }); }
+      if (/key not accepted/.test(r.error)) break;
+    }
+    errs.push('Gemini: ' + (tried.join(', ') || 'no time left'));
   }
   foLogError_('brain', errs.join(' | '));
   return { ok: false, error: 'AP Brain could not get an answer right now (' + errs.join('; ') + '). Please try again in a minute.' };
@@ -81,6 +91,14 @@ function foBrainPickModel_(provider, key) {
     return foBrainRankModels_(provider, JSON.parse(res.getContentText()))[0] || null;
   } catch (e) { return null; }
 }
+/** Gemini chat models to try, stable first (cached 6 hours). */
+function foBrainGeminiList_(key) {
+  const c = CacheService.getScriptCache(), hit = c.get('FO_BRAIN_GEMLIST'); if (hit) return JSON.parse(hit);
+  let list = [];
+  try { const res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key }, muteHttpExceptions: true }); if (res.getResponseCode() === 200) list = foBrainRankModels_('gemini', JSON.parse(res.getContentText())); } catch (e) {}
+  if (list.length) c.put('FO_BRAIN_GEMLIST', JSON.stringify(list), 21600);
+  return list;
+}
 function foBrainRankModels_(provider, j) {
   if (provider === 'groq') {
     const ids = (j.data || []).filter(m => m.active !== false).map(m => String(m.id)).filter(id => !/whisper|tts|guard|embed|vision|audio|playai|compound|orpheus/i.test(id));
@@ -89,9 +107,11 @@ function foBrainRankModels_(provider, j) {
     return ids.sort((a, b) => fam(b) - fam(a) || size(b) - size(a) || b.localeCompare(a));
   }
   const ms = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0).map(m => String(m.name).replace(/^models\//, ''))
-    .filter(n => /^gemini-/.test(n) && !/embedding|image|tts|audio|live|exp|preview|thinking|vision|lite/i.test(n));
+    .filter(n => /^gemini-/.test(n) && !/embedding|image|tts|audio|live|exp|preview|thinking|vision/i.test(n));
   const ver = n => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : 0; };
-  return ms.sort((a, b) => (/flash/.test(b) ? 1 : 0) - (/flash/.test(a) ? 1 : 0) || ver(b) - ver(a) || a.length - b.length);
+  // the newest model is usually the busiest on the free tier: flash first, then the second-newest and older versions before the newest, lite last
+  const vs = [...new Set(ms.map(ver))].sort((a, b) => b - a), rank = v => v === vs[0] && vs.length > 1 ? vs.length : vs.indexOf(v);
+  return ms.sort((a, b) => (/lite/.test(a) ? 1 : 0) - (/lite/.test(b) ? 1 : 0) || (/flash/.test(b) ? 1 : 0) - (/flash/.test(a) ? 1 : 0) || rank(ver(a)) - rank(ver(b)) || a.length - b.length);
 }
 function foBrainHttp_(url, headers, body, pick) {
   let res;
@@ -174,6 +194,8 @@ function foBrainTestGemini() {
   console.log('list models: HTTP ' + r.getResponseCode() + ' in ' + (Date.now() - t) + ' ms');
   if (r.getResponseCode() !== 200) return console.log(r.getContentText().slice(0, 300));
   const ranked = foBrainRankModels_('gemini', JSON.parse(r.getContentText())); console.log('best models: ' + ranked.slice(0, 5).join(', '));
+  t = Date.now(); const real = foBrainCall_('You are a test. Reply in five words or fewer.', [], 'Say: AP Brain is working.', 'gemini');
+  console.log('real answer path: ' + (real.ok ? 'OK · ' + real.model + ' in ' + (Date.now() - t) + ' ms: ' + real.text : 'FAILED in ' + (Date.now() - t) + ' ms: ' + real.error));
   const model = ranked[0] || FO_BRAIN.GEMINI_MODEL; t = Date.now();
   r = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, muteHttpExceptions: true,
     payload: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Say: AP Brain is working.' }] }], generationConfig: { maxOutputTokens: 50 } }) });

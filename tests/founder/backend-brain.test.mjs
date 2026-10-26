@@ -92,3 +92,18 @@ test('retired model (404): the brain asks the provider for its models, picks the
   const n = env.net.calls.length; env.api({ action: 'f.brain.ask', token, question: 'Again?' });
   assert.equal(env.net.calls.slice(n).filter(c => /models$/.test(c.url)).length, 0, 'remembered: no second model lookup');
 });
+
+test('Gemini busy (503) on one model: the next model answers; the one that worked is remembered', async () => {
+  const { env, token } = await ready(r => {
+    if (/v1beta\/models\?/.test(r.url)) return { code: 200, body: JSON.stringify({ models: ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-pro'].map(n => ({ name: 'models/' + n, supportedGenerationMethods: ['generateContent'] })) }) };
+    if (/gemini-3\.7-flash:generateContent/.test(r.url)) return geminiOk('From 3.7.');
+    return { code: 503, body: '{"error":{"message":"high demand"}}' };
+  });
+  env.props.set('GEMINI_API_KEY', 'AIza_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Tonight?' });
+  assert.equal(r.ok, true, r.error); assert.equal(r.model, 'gemini-3.7-flash');
+  assert.equal(env.props.get('GEMINI_MODEL_AUTO'), 'gemini-3.7-flash');
+  const ranked = env.fo.foBrainRankModels_('gemini', { models: ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-pro'].map(n => ({ name: 'models/' + n, supportedGenerationMethods: ['generateContent'] })) });
+  assert.deepEqual(ranked.slice(0, 3), ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-3.8-flash'], 'newest (busiest) after the stable ones; lite last');
+  assert.equal(ranked[ranked.length - 1], 'gemini-2.5-flash-lite');
+});
