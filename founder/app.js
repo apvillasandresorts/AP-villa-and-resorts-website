@@ -571,7 +571,20 @@
       '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
       '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything about AP Villas… (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>');
     var log = $('#br-log', p);
-    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + esc(m.text).replace(/\n/g, '<br>') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
+    // the models answer in Markdown: show headings, bold, bullets and numbered points properly (escaped first, so no HTML gets through)
+    function md(t) {
+      var lines = esc(t).split('\n'), out = [], list = null;
+      function close() { if (list) { out.push('</' + list + '>'); list = null; } }
+      lines.forEach(function (l) {
+        var b = l.match(/^\s*[-*•]\s+(.*)$/), n = l.match(/^\s*\d+[.)]\s+(.*)$/), h = l.match(/^\s*#{1,4}\s+(.*)$/);
+        if (b || n) { var tag = b ? 'ul' : 'ol'; if (list !== tag) { close(); out.push('<' + tag + '>'); list = tag; } out.push('<li>' + (b || n)[1] + '</li>'); return; }
+        close();
+        if (h) out.push('<b class="fo-brain__h">' + h[1] + '</b>'); else if (l.trim()) out.push('<p>' + l + '</p>');
+      });
+      close();
+      return out.join('').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+    function paint() { log.innerHTML = BRAIN.history.map(function (m) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight; }
     function ask(q) {
       q = String(q || '').trim(); if (!q) return;
       BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Thinking…', pending: true }); paint();

@@ -428,3 +428,6 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
   .fx-flow, .fx-vias circle, .fx-neurons circle, .fx-brain__aura, .fx-boot__ring img, .fx-boot__ring span, .fx-boot__bar i, .fo-login__chips span::before, .fo-brainpill::after, .fo-login__card { animation: none !important; }
   .fx-flow { stroke-dashoffset: 300; }
 }
+.fo-brain__msg p { margin: 0 0 6px; } .fo-brain__msg p:last-of-type { margin-bottom: 0; }
+.fo-brain__msg ul, .fo-brain__msg ol { margin: 4px 0 8px; padding-left: 20px; } .fo-brain__msg li { margin: 2px 0; }
+.fo-brain__h { display: block; margin: 8px 0 4px; color: var(--em-3); } .fo-brain__msg code { font-size: 12.5px; background: var(--em-soft); padding: 0 4px; border-radius: 4px; }
