@@ -9,7 +9,7 @@
  * headlines, system status). Never guest names, phones, emails, ID numbers or booking references. Questions and history are scrubbed
  * of emails/phone/ID-like numbers before they leave Google. Answers are advice only: the brain cannot change data.
  */
-const FO_BRAIN = { BUDGET_MS: 35000, PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'llama-3.3-70b-versatile', GEMINI_MODEL: 'gemini-2.5-flash' };
+const FO_BRAIN = { BUDGET_MS: 35000, PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'openai/gpt-oss-120b', GEMINI_MODEL: 'gemini-3.6-flash' };
 
 const FO_BRAIN_SYSTEM = [
   'You are "AP Brain", the sharp, practical business analyst for AP Villas & Resorts: five owner-operated holiday villas within 2 km of Mahakaleshwar Jyotirlinga, Ujjain (India). The owner, Apoorv, runs it himself; his goal is full occupancy at the best price the market will pay.',
@@ -38,42 +38,62 @@ function foBrainAsk_(b, user) {
   const r = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt);
   foBrainLog_(user.email, q, r, Date.now() - t0);
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
-  return { answer: r.text, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [] };
+  return { answer: r.text, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
 }
 
 /**
- * Web research: a quick planner call decides which Google searches (0–3) would help, then Gemini answers each with Google Search
- * grounding, all in parallel (UrlFetchApp.fetchAll), within a 22 s budget. Returns findings plus de-duplicated sources (title, link).
- * Free tier: Gemini grounding has a daily allowance; when it is used up or Gemini is busy, the brain answers from the business data alone.
+ * Web research (all free): a quick planner call decides which searches (0–3) would help, then they run in parallel, in this order:
+ *   1. Groq "compound" models, which search the web themselves and return their sources (same free GROQ_API_KEY);
+ *   2. Gemini with Google Search grounding (free allowance; often used up: then 429);
+ *   3. GDELT news search (open news database, no key): headlines and links only.
+ * Stays within a ~25 s budget so the whole answer fits the portal's 60 s. Returns findings plus de-duplicated sources (title, link).
  */
 function foBrainResearch_(q, hist) {
-  const p = PropertiesService.getScriptProperties(), gem = p.getProperty('GEMINI_API_KEY');
-  if (!gem) return null;
+  const p = PropertiesService.getScriptProperties(), groq = p.getProperty('GROQ_API_KEY'), gem = p.getProperty('GEMINI_API_KEY');
+  if (!groq && !gem) return null;
   const plan = foBrainCall_(FO_BRAIN_PLANNER, hist.slice(-2), 'QUESTION: ' + q + '\nToday: ' + foToday_());
   let queries = [];
   if (plan.ok) { try { const m = String(plan.text).match(/\{[\s\S]*\}/); queries = (JSON.parse(m ? m[0] : '{}').search || []).map(x => foBrainScrub_(String(x)).slice(0, 140)).filter(Boolean).slice(0, 3); } catch (e) {} }
-  if (!queries.length) return { queries: [], findings: [], sources: [] };
-  const models = [p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i && !/lite/.test(m));
-  const ask = (model, query) => ({ url: 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': gem }, muteHttpExceptions: true,
-    payload: JSON.stringify({ tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 700 },
-      contents: [{ role: 'user', parts: [{ text: 'Search Google and report the facts that matter for a holiday-villa business near Mahakaleshwar temple, Ujjain, India. Question: ' + query + '\nGive 3–6 short factual bullet points with dates and numbers where available. No advice.' }] }] }) });
-  const out = { queries, findings: [], sources: [] }, seen = {}, t0 = Date.now();
+  const out = { queries, findings: [], sources: [], via: [] }, seen = {}, t0 = Date.now();
+  if (!queries.length) return out;
+  const brief = query => 'Search the web and report the facts that matter for a holiday-villa business near Mahakaleshwar temple, Ujjain, India. Question: ' + query + '\nGive 3–6 short factual bullet points with dates and numbers where available. No advice.';
+  const cite = list => list.filter(w => w && /^https?:\/\//.test(w.url || '')).map(w => {
+    const key = String(w.url).split('#')[0]; if (!seen[key]) { seen[key] = out.sources.length + 1; out.sources.push({ title: String(w.title || w.url).slice(0, 120), url: String(w.url).slice(0, 600) }); } return seen[key];
+  });
+  const add = (query, text, refs, via) => { out.findings.push({ query, text: String(text).slice(0, 1800) + (refs.length ? ' (sources ' + refs.slice(0, 6).map(n => '[' + n + ']').join('') + ')' : '') }); if (out.via.indexOf(via) < 0) out.via.push(via); };
+  const run = (reqs, read, via) => {
+    if (!pending.length || Date.now() - t0 > 20000) return;
+    let res; try { res = UrlFetchApp.fetchAll(pending.map(reqs)); } catch (e) { return; }
+    const left = [];
+    res.forEach((r, i) => { let ok = false; if (r.getResponseCode() === 200) { try { ok = read(pending[i], JSON.parse(r.getContentText())); } catch (e) {} } if (!ok) left.push(pending[i]); });
+    pending = left;
+  };
   let pending = queries.slice();
-  // a second model is tried only when the first round answered quickly (a busy model can take ~50 s to say no; the portal waits 60 s)
-  for (let k = 0; k < Math.min(2, models.length) && pending.length && Date.now() - t0 < (k ? 9000 : 22000); k++) {
-    let res; try { res = UrlFetchApp.fetchAll(pending.map(x => ask(models[k], x))); } catch (e) { break; }
-    const retry = [];
-    res.forEach((r, i) => {
-      if (r.getResponseCode() !== 200) { retry.push(pending[i]); return; }
-      let j; try { j = JSON.parse(r.getContentText()); } catch (e) { return; }
-      const c = (j.candidates || [])[0] || {}, text = ((c.content || {}).parts || []).map(x => x.text || '').join('').trim();
-      if (!text) return;
-      const refs = ((c.groundingMetadata || {}).groundingChunks || []).map(g => g.web).filter(w => w && w.uri).map(w => {
-        const key = String(w.title || w.uri); if (!seen[key]) { seen[key] = out.sources.length + 1; out.sources.push({ title: String(w.title || 'source').slice(0, 120), url: String(w.uri).slice(0, 600) }); } return seen[key];
-      });
-      out.findings.push({ query: pending[i], text: text.slice(0, 1800) + (refs.length ? ' (sources ' + refs.map(n => '[' + n + ']').join('') + ')' : '') });
-    });
-    pending = retry;
+  // 1. Groq compound: built-in web search
+  if (groq) ['groq/compound-mini', 'groq/compound'].forEach(model => run(query => ({ url: 'https://api.groq.com/openai/v1/chat/completions', method: 'post', contentType: 'application/json', headers: { Authorization: 'Bearer ' + groq }, muteHttpExceptions: true,
+    payload: JSON.stringify({ model, temperature: 0.2, max_tokens: 700, messages: [{ role: 'user', content: brief(query) }] }) }), (query, j) => {
+    const m = ((j.choices || [])[0] || {}).message || {}, text = String(m.content || '').trim(); if (!text) return false;
+    const hits = []; (m.executed_tools || []).forEach(t => { const sr = t.search_results; (Array.isArray(sr) ? sr : (sr && sr.results) || []).forEach(x => hits.push({ title: x.title, url: x.url })); });
+    add(query, text, cite(hits), 'Groq web search'); return true;
+  }, 'groq'));
+  // 2. Gemini with Google Search grounding
+  if (gem && pending.length) {
+    const model = [p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].filter(Boolean)[0];
+    run(query => ({ url: 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': gem }, muteHttpExceptions: true,
+      payload: JSON.stringify({ tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 700 }, contents: [{ role: 'user', parts: [{ text: brief(query) }] }] }) }), (query, j) => {
+      const c = (j.candidates || [])[0] || {}, text = ((c.content || {}).parts || []).map(x => x.text || '').join('').trim(); if (!text) return false;
+      add(query, text, cite(((c.groundingMetadata || {}).groundingChunks || []).map(g => g.web && { title: g.web.title, url: g.web.uri })), 'Google Search (Gemini)'); return true;
+    }, 'gemini');
+  }
+  // 3. GDELT news: one combined request (it allows about one every 5 seconds), headlines and links only
+  if (pending.length && Date.now() - t0 < 22000) {
+    try {
+      const terms = pending.map(x => '(' + x.replace(/[^\w\sऀ-ॿ]/g, ' ').trim().split(/\s+/).filter(w => w.length > 3 && !/^(\d{4}|ujjain)$/i.test(w)).slice(0, 4).join(' AND ') + ')').filter(x => x !== '()');
+      const u = 'https://api.gdeltproject.org/api/v2/doc/doc?' + ['query=' + encodeURIComponent('Ujjain' + (terms.length ? ' (' + terms.join(' OR ') + ')' : '')), 'mode=artlist', 'format=json', 'maxrecords=12', 'timespan=1m', 'sort=datedesc'].join('&');
+      const r = UrlFetchApp.fetch(u, { muteHttpExceptions: true });
+      const arts = r.getResponseCode() === 200 ? (JSON.parse(r.getContentText() || '{}').articles || []) : [];
+      if (arts.length) add(pending.join('; '), 'Recent news headlines (GDELT, last 30 days):\n' + arts.map(a => '- ' + String(a.seendate || '').slice(0, 8).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') + ': ' + a.title + ' (' + a.domain + ')').join('\n'), cite(arts.map(a => ({ title: a.title, url: a.url }))), 'news (GDELT)');
+    } catch (e) {}
   }
   out.sources = out.sources.slice(0, 10);
   return out;
