@@ -266,4 +266,10 @@ function foBrainTestResearch() {
   console.log('planner: ' + (plan.ok ? plan.provider + ' → ' + String(plan.text).slice(0, 400) : 'FAILED ' + plan.error));
   const r = foBrainResearch_(q, []);
   console.log('research in ' + (Date.now() - t) + ' ms: ' + JSON.stringify(r).slice(0, 1500));
+  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  [PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL_AUTO'), 'gemini-2.5-flash'].filter(Boolean).forEach(model => {
+    const x = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, muteHttpExceptions: true,
+      payload: JSON.stringify({ tools: [{ google_search: {} }], contents: [{ role: 'user', parts: [{ text: 'Upcoming events in Ujjain this month?' }] }], generationConfig: { maxOutputTokens: 200 } }) });
+    console.log(model + ' with Google Search: HTTP ' + x.getResponseCode() + ' · ' + x.getContentText().replace(/\s+/g, ' ').slice(0, 500));
+  });
 }
