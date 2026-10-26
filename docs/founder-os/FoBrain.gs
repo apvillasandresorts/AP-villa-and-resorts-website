@@ -167,3 +167,15 @@ function foBrainTest() {
     return r.ok;
   }).every(Boolean);
 }
+/** Gemini only, step by step (each request timed): which model, HTTP status and the start of Google's answer. No business data. */
+function foBrainTestGemini() {
+  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY'); if (!key) return console.log('GEMINI_API_KEY is not set');
+  let t = Date.now(), r = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key }, muteHttpExceptions: true });
+  console.log('list models: HTTP ' + r.getResponseCode() + ' in ' + (Date.now() - t) + ' ms');
+  if (r.getResponseCode() !== 200) return console.log(r.getContentText().slice(0, 300));
+  const ranked = foBrainRankModels_('gemini', JSON.parse(r.getContentText())); console.log('best models: ' + ranked.slice(0, 5).join(', '));
+  const model = ranked[0] || FO_BRAIN.GEMINI_MODEL; t = Date.now();
+  r = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, muteHttpExceptions: true,
+    payload: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Say: AP Brain is working.' }] }], generationConfig: { maxOutputTokens: 50 } }) });
+  console.log(model + ': HTTP ' + r.getResponseCode() + ' in ' + (Date.now() - t) + ' ms · ' + r.getContentText().replace(/\s+/g, ' ').slice(0, 300));
+}
