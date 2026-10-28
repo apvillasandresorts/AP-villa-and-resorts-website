@@ -330,7 +330,7 @@ function foBrainTestResearch() {
  * Privacy: vouchers contain guest details, so they go only to providers that do not train on API data (Groq, Cerebras, Mistral),
  * never to the Gemini free tier or OpenRouter; ID numbers (Aadhaar-style 12 digits) are masked; the log keeps only the action type.
  */
-const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'none'];
+const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'none'];
 function foBrainAct_(b, user) {
   const text = String(b.text || '').replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[id-number]').trim().slice(0, 6000);
   if (!text) return { ok: false, error: 'Type or paste the details first.' };
@@ -348,6 +348,7 @@ function foBrainAct_(b, user) {
     'record_salary fields: emp_id (one of: ' + staff + '), amount, paid_on, period (YYYY-MM), mode (upi|cash|bank|other), kind (salary|advance|bonus|stipend|deduction), ref.',
     'add_employee fields: name, role (caretaker|sweeper|intern|manager|cook|driver|security|other), work_mode (on-site|remote), phone, email, property_ids, salary_amount, salary_cycle (monthly|weekly|daily|stipend|per-task), pay_day, joined.',
     'add_lead fields: name, phone, email, source, villa, checkin, nights, guests, value_inr, next_followup, notes.',
+    'channel_change fields (prices or availability on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id, type (rate|close|open|min_stay|stop_sell), value (rupees for rate, nights for min_stay), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
   ].filter(Boolean).join('\n');
@@ -406,6 +407,17 @@ function foActPlan_(intent, f, D, today) {
     f.stage = 'new'; f.next_followup = foDate_(f.next_followup) || FoMetrics.addDays(today, 1);
     lines.push(['Enquiry', [f.name, f.phone, f.email].filter(Boolean).join(' · ') || '—'], ['Wants', [f.villa, f.checkin, f.nights ? f.nights + ' nights' : '', f.guests ? f.guests + ' guests' : ''].filter(Boolean).join(' · ') || '—'], ['From', f.source || '—'], ['Follow up', f.next_followup]);
     route = 'f.crm.lead.save'; payload = { lead: { name: f.name || '', phone: f.phone || '', email: f.email || '', source: f.source || '', villa: f.villa || '', checkin: f.checkin || '', nights: f.nights || '', guests: f.guests || '', value_inr: f.value_inr || '', stage: 'new', next_followup: f.next_followup, notes: (f.notes || '') + ' · added by AP Brain' } };
+  } else if (intent === 'channel_change') {
+    const types = { rate: 'Price', close: 'Close', open: 'Open', min_stay: 'Minimum stay', stop_sell: 'Stop-sell' }, names = { mmt: 'MakeMyTrip / Goibibo', booking: 'Booking.com', airbnb: 'Airbnb' };
+    f.type = types[f.type] ? f.type : 'rate'; f.from = foDate_(f.from) || ''; f.to = foDate_(f.to) || f.from; f.basis = f.basis === 'channel' ? 'channel' : 'net';
+    const chans = String(f.channels || '').toLowerCase().split(/[\s,]+/).map(c => /goibibo|make/.test(c) ? 'mmt' : /booking/.test(c) ? 'booking' : c).filter(c => names[c]);
+    const wds = String(f.weekdays || '').split(/[\s,]+/).map(Number).filter(n => n >= 0 && n <= 6 && String(f.weekdays).trim() !== '');
+    need('property_id', 'which villa'); need('from', 'which nights');
+    if ((f.type === 'rate' || f.type === 'min_stay') && !foNum_(f.value)) missing.push({ key: 'value', label: f.type === 'rate' ? 'the price' : 'the minimum nights' });
+    lines.push(['Villa', f.property_id ? (prop(f.property_id) || {}).name || '—' : '—'], ['Change', types[f.type] + (f.type === 'rate' && f.value ? ' ' + inr(f.value) + (f.basis === 'net' ? ' (you keep; commission added per channel)' : ' (guest price)') : f.type === 'min_stay' && f.value ? ' ' + f.value + ' nights' : '')],
+      ['Nights', (f.from || '?') + (f.to && f.to !== f.from ? ' → ' + f.to : '') + (wds.length ? ' · only ' + wds.map(n => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][n]).join(', ') : '')], ['Channels', chans.length ? chans.map(c => names[c]).join(', ') : 'all three'],
+      ['Safety', 'prices outside your floor/ceiling are refused; the agent reads every change back']);
+    route = 'f.cm.jobs.propose'; payload = { approve: true, manual: { villa: f.property_id, type: f.type, value: foNum_(f.value), basis: f.basis, from: f.from, to: f.to, weekdays: wds, channels: chans } };
   }
   const question = missing.length ? 'To finish this I still need: ' + missing.map(m => m.label).join(', ') + '.' : '';
   return { fields: f, missing, question, lines, route, payload, ready: !missing.length };

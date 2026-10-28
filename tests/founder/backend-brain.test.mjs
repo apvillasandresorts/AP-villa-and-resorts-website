@@ -230,3 +230,14 @@ test('actions: expense and salary in plain words; the salary defaults to the per
   assert.equal(env.tab('Expenses').length, 2, 'electricity + the salary expense');
   assert.equal(env.api({ action: 'f.brain.act', token, text: 'how is occupancy?' }).result.intent, 'none');
 });
+
+test('actions: "set AP Suite ₹4,000 on Airbnb and Booking this weekend" becomes channel jobs after the owner confirms', async () => {
+  const { env, token } = await ready(() => groqOk('{"intent":"channel_change","fields":{"property_id":"AP Suite","type":"rate","value":4000,"from":"2026-10-23","to":"2026-10-25","weekdays":"5,6","channels":"airbnb, booking.com"}}'));
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const a = env.api({ action: 'f.brain.act', token, text: 'set AP Suite 4000 on Airbnb and Booking this weekend' });
+  assert.equal(a.result.intent, 'channel_change'); assert.equal(a.result.ready, true, JSON.stringify(a.result.missing)); assert.equal(a.result.route, 'f.cm.jobs.propose');
+  assert.deepEqual(a.result.payload.manual.channels, ['airbnb', 'booking']); assert.deepEqual(a.result.payload.manual.weekdays, [5, 6]);
+  const r = env.api(Object.assign({ action: a.result.route, token }, a.result.payload));
+  assert.equal(r.ok, true, r.error); assert.equal(r.result.created.length, 2, JSON.stringify(r.result));
+  assert.ok(env.tab('ChannelJobs').every(j => j.state === 'queued' && j.date_from === '2026-10-23' && j.date_to === '2026-10-24'));
+});

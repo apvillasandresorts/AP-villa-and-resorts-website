@@ -191,6 +191,7 @@ function testGuestEmail() {
 function doGet(e) {
   if (e && e.parameter && e.parameter.unsub) return unsubscribe_(e.parameter);   // Journal email unsubscribe (BlogMailer.gs)
   if (e && e.parameter && e.parameter.action === 'leaderboard') return json_({ ok: true, top: gameTop_() });
+  if (e && e.parameter && e.parameter.ical && typeof foCmIcal_ === 'function') return foCmIcal_(e);   // Channel Manager calendar feeds (FoChannels.gs)
   return json_({ ok: true, service: 'AP Villas e-check-in' });
 }
 

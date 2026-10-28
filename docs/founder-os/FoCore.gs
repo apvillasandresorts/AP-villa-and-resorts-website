@@ -55,7 +55,7 @@ const FO_TABS = {
   Settings: ['key', 'value', 'updated_at'],
   // market intelligence + pricing (FoMarket.gs)
   Competitors: ['competitor_id', 'name', 'type', 'area', 'distance_km', 'bedrooms', 'sleeps', 'segment', 'website', 'listing_urls', 'positioning', 'amenities', 'review_themes', 'notes', 'last_checked', 'source_url', 'created_at', 'updated_at', 'updated_by'],
-  MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at', 'availability', 'group_size', 'target_property', 'platform'],
+  MarketRates: ['obs_id', 'competitor', 'observed_at', 'stay_date', 'nights', 'unit_type', 'bedrooms', 'sleeps', 'price_total', 'price_per_night', 'taxes_included', 'source_type', 'source_url', 'confidence', 'notes', 'collected_by', 'created_at', 'availability', 'group_size', 'target_property', 'platform', 'listing_id'],
   DemandSignals: ['signal_id', 'date', 'source', 'metric', 'keyword', 'value', 'period', 'growth_pct', 'source_url', 'notes', 'collected_by', 'created_at'],
   // SEO & marketing (FoSearch.gs)
   SeoKeywords: ['keyword_id', 'keyword', 'target_page', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
@@ -67,7 +67,7 @@ const FO_TABS = {
   CompChanges: ['change_id', 'date', 'property', 'action', 'key', 'name', 'score', 'reason'],
   Recommendations: ['rec_id', 'computed_at', 'property', 'for_date', 'price', 'low', 'high', 'confidence', 'channels', 'factors', 'inputs', 'run_id'],
   PriceDecisions: ['decision_id', 'decided_at', 'decided_by', 'property', 'for_date', 'channel', 'recommended', 'set_price', 'accepted', 'reason', 'slot'],
-  BotRuns: ['run_id', 'at', 'bot', 'platform', 'mode', 'pages', 'prices', 'sold_out', 'discovered', 'blocked', 'status', 'note'],
+  BotRuns: ['run_id', 'at', 'bot', 'platform', 'mode', 'pages', 'prices', 'sold_out', 'discovered', 'blocked', 'status', 'note', 'start', 'end', 'result', 'error_code'],
   DeletedRecords: ['deleted_id', 'deleted_at', 'deleted_by', 'kind', 'record_id', 'origin', 'origin_ref', 'channel', 'external_id', 'summary', 'reason', 'data_json'],
   SearchKeywords: ['date', 'fetched_at', 'keyword', 'kinds', 'seeds', 'top_24h', 'top_7d', 'rising', 'latest', 'latest_date', 'avg7', 'avg30', 'change', 'series', 'anchor'],
   SearchExtra: ['date', 'kind', 'key', 'data'],
@@ -78,6 +78,12 @@ const FO_TABS = {
   CrmLeads: ['lead_id', 'name', 'phone', 'email', 'source', 'villa', 'checkin', 'nights', 'guests', 'stage', 'value_inr', 'next_followup', 'lost_reason', 'notes', 'created_at', 'updated_at', 'updated_by'],
   CrmTasks: ['task_id', 'title', 'due', 'contact_type', 'contact_id', 'done', 'notes', 'created_at', 'updated_at', 'updated_by'],
   CrmTemplates: ['template_id', 'name', 'channel', 'audience', 'subject', 'body', 'created_at', 'updated_at', 'updated_by'],
+  // AP Channel Manager (FoChannels.gs)
+  Listings: ['listing_id', 'platform', 'platform_listing_id', 'url_clean', 'role', 'villa', 'extranet_property_id', 'extranet_room_id', 'bedrooms', 'sleeps', 'distance_band', 'comp_set', 'schedule', 'status', 'name', 'rating', 'reviews', 'added_at'],
+  ChannelState: ['villa', 'channel', 'date', 'rate', 'available', 'min_stay', 'stop_sell', 'read_at'],
+  ChannelJobs: ['job_id', 'idem_key', 'type', 'villa', 'channel', 'date_from', 'date_to', 'old_value', 'new_value', 'band_lo', 'band_hi', 'reason', 'mode', 'state', 'attempts', 'claimed_by', 'lease_until', 'failed_at', 'read_back', 'evidence_ref', 'error_code', 'message', 'created_by', 'created_at', 'approved_by', 'approved_at', 'done_at'],
+  ChannelSettings: ['channel', 'enabled', 'mode', 'dry_run', 'dry_until', 'paused', 'pause_reason', 'commission_pct', 'markup_pct', 'permission_note', 'enabled_by', 'enabled_at'],
+  ChannelReservations: ['reservation_id', 'channel', 'villa', 'checkin', 'checkout', 'amount', 'currency', 'status', 'read_at'],
   BrainLog: ['asked_at', 'user', 'question', 'provider', 'model', 'ms', 'ok', 'error'],
   News: ['news_id', 'published_at', 'fetched_at', 'title', 'source', 'url', 'lang', 'category', 'categories', 'impact', 'direction', 'score', 'summary', 'query', 'alerted'],
   Campaigns: ['campaign_id', 'name', 'channel', 'utm_campaign', 'utm_source', 'utm_medium', 'landing_url', 'start', 'end', 'budget', 'spent', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
@@ -111,6 +117,10 @@ function foHourly() {
   if (typeof foDeskHourly_ === 'function') {   // Live Pricing Desk: recompute, alerts, 07:00 brief (failures are logged, never block the sync)
     try { const r = foDeskHourly_(); if (/brief sent/.test(r)) foAppend_('Jobs', { job: 'desk', started: foNow_(), finished: foNow_(), status: 'ok', detail: r }); }
     catch (e) { foAppend_('Jobs', { job: 'desk', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e && e.message || e).slice(0, 900) }); }
+    foFlush_();
+  }
+  if (typeof foCmHourly_ === 'function') {   // AP Channel Manager: bookings anywhere close the other channels; daily rate proposals
+    try { foCmHourly_(); } catch (e) { foAppend_('Jobs', { job: 'channels', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e && e.message || e).slice(0, 900) }); }
     foFlush_();
   }
 }
@@ -408,6 +418,12 @@ function foRoutes_() {
     'f.crm.log': [foCrmLog_, 'manager'], 'f.crm.email': [foCrmEmail_, 'manager'], 'f.crm.lead.save': [foCrmLeadSave_, 'manager'], 'f.crm.lead.delete': [(b, u) => foDelete_('CrmLeads', 'lead_id', b.lead_id, u), 'founder'],
     'f.crm.task.save': [foCrmTaskSave_, 'manager'], 'f.crm.task.delete': [(b, u) => foDelete_('CrmTasks', 'task_id', b.task_id, u), 'manager'],
     'f.crm.template.save': [foCrmTemplateSave_, 'manager'], 'f.crm.template.delete': [(b, u) => foDelete_('CrmTemplates', 'template_id', b.template_id, u), 'manager'], 'f.brain.ask': [foBrainAsk_, 'manager'], 'f.brain.act': [foBrainAct_, 'manager'], 'f.brain.status': [() => ({ result: foBrainStatus_() }), 'viewer'],
+    // AP Channel Manager (FoChannels.gs)
+    'f.cm.listings.add': [foCmListingsAdd_, 'founder'], 'f.cm.listings.update': [foCmListingsUpdate_, 'founder'], 'f.cm.listings.delete': [(b, u) => foDelete_('Listings', 'listing_id', b.listing_id, u), 'founder'],
+    'f.cm.calendar': [b => foCmCalendar_(b), 'viewer'], 'f.cm.ratedesk': [b => foCmRatedesk_(b), 'viewer'],
+    'f.cm.jobs.propose': [foCmJobsPropose_, 'founder'], 'f.cm.jobs.approve': [foCmJobsApprove_, 'founder'], 'f.cm.jobs.cancel': [foCmJobsCancel_, 'founder'], 'f.cm.jobs.retry': [foCmJobsRetry_, 'founder'],
+    'f.cm.settings.set': [foCmSettingsSet_, 'founder'], 'f.cm.killswitch': [foCmKillswitch_, 'founder'], 'f.cm.ical.token': [foCmIcalToken_, 'founder'],
+    'f.cm.agent.key': [foCmAgentKeyCreate_, 'founder'], 'f.cm.agent.revoke': [foCmAgentKeyRevoke_, 'founder'], 'f.cm.sync': [(b, u) => ({ result: foCmSyncAvailability_(u.email) }), 'manager'],
     // Live Pricing Desk (FoSignals.gs)
     'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
     'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],
@@ -425,6 +441,7 @@ function foApi_(b) {
     if (a === 'f.login.start') return foLoginStart_(b);
     if (a === 'f.login.verify') return foLoginVerify_(b);
     if (a === 'f.login.resend') return foLoginResend_(b);
+    if (b.agent_key && !b.token) return foAgentApi_(b);   // channel agent (FoChannels.gs): jobs and channel reads only, never guests
     if (b.key && !b.token) return foMachineApi_(b);   // automation key (FoMarket.gs): a few machine-only actions, no guest data
     const sess = foAuth_(b.token);
     if (!sess.ok) return { ok: false, auth: false, error: 'Your session has ended. Please sign in again.' };

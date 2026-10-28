@@ -69,7 +69,9 @@ export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
       getAs: t => { if (t !== 'application/pdf') throw new Error('bad type'); return blob('%PDF ' + data.length, t, name); } };
     return b;
   }
-  const folder = { getId: () => 'FOLDER1', createFile: b => { const id = 'F' + (files.size + 1); files.set(id, b); return { getId: () => id }; } };
+  const folder = { getId: () => 'FOLDER1', createFile: b => { const id = 'F' + (files.size + 1); files.set(id, b); return { getId: () => id }; },
+    getFoldersByName: () => { let done = false; return { hasNext: () => !done, next: () => { done = true; return folder; } }; }, createFolder: () => folder,
+    getFiles: () => { const all = [...files.entries()]; let i = 0; return { hasNext: () => i < all.length, next: () => { const [id, b] = all[i++]; return { getDateCreated: () => new Date(b.created || now), setTrashed: () => { files.delete(id); } }; } }; } };
   const checkinSheet = new Sheet('E-Check-in');
   // UrlFetchApp: a handler(request) → { code, body } set per test (Search Console, the live site); default = permission not granted yet
   const net = { handler: http, calls: [] };
@@ -94,7 +96,7 @@ export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
       computeDigest: (alg, s) => signed(crypto.createHash(alg).update(toBuf(s)).digest()),
       computeHmacSha256Signature: (m, k) => signed(crypto.createHmac('sha256', toBuf(k)).update(toBuf(m)).digest()),
       computeHmacSignature: (alg, m, k) => signed(crypto.createHmac(alg, toBuf(k)).update(toBuf(m)).digest()),
-      newBlob: (s, type, name) => blob(String(s), type, name),
+      newBlob: (s, type, name) => blob(Array.isArray(s) ? Buffer.from(s).toString('latin1') : String(s), type, name), base64Decode: s => [...Buffer.from(String(s), 'base64')],
       base64EncodeWebSafe: b => toBuf(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
       formatDate,
     },
@@ -106,14 +108,15 @@ export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
     UrlFetchApp: { fetchAll: reqs => reqs.map(respond), fetch: (url, o) => respond(Object.assign({ url }, o || {})) },
     ScriptApp: { getOAuthToken: () => 'test-token', getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => { const t = { timeBased: () => t, everyHours: () => t, everyMinutes: () => t, create: () => t }; return t; } },
     sheet_: () => checkinSheet,
+    ContentService: { MimeType: { TEXT: 'text/plain', ICAL: 'text/calendar', JSON: 'application/json' }, createTextOutput: t => { const o = { text: t, mime: '', setMimeType: m => { o.mime = m; return o; }, getContent: () => t }; return o; } },
     DriveApp: { createFolder: () => folder, getFolderById: () => folder, getFileById: id => ({ getBlob: () => files.get(id) }) },
     ...(analytics ? { AnalyticsData: analytics } : {}),
   };
   vm.createContext(ctx);
   vm.runInContext('Date.now = () => __now(); const __RealDate = Date; Date = class extends __RealDate { constructor(...a) { if (a.length) super(...a); else super(__now()); } static now() { return __now(); } };', Object.assign(ctx, { __now: () => now }));
   const root = new URL('../../', import.meta.url);
-  const src = ['founder/metrics.js', 'founder/insights.js', 'founder/desk.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs', 'docs/founder-os/FoSearch.gs', 'docs/founder-os/FoSignals.gs', 'docs/founder-os/FoBrain.gs', 'docs/founder-os/FoPeople.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
-  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_, foGsc_, foGscOpportunities_, foSeoCheckPage_, foSeoRanks_, foHealth_, foDeskHourly_, foCompRerank_, foSignalsImport_, foBrainContext_, foBrainScrub_, foBrainDailyBrief_, foBrainRankModels_ };', ctx);
+  const src = ['founder/metrics.js', 'founder/insights.js', 'founder/desk.js', 'docs/founder-os/FoCore.gs', 'docs/founder-os/FoData.gs', 'docs/founder-os/FoInsights.gs', 'docs/founder-os/FoMarket.gs', 'docs/founder-os/FoSearch.gs', 'docs/founder-os/FoSignals.gs', 'docs/founder-os/FoBrain.gs', 'docs/founder-os/FoPeople.gs', 'docs/founder-os/FoChannels.gs'].map(f => readFileSync(new URL(f, root), 'utf8')).join('\n;\n');
+  vm.runInContext(src + '\n;globalThis.__fo = { foApi_, foSetup, foHourly, foSyncCheckins_, foRows_, FO, foAuth_, foDailyIfDue_, foGa4_, foSettingSet_, foGsc_, foGscOpportunities_, foSeoCheckPage_, foSeoRanks_, foHealth_, foDeskHourly_, foCompRerank_, foSignalsImport_, foBrainContext_, foBrainScrub_, foBrainDailyBrief_, foBrainRankModels_, foCmSyncAvailability_, foCmIcal_, foCmHourly_, foCmEvidencePurge_ };', ctx);
 
   // the e-check-in tab, with the real column titles from docs/echeckin-apps-script.gs
   const head = ['Submitted at', 'Reference', 'Booked through', 'Booking ID', 'Villa', 'Check-in', 'Check-out', 'Nights', 'Adults', 'Children', 'Main guest', 'Mobile', 'Email', 'City', 'State',

@@ -444,3 +444,13 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .fo-brain__act { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--gold-2); font-size: 13px; }
 .fo-brain__act > b { display: block; margin-bottom: 6px; color: var(--em-3); } .fo-brain__act div:not(.fo-toolbar) { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px dotted var(--line); }
 .fo-brain__act div span:first-child { color: var(--muted); } .fo-brain__act div span:last-child { text-align: right; font-weight: 600; } .fo-brain__ok { color: var(--good); font-weight: 700; margin: 8px 0 0; }
+
+/* AP Channel Manager (channels.js) */
+.fo-badge--ok { background: #DDF1E7; color: var(--good); } :root[data-theme="dark"] .fo-badge--ok { background: #12301F; color: #7FD1A8; }
+.fo-alert { border: 1px solid var(--line); border-left: 4px solid var(--gold); background: var(--gold-soft); color: var(--ink-2); border-radius: 10px; padding: 10px 14px; margin: 0 0 14px; font-size: 13.5px; }
+.fo-alert--bad { border-left-color: var(--bad); background: #F8E3DE; } :root[data-theme="dark"] .fo-alert { background: #2A2412; } :root[data-theme="dark"] .fo-alert--bad { background: #3A1D17; }
+.fo-steps { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.7; }
+.fo-checks { display: flex; flex-wrap: wrap; gap: 6px 16px; font-weight: 400; }
+.fo-warn { color: var(--warn); }
+#cm .fo-table input[type="checkbox"] { width: 20px; height: 20px; }
+@media (max-width: 640px) { #cm .fo-table td, #cm .fo-table th { padding: 8px 6px; font-size: 12.5px; } }

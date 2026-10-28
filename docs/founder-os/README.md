@@ -184,6 +184,20 @@ on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details
   tasks; templates with {name}, {checkin}, {villa} (6 starter templates).
 - Sheets: Employees, SalaryPayments, EmployeeReviews, CrmMessages, CrmLeads, CrmTasks, CrmTemplates.
 
+## AP Channel Manager (FoChannels.gs + founder/channels.js; milestone 1 of 6)
+Founder OS is the brain, the channel agent (private repo `ap-channel-agent`, a real signed-in Chromium on an always-on free machine) is the hands. Portal → **Channel Manager**.
+- **Listings**: paste Airbnb / Booking.com / MakeMyTrip / Goibibo links (many at once). Own links need the villa; competitor links feed the market engines through `agent.observations` → MarketRates (with `listing_id`).
+- **Rate desk**: 30 nights per villa: what you keep (the Live Pricing Desk's fill price), chance to sell, and per channel the live extranet price vs the recommended one (net ÷ (1 − commission) × (1 + channel markup), nearest ₹50, always inside the floor/ceiling). "Propose prices from the desk" or tick nights → "Set price" (net or guest price, any channels).
+- **Availability**: open, close, minimum stay, stop-sell per channel. Any booking (any channel, direct, e-check-in) or owner block closes the villa's other channels at once (no approval, handed to the agent first). Removing it proposes re-opening.
+- **Jobs**: proposed → approved → queued → running → verifying → done | failed → one automatic retry after 10 min → needs_human. Done only when the agent reads the new value back; a mismatch is a failure. A login, OTP, CAPTCHA, "unusual activity" or unknown screen pauses that channel and emails you; nothing retries around it.
+- **Modes** per channel: Observe, Propose (you approve), Auto-band (inside the band, ≤ 10 % from the last price, once a day per night, never within a day of a booking). Every channel starts in Propose with 3 days of dry-run (form filled and photographed, not saved).
+- **Reservations**: the agent sends only reservation id, villa, dates, amount, currency, channel and status (the server drops anything else). Each becomes a ledger booking (origin `channel_agent`, no guest fields).
+- **Parity**: direct must stay cheapest; channels more than 15 % apart are flagged.
+- **Safety net**: Settings → Calendar feeds gives one secret iCal link per villa (busy dates only) to import in Airbnb and Booking.com, so booked nights stay closed even when the agent is offline. Served by `doGet ?ical=` in Code.gs.
+- **Agent key**: Settings → Create the agent key (shown once, stored as a digest, scope `agent`: pull jobs, report reads, never guests or bookings). Put it in the agent machine's `.env`, never in a repo or GitHub secret.
+- AP Brain understands "set AP Suite ₹4,500 on all channels this weekend" / "close Villa Aranya on Airbnb 5–7 Nov" and shows a confirm card.
+- Kill switch: Today → pause every channel (or one). Hourly: `foCmHourly_` (availability sync each hour, desk proposals once a day after 07:00). Evidence screenshots: Drive "AP Villas Founder OS Reports/Channel evidence" (30 days).
+
 ## GA4 reporting
 Server-side only (Apps Script advanced service **Google Analytics Data API**, identifier `AnalyticsData`), property in Settings
 (default 558430227), counting only the live hostname. Until the service is enabled and the read-only Analytics permission approved,

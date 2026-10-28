@@ -50,7 +50,7 @@
       ops: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21h-4v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1-2.8-2.8.1-.1A1.7 1.7 0 0 0 3.2 14H3v-4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1 2.8-2.8.1.1A1.7 1.7 0 0 0 10 3.2V3h4v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1 2.8 2.8-.1.1A1.7 1.7 0 0 0 20.8 10H21v4h-.2a1.7 1.7 0 0 0-1.4 1z',
       idea: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z', tag: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01', report: 'M6 2h9l5 5v15H6zM14 2v6h6M9 13h6M9 17h6', plug: 'M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4',
       lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4', bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0', menu: 'M3 6h18M3 12h18M3 18h18',
-      search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3', people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6', crm: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5', moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', x: 'M18 6 6 18M6 6l12 12',
+      search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3', people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6', crm: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5', channels: 'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M11 15v6', moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', x: 'M18 6 6 18M6 6l12 12',
     };
     return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (P[name] || P.overview) + '"/></svg>';
   }
@@ -174,6 +174,7 @@
     { id: 'bookings', label: 'Booking Management', ic: 'bookings', count: function () { return openEx().length; } },
     { g: 'Revenue & pricing' },
     { id: 'pricing', label: 'Pricing & Market', ic: 'tag' },
+    { id: 'channels', label: 'Channel Manager', ic: 'channels', count: function () { var c = S.data && S.data.channel_manager; return c ? (c.jobs || []).filter(function (j) { return j.state === 'proposed' || j.state === 'needs_human'; }).length : 0; } },
     { id: 'finance', label: 'Finance & Accounts', ic: 'money' },
     { g: 'People & guests' },
     { id: 'crm', label: 'CRM', ic: 'crm' },
@@ -600,6 +601,7 @@
       $$('[data-cancel]', log).forEach(function (b) { b.onclick = function () { BRAIN.draft = null; BRAIN.history[Number(b.dataset.cancel)].action.ready = false; BRAIN.history.push({ role: 'assistant', text: 'Cancelled. Nothing was saved.' }); paint(); }; });
     }
     // records (bookings from a pasted voucher, expenses, salaries, staff, enquiries) go to f.brain.act; questions to f.brain.ask
+    var CHANNEL_ACT = /\b(set|change|make|close|open|stop[- ]?sell|min(imum)? stay)\b[\s\S]*\b(airbnb|booking\.com|mmt|makemytrip|goibibo|all channels|every channel|channels?)\b/i;
     var ACT = /\b(add|record|log|enter|paid|pay|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b/i;
     function act(q) {
       BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Reading the details…', pending: true }); paint();
@@ -624,7 +626,7 @@
     }
     function ask(q, skipAct) {
       q = String(q || '').trim(); if (!q) return;
-      if (!skipAct && (BRAIN.draft || ACT.test(q) || q.length > 220)) return act(q);
+      if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || q.length > 220)) return act(q);
       var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
       if (!skipAct) BRAIN.history.push({ role: 'user', text: q });
       BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();

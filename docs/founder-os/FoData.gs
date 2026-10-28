@@ -426,6 +426,7 @@ function foDataBuild_() {
     search_extra: (() => { const rows = foRows_('SearchExtra'), last = rows.map(r => String(r.date)).sort().pop(); return rows.filter(r => String(r.date) === last).map(strip); })(),
     employees: foRows_('Employees').map(strip), salary_payments: foRows_('SalaryPayments').slice(-1500).map(strip), employee_reviews: foRows_('EmployeeReviews').slice(-800).map(strip),
     crm_messages: foRows_('CrmMessages').slice(-1500).map(strip), crm_leads: foRows_('CrmLeads').map(strip), crm_tasks: foRows_('CrmTasks').map(strip), crm_templates: foRows_('CrmTemplates').map(strip),
+    channel_manager: typeof foCmBundle_ === 'function' ? foCmBundle_() : null,
     news: foRows_('News').filter(r => String(r.fetched_at) >= (foDate_(new Date(Date.now() - 30 * 86400000)) || '')).slice(-400).map(strip),
   }, typeof foInsightsData_ === 'function' ? foInsightsData_() : {});
 }
