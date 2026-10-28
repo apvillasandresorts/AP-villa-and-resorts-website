@@ -454,3 +454,10 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .fo-warn { color: var(--warn); }
 #cm .fo-table input[type="checkbox"] { width: 20px; height: 20px; }
 @media (max-width: 640px) { #cm .fo-table td, #cm .fo-table th { padding: 8px 6px; font-size: 12.5px; } }
+.cm-tasks { display: grid; gap: 10px; margin-top: 10px; }
+.cm-task { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.cm-task--urgent { border-left: 4px solid var(--bad); }
+.cm-task__main { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; flex: 1 1 220px; }
+.cm-task__main input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+.cm-task__btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.cm-task__btns .btn { min-height: 36px; }

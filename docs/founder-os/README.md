@@ -196,6 +196,7 @@ Founder OS is the brain, the channel agent (private repo `ap-channel-agent`, a r
 - **Safety net**: Settings → Calendar feeds gives one secret iCal link per villa (busy dates only) to import in Airbnb and Booking.com, so booked nights stay closed even when the agent is offline. Served by `doGet ?ical=` in Code.gs.
 - **Agent key**: Settings → Create the agent key (shown once, stored as a digest, scope `agent`: pull jobs, report reads, never guests or bookings). Put it in the agent machine's `.env`, never in a repo or GitHub secret.
 - AP Brain understands "set AP Suite ₹4,500 on all channels this weekend" / "close Villa Aranya on Airbnb 5–7 Nov" and shows a confirm card.
+- **Phone assist (backup, no agent machine needed)**: while no agent is online, Today lists every approved change as a phone task (Open the extranet page → change it → Done; read_back "owner confirmed"). A booking saved anywhere closes the other channels at once and the closures are emailed immediately (each once); other waiting changes are emailed daily at 08:00. Agent machine (Oracle Always Free + Tailscale) can be set up later from Settings.
 - Kill switch: Today → pause every channel (or one). Hourly: `foCmHourly_` (availability sync each hour, desk proposals once a day after 07:00). Evidence screenshots: Drive "AP Villas Founder OS Reports/Channel evidence" (30 days).
 
 ## GA4 reporting

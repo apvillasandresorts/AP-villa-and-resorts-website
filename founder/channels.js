@@ -53,10 +53,11 @@
     var agentOk = age != null && age <= 15, closures = js.filter(function (j) { return j.reason === 'booking_elsewhere' && ['queued', 'running', 'verifying'].indexOf(j.state) >= 0; });
     var setupLeft = [];
     if (!c.listings.some(function (l) { return l.role === 'own'; })) setupLeft.push('Add your own listing links (Listings tab) so the agent knows each villa on each channel.');
-    if (!c.agent_key) setupLeft.push('Create the agent key (Settings) and put it on the agent machine.');
-    if (!hb) setupLeft.push('Start the channel agent and sign in to each extranet once (from your phone through the private remote screen).');
+    if (!c.agent_key && hb) setupLeft.push('Create the agent key (Settings) and put it on the agent machine.');
+    if (!Object.keys(c.ical || {}).length) setupLeft.push('Create the calendar feed links (Settings) and add them in Airbnb and Booking.com: booked nights then close there automatically, with or without the agent.');
     body.innerHTML = (c.global_paused ? '<div class="fo-alert fo-alert--bad"><b>Everything is paused.</b> The agent reads nothing and writes nothing until you resume. ' + (founder() ? '<button class="btn btn--sm" id="cm-resume-all">Resume all channels</button>' : '') + '</div>' : '') +
       (setupLeft.length ? card('Finish setting up', '', '<ol class="fo-steps">' + setupLeft.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>') : '') +
+      (!c.agent_online ? assistCard(c) : '') +
       '<div class="fo-grid fo-grid--kpi">' +
       kpi('Channel agent', agentOk ? 'Online' : hb ? 'Offline' : 'Not connected', hb ? 'last seen ' + (age < 1 ? 'just now' : age + ' min ago') + (hb.version ? ' · v' + esc(hb.version) : '') : 'no heartbeat yet', agentOk ? 'up' : 'down') +
       kpi('Waiting for you', String(count('proposed')), count('proposed') ? 'price changes to approve' : 'nothing to approve') +
@@ -72,11 +73,34 @@
         return [when(j.done_at || j.approved_at || j.created_at), esc(vname(j.villa)), esc(SHORT[j.channel]), jobValue(j) + (j.reason === 'booking_elsewhere' ? ' <small class="fo-hint">booked elsewhere</small>' : ''), range(j), badge(j.state.replace('_', ' '), STATE_CLS[j.state])];
       }), 'No changes yet.')) +
       (founder() ? '<div class="fo-toolbar"><button class="btn btn--danger" id="cm-kill">' + (c.global_paused ? 'Resume everything' : 'Kill switch: pause every channel') + '</button><button class="btn" id="cm-sync">Re-check bookings and closures now</button></div>' : '');
+    wireAssist(body);
     var k = $('#cm-kill'); if (k) k.onclick = function () { if (c.global_paused || confirm('Pause every channel now? The agent will stop reading and writing until you resume.')) save('f.cm.killswitch', { on: !c.global_paused }, c.global_paused ? 'Resumed' : 'Everything paused'); };
     var ra = $('#cm-resume-all'); if (ra) ra.onclick = function () { save('f.cm.killswitch', { on: false }, 'Resumed'); };
     var sy = $('#cm-sync'); if (sy) sy.onclick = function () { save('f.cm.sync', {}).then(function (j) { if (j.ok) toast(j.result.closed + ' closures queued · ' + j.result.reopen + ' re-openings proposed'); }); };
     $$('[data-pause]', body).forEach(function (b) { b.onclick = function () { save('f.cm.killswitch', { scope: b.dataset.pause, on: true }, 'Paused'); }; });
     $$('[data-resume]', body).forEach(function (b) { b.onclick = function () { save('f.cm.killswitch', { scope: b.dataset.resume, on: false }, 'Resumed'); }; });
+  }
+
+  /** Phone assist: while no agent machine is online, every approved change is a task: open the extranet, make it, tap Done. */
+  function assistCard(c) {
+    var todo = (c.jobs || []).filter(function (j) { return ['approved', 'queued', 'failed', 'needs_human'].indexOf(j.state) >= 0; })
+      .sort(function (a, b) { return (a.reason === 'booking_elsewhere' ? 0 : 1) - (b.reason === 'booking_elsewhere' ? 0 : 1) || (a.date_from < b.date_from ? -1 : 1); });
+    var body = '<p class="fo-hint">No channel agent is running, so changes are made by you in each extranet (it takes a minute on the phone). Booking closures come first and are emailed to you the moment a booking arrives. Calendar feeds keep Airbnb and Booking.com closed automatically once you add them.</p>';
+    if (!todo.length) return card('Phone assist', 'nothing to do', body + '<div class="fo-empty">All channels are up to date.</div>');
+    return card('Phone assist', todo.length + ' to do', body + '<div class="cm-tasks">' + todo.slice(0, 60).map(function (j) {
+      var link = (c.links || {})[j.villa + '|' + j.channel], urgent = j.reason === 'booking_elsewhere';
+      var what = j.type === 'rate' ? 'Set price <b>' + inr(num(j.new_value)) + '</b>' : '<b>' + esc(TYPES[j.type] || j.type) + '</b>' + (j.type === 'min_stay' ? ' ' + esc(j.new_value) + ' nights' : '');
+      return '<div class="cm-task' + (urgent ? ' cm-task--urgent' : '') + '"><label class="cm-task__main"><input type="checkbox" data-asel="' + esc(j.job_id) + '"><span>' + (urgent ? badge('booked elsewhere', 'fo-badge--bad') + '<br>' : '') +
+        '<b>' + esc(NAMES[j.channel]) + '</b> · ' + esc(vname(j.villa)) + '<br>' + what + ' · ' + range(j) + '</span></label><div class="cm-task__btns">' +
+        (link ? '<a class="btn btn--sm" href="' + esc(link) + '" target="_blank" rel="noopener">Open ' + esc(SHORT[j.channel]) + '</a>' : '<small class="fo-hint">add the listing link</small>') +
+        (j.type === 'rate' ? '<button class="btn btn--sm" data-copy="' + esc(String(Math.round(num(j.new_value)))) + '">Copy price</button>' : '') +
+        '<button class="btn btn--sm btn--primary" data-adone="' + esc(j.job_id) + '">Done</button></div></div>';
+    }).join('') + '</div><div class="fo-toolbar"><button class="btn" id="as-done">Mark ticked as done</button></div>');
+  }
+  function wireAssist(body) {
+    $$('[data-adone]', body).forEach(function (b) { b.onclick = function () { save('f.cm.jobs.done', { job_id: b.dataset.adone }, 'Marked done'); }; });
+    $$('[data-copy]', body).forEach(function (b) { b.onclick = function () { try { navigator.clipboard.writeText(b.dataset.copy); toast('Copied ' + b.dataset.copy); } catch (e) { toast(b.dataset.copy); } }; });
+    var all = $('#as-done'); if (all) all.onclick = function () { var ids = $$('[data-asel]', body).filter(function (x) { return x.checked; }).map(function (x) { return x.dataset.asel; }); if (!ids.length) return toast('Tick the ones you have done.', true); save('f.cm.jobs.done', { job_ids: ids }, ids.length + ' marked done'); };
   }
 
   // ------------------------------------------------------------ Rate desk ------------------------------------------------------------
@@ -240,6 +264,8 @@
         input('cp-' + ch, Math.round((s.commission || 0) * 100), 'number', ' min="0" max="50" style="width:70px"'), input('mk-' + ch, Math.round((s.markup || 0) * 100), 'number', ' min="-30" max="30" style="width:70px"'),
         f ? '<button class="btn btn--sm" data-save="' + ch + '">Save</button>' : ''];
     })) + '<p class="fo-hint"><b>Observe</b>: the agent only reads. <b>Propose</b>: price changes wait for your tap. <b>Auto-band</b>: changes inside your floor and ceiling, within 10% of the last price, at most once a day per night and never within a day of a booking go automatically. Dry-run: the agent fills the form and takes a screenshot but does not save (first 3 days of every channel).</p>') +
+      (!c.heartbeat ? card('Agent machine', 'set up later', '<p>The channel agent changes prices for you automatically. It needs a small always-on computer: free on Oracle Cloud (needs a card check, never charged) plus the free Tailscale app for a private remote screen on your phone. Until then <b>Phone assist</b> (Today tab) and the calendar feeds keep every channel right.</p>' +
+        '<ol class="fo-steps"><li><a href="https://signup.cloud.oracle.com/" target="_blank" rel="noopener">Create the Oracle Cloud Free Tier account</a> (region India South or India West)</li><li><a href="https://login.tailscale.com/start" target="_blank" rel="noopener">Create a Tailscale account</a> and install the Tailscale app on your phone</li><li>Tell Claude in the console: it creates the machine settings, installs the agent and walks you through signing in to each extranet once.</li></ol>') : '') +
       card('Channel agent', c.heartbeat ? 'last seen ' + when(c.heartbeat.at) : 'not connected', '<p>' + (c.agent_key ? 'An agent key is active.' : 'No agent key yet.') + ' The key lets the agent pull jobs and report what it reads; it cannot see guests or bookings. It is shown once: put it in the agent machine\'s .env file, never in a repository.</p>' +
         (f ? '<div class="fo-toolbar"><button class="btn btn--primary" id="ag-new">' + (c.agent_key ? 'Replace the agent key' : 'Create the agent key') + '</button>' + (c.agent_key ? '<button class="btn btn--danger" id="ag-rev">Revoke</button>' : '') + '</div><div id="ag-out"></div>' : '')) +
       card('Calendar feeds (iCal)', 'safety net', '<p>Import these into Airbnb (Calendar → Availability → Connect calendars) and Booking.com (Rates & availability → Sync calendars). Even when the agent is offline, nights booked anywhere stay closed there. Busy dates only, no guest data.</p>' +

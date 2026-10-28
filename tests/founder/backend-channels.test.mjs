@@ -188,3 +188,23 @@ test('observations from registered listings feed MarketRates (deduped per listin
   const d = env.api({ action: 'f.data', token: await env.login() });
   assert.ok(d.channel_manager); assert.equal(d.channel_manager.listings.length, 4); assert.equal(d.channel_manager.heartbeat.sessions.airbnb, 'login'); assert.equal(d.channel_manager.agent_key, true);
 });
+
+test('phone assist (no agent machine): a booking saved in the portal closes the channels at once, emails the owner once, "Done" from the phone finishes it', async () => {
+  const { env, token } = await ready();
+  const bk = env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'Walk In', checkin: '2026-11-20', checkout: '2026-11-22', status: 'confirmed', gross_amount: 9000, channel: 'Direct' } });
+  assert.equal(bk.ok, true, bk.error);
+  const closes = env.tab('ChannelJobs').filter(j => j.type === 'close' && j.date_from === '2026-11-20');
+  assert.equal(closes.length, 3, 'all three channels closed without waiting for the hourly run'); assert.ok(closes.every(j => j.date_to === '2026-11-21' && j.state === 'queued'));
+  const mails = env.mails.filter(m => /close .* now/.test(m.subject || '')); assert.equal(mails.length, 1);
+  assert.match(mails[0].body, /admin\.booking\.com\/hotel\/hoteladmin\/extranet_ng\/manage\/calendar\/index\.html\?hotel_id=B1/); assert.match(mails[0].body, /airbnb\.co\.in\/multicalendar\/P1/);
+  assert.ok(!/Walk In/.test(mails[0].body), 'no guest name in the email');
+  env.fo.foCmHourly_(); assert.equal(env.mails.filter(m => /close .* now/.test(m.subject || '')).length, 1, 'each closure is emailed once');
+  const d = env.api({ action: 'f.data', token: await env.login() });
+  assert.equal(d.channel_manager.agent_online, false); assert.match(d.channel_manager.links['ap-suite|booking'], /hotel_id=B1/);
+  const r = env.api({ action: 'f.cm.jobs.done', token, job_ids: closes.map(j => j.job_id) });
+  assert.equal(r.result.done, 3);
+  const after = env.tab('ChannelJobs').filter(j => j.type === 'close' && j.date_from === '2026-11-20');
+  assert.ok(after.every(j => j.state === 'done' && j.read_back === 'owner confirmed'));
+  assert.equal(env.tab('ChannelState').filter(s => s.date === '2026-11-20' && s.available === 'no').length, 3);
+  env.setUserRole('viewer'); assert.match(env.api({ action: 'f.cm.jobs.done', token, job_id: 'x' }).error, /role/);
+});

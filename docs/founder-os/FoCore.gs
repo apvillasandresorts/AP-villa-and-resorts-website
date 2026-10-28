@@ -394,9 +394,9 @@ function foRoutes_() {
   return {
     'f.logout': [foLogout_, 'viewer'], 'f.logout.all': [foLogoutAll_, 'viewer'], 'f.sessions': [foSessionsList_, 'viewer'], 'f.passphrase': [foChangePass_, 'viewer'],
     'f.data': [foDataLoad_, 'viewer'], 'f.audit': [foAuditList_, 'founder'],
-    'f.sync': [foSyncNow_, 'manager'], 'f.booking.save': [foBookingSave_, 'manager'], 'f.booking.note': [foBookingNote_, 'manager'],
+    'f.sync': [foSyncNow_, 'manager'], 'f.booking.save': [foCmAfter_(foBookingSave_), 'manager'], 'f.booking.note': [foBookingNote_, 'manager'],
     'f.booking.history': [foBookingHistory_, 'viewer'], 'f.bookings.delete.request': [foBookingsDeleteRequest_, 'founder'], 'f.bookings.delete.confirm': [foBookingsDeleteConfirm_, 'founder'], 'f.payment.add': [foPaymentAdd_, 'manager'],
-    'f.block.save': [foBlockSave_, 'manager'], 'f.block.delete': [foBlockDelete_, 'manager'],
+    'f.block.save': [foCmAfter_(foBlockSave_), 'manager'], 'f.block.delete': [foCmAfter_(foBlockDelete_), 'manager'],
     'f.exception.resolve': [foExceptionResolve_, 'manager'], 'f.import.rows': [foImportRows_, 'manager'],
     'f.channel.save': [foChannelSave_, 'founder'],
     // phases 5–10
@@ -423,7 +423,7 @@ function foRoutes_() {
     'f.cm.calendar': [b => foCmCalendar_(b), 'viewer'], 'f.cm.ratedesk': [b => foCmRatedesk_(b), 'viewer'],
     'f.cm.jobs.propose': [foCmJobsPropose_, 'founder'], 'f.cm.jobs.approve': [foCmJobsApprove_, 'founder'], 'f.cm.jobs.cancel': [foCmJobsCancel_, 'founder'], 'f.cm.jobs.retry': [foCmJobsRetry_, 'founder'],
     'f.cm.settings.set': [foCmSettingsSet_, 'founder'], 'f.cm.killswitch': [foCmKillswitch_, 'founder'], 'f.cm.ical.token': [foCmIcalToken_, 'founder'],
-    'f.cm.agent.key': [foCmAgentKeyCreate_, 'founder'], 'f.cm.agent.revoke': [foCmAgentKeyRevoke_, 'founder'], 'f.cm.sync': [(b, u) => ({ result: foCmSyncAvailability_(u.email) }), 'manager'],
+    'f.cm.jobs.done': [foCmJobsManualDone_, 'manager'], 'f.cm.agent.key': [foCmAgentKeyCreate_, 'founder'], 'f.cm.agent.revoke': [foCmAgentKeyRevoke_, 'founder'], 'f.cm.sync': [(b, u) => ({ result: foCmSyncAvailability_(u.email) }), 'manager'],
     // Live Pricing Desk (FoSignals.gs)
     'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
     'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],
@@ -434,6 +434,10 @@ function foRoutes_() {
     'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],
     'f.campaign.save': [foCampaignSave_, 'manager'], 'f.campaign.delete': [(b, u) => foDelete_('Campaigns', 'campaign_id', b.id, u), 'manager'],
   };
+}
+/** A saved booking or block closes / re-opens the villa's other channels straight away (AP Channel Manager), not just on the hourly run. */
+function foCmAfter_(fn) {
+  return (b, u, sess) => { const out = fn(b, u, sess); if (out && out.ok !== false && typeof foCmSyncAvailability_ === 'function') { try { if (foRows_('Listings').some(l => l.role === 'own')) foCmSyncAvailability_(u.email); } catch (e) {} } return out; };
 }
 function foApi_(b) {
   const a = String(b.action || '');

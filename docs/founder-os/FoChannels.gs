@@ -244,6 +244,57 @@ function foCmJobsSet_(b, user, allowed, next) {
 const foCmJobsCancel_ = (b, u) => foCmJobsSet_(b, u, ['proposed', 'approved', 'queued', 'failed', 'needs_human'], b.reject ? 'rejected' : 'cancelled');
 const foCmJobsRetry_ = (b, u) => foCmJobsSet_(b, u, ['failed', 'needs_human'], 'queued');
 
+// ---------------------------------------------------------------- phone assist (backup while no agent machine is online) ----------------
+/** The agent is online when its last heartbeat is under 15 minutes old. */
+function foCmAgentOnline_() { const hb = foCmHeartbeatGet_(); return !!(hb && Date.now() - Date.parse(hb.at) < 15 * 60000); }
+/**
+ * The owner made the change by hand in the extranet (phone assist): the job is done on the owner's word (read_back "owner confirmed").
+ * Jobs an online agent is running right now are left alone.
+ */
+function foCmJobsManualDone_(b, user) {
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const ids = Array.isArray(b.job_ids) ? b.job_ids : [b.job_id], now = foNow_(); let n = 0;
+    foRows_('ChannelJobs').filter(j => ids.indexOf(j.job_id) >= 0).forEach(j => {
+      const leased = (j.state === 'running' || j.state === 'verifying') && j.lease_until && Date.parse(j.lease_until) > Date.now();
+      if (leased || ['proposed', 'approved', 'queued', 'failed', 'needs_human', 'running', 'verifying'].indexOf(j.state) < 0) return;
+      j.state = 'done'; j.read_back = 'owner confirmed'; j.claimed_by = 'owner'; j.lease_until = ''; j.error_code = ''; j.done_at = now; if (!j.approved_at) { j.approved_by = user.email; j.approved_at = now; }
+      j.message = ('Set by hand in the extranet by ' + user.email + (b.note ? ': ' + foClean_(b.note, 120) : '')).slice(0, 300);
+      const r = j._row; delete j._row; foUpdate_('ChannelJobs', r, j); foCmStateFromJob_(j); n++;
+    });
+    foAudit_(user.email, 'cm_jobs_manual_done', n + ' jobs', 'ok'); foTouch_();
+    return { result: { done: n } };
+  } finally { lock.releaseLock(); }
+}
+/** Phone deep link to the right extranet page for a villa on a channel (Airbnb opens its app on a phone). */
+function foCmExtranetLink_(villa, ch) {
+  const l = foCmOwn_(villa, ch); if (!l) return '';
+  if (ch === 'airbnb') return 'https://www.airbnb.co.in/multicalendar/' + (l.extranet_property_id || l.platform_listing_id);
+  if (ch === 'booking') return l.extranet_property_id ? 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?hotel_id=' + encodeURIComponent(l.extranet_property_id) : 'https://admin.booking.com/';
+  return 'https://in.goibibo.com/extranet/';
+}
+/**
+ * While no agent is online: email the owner every NEW booking-driven closure at once (double-booking risk), and once a day a list of the
+ * other changes waiting. Each job is emailed once.
+ */
+function foCmAssistAlert_() {
+  if (foCmAgentOnline_()) return 'agent online';
+  const p = PropertiesService.getScriptProperties(), sent = JSON.parse(p.getProperty('FO_CM_ASSIST_SENT') || '[]'), props = {}; foRows_('Properties').forEach(x => { props[x.property_id] = x.name; });
+  const waiting = foRows_('ChannelJobs').filter(j => ['approved', 'queued', 'failed', 'needs_human'].indexOf(j.state) >= 0);
+  const urgent = waiting.filter(j => j.reason === 'booking_elsewhere' && sent.indexOf(j.job_id) < 0);
+  const today = foToday_(), daily = p.getProperty('FO_CM_ASSIST_DAY') !== today && Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) >= 8 && waiting.length;
+  if (!urgent.length && !daily) return 'nothing new';
+  const line = j => '• ' + (props[j.villa] || j.villa) + ' on ' + FO_CM.NAMES[j.channel] + ': ' + (j.type === 'rate' ? 'set ₹' + foNum_(j.new_value).toLocaleString('en-IN') : j.type === 'min_stay' ? 'minimum stay ' + j.new_value + ' nights' : j.type.replace('_', '-').toUpperCase()) +
+    ' for ' + j.date_from + (j.date_to !== j.date_from ? ' → ' + j.date_to : '') + '\n  ' + foCmExtranetLink_(j.villa, j.channel);
+  const body = (urgent.length ? 'A booking came in. Close these nights now to avoid a double booking:\n\n' + urgent.map(line).join('\n') + '\n\n' : '') +
+    (daily ? 'Changes waiting for you (no channel agent is running yet, so these are done by hand):\n\n' + waiting.filter(j => urgent.indexOf(j) < 0).slice(0, 40).map(line).join('\n') + '\n\n' : '') +
+    'After changing it in the extranet, tap "Done" in Channel Manager → Today: https://www.apvillasandresorts.in/founder/#/channels';
+  try { MailApp.sendEmail({ to: foDeskRecipient_(), subject: urgent.length ? 'AP Channel Manager · close ' + urgent.length + ' night range' + (urgent.length > 1 ? 's' : '') + ' now (booking elsewhere)' : 'AP Channel Manager · ' + waiting.length + ' changes to make today', body }); } catch (e) { return 'mail failed'; }
+  p.setProperty('FO_CM_ASSIST_SENT', JSON.stringify(sent.concat(urgent.map(j => j.job_id)).slice(-400)));
+  if (daily) p.setProperty('FO_CM_ASSIST_DAY', today);
+  return urgent.length + ' urgent, daily ' + (daily ? 'sent' : 'no');
+}
+
 // ---------------------------------------------------------------- availability sync (bookings anywhere → close everywhere) ----------------
 /**
  * Every confirmed/tentative booking or owner block in the ledger closes those nights on the villa's other channels, at once,
@@ -270,7 +321,7 @@ function foCmSyncAvailability_(actor) {
     foCmRanges_(need).forEach(r => { const res = foCmCreate_({ type: 'close', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: 'close', reason: 'booking_elsewhere', state: 'queued', approved_by: 'availability-sync' }, actor, jobs); if (res.job) out.closed++; });
     foCmRanges_(reopen).forEach(r => { const res = foCmCreate_({ type: 'open', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: 'open', reason: 'manual', state: 'proposed' }, actor, jobs); if (res.job) out.reopen++; });
   }));
-  if (out.closed || out.reopen) foTouch_();
+  if (out.closed || out.reopen) { foTouch_(); if (out.closed) out.assist = foCmAssistAlert_(); }
   return out;
 }
 function FoCmChannelOf_(ledgerChannel) { const c = String(ledgerChannel || '').toLowerCase(); return /airbnb/.test(c) ? 'airbnb' : /booking\.com/.test(c) ? 'booking' : /makemytrip|goibibo|mmt/.test(c) ? 'mmt' : ''; }
@@ -520,7 +571,8 @@ function foCmBundle_() {
   return { settings, global_paused: foCmGlobalPaused_(), heartbeat: foCmHeartbeatGet_(), agent_key: !!PropertiesService.getScriptProperties().getProperty('FO_AGENT_KEY'),
     listings: foRows_('Listings').map(strip), jobs: foRows_('ChannelJobs').filter(j => FO_CM.OPEN.indexOf(j.state) >= 0 || String(j.created_at) >= FoMetrics.addDays(today, -14)).slice(-800).map(strip),
     state: foRows_('ChannelState').filter(r => String(r.date).slice(0, 10) >= today).map(strip), reservations: foRows_('ChannelReservations').filter(r => String(r.checkout) >= FoMetrics.addDays(today, -30)).map(strip),
-    ical: foCmIcalUrls_() };
+    ical: foCmIcalUrls_(), agent_online: foCmAgentOnline_(),
+    links: (() => { const o = {}; foRows_('Properties').forEach(p => FO_CM.CHANNELS.forEach(c => { const u = foCmExtranetLink_(p.property_id, c); if (u) o[p.property_id + '|' + c] = u; })); return o; })() };
 }
 
 // ---------------------------------------------------------------- iCal export (official calendar sync safety net) ----------------
@@ -555,5 +607,6 @@ function foCmHourly_() {
   if (!foRows_('Listings').some(r => r.role === 'own')) return 'no own listings yet';
   const out = { availability: foCmSyncAvailability_('system') }, p = PropertiesService.getScriptProperties(), today = foToday_();
   if (p.getProperty('FO_CM_PROPOSED') !== today && Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) >= 7) { out.pricing = foCmProposeFromDesk_('system', { days: 30 }); p.setProperty('FO_CM_PROPOSED', today); }
+  out.assist = foCmAssistAlert_();
   return JSON.stringify(out);
 }
