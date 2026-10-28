@@ -348,7 +348,7 @@ function foBrainAct_(b, user) {
     'record_salary fields: emp_id (one of: ' + staff + '), amount, paid_on, period (YYYY-MM), mode (upi|cash|bank|other), kind (salary|advance|bonus|stipend|deduction), ref.',
     'add_employee fields: name, role (caretaker|sweeper|intern|manager|cook|driver|security|other), work_mode (on-site|remote), phone, email, property_ids, salary_amount, salary_cycle (monthly|weekly|daily|stipend|per-task), pay_day, joined.',
     'add_lead fields: name, phone, email, source, villa, checkin, nights, guests, value_inr, next_followup, notes.',
-    'channel_change fields (prices or availability on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id, type (rate|close|open|min_stay|stop_sell), value (rupees for rate, nights for min_stay), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
+    'channel_change fields (prices, availability and restrictions on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id (a villa id, or "all" for every villa), type (rate|pct|recommended|close|open|min_stay|max_stay|cta|ctd|stop_sell|units), value (rupees for rate, percent for pct e.g. 10 or -15, nights for min_stay/max_stay (0 = no limit), number for units, on|off for cta/ctd/stop_sell; cta = no check-ins, ctd = no check-outs), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
   ].filter(Boolean).join('\n');
@@ -408,16 +408,30 @@ function foActPlan_(intent, f, D, today) {
     lines.push(['Enquiry', [f.name, f.phone, f.email].filter(Boolean).join(' · ') || '—'], ['Wants', [f.villa, f.checkin, f.nights ? f.nights + ' nights' : '', f.guests ? f.guests + ' guests' : ''].filter(Boolean).join(' · ') || '—'], ['From', f.source || '—'], ['Follow up', f.next_followup]);
     route = 'f.crm.lead.save'; payload = { lead: { name: f.name || '', phone: f.phone || '', email: f.email || '', source: f.source || '', villa: f.villa || '', checkin: f.checkin || '', nights: f.nights || '', guests: f.guests || '', value_inr: f.value_inr || '', stage: 'new', next_followup: f.next_followup, notes: (f.notes || '') + ' · added by AP Brain' } };
   } else if (intent === 'channel_change') {
-    const types = { rate: 'Price', close: 'Close', open: 'Open', min_stay: 'Minimum stay', stop_sell: 'Stop-sell' }, names = { mmt: 'MakeMyTrip / Goibibo', booking: 'Booking.com', airbnb: 'Airbnb' };
+    const types = { rate: 'Price', pct: 'Price change vs recommended', recommended: 'Back to the recommended price', close: 'Close', open: 'Open', min_stay: 'Minimum stay', max_stay: 'Maximum stay', cta: 'No check-ins (closed to arrival)', ctd: 'No check-outs (closed to departure)', stop_sell: 'Stop-sell', units: 'Units to sell' };
+    const names = { mmt: 'MakeMyTrip / Goibibo', booking: 'Booking.com', airbnb: 'Airbnb' };
     f.type = types[f.type] ? f.type : 'rate'; f.from = foDate_(f.from) || ''; f.to = foDate_(f.to) || f.from; f.basis = f.basis === 'channel' ? 'channel' : 'net';
+    if (String(f.property_id || '').toLowerCase() === 'all') f.property_id = 'all';
     const chans = String(f.channels || '').toLowerCase().split(/[\s,]+/).map(c => /goibibo|make/.test(c) ? 'mmt' : /booking/.test(c) ? 'booking' : c).filter(c => names[c]);
-    const wds = String(f.weekdays || '').split(/[\s,]+/).map(Number).filter(n => n >= 0 && n <= 6 && String(f.weekdays).trim() !== '');
-    need('property_id', 'which villa'); need('from', 'which nights');
-    if ((f.type === 'rate' || f.type === 'min_stay') && !foNum_(f.value)) missing.push({ key: 'value', label: f.type === 'rate' ? 'the price' : 'the minimum nights' });
-    lines.push(['Villa', f.property_id ? (prop(f.property_id) || {}).name || '—' : '—'], ['Change', types[f.type] + (f.type === 'rate' && f.value ? ' ' + inr(f.value) + (f.basis === 'net' ? ' (you keep; commission added per channel)' : ' (guest price)') : f.type === 'min_stay' && f.value ? ' ' + f.value + ' nights' : '')],
+    const wds = String(f.weekdays == null ? '' : f.weekdays).split(/[\s,]+/).filter(x => /^[0-6]$/.test(x)).map(Number);   // nothing said = every day
+    const on = !/^(off|no|false|0|remove|clear)$/i.test(String(f.value == null ? 'on' : f.value).trim());
+    need('property_id', 'which villa (or all villas)'); need('from', 'which nights');
+    if (['rate', 'pct', 'min_stay'].indexOf(f.type) >= 0 && !foNum_(f.value)) missing.push({ key: 'value', label: f.type === 'rate' ? 'the price' : f.type === 'pct' ? 'the % change' : 'the minimum nights' });
+    if (['max_stay', 'units'].indexOf(f.type) >= 0 && !foHasNum_(f.value)) missing.push({ key: 'value', label: f.type === 'units' ? 'how many units' : 'the maximum nights (0 = no limit)' });
+    const set = {};
+    if (f.type === 'rate') set.price = { mode: f.basis, value: foNum_(f.value) };
+    else if (f.type === 'pct') set.price = { mode: 'pct', value: foNum_(f.value) };
+    else if (f.type === 'recommended') set.price = { mode: 'recommended' };
+    else if (f.type === 'close' || f.type === 'open') set.closed = f.type === 'close';
+    else if (f.type === 'units') set.units = foNum_(f.value);
+    else if (f.type === 'min_stay' || f.type === 'max_stay') set[f.type] = foNum_(f.value);
+    else set[f.type] = on;
+    const what = f.type === 'rate' && f.value ? ' ' + inr(f.value) + (f.basis === 'net' ? ' (you keep; commission added per channel)' : ' (guest price)') : f.type === 'pct' && f.value ? ' ' + (foNum_(f.value) > 0 ? '+' : '') + foNum_(f.value) + '%' :
+      ['min_stay', 'max_stay'].indexOf(f.type) >= 0 && foHasNum_(f.value) ? ' ' + (foNum_(f.value) || 'no limit') + (foNum_(f.value) ? ' nights' : '') : f.type === 'units' && foHasNum_(f.value) ? ' ' + foNum_(f.value) : ['cta', 'ctd', 'stop_sell'].indexOf(f.type) >= 0 ? (on ? ' ON' : ' OFF') : '';
+    lines.push(['Villa', f.property_id === 'all' ? 'All villas' : f.property_id ? (prop(f.property_id) || {}).name || '—' : '—'], ['Change', types[f.type] + what],
       ['Nights', (f.from || '?') + (f.to && f.to !== f.from ? ' → ' + f.to : '') + (wds.length ? ' · only ' + wds.map(n => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][n]).join(', ') : '')], ['Channels', chans.length ? chans.map(c => names[c]).join(', ') : 'all three'],
-      ['Safety', 'prices outside your floor/ceiling are refused; the agent reads every change back']);
-    route = 'f.cm.jobs.propose'; payload = { approve: true, manual: { villa: f.property_id, type: f.type, value: foNum_(f.value), basis: f.basis, from: f.from, to: f.to, weekdays: wds, channels: chans } };
+      ['Safety', 'prices stay inside your floor/ceiling; every change is read back (or done by you in Phone assist)']);
+    route = 'f.cm.bulk'; payload = { bulk: { villas: f.property_id === 'all' ? props.map(p => p.property_id) : [f.property_id], from: f.from, to: f.to, weekdays: wds, channels: chans, set, approve: true } };
   }
   const question = missing.length ? 'To finish this I still need: ' + missing.map(m => m.label).join(', ') + '.' : '';
   return { fields: f, missing, question, lines, route, payload, ready: !missing.length };

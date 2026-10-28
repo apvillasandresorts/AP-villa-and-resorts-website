@@ -601,6 +601,7 @@
       $$('[data-cancel]', log).forEach(function (b) { b.onclick = function () { BRAIN.draft = null; BRAIN.history[Number(b.dataset.cancel)].action.ready = false; BRAIN.history.push({ role: 'assistant', text: 'Cancelled. Nothing was saved.' }); paint(); }; });
     }
     // records (bookings from a pasted voucher, expenses, salaries, staff, enquiries) go to f.brain.act; questions to f.brain.ask
+    var RESTRICT_ACT = /\b(set|make|put|add|remove|no|block)\b[\s\S]{0,40}\b(min(imum)?[- ]stay|max(imum)?[- ]stay|check-?ins?|check-?outs?|closed to (arrival|departure)|stop[- ]?sell|units? to sell)\b|\b(min(imum)?|max(imum)?)[- ]stay\b[\s\S]{0,30}\d/i;
     var CHANNEL_ACT = /\b(set|change|make|close|open|stop[- ]?sell|min(imum)? stay)\b[\s\S]*\b(airbnb|booking\.com|mmt|makemytrip|goibibo|all channels|every channel|channels?)\b/i;
     var ACT = /\b(add|record|log|enter|paid|pay|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b/i;
     function act(q) {
@@ -626,7 +627,7 @@
     }
     function ask(q, skipAct) {
       q = String(q || '').trim(); if (!q) return;
-      if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || q.length > 220)) return act(q);
+      if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || RESTRICT_ACT.test(q) || q.length > 220)) return act(q);
       var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
       if (!skipAct) BRAIN.history.push({ role: 'user', text: q });
       BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();

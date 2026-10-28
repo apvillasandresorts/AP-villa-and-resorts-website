@@ -235,9 +235,23 @@ test('actions: "set AP Suite ₹4,000 on Airbnb and Booking this weekend" become
   const { env, token } = await ready(() => groqOk('{"intent":"channel_change","fields":{"property_id":"AP Suite","type":"rate","value":4000,"from":"2026-10-23","to":"2026-10-25","weekdays":"5,6","channels":"airbnb, booking.com"}}'));
   env.props.set('GROQ_API_KEY', 'gsk_test');
   const a = env.api({ action: 'f.brain.act', token, text: 'set AP Suite 4000 on Airbnb and Booking this weekend' });
-  assert.equal(a.result.intent, 'channel_change'); assert.equal(a.result.ready, true, JSON.stringify(a.result.missing)); assert.equal(a.result.route, 'f.cm.jobs.propose');
-  assert.deepEqual(a.result.payload.manual.channels, ['airbnb', 'booking']); assert.deepEqual(a.result.payload.manual.weekdays, [5, 6]);
+  assert.equal(a.result.intent, 'channel_change'); assert.equal(a.result.ready, true, JSON.stringify(a.result.missing)); assert.equal(a.result.route, 'f.cm.bulk');
+  assert.deepEqual(a.result.payload.bulk.channels, ['airbnb', 'booking']); assert.deepEqual(a.result.payload.bulk.weekdays, [5, 6]); assert.deepEqual(a.result.payload.bulk.villas, ['ap-suite']);
   const r = env.api(Object.assign({ action: a.result.route, token }, a.result.payload));
-  assert.equal(r.ok, true, r.error); assert.equal(r.result.created.length, 2, JSON.stringify(r.result));
+  assert.equal(r.ok, true, r.error); assert.equal(r.result.jobs, 2, JSON.stringify(r.result));
   assert.ok(env.tab('ChannelJobs').every(j => j.state === 'queued' && j.date_from === '2026-10-23' && j.date_to === '2026-10-24'));
+});
+
+test('actions: restrictions in plain words — "no check-ins on 14 Nov for all villas", "min stay 2 on weekends" — go through bulk edit', async () => {
+  let reply = '';
+  const { env, token } = await ready(() => groqOk(reply));
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  reply = '{"intent":"channel_change","fields":{"property_id":"all","type":"cta","value":"on","from":"2026-11-14"}}';
+  const a = env.api({ action: 'f.brain.act', token, text: 'no check-ins on 14 Nov for all villas on every channel' });
+  assert.equal(a.result.ready, true, JSON.stringify(a.result.missing)); assert.equal(a.result.payload.bulk.villas.length, 5); assert.deepEqual(a.result.payload.bulk.set, { cta: true });
+  assert.equal(env.api(Object.assign({ action: a.result.route, token }, a.result.payload)).ok, true);
+  assert.equal(env.tab('InventoryCalendar').filter(x => x.date === '2026-11-14' && x.cta === 'yes').length, 5);
+  reply = '{"intent":"channel_change","fields":{"property_id":"Villa Aranya","type":"min_stay","from":"2026-12-01","to":"2026-12-31","weekdays":"5,6"}}';
+  const b = env.api({ action: 'f.brain.act', token, text: 'min stay on weekends in December for Villa Aranya' });
+  assert.equal(b.result.ready, false); assert.match(b.result.question, /minimum nights/);
 });
