@@ -2,6 +2,14 @@
   "_readme": "Queue of blog topics. status: queued | published | skip. The writer picks a timely topic or the first queued one, then sets status to published.",
   "topics": [
     {
+      "slug": "mahakal-aarti-timings-winter-2026",
+      "title": "Mahakal Aarti Timings from 27 October 2026: Winter Schedule",
+      "keyword": "mahakal aarti timing today",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "published"
+    },
+    {
       "slug": "where-to-stay-near-mahakaleshwar-temple",
       "title": "Where to Stay Near Mahakaleshwar Temple: A Family Guide",
       "keyword": "where to stay near mahakaleshwar temple",
