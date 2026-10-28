@@ -18,7 +18,9 @@ const FO_CM = {
   CHANNELS: ['mmt', 'booking', 'airbnb'], PLATFORMS: ['mmt', 'goibibo', 'booking', 'airbnb'],
   NAMES: { mmt: 'MakeMyTrip / Goibibo', booking: 'Booking.com', airbnb: 'Airbnb' },
   LEDGER: { mmt: 'MakeMyTrip', booking: 'Booking.com', airbnb: 'Airbnb' },
-  TYPES: ['rate', 'open', 'close', 'min_stay', 'stop_sell'], REASONS: ['pricing', 'booking_elsewhere', 'manual'],
+  TYPES: ['rate', 'open', 'close', 'min_stay', 'max_stay', 'cta', 'ctd', 'stop_sell', 'inventory'], NUM: ['rate', 'min_stay', 'max_stay', 'inventory'], ONOFF: ['cta', 'ctd', 'stop_sell'],
+  LABEL: { rate: 'Price', open: 'Open', close: 'Close', min_stay: 'Min stay', max_stay: 'Max stay', cta: 'Closed to arrival', ctd: 'Closed to departure', stop_sell: 'Stop-sell', inventory: 'Units to sell' },
+  REASONS: ['pricing', 'booking_elsewhere', 'manual'],
   OPEN: ['proposed', 'approved', 'queued', 'running', 'verifying', 'failed', 'needs_human'], FINAL: ['done', 'rejected', 'cancelled'],
   LEASE_MIN: 10, RETRY_MIN: 10, HORIZON: 90, PULL_MAX: 12, BAND: 0.10, DRY_DAYS: 3, READ_EVERY_H: 3,
   RES_FIELDS: ['reservation_id', 'villa', 'checkin', 'checkout', 'amount', 'currency', 'channel', 'status'],
@@ -112,8 +114,8 @@ function foCmList_(net, floor, ceiling, st) {
   return { price: Math.max(lo, Math.min(hi, foCm50_(net * k))), lo, hi };
 }
 /** Last value written (done) or approved for one villa·channel·night and type. */
-function foCmLastValue_(jobs, villa, ch, d, type) {
-  const hit = jobs.filter(j => j.villa === villa && j.channel === ch && j.type === type && ['done', 'approved', 'queued', 'running', 'verifying'].indexOf(j.state) >= 0 && j.date_from <= d && j.date_to >= d && j.read_back !== 'dry_run')
+function foCmLastValue_(jobs, villa, ch, d, type, plan) {
+  const hit = jobs.filter(j => j.villa === villa && j.channel === ch && j.type === type && String(j.rate_plan || '') === String(plan || '') && ['done', 'approved', 'queued', 'running', 'verifying'].indexOf(j.state) >= 0 && j.date_from <= d && j.date_to >= d && j.read_back !== 'dry_run')
     .sort((a, b) => String(b.approved_at || b.created_at) < String(a.approved_at || a.created_at) ? -1 : 1);
   return hit.length ? foNum_(hit[0].new_value) : null;
 }
@@ -121,20 +123,160 @@ function foCmLastValue_(jobs, villa, ch, d, type) {
 function foCmDesk_(D, villa, days) {
   const s = foCmSettings_(), cal = FoDesk.calendar(D, villa, days || FO_CM.HORIZON); if (!cal) return null;
   const state = {}; foRows_('ChannelState').forEach(r => { if (r.villa === villa) state[r.channel + '|' + String(r.date).slice(0, 10)] = r; });
-  const jobs = foRows_('ChannelJobs');
+  const jobs = foRows_('ChannelJobs'), ari = foCmAri_(villa), sold = foCmSold_(D, villa), base = foCmUnits_(villa);
   return cal.rows.map(q => {
-    const ch = {};
+    const a = ari[q.date] || {}, override = foHasNum_(a.price_net) && foNum_(a.price_net) > 0, net = override ? foNum_(a.price_net) : q.price, ch = {};
     FO_CM.CHANNELS.forEach(c => {
       const st = s[c]; if (!st) return;
-      const L = foCmList_(q.price, q.floor, q.ceiling, st), live = state[c + '|' + q.date], last = foCmLastValue_(jobs, villa, c, q.date, 'rate');
-      ch[c] = { list: L.price, lo: L.lo, hi: L.hi, live: live && live.rate !== '' ? foNum_(live.rate) : null, available: live ? live.available : '', read_at: live ? live.read_at : '', last };
+      const L = foCmList_(net, q.floor, q.ceiling, st), live = state[c + '|' + q.date] || {}, last = foCmLastValue_(jobs, villa, c, q.date, 'rate');
+      ch[c] = { list: L.price, lo: L.lo, hi: L.hi, live: live.rate !== undefined && live.rate !== '' ? foNum_(live.rate) : null, available: live.available || '', read_at: live.read_at || '', last,
+        min_stay: live.min_stay || '', max_stay: live.max_stay || '', cta: live.cta || '', ctd: live.ctd || '', stop_sell: live.stop_sell || '', inventory: live.inventory !== undefined ? live.inventory : '' };
     });
-    return { date: q.date, net: q.price, floor: q.floor, ceiling: q.ceiling, booked: q.booked, blocked: q.blocked, chance: q.fill ? q.fill.chance : null, confidence: q.confidence, channels: ch };
+    const units = foHasNum_(a.units) ? foNum_(a.units) : base;
+    return { date: q.date, net, rec_net: q.price, override, floor: q.floor, ceiling: q.ceiling, booked: q.booked, blocked: q.blocked, chance: q.fill ? q.fill.chance : null, confidence: q.confidence, channels: ch,
+      units, sold: sold[q.date] || 0, left: q.blocked ? 0 : Math.max(0, units - (sold[q.date] || 0)),
+      ari: { min_stay: a.min_stay || '', max_stay: a.max_stay || '', cta: a.cta || '', ctd: a.ctd || '', stop_sell: a.stop_sell || '', closed: a.closed || '', note: a.note || '' } };
   });
+}
+// ---------------------------------------------------------------- inventory, restrictions and price overrides per villa·night (ARI) ----------------
+/** Units the villa sells by default (Properties.units, at least 1). */
+function foCmUnits_(villa) { const p = foRows_('Properties').find(x => x.property_id === villa); return Math.max(1, Math.round(foNum_(p && p.units) || 1)); }
+function foCmAri_(villa) { const o = {}; foRows_('InventoryCalendar').forEach(r => { if (r.villa === villa) o[String(r.date).slice(0, 10)] = r; }); return o; }
+/** Nights already sold per date (confirmed + tentative bookings). */
+function foCmSold_(D, villa) { const o = {}; (D.bookings || []).forEach(b => { if (b.property_id !== villa || ['confirmed', 'tentative'].indexOf(b.status) < 0) return; for (let d = b.checkin; d < b.checkout; d = FoMetrics.addDays(d, 1)) o[d] = (o[d] || 0) + 1; }); return o; }
+function foCmAriUpsert_(rows, actor) {
+  const have = {}; foRows_('InventoryCalendar').forEach(r => { have[r.villa + '|' + String(r.date).slice(0, 10)] = r; });
+  rows.forEach(x => {
+    const k = x.villa + '|' + x.date, old = have[k], rec = Object.assign({}, old || {}, x, { updated_at: foNow_(), updated_by: actor }); delete rec._row;
+    if (old) foUpdate_('InventoryCalendar', old._row, rec); else { foAppend_('InventoryCalendar', rec); have[k] = rec; }
+  });
+}
+function foCmUnitsSet_(b, user) {
+  const row = foRows_('Properties').find(p => p.property_id === b.villa); if (!row) return { ok: false, error: 'Choose a villa.' };
+  const u = Math.round(foNum_(b.units)); if (!(u >= 1 && u <= 50)) return { ok: false, error: 'Units must be 1–50 (a whole villa is 1).' };
+  const rec = Object.assign({}, row, { units: u }); delete rec._row; foUpdate_('Properties', row._row, rec);
+  foAudit_(user.email, 'cm_units', b.villa + ' → ' + u, 'ok'); foTouch_();
+  return { result: { villa: b.villa, units: u, sync: foCmSyncAvailability_(user.email) } };
+}
+
+// ---------------------------------------------------------------- rate plans (derived from the main price) ----------------
+function foCmPlans_(villa, ch) {
+  return foRows_('RatePlans').filter(p => p.active === 'yes' && (p.villa === 'all' || p.villa === villa) && (!p.channels || p.channels === 'all' || String(p.channels).split(',').indexOf(ch) >= 0));
+}
+function foCmPlanSave_(b, user) {
+  const x = b.plan || {}, name = foClean_(x.name, 60); if (!name) return { ok: false, error: 'Give the plan a name.' };
+  const pct = foNum_(x.adjust_pct), amt = foNum_(x.adjust_amt);
+  if (!(pct >= -50 && pct <= 100) || !(amt >= -20000 && amt <= 20000)) return { ok: false, error: 'Adjustment must be −50…+100 % and −₹20,000…+₹20,000.' };
+  const villa = x.villa === 'all' || foRows_('Properties').some(p => p.property_id === x.villa) ? x.villa : 'all';
+  const chans = (Array.isArray(x.channels) ? x.channels : String(x.channels || 'all').split(',')).filter(c => FO_CM.CHANNELS.indexOf(c) >= 0);
+  const ext = {}; FO_CM.CHANNELS.forEach(c => { const v = x.ext_ids && x.ext_ids[c]; if (v) ext[c] = foClean_(v, 40); });
+  const rows = foRows_('RatePlans'), old = rows.find(r => r.plan_id === x.plan_id), now = foNow_();
+  const rec = Object.assign({}, old || { plan_id: foId_('RP'), created_at: now }, { name, villa, channels: chans.length && chans.length < 3 ? chans.join(',') : 'all', adjust_pct: pct, adjust_amt: amt,
+    meal: ['none', 'breakfast', 'half_board', 'full_board'].indexOf(x.meal) >= 0 ? x.meal : 'none', refund: x.refund === 'non_refundable' ? 'non_refundable' : 'flexible', ext_ids: JSON.stringify(ext), active: x.active === false ? '' : 'yes', updated_at: now, updated_by: user.email });
+  delete rec._row; if (old) foUpdate_('RatePlans', old._row, rec); else foAppend_('RatePlans', rec);
+  foAudit_(user.email, 'cm_plan_save', rec.plan_id + ' ' + name, 'ok'); foTouch_();
+  return { plan: rec };
+}
+/** Price of a derived plan, kept inside the same floor/ceiling band. */
+function foCmPlanPrice_(plan, base, lo, hi) { return Math.max(lo, Math.min(hi, foCm50_(base * (1 + foNum_(plan.adjust_pct) / 100) + foNum_(plan.adjust_amt)))); }
+/** After creating a standard-rate range, the same range for every active derived plan. */
+function foCmPlanJobs_(villa, ch, r, base, opts, user, jobs) {
+  const out = [];
+  foCmPlans_(villa, ch).forEach(p => {
+    const v = foCmPlanPrice_(p, base, r.lo, r.hi);
+    const res = foCmCreate_(Object.assign({}, opts, { type: 'rate', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: v, lo: r.lo, hi: r.hi, rate_plan: p.plan_id }), user, jobs);
+    out.push(res);
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------- bulk edit (calendar) ----------------
+/**
+ * One edit for many villas · nights · channels, like the bulk-update screen of a channel manager:
+ * bulk = { villas[], from, to | dates[], weekdays[], channels[], approve, preview,
+ *          set: { price: { mode: net|channel|pct|recommended, value }, units, closed, stop_sell, min_stay, max_stay, cta, ctd, note } }
+ * Saves the nightly settings (InventoryCalendar) and creates the channel jobs (merged into ranges). preview = count only, nothing saved.
+ */
+function foCmBulk_(b, user) {
+  const x = b.bulk || {}, set = x.set || {}, preview = !!x.preview;
+  const props = foRows_('Properties'), villas = (Array.isArray(x.villas) ? x.villas : [x.villas]).filter(v => props.some(p => p.property_id === v));
+  if (!villas.length) return { ok: false, error: 'Choose at least one villa.' };
+  const picked = Array.isArray(x.dates) && x.dates.length ? x.dates.map(foDate_).filter(Boolean).sort() : null, today = foToday_();
+  const from = picked ? picked[0] : foDate_(x.from), to = picked ? picked[picked.length - 1] : foDate_(x.to || x.from);
+  if (!from || !to || to < from) return { ok: false, error: 'Choose the dates.' };
+  if (to > FoMetrics.addDays(today, 365)) return { ok: false, error: 'Dates can be at most a year ahead.' };
+  const days = []; for (let d = from < today ? today : from; d <= to; d = FoMetrics.addDays(d, 1)) { const wd = new Date(d + 'T00:00:00Z').getUTCDay(); if ((!picked || picked.indexOf(d) >= 0) && (!Array.isArray(x.weekdays) || !x.weekdays.length || x.weekdays.indexOf(wd) >= 0)) days.push(d); }
+  if (!days.length) return { ok: false, error: 'No dates match (past dates and unticked weekdays are skipped).' };
+  const has = k => set[k] !== undefined && set[k] !== null && set[k] !== '';
+  if (!['price', 'units', 'closed', 'stop_sell', 'min_stay', 'max_stay', 'cta', 'ctd', 'note'].some(has)) return { ok: false, error: 'Choose at least one thing to change.' };
+  const price = has('price') ? set.price : null;
+  if (price && ['net', 'channel', 'pct', 'recommended'].indexOf(price.mode) < 0) return { ok: false, error: 'Unknown price mode.' };
+  if (price && price.mode !== 'recommended' && !foHasNum_(price.value)) return { ok: false, error: 'Enter the price or the % change.' };
+  if (has('min_stay') && !(foNum_(set.min_stay) >= 1 && foNum_(set.min_stay) <= 30)) return { ok: false, error: 'Minimum stay must be 1–30 nights.' };
+  if (has('max_stay') && !(foNum_(set.max_stay) >= 0 && foNum_(set.max_stay) <= 90)) return { ok: false, error: 'Maximum stay must be 0 (no limit) to 90 nights.' };
+  if (has('units') && !(foNum_(set.units) >= 0 && foNum_(set.units) <= 50)) return { ok: false, error: 'Units must be 0–50.' };
+  const chans = (Array.isArray(x.channels) && x.channels.length ? x.channels : FO_CM.CHANNELS).filter(c => FO_CM.CHANNELS.indexOf(c) >= 0);
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const D = foDataLoad_(), s = foCmSettings_(), jobs = foRows_('ChannelJobs'), out = { nights: days.length * villas.length, saved: 0, jobs: 0, by_channel: {}, errors: [], warnings: [], preview };
+    const onoff = v => v === true || v === 'on' || v === 'yes' ? 'on' : 'off';
+    const opts = { state: x.approve ? 'queued' : 'proposed', approved_by: x.approve ? user.email : '', reason: 'manual', dry: preview };
+    const count = (ch, res, label) => { if (res.job) { out.jobs++; out.by_channel[ch] = (out.by_channel[ch] || 0) + 1; } else if (!res.duplicate) out.errors.push(label + ': ' + res.error); };
+    villas.forEach(villa => {
+      const vname = (props.find(p => p.property_id === villa) || {}).name || villa, needDesk = !!price || has('units');
+      const desk = needDesk ? (foCmDesk_(D, villa, Math.min(366, Math.round((Date.parse(to) - Date.parse(today)) / 864e5) + 1)) || []) : [], byDate = {}; desk.forEach(n => { byDate[n.date] = n; });
+      // 1) nightly settings
+      const ari = days.map(d => {
+        const r = { villa, date: d };
+        if (price && price.mode === 'net') r.price_net = foCm50_(foNum_(price.value));
+        if (price && price.mode === 'pct') { const n = byDate[d]; if (n) r.price_net = foCm50_(n.rec_net * (1 + foNum_(price.value) / 100)); }
+        if (price && price.mode === 'recommended') r.price_net = '';
+        if (has('units')) r.units = Math.round(foNum_(set.units));
+        if (has('closed')) r.closed = set.closed === true || set.closed === 'yes' ? 'yes' : '';
+        if (has('stop_sell')) r.stop_sell = onoff(set.stop_sell) === 'on' ? 'yes' : '';
+        if (has('min_stay')) r.min_stay = Math.round(foNum_(set.min_stay));
+        if (has('max_stay')) r.max_stay = Math.round(foNum_(set.max_stay)) || '';
+        if (has('cta')) r.cta = onoff(set.cta) === 'on' ? 'yes' : '';
+        if (has('ctd')) r.ctd = onoff(set.ctd) === 'on' ? 'yes' : '';
+        if (has('note')) r.note = foClean_(set.note, 120);
+        return r;
+      });
+      if (!preview) { foCmAriUpsert_(ari, user.email); out.saved += ari.length; }
+      // 2) channel jobs
+      chans.forEach(ch => {
+        const st = s[ch]; if (!st || !st.enabled) { out.warnings.push(FO_CM.NAMES[ch] + ' is switched off in Settings: skipped'); return; }
+        if (!foCmOwn_(villa, ch)) out.warnings.push(vname + ' has no ' + FO_CM.NAMES[ch] + ' listing yet: jobs wait until you add it');
+        const job = (type, nights, extra) => foCmRanges_(nights).forEach(r => {
+          const res = foCmCreate_(Object.assign({}, opts, extra || {}, { type, villa, channel: ch, date_from: r.from, date_to: r.to, old_value: r.old, new_value: r.value, lo: r.lo, hi: r.hi, mode: st.mode }), user.email, jobs);
+          count(ch, res, vname + ' · ' + FO_CM.NAMES[ch] + ' ' + r.from + (r.to !== r.from ? '→' + r.to : ''));
+          if (type === 'rate' && res.job) foCmPlanJobs_(villa, ch, r, r.value, Object.assign({}, opts, { mode: st.mode }), user.email, jobs).forEach(pr => count(ch, pr, vname + ' · plan'));
+        });
+        if (price) {
+          let clamped = 0;
+          job('rate', days.map(d => {
+            const n = byDate[d], c = n && n.channels[ch]; if (!c) return null;
+            if (price.mode === 'channel') return { date: d, value: foCm50_(foNum_(price.value)), old: c.live, lo: c.lo, hi: c.hi };
+            const net = price.mode === 'net' ? foNum_(price.value) : price.mode === 'pct' ? n.rec_net * (1 + foNum_(price.value) / 100) : n.rec_net, L = foCmList_(net, n.floor, n.ceiling, st);
+            if (L.price !== foCm50_(net / (1 - st.commission) * (1 + st.markup))) clamped++;
+            return { date: d, value: L.price, old: c.live, lo: c.lo, hi: c.hi };
+          }).filter(Boolean));
+          if (clamped) out.warnings.push(vname + ' · ' + FO_CM.NAMES[ch] + ': ' + clamped + ' night(s) kept inside your floor/ceiling');
+        }
+        if (has('closed')) job(set.closed === true || set.closed === 'yes' ? 'close' : 'open', days.map(d => ({ date: d, value: set.closed === true || set.closed === 'yes' ? 'close' : 'open' })));
+        ['stop_sell', 'cta', 'ctd'].forEach(k => { if (has(k)) job(k, days.map(d => ({ date: d, value: onoff(set[k]) }))); });
+        if (has('min_stay')) job('min_stay', days.map(d => ({ date: d, value: Math.round(foNum_(set.min_stay)) })));
+        if (has('max_stay')) job('max_stay', days.map(d => ({ date: d, value: Math.round(foNum_(set.max_stay)) })));
+        if (has('units')) job('inventory', days.map(d => { const n = byDate[d]; return { date: d, value: Math.max(0, Math.round(foNum_(set.units)) - (n ? n.sold : 0)) }; }));
+      });
+    });
+    out.warnings = out.warnings.filter((w, i, a) => a.indexOf(w) === i);
+    if (!preview) { foAudit_(user.email, 'cm_bulk', villas.join(',') + ' ' + from + '→' + to + ' ' + Object.keys(set).join(',') + ' · ' + out.jobs + ' jobs', 'ok'); foTouch_(); }
+    return { result: out };
+  } finally { lock.releaseLock(); }
 }
 
 // ---------------------------------------------------------------- jobs ----------------
-function foCmIdem_(j) { return [j.villa, j.channel, j.date_from, j.date_to, j.type, String(j.new_value)].join('|'); }
+function foCmIdem_(j) { return [j.villa, j.channel, j.date_from, j.date_to, j.type, String(j.new_value)].concat(j.rate_plan ? [j.rate_plan] : []).join('|'); }
 /**
  * Create one job unless the same change is already in flight. state: proposed | approved | queued (closures skip approval).
  * Returns the job or null (duplicate, out of band, unknown villa/channel).
@@ -146,11 +288,15 @@ function foCmCreate_(j, user, jobs) {
   if (jobs.some(x => x.idem_key === idem && FO_CM.OPEN.indexOf(x.state) >= 0)) return { duplicate: true };
   if (j.type === 'rate' && (j.lo != null && (foNum_(j.new_value) < j.lo || foNum_(j.new_value) > j.hi))) return { error: 'outside the floor/ceiling band ₹' + j.lo + '–₹' + j.hi };
   if (j.type === 'min_stay' && !(foNum_(j.new_value) >= 1 && foNum_(j.new_value) <= 30)) return { error: 'minimum stay must be 1–30 nights' };
+  if (j.type === 'max_stay' && !(foNum_(j.new_value) >= 0 && foNum_(j.new_value) <= 90)) return { error: 'maximum stay must be 0–90 nights' };
+  if (j.type === 'inventory' && !(foNum_(j.new_value) >= 0 && foNum_(j.new_value) <= 50 && Math.round(foNum_(j.new_value)) === foNum_(j.new_value))) return { error: 'units must be a whole number 0–50' };
+  if (FO_CM.ONOFF.indexOf(j.type) >= 0 && ['on', 'off'].indexOf(String(j.new_value)) < 0) return { error: j.type + ' must be on or off' };
   const now = foNow_(), rec = { job_id: foId_('CMJ'), idem_key: idem, type: j.type, villa: j.villa, channel: j.channel, date_from: j.date_from, date_to: j.date_to,
-    old_value: j.old_value == null ? '' : j.old_value, new_value: j.new_value, band_lo: j.lo == null ? '' : j.lo, band_hi: j.hi == null ? '' : j.hi, reason: FO_CM.REASONS.indexOf(j.reason) >= 0 ? j.reason : 'manual', mode: j.mode == null ? '' : j.mode,
+    rate_plan: j.rate_plan || '', old_value: j.old_value == null ? '' : j.old_value, new_value: j.new_value, band_lo: j.lo == null ? '' : j.lo, band_hi: j.hi == null ? '' : j.hi, reason: FO_CM.REASONS.indexOf(j.reason) >= 0 ? j.reason : 'manual', mode: j.mode == null ? '' : j.mode,
     state: j.state, attempts: 0, claimed_by: '', lease_until: '', failed_at: '', read_back: '', evidence_ref: '', error_code: '', message: '',
     created_by: user, created_at: now, approved_by: j.state === 'proposed' ? '' : (j.approved_by || user), approved_at: j.state === 'proposed' ? '' : now, done_at: '' };
-  foAppend_('ChannelJobs', rec); jobs.push(rec);
+  if (!j.dry) foAppend_('ChannelJobs', rec);
+  jobs.push(rec);
   return { job: rec };
 }
 /** Merge consecutive nights with the same value into one job range. */
@@ -176,12 +322,13 @@ function foCmProposeFromDesk_(user, opts) {
     const desk = foCmDesk_(D, villa, opts.days || 30); if (!desk) return;
     FO_CM.CHANNELS.forEach(ch => {
       const st = s[ch]; if (!st || !st.enabled || st.mode === 0) return;
-      const nights = desk.filter(n => !n.booked && !n.blocked && n.channels[ch]).map(n => { const c = n.channels[ch], ref = c.live != null ? c.live : c.last; return ref === c.list ? null : { date: n.date, value: c.list, old: ref, lo: c.lo, hi: c.hi }; }).filter(Boolean);
+      const nights = desk.filter(n => !n.booked && !n.blocked && !n.ari.closed && !n.ari.stop_sell && n.channels[ch]).map(n => { const c = n.channels[ch], ref = c.live != null ? c.live : c.last; return ref === c.list ? null : { date: n.date, value: c.list, old: ref, lo: c.lo, hi: c.hi }; }).filter(Boolean);
       foCmRanges_(nights).forEach(r => {
         let auto = st.mode === 2 && r.old != null && Math.abs(r.value - r.old) / r.old <= FO_CM.BAND;
         for (let d = r.from; auto && d <= r.to; d = FoMetrics.addDays(d, 1)) if (autoToday[villa + '|' + ch + '|' + d] || recentBooking[villa + '|' + d]) auto = false;
         const res = foCmCreate_({ type: 'rate', villa, channel: ch, date_from: r.from, date_to: r.to, old_value: r.old, new_value: r.value, lo: r.lo, hi: r.hi, reason: 'pricing', mode: st.mode,
           state: auto ? 'queued' : 'proposed', approved_by: auto ? 'auto-band' : '' }, user, jobs);
+        if (res.job) foCmPlanJobs_(villa, ch, r, r.value, { reason: 'pricing', mode: st.mode, state: auto ? 'queued' : 'proposed', approved_by: auto ? 'auto-band' : '' }, user, jobs);
         if (res.duplicate) out.duplicates++; else if (res.error) out.skipped++; else if (auto) { out.auto++; for (let d = r.from; d <= r.to; d = FoMetrics.addDays(d, 1)) autoToday[villa + '|' + ch + '|' + d] = 1; } else out.proposed++;
       });
     });
@@ -203,7 +350,7 @@ function foCmJobsPropose_(b, user) {
   chans.forEach(ch => {
     const st = s[ch]; if (!st) return;
     const nights = days.map(d => {
-      if (type !== 'rate') return { date: d, value: type === 'min_stay' ? Math.round(foNum_(m.value)) : type, old: null, lo: null, hi: null };
+      if (type !== 'rate') return { date: d, value: ['min_stay', 'max_stay', 'inventory'].indexOf(type) >= 0 ? Math.round(foNum_(m.value)) : FO_CM.ONOFF.indexOf(type) >= 0 ? (m.value === false || m.value === 'off' ? 'off' : 'on') : type, old: null, lo: null, hi: null };
       const n = desk && desk.find(x => x.date === d), c = n && n.channels[ch];
       // the owner types the NET price (what AP Villas keeps) or a channel price; both are bounded by the desk band
       const value = m.basis === 'channel' ? foCm50_(foNum_(m.value)) : c ? foCmList_(foNum_(m.value), n.floor, n.ceiling, st).price : foCm50_(foNum_(m.value) / (1 - st.commission));
@@ -284,7 +431,7 @@ function foCmAssistAlert_() {
   const urgent = waiting.filter(j => j.reason === 'booking_elsewhere' && sent.indexOf(j.job_id) < 0);
   const today = foToday_(), daily = p.getProperty('FO_CM_ASSIST_DAY') !== today && Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) >= 8 && waiting.length;
   if (!urgent.length && !daily) return 'nothing new';
-  const line = j => '• ' + (props[j.villa] || j.villa) + ' on ' + FO_CM.NAMES[j.channel] + ': ' + (j.type === 'rate' ? 'set ₹' + foNum_(j.new_value).toLocaleString('en-IN') : j.type === 'min_stay' ? 'minimum stay ' + j.new_value + ' nights' : j.type.replace('_', '-').toUpperCase()) +
+  const line = j => '• ' + (props[j.villa] || j.villa) + ' on ' + FO_CM.NAMES[j.channel] + ': ' + (j.type === 'rate' ? 'set ₹' + foNum_(j.new_value).toLocaleString('en-IN') + (j.rate_plan ? ' (rate plan ' + j.rate_plan + ')' : '') : FO_CM.LABEL[j.type] + (['min_stay', 'max_stay'].indexOf(j.type) >= 0 ? ' ' + j.new_value + ' nights' : j.type === 'inventory' ? ' ' + j.new_value : FO_CM.ONOFF.indexOf(j.type) >= 0 ? ' ' + j.new_value.toUpperCase() : '')) +
     ' for ' + j.date_from + (j.date_to !== j.date_from ? ' → ' + j.date_to : '') + '\n  ' + foCmExtranetLink_(j.villa, j.channel);
   const body = (urgent.length ? 'A booking came in. Close these nights now to avoid a double booking:\n\n' + urgent.map(line).join('\n') + '\n\n' : '') +
     (daily ? 'Changes waiting for you (no channel agent is running yet, so these are done by hand):\n\n' + waiting.filter(j => urgent.indexOf(j) < 0).slice(0, 40).map(line).join('\n') + '\n\n' : '') +
@@ -308,12 +455,32 @@ function foCmSyncAvailability_(actor) {
   (D.blocks || []).forEach(b => { for (let d = b.start; d < b.end; d = FoMetrics.addDays(d, 1)) if (d >= today && d < end) taken[b.property_id + '|' + d] = ''; });
   const closedBy = {}; jobs.filter(j => j.type === 'close' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) closedBy[j.villa + '|' + j.channel + '|' + d] = j; });
   const opened = {}; jobs.filter(j => j.type === 'open' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) opened[j.villa + '|' + j.channel + '|' + d] = j.created_at; });
-  const villas = (D.properties || []).map(p => p.property_id);
+  const villas = (D.properties || []).map(p => p.property_id), multi = {};
+  // multi-unit villas (more than 1 unit to sell): every channel gets the number of units LEFT instead of open/close
+  const blocked = {}; (D.blocks || []).forEach(b => { for (let d = b.start; d < b.end; d = FoMetrics.addDays(d, 1)) blocked[b.property_id + '|' + d] = 1; });
+  villas.forEach(villa => {
+    const ari = foCmAri_(villa), base = foCmUnits_(villa), sold = foCmSold_(D, villa);
+    for (let d = today; d < end; d = FoMetrics.addDays(d, 1)) {
+      const a = ari[d] || {}, cap = foHasNum_(a.units) ? foNum_(a.units) : base;
+      if (cap > 1) multi[villa + '|' + d] = blocked[villa + '|' + d] ? 0 : Math.max(0, cap - (sold[d] || 0));
+      else if (cap <= 0 && taken[villa + '|' + d] === undefined) taken[villa + '|' + d] = '';   // owner set 0 units: closed everywhere
+    }
+  });
+  const lastInv = {}; jobs.filter(j => j.type === 'inventory' && ['rejected', 'cancelled', 'failed', 'needs_human'].indexOf(j.state) < 0).sort((a, b) => a.created_at < b.created_at ? -1 : 1)
+    .forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) lastInv[j.villa + '|' + j.channel + '|' + d] = foNum_(j.new_value); });
+  out.inventory = 0;
+  villas.forEach(villa => FO_CM.CHANNELS.forEach(ch => {
+    if (!foCmOwn_(villa, ch)) return;
+    const inv = [];
+    for (let d = today; d < end; d = FoMetrics.addDays(d, 1)) { const left = multi[villa + '|' + d]; if (left !== undefined && lastInv[villa + '|' + ch + '|' + d] !== left) inv.push({ date: d, value: left }); }
+    foCmRanges_(inv).forEach(r => { const res = foCmCreate_({ type: 'inventory', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: r.value, reason: 'booking_elsewhere', state: 'queued', approved_by: 'availability-sync' }, actor, jobs); if (res.job) out.inventory++; });
+  }));
   villas.forEach(villa => FO_CM.CHANNELS.forEach(ch => {
     if (!foCmOwn_(villa, ch)) return;
     const need = [], reopen = [];
     for (let d = today; d < end; d = FoMetrics.addDays(d, 1)) {
       const k = villa + '|' + d, ck = villa + '|' + ch + '|' + d, src = taken[k];
+      if (multi[k] !== undefined) continue;   // handled by units left above
       if (src !== undefined && src !== ch && !closedBy[ck]) need.push({ date: d, value: 'close', old: null, lo: null, hi: null });
       // a closure we made earlier whose booking is gone (cancelled/void) → propose re-opening, unless already re-opened after it
       if (src === undefined && closedBy[ck] && closedBy[ck].reason === 'booking_elsewhere' && !(opened[ck] && opened[ck] > closedBy[ck].created_at)) reopen.push({ date: d, value: 'open', old: null, lo: null, hi: null });
@@ -321,7 +488,7 @@ function foCmSyncAvailability_(actor) {
     foCmRanges_(need).forEach(r => { const res = foCmCreate_({ type: 'close', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: 'close', reason: 'booking_elsewhere', state: 'queued', approved_by: 'availability-sync' }, actor, jobs); if (res.job) out.closed++; });
     foCmRanges_(reopen).forEach(r => { const res = foCmCreate_({ type: 'open', villa, channel: ch, date_from: r.from, date_to: r.to, new_value: 'open', reason: 'manual', state: 'proposed' }, actor, jobs); if (res.job) out.reopen++; });
   }));
-  if (out.closed || out.reopen) { foTouch_(); if (out.closed) out.assist = foCmAssistAlert_(); }
+  if (out.closed || out.reopen || out.inventory) { foTouch_(); if (out.closed || out.inventory) out.assist = foCmAssistAlert_(); }
   return out;
 }
 function FoCmChannelOf_(ledgerChannel) { const c = String(ledgerChannel || '').toLowerCase(); return /airbnb/.test(c) ? 'airbnb' : /booking\.com/.test(c) ? 'booking' : /makemytrip|goibibo|mmt/.test(c) ? 'mmt' : ''; }
@@ -375,6 +542,7 @@ function foCmPull_(b) {
       j.state = 'running'; j.claimed_by = agent; j.lease_until = lease; j.attempts = foNum_(j.attempts) + 1; save(j);
       out.jobs.push({ job_id: j.job_id, type: j.type, villa: j.villa, channel: j.channel, date_from: j.date_from, date_to: j.date_to, new_value: j.new_value, old_value: j.old_value,
         band: j.type === 'rate' && j.band_lo !== '' ? { lo: foNum_(j.band_lo), hi: foNum_(j.band_hi) } : null, dry_run: s[j.channel].dryRun, reason: j.reason,
+        rate_plan: j.rate_plan || '', rate_plan_ext: j.rate_plan ? (() => { const p = foRows_('RatePlans').find(x => x.plan_id === j.rate_plan); try { return (JSON.parse((p && p.ext_ids) || '{}'))[j.channel] || ''; } catch (e) { return ''; } })() : '',
         listing: { platform: own.platform, extranet_property_id: own.extranet_property_id, extranet_room_id: own.extranet_room_id, url: own.url_clean } });
     });
     // reads: each enabled channel's own listings every 3 hours (or when the agent asks)
@@ -408,7 +576,7 @@ function foCmReport_(b) {
     if (b.agent_id && j.claimed_by && foClean_(b.agent_id, 40) !== j.claimed_by) return { ok: false, error: 'Job is leased to another agent.' };
     const now = foNow_(), result = String(b.result || ''); j.error_code = ''; j.message = foClean_(b.message, 300); j.evidence_ref = foClean_(b.evidence_ref, 80) || j.evidence_ref;
     if (result === 'done' || result === 'dry_run') {
-      const rb = String(b.read_back == null ? '' : b.read_back).trim(), want = String(j.new_value), match = j.type === 'rate' || j.type === 'min_stay' ? foHasNum_(rb) && Math.abs(foNum_(rb) - foNum_(want)) < 1 : rb.toLowerCase() === want.toLowerCase();
+      const rb = String(b.read_back == null ? '' : b.read_back).trim(), want = String(j.new_value), match = FO_CM.NUM.indexOf(j.type) >= 0 ? foHasNum_(rb) && Math.abs(foNum_(rb) - foNum_(want)) < 1 : rb.toLowerCase() === want.toLowerCase();
       if (result === 'dry_run') { j.state = 'done'; j.read_back = 'dry_run'; j.done_at = now; j.message = 'Dry run: form filled and photographed, not submitted. ' + j.message; }
       else if (match) { j.state = 'done'; j.read_back = rb; j.done_at = now; foCmStateFromJob_(j); }
       else { j.state = 'failed'; j.read_back = rb; j.error_code = 'readback_mismatch'; j.failed_at = now; j.message = 'Wrote ' + want + ', channel shows ' + (rb || 'nothing'); }
@@ -433,7 +601,10 @@ function foCmPauseChannel_(ch, why) {
 function foCmStateFromJob_(j) {
   const rows = []; for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) {
     const r = { villa: j.villa, channel: j.channel, date: d, read_at: foNow_() };
-    if (j.type === 'rate') r.rate = foNum_(j.new_value); else if (j.type === 'open' || j.type === 'close') r.available = j.type === 'open' ? 'yes' : 'no'; else if (j.type === 'min_stay') r.min_stay = foNum_(j.new_value); else if (j.type === 'stop_sell') r.stop_sell = 'yes';
+    if (j.type === 'rate') { if (j.rate_plan) return; r.rate = foNum_(j.new_value); }
+    else if (j.type === 'open' || j.type === 'close') r.available = j.type === 'open' ? 'yes' : 'no';
+    else if (['min_stay', 'max_stay', 'inventory'].indexOf(j.type) >= 0) r[j.type] = foNum_(j.new_value);
+    else if (FO_CM.ONOFF.indexOf(j.type) >= 0) r[j.type] = String(j.new_value) === 'off' ? '' : 'yes';
     rows.push(r);
   }
   foCmUpsertState_(rows, true);
@@ -445,7 +616,9 @@ function foCmUpsertState_(rows, partial) {
   rows.forEach(x => {
     const k = x.villa + '|' + x.channel + '|' + x.date, old = have[k];
     const rec = { villa: x.villa, channel: x.channel, date: x.date, rate: x.rate !== undefined ? x.rate : old ? old.rate : '', available: x.available !== undefined ? x.available : old ? old.available : '',
-      min_stay: x.min_stay !== undefined ? x.min_stay : old ? old.min_stay : '', stop_sell: x.stop_sell !== undefined ? x.stop_sell : old ? old.stop_sell : '', read_at: x.read_at || foNow_() };
+      min_stay: x.min_stay !== undefined ? x.min_stay : old ? old.min_stay : '', stop_sell: x.stop_sell !== undefined ? x.stop_sell : old ? old.stop_sell : '',
+      max_stay: x.max_stay !== undefined ? x.max_stay : old ? old.max_stay : '', cta: x.cta !== undefined ? x.cta : old ? old.cta : '', ctd: x.ctd !== undefined ? x.ctd : old ? old.ctd : '',
+      inventory: x.inventory !== undefined ? x.inventory : old ? old.inventory : '', read_at: x.read_at || foNow_() };
     if (old) foUpdate_('ChannelState', old._row, rec); else { foAppend_('ChannelState', rec); have[k] = rec; }
     n++;
   });
@@ -456,7 +629,8 @@ function foCmState_(b) {
   const ch = String(b.channel || ''), villa = String(b.villa || ''); if (FO_CM.CHANNELS.indexOf(ch) < 0 || !foRows_('Properties').some(p => p.property_id === villa)) return { ok: false, error: 'Unknown channel or villa.' };
   const jobs = foRows_('ChannelJobs'), now = foNow_(), drift = [];
   const rows = (Array.isArray(b.rows) ? b.rows : []).slice(0, 400).map(r => ({ villa, channel: ch, date: foDate_(r.date), rate: foHasNum_(r.rate) ? foNum_(r.rate) : '', available: r.available === true || r.available === 'yes' ? 'yes' : r.available === false || r.available === 'no' ? 'no' : '',
-    min_stay: foHasNum_(r.min_stay) ? foNum_(r.min_stay) : '', stop_sell: r.stop_sell ? 'yes' : '', read_at: now })).filter(r => r.date);
+    min_stay: foHasNum_(r.min_stay) ? foNum_(r.min_stay) : '', stop_sell: r.stop_sell ? 'yes' : '', max_stay: foHasNum_(r.max_stay) ? foNum_(r.max_stay) : '', cta: r.cta ? 'yes' : '', ctd: r.ctd ? 'yes' : '',
+    inventory: foHasNum_(r.inventory) ? foNum_(r.inventory) : '', read_at: now })).filter(r => r.date);
   rows.forEach(r => { const last = foCmLastValue_(jobs.filter(j => j.state === 'done'), villa, ch, r.date, 'rate'); if (last != null && r.rate !== '' && Math.abs(r.rate - last) >= 1) drift.push(r.date + ' ₹' + r.rate + ' (we set ₹' + last + ')'); });
   const n = foCmUpsertState_(rows);
   if (drift.length) foCmAlert_('drift', { channel: ch, villa, message: drift.slice(0, 10).join(', ') });
@@ -561,7 +735,7 @@ function foCmParity_(D, villa, days) {
 // ---------------------------------------------------------------- portal reads ----------------
 function foCmCalendar_(b) {
   const D = foDataLoad_(), villa = String(b.villa || ''), cfg = FoDesk.settings(D), v = villa || cfg.properties[0];
-  return { villa: v, desk: foCmDesk_(D, v, Math.min(FO_CM.HORIZON, foNum_(b.days) || FO_CM.HORIZON)), settings: foCmSettings_(), parity: foCmParity_(D, v, 30) };
+  return { villa: v, desk: foCmDesk_(D, v, Math.min(b.long ? 366 : FO_CM.HORIZON, foNum_(b.days) || FO_CM.HORIZON)), settings: foCmSettings_(), parity: foCmParity_(D, v, 30) };
 }
 function foCmRatedesk_(b) { return foCmCalendar_(Object.assign({}, b, { days: b.days || 30 })); }
 /** Bundle part (f.data): everything the Channel Manager screens need; no guest data (reservations are allowlisted). */
@@ -571,7 +745,8 @@ function foCmBundle_() {
   return { settings, global_paused: foCmGlobalPaused_(), heartbeat: foCmHeartbeatGet_(), agent_key: !!PropertiesService.getScriptProperties().getProperty('FO_AGENT_KEY'),
     listings: foRows_('Listings').map(strip), jobs: foRows_('ChannelJobs').filter(j => FO_CM.OPEN.indexOf(j.state) >= 0 || String(j.created_at) >= FoMetrics.addDays(today, -14)).slice(-800).map(strip),
     state: foRows_('ChannelState').filter(r => String(r.date).slice(0, 10) >= today).map(strip), reservations: foRows_('ChannelReservations').filter(r => String(r.checkout) >= FoMetrics.addDays(today, -30)).map(strip),
-    ical: foCmIcalUrls_(), agent_online: foCmAgentOnline_(),
+    ical: foCmIcalUrls_(), agent_online: foCmAgentOnline_(), rate_plans: foRows_('RatePlans').map(strip),
+    ari: foRows_('InventoryCalendar').filter(r => String(r.date).slice(0, 10) >= today).map(strip),
     links: (() => { const o = {}; foRows_('Properties').forEach(p => FO_CM.CHANNELS.forEach(c => { const u = foCmExtranetLink_(p.property_id, c); if (u) o[p.property_id + '|' + c] = u; })); return o; })() };
 }
 

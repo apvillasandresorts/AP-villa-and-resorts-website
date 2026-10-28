@@ -208,3 +208,66 @@ test('phone assist (no agent machine): a booking saved in the portal closes the 
   assert.equal(env.tab('ChannelState').filter(s => s.date === '2026-11-20' && s.available === 'no').length, 3);
   env.setUserRole('viewer'); assert.match(env.api({ action: 'f.cm.jobs.done', token, job_id: 'x' }).error, /role/);
 });
+
+test('bulk edit: preview counts without saving; apply saves nightly settings and merged channel jobs for every villa · channel', async () => {
+  const { env, token } = await ready();
+  const bulk = { villas: ['ap-suite'], from: '2026-11-02', to: '2026-11-08', weekdays: [5, 6], channels: ['airbnb', 'booking'], set: { min_stay: 2, cta: true, stop_sell: false } };
+  const pv = env.api({ action: 'f.cm.bulk', token, bulk: Object.assign({ preview: true }, bulk) });
+  assert.equal(pv.ok, true, pv.error); assert.equal(pv.result.preview, true); assert.equal(pv.result.jobs, 6, JSON.stringify(pv.result));
+  assert.equal(env.tab('ChannelJobs').length, 0); assert.equal(env.tab('InventoryCalendar').length, 0, 'preview saves nothing');
+  const r = env.api({ action: 'f.cm.bulk', token, bulk: Object.assign({ approve: true }, bulk) });
+  assert.equal(r.result.jobs, 6); assert.equal(r.result.saved, 2);
+  const jobs = env.tab('ChannelJobs'); assert.deepEqual([...new Set(jobs.map(j => j.type))].sort(), ['cta', 'min_stay', 'stop_sell']);
+  assert.ok(jobs.every(j => j.state === 'queued' && j.date_from === '2026-11-06' && j.date_to === '2026-11-07'));
+  assert.ok(jobs.filter(j => j.type === 'cta').every(j => j.new_value === 'on')); assert.ok(jobs.filter(j => j.type === 'stop_sell').every(j => j.new_value === 'off'));
+  const ari = env.tab('InventoryCalendar'); assert.equal(ari.length, 2); assert.ok(ari.every(a => Number(a.min_stay) === 2 && a.cta === 'yes' && a.stop_sell === ''));
+  assert.match(env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-02', set: {} } }).error, /at least one/);
+  assert.match(env.api({ action: 'f.cm.bulk', token, bulk: { villas: [], from: '2026-11-02', set: { min_stay: 2 } } }).error, /villa/);
+});
+
+test('bulk price: net override is saved and drives the rate desk; % of recommended; back to recommended clears it; prices stay in the band', async () => {
+  const { env, token } = await ready();
+  const r = env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-10', to: '2026-11-11', channels: ['booking'], set: { price: { mode: 'net', value: 6000 } } } });
+  assert.equal(r.ok, true, r.error); assert.equal(r.result.jobs, 1);
+  const desk = env.api({ action: 'f.cm.ratedesk', token, villa: 'ap-suite', days: 30 }).desk, n = desk.find(x => x.date === '2026-11-10');
+  assert.equal(n.override, true); assert.equal(n.net, 6000); assert.equal(n.channels.booking.list % 50, 0);
+  const j = env.tab('ChannelJobs')[0]; assert.equal(Number(j.new_value), n.channels.booking.list); assert.ok(Number(j.new_value) <= Number(j.band_hi));
+  const big = env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-12', channels: ['booking'], set: { price: { mode: 'net', value: 999999 } } } });
+  assert.ok(big.result.warnings.some(w => /floor\/ceiling/.test(w)));
+  const job = env.tab('ChannelJobs').find(x => x.date_from === '2026-11-12'); assert.equal(Number(job.new_value), Number(job.band_hi), 'clamped to the ceiling');
+  env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-10', to: '2026-11-11', channels: ['booking'], set: { price: { mode: 'recommended' } } } });
+  const desk2 = env.api({ action: 'f.cm.ratedesk', token, villa: 'ap-suite', days: 30 }).desk;
+  assert.equal(desk2.find(x => x.date === '2026-11-10').override, false);
+  const pct = env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-15', channels: ['booking'], set: { price: { mode: 'pct', value: 10 } } } });
+  assert.equal(pct.ok, true); const a = env.tab('InventoryCalendar').find(x => x.date === '2026-11-15'); assert.ok(Number(a.price_net) > 0);
+});
+
+test('rate plans: derived prices follow every standard price change, stay in the band, and carry the plan id to the agent', async () => {
+  const { env, token, agent } = await ready();
+  const p = env.api({ action: 'f.cm.plan.save', token, plan: { name: 'Non-refundable', villa: 'all', channels: ['booking'], adjust_pct: -10, refund: 'non_refundable', ext_ids: { booking: 'RATE-NR-1' } } });
+  assert.equal(p.ok, true, p.error);
+  assert.match(env.api({ action: 'f.cm.plan.save', token, plan: { name: 'x', adjust_pct: 500 } }).error, /Adjustment/);
+  env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-11-20', channels: ['booking'], approve: true, set: { price: { mode: 'net', value: 5000 } } } });
+  const jobs = env.tab('ChannelJobs'); assert.equal(jobs.length, 2);
+  const std = jobs.find(j => !j.rate_plan), nr = jobs.find(j => j.rate_plan === p.plan.plan_id);
+  assert.equal(Number(nr.new_value), Math.max(Number(nr.band_lo), Math.round(Number(std.new_value) * 0.9 / 50) * 50));
+  env.api({ action: 'f.cm.settings.set', token, settings: { channel: 'booking', dry_run: false } });
+  const pulled = agent('agent.pull').jobs.find(j => j.rate_plan); assert.equal(pulled.rate_plan_ext, 'RATE-NR-1');
+  agent('agent.report', { job_id: pulled.job_id, result: 'done', read_back: String(pulled.new_value) });
+  assert.ok(!env.tab('ChannelState').some(s => Number(s.rate) === Number(pulled.new_value) && Number(pulled.new_value) !== Number(std.new_value)), 'plan prices do not overwrite the main live price');
+});
+
+test('inventory: units per villa; a 3-unit villa sends units left (not closures) as bookings come in; 0 units closes everything', async () => {
+  const { env, token } = await ready();
+  assert.equal(env.api({ action: 'f.cm.units', token, villa: 'ap-suite', units: 3 }).ok, true);
+  assert.match(env.api({ action: 'f.cm.units', token, villa: 'ap-suite', units: 0 }).error, /1–50/);
+  env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'A', checkin: '2026-11-25', checkout: '2026-11-26', status: 'confirmed', gross_amount: 4000, channel: 'Direct' } });
+  const inv = env.tab('ChannelJobs').filter(j => j.type === 'inventory' && j.date_from <= '2026-11-25' && j.date_to >= '2026-11-25');
+  assert.ok(inv.length >= 3, 'every channel told'); const latest = {}; inv.forEach(j => { latest[j.channel] = Number(j.new_value); });
+  assert.deepEqual(Object.values(latest), [2, 2, 2]);
+  assert.equal(env.tab('ChannelJobs').filter(j => j.type === 'close' && j.date_from === '2026-11-25').length, 0, 'no closure while units are left');
+  env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: '2026-12-01', set: { units: 0 } } });
+  assert.ok(env.tab('ChannelJobs').filter(j => j.type === 'inventory' && j.date_from === '2026-12-01' && Number(j.new_value) === 0).length >= 3);
+  const d = env.api({ action: 'f.data', token: await env.login() });
+  assert.ok(d.channel_manager.ari.some(a => a.date === '2026-12-01' && Number(a.units) === 0)); assert.ok(Array.isArray(d.channel_manager.rate_plans));
+});

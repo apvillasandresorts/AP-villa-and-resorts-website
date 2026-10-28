@@ -80,8 +80,10 @@ const FO_TABS = {
   CrmTemplates: ['template_id', 'name', 'channel', 'audience', 'subject', 'body', 'created_at', 'updated_at', 'updated_by'],
   // AP Channel Manager (FoChannels.gs)
   Listings: ['listing_id', 'platform', 'platform_listing_id', 'url_clean', 'role', 'villa', 'extranet_property_id', 'extranet_room_id', 'bedrooms', 'sleeps', 'distance_band', 'comp_set', 'schedule', 'status', 'name', 'rating', 'reviews', 'added_at'],
-  ChannelState: ['villa', 'channel', 'date', 'rate', 'available', 'min_stay', 'stop_sell', 'read_at'],
-  ChannelJobs: ['job_id', 'idem_key', 'type', 'villa', 'channel', 'date_from', 'date_to', 'old_value', 'new_value', 'band_lo', 'band_hi', 'reason', 'mode', 'state', 'attempts', 'claimed_by', 'lease_until', 'failed_at', 'read_back', 'evidence_ref', 'error_code', 'message', 'created_by', 'created_at', 'approved_by', 'approved_at', 'done_at'],
+  ChannelState: ['villa', 'channel', 'date', 'rate', 'available', 'min_stay', 'stop_sell', 'read_at', 'max_stay', 'cta', 'ctd', 'inventory'],
+  InventoryCalendar: ['villa', 'date', 'units', 'price_net', 'min_stay', 'max_stay', 'cta', 'ctd', 'stop_sell', 'closed', 'note', 'updated_at', 'updated_by'],
+  RatePlans: ['plan_id', 'name', 'villa', 'channels', 'adjust_pct', 'adjust_amt', 'meal', 'refund', 'ext_ids', 'active', 'created_at', 'updated_at', 'updated_by'],
+  ChannelJobs: ['job_id', 'idem_key', 'type', 'villa', 'channel', 'date_from', 'date_to', 'old_value', 'new_value', 'band_lo', 'band_hi', 'reason', 'mode', 'state', 'attempts', 'claimed_by', 'lease_until', 'failed_at', 'read_back', 'evidence_ref', 'error_code', 'message', 'created_by', 'created_at', 'approved_by', 'approved_at', 'done_at', 'rate_plan'],
   ChannelSettings: ['channel', 'enabled', 'mode', 'dry_run', 'dry_until', 'paused', 'pause_reason', 'commission_pct', 'markup_pct', 'permission_note', 'enabled_by', 'enabled_at'],
   ChannelReservations: ['reservation_id', 'channel', 'villa', 'checkin', 'checkout', 'amount', 'currency', 'status', 'read_at'],
   BrainLog: ['asked_at', 'user', 'question', 'provider', 'model', 'ms', 'ok', 'error'],
@@ -423,7 +425,8 @@ function foRoutes_() {
     'f.cm.calendar': [b => foCmCalendar_(b), 'viewer'], 'f.cm.ratedesk': [b => foCmRatedesk_(b), 'viewer'],
     'f.cm.jobs.propose': [foCmJobsPropose_, 'founder'], 'f.cm.jobs.approve': [foCmJobsApprove_, 'founder'], 'f.cm.jobs.cancel': [foCmJobsCancel_, 'founder'], 'f.cm.jobs.retry': [foCmJobsRetry_, 'founder'],
     'f.cm.settings.set': [foCmSettingsSet_, 'founder'], 'f.cm.killswitch': [foCmKillswitch_, 'founder'], 'f.cm.ical.token': [foCmIcalToken_, 'founder'],
-    'f.cm.jobs.done': [foCmJobsManualDone_, 'manager'], 'f.cm.agent.key': [foCmAgentKeyCreate_, 'founder'], 'f.cm.agent.revoke': [foCmAgentKeyRevoke_, 'founder'], 'f.cm.sync': [(b, u) => ({ result: foCmSyncAvailability_(u.email) }), 'manager'],
+    'f.cm.jobs.done': [foCmJobsManualDone_, 'manager'], 'f.cm.bulk': [foCmBulk_, 'founder'], 'f.cm.units': [foCmUnitsSet_, 'founder'],
+    'f.cm.plan.save': [foCmPlanSave_, 'founder'], 'f.cm.plan.delete': [(b, u) => foDelete_('RatePlans', 'plan_id', b.plan_id, u), 'founder'], 'f.cm.agent.key': [foCmAgentKeyCreate_, 'founder'], 'f.cm.agent.revoke': [foCmAgentKeyRevoke_, 'founder'], 'f.cm.sync': [(b, u) => ({ result: foCmSyncAvailability_(u.email) }), 'manager'],
     // Live Pricing Desk (FoSignals.gs)
     'f.pricing.today': [(b, u) => foDeskView_(b, u, 'today'), 'viewer'], 'f.pricing.calendar': [(b, u) => foDeskView_(b, u, 'calendar'), 'viewer'], 'f.pricing.date': [(b, u) => foDeskView_(b, u, 'date'), 'viewer'],
     'f.comp.list': [(b, u) => foDeskView_(b, u, 'comp'), 'viewer'], 'f.comp.changes': [(b, u) => foDeskView_(b, u, 'changes'), 'viewer'], 'f.signals.health': [(b, u) => foDeskView_(b, u, 'health'), 'viewer'],

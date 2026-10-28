@@ -11,7 +11,7 @@
   var esc = U.esc, $ = U.$, $$ = U.$$, inr = U.inr, dmy = U.dmy, dm = U.dm, when = U.when, toast = U.toast, sel = U.sel, num = M.num;
   var CH = ['mmt', 'booking', 'airbnb'], NAMES = { mmt: 'MakeMyTrip / Goibibo', booking: 'Booking.com', airbnb: 'Airbnb' }, SHORT = { mmt: 'MMT', booking: 'Booking', airbnb: 'Airbnb' };
   var MODES = [['0', 'Observe (read only)'], ['1', 'Propose (I approve)'], ['2', 'Auto-band (small moves automatic)']];
-  var TYPES = { rate: 'Price', open: 'Open', close: 'Close', min_stay: 'Min stay', stop_sell: 'Stop-sell' };
+  var TYPES = { rate: 'Price', open: 'Open', close: 'Close', min_stay: 'Min stay', max_stay: 'Max stay', cta: 'Closed to arrival', ctd: 'Closed to departure', stop_sell: 'Stop-sell', inventory: 'Units' };
   var STATE_CLS = { proposed: 'fo-badge--gold', approved: '', queued: '', running: '', verifying: '', done: 'fo-badge--ok', failed: 'fo-badge--warn', needs_human: 'fo-badge--bad', rejected: '', cancelled: '' };
   var desk = { villa: null, rows: null, parity: null, loading: false, picked: {} };
   function D() { return S.data || {}; }
@@ -34,16 +34,24 @@
   function villas() { return (D().properties || []).map(function (p) { return [p.property_id, p.name]; }); }
   function vname(id) { return U.propName ? U.propName(id) : id; }
   function range(j) { return dm(j.date_from) + (j.date_to !== j.date_from ? ' → ' + dm(j.date_to) : ''); }
-  function jobValue(j) { return j.type === 'rate' ? inr(num(j.new_value)) : j.type === 'min_stay' ? j.new_value + ' nights' : TYPES[j.type] || j.type; }
+  function jobValue(j) {
+    if (j.type === 'rate') return inr(num(j.new_value)) + (j.rate_plan ? ' <small class="fo-hint">' + esc(planName(j.rate_plan)) + '</small>' : '');
+    if (j.type === 'min_stay' || j.type === 'max_stay') return TYPES[j.type] + ' ' + (num(j.new_value) || 'no limit') + (num(j.new_value) ? ' nights' : '');
+    if (j.type === 'inventory') return 'Units ' + j.new_value;
+    if (j.type === 'cta' || j.type === 'ctd' || j.type === 'stop_sell') return TYPES[j.type] + ' ' + String(j.new_value).toUpperCase();
+    return TYPES[j.type] || j.type;
+  }
+  function planName(id) { var p = (C().rate_plans || []).filter(function (x) { return x.plan_id === id; })[0]; return p ? p.name : 'rate plan'; }
   function ageMin(ts) { return ts ? Math.round((Date.now() - Date.parse(ts)) / 60000) : null; }
   function ownOn(villa, ch) { return C().listings.some(function (l) { return l.role === 'own' && l.villa === villa && (l.platform === ch || (ch === 'mmt' && l.platform === 'goibibo')); }); }
   function wd(d) { return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(d + 'T00:00:00Z').getUTCDay()]; }
 
   function view(page) {
-    var T = U.tabs('channels', [['today', 'Today'], ['rates', 'Rate desk'], ['avail', 'Availability'], ['jobs', 'Jobs'], ['res', 'Reservations'], ['parity', 'Parity'], ['listings', 'Listings'], ['settings', 'Settings']]);
+    var T = U.tabs('channels', [['today', 'Today'], ['calendar', 'Calendar'], ['rates', 'Rate desk'], ['jobs', 'Jobs'], ['res', 'Reservations'], ['plans', 'Rate plans'], ['perf', 'Performance'], ['parity', 'Parity'], ['listings', 'Listings'], ['settings', 'Settings']]);
     page.innerHTML = U.hello('Channel Manager', 'One place for MakeMyTrip / Goibibo, Booking.com and Airbnb: prices, open and closed nights, minimum stays and bookings. Every change is run by your channel agent, read back from the extranet and proven with a screenshot.') + T.html + '<div id="cm"></div>';
     U.wireTabs(page, 'channels');
-    ({ today: today, rates: rates, avail: avail, jobs: jobs, res: reservations, parity: parity, listings: listings, settings: settings }[T.cur] || today)($('#cm'));
+    var CAL = window.FoChannelsCal;
+    ({ today: today, calendar: CAL.view, avail: CAL.view, rates: rates, jobs: jobs, res: reservations, plans: CAL.plans, perf: CAL.performance, parity: parity, listings: listings, settings: settings }[T.cur] || today)($('#cm'));
   }
 
   // ------------------------------------------------------------ Today ------------------------------------------------------------
@@ -157,25 +165,6 @@
     };
   }
 
-  // ------------------------------------------------------------ Availability ------------------------------------------------------------
-  function avail(body) {
-    loadDesk(body, function () {
-      var c = C(), st = {}; (c.state || []).forEach(function (r) { if (r.villa === desk.villa) st[r.channel + '|' + String(r.date).slice(0, 10)] = r; });
-      var picked = Object.keys(desk.picked).filter(function (d) { return desk.picked[d]; });
-      body.innerHTML = '<div class="fo-toolbar">' + villaBar('av-v') + (founder() ? ['close', 'open', 'min_stay', 'stop_sell'].map(function (t) { return '<button class="btn' + (t === 'close' ? ' btn--primary' : '') + '" data-av="' + t + '"' + (picked.length ? '' : ' disabled') + '>' + TYPES[t] + '</button>'; }).join('') : '') +
-        '<span class="fo-hint">Tick nights, then choose an action. Bookings on any channel, direct bookings and your blocks close the other channels automatically.</span></div>' +
-        table(['', 'Night', 'Ledger'].concat(CH.map(function (x) { return esc(SHORT[x]); })), desk.rows.map(function (n) {
-          return ['<input type="checkbox" data-pick="' + n.date + '"' + (desk.picked[n.date] ? ' checked' : '') + '>', '<b>' + wd(n.date) + ' ' + dm(n.date) + '</b>', n.booked ? badge('booked', 'fo-badge--ok') : n.blocked ? badge('blocked') : badge('free')].concat(CH.map(function (x) {
-            var r = st[x + '|' + n.date]; if (!r) return '<span class="fo-hint">not read</span>';
-            return (r.available === 'no' ? badge('closed', 'fo-badge--bad') : r.available === 'yes' ? badge('open', 'fo-badge--ok') : '') + (r.stop_sell === 'yes' ? ' ' + badge('stop-sell') : '') + (r.min_stay ? ' <small>min ' + r.min_stay + '</small>' : '');
-          }));
-        }), 'No nights.');
-      $('#av-v').onchange = function () { desk.villa = this.value; desk.rows = null; desk.picked = {}; avail(body); };
-      $$('[data-pick]', body).forEach(function (b) { b.onchange = function () { desk.picked[b.dataset.pick] = b.checked; avail(body); }; });
-      $$('[data-av]', body).forEach(function (b) { b.onclick = function () { changeDrawer(b.dataset.av, picked); }; });
-    });
-  }
-
   // ------------------------------------------------------------ Jobs ------------------------------------------------------------
   var jobFilter = 'open';
   function jobs(body) {
@@ -257,7 +246,7 @@
   // ------------------------------------------------------------ Settings ------------------------------------------------------------
   function settings(body) {
     var c = C(), f = founder();
-    body.innerHTML = card('Channels', 'mode, dry-run, commission', table(['Channel', 'On', 'Mode', 'Dry-run', 'Commission %', 'Channel markup %', ''], CH.map(function (ch) {
+    body.innerHTML = window.FoChannelsCal.inventoryCard() + card('Channels', 'mode, dry-run, commission', table(['Channel', 'On', 'Mode', 'Dry-run', 'Commission %', 'Channel markup %', ''], CH.map(function (ch) {
       var s = c.settings[ch] || {};
       return ['<b>' + esc(NAMES[ch]) + '</b>', '<input type="checkbox" data-on="' + ch + '"' + (s.enabled ? ' checked' : '') + (f ? '' : ' disabled') + '>', sel('md-' + ch, MODES, String(s.mode || 0)),
         '<input type="checkbox" data-dry="' + ch + '"' + (s.dryRun ? ' checked' : '') + (f ? '' : ' disabled') + '>' + (s.dryRun && s.dry_until ? ' <small class="fo-hint">until ' + dm(s.dry_until) + '</small>' : ''),
@@ -271,6 +260,7 @@
       card('Calendar feeds (iCal)', 'safety net', '<p>Import these into Airbnb (Calendar → Availability → Connect calendars) and Booking.com (Rates & availability → Sync calendars). Even when the agent is offline, nights booked anywhere stay closed there. Busy dates only, no guest data.</p>' +
         (Object.keys(c.ical || {}).length ? table(['Villa', 'Feed link'], Object.keys(c.ical).map(function (v) { return [esc(vname(v)), '<input readonly value="' + esc(c.ical[v]) + '" class="cm-copy" style="width:100%">']; })) : '') +
         (f ? '<div class="fo-toolbar"><button class="btn" id="ic-new">' + (Object.keys(c.ical || {}).length ? 'New links (old ones stop working)' : 'Create feed links') + '</button></div>' : ''));
+    window.FoChannelsCal.wireInventory(body);
     $$('.cm-copy', body).forEach(function (x) { x.onfocus = function () { x.select(); }; });
     $$('[data-save]', body).forEach(function (b) {
       b.onclick = function () {
