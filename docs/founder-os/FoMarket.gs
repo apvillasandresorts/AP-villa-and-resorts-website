@@ -41,7 +41,8 @@ function foAutomationStatus_() {
 }
 function foMachineApi_(b) {
   const p = PropertiesService.getScriptProperties(), stored = p.getProperty('FO_AUTOMATION_KEY'), a = String(b.action || '');
-  if (!stored || String(b.key).length < 40 || !foSafeEqual_(foHmac_('automation:' + b.key), stored)) { foFail_('automation', 'bad automation key'); return { ok: false, auth: false, error: 'Automation key not accepted.' }; }
+  if (foKeyLocked_('automation')) return { ok: false, auth: false, error: 'Automation key not accepted.' };
+  if (!stored || String(b.key).length < 40 || !foSafeEqual_(foHmac_('automation:' + b.key), stored)) { foKeyFail_('automation', 'bad automation key'); return { ok: false, auth: false, error: 'Automation key not accepted.' }; }
   if (foCounter_('FO_MACHINE_CALLS', 3600) > 300) return { ok: false, error: 'Too many automation calls this hour.' };
   const fn = FO_MACHINE_ROUTES[a]; if (!fn) return { ok: false, error: 'Action not allowed for the automation key.' };
   const meta = JSON.parse(p.getProperty('FO_AUTOMATION_META') || '{}'); meta.last_used = foNow_(); p.setProperty('FO_AUTOMATION_META', JSON.stringify(meta));

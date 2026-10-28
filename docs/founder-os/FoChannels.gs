@@ -508,7 +508,8 @@ const FO_AGENT_ROUTES = {
 /** Entry point for requests carrying agent_key (FoCore.gs foApi_). The agent can reach only FO_AGENT_ROUTES. */
 function foAgentApi_(b) {
   const p = PropertiesService.getScriptProperties(), stored = p.getProperty('FO_AGENT_KEY');
-  if (!stored || String(b.agent_key).length < 40 || !foSafeEqual_(foHmac_('agent:' + b.agent_key), stored)) { foFail_('agent', 'bad agent key'); return { ok: false, auth: false, error: 'Agent key not accepted.' }; }
+  if (foKeyLocked_('agent')) return { ok: false, auth: false, error: 'Agent key not accepted.' };
+  if (!stored || String(b.agent_key).length < 40 || !foSafeEqual_(foHmac_('agent:' + b.agent_key), stored)) { foKeyFail_('agent', 'bad agent key'); return { ok: false, auth: false, error: 'Agent key not accepted.' }; }
   if (foCounter_('FO_AGENT_CALLS', 3600) > 900) return { ok: false, error: 'Too many agent calls this hour.' };
   const fn = FO_AGENT_ROUTES[String(b.action || '')]; if (!fn) return { ok: false, error: 'Not allowed for the agent.' };
   const out = fn(b) || {}; foFlush_(); if (out.ok === undefined) out.ok = true; return out;

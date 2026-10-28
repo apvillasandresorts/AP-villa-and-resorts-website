@@ -271,3 +271,12 @@ test('inventory: units per villa; a 3-unit villa sends units left (not closures)
   const d = env.api({ action: 'f.data', token: await env.login() });
   assert.ok(d.channel_manager.ari.some(a => a.date === '2026-12-01' && Number(a.units) === 0)); assert.ok(Array.isArray(d.channel_manager.rate_plans));
 });
+
+test('wrong machine keys never pause the founder\'s sign-in (own counter), and a flood is refused before any work', async () => {
+  const { env } = await ready();
+  for (let i = 0; i < 12; i++) assert.equal(env.api({ action: 'agent.pull', agent_key: 'apa_' + 'x'.repeat(60) }).auth, false);
+  for (let i = 0; i < 12; i++) assert.equal(env.api({ action: 'f.m.ping', key: 'k'.repeat(60) }).auth, false);
+  assert.ok(await env.login(), 'founder can still sign in');
+  assert.ok(!env.mails.some(m => /sign-in paused/.test(m.subject || '')), 'no "sign-in paused" email');
+  assert.ok(env.tab('Audit').filter(a => a.action === 'key_refused').length <= 40);
+});

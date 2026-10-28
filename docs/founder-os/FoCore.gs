@@ -276,6 +276,14 @@ function foFail_(email, why) {
     if (to) MailApp.sendEmail(to, 'AP Villas Founder OS: sign-in paused', 'There were ' + n + ' wrong sign-in attempts in the last hour, so sign-in is paused for up to an hour. If this was not you, nothing else is needed: your passphrase and email code are still required.\n\nTime: ' + foNow_());
   }
 }
+/** A wrong machine key (agent / automation): its own counter, so it can never pause the founder's sign-in. Audited up to 20 an hour. */
+function foKeyFail_(scope, why) {
+  const n = foCounter_('FO_KEYFAIL_' + scope, 3600);
+  if (n <= 20) foAudit_(scope, 'key_refused', why, 'denied');
+  return n;
+}
+/** True when a scope has seen too many wrong keys this hour: refuse at once, before any other work. */
+function foKeyLocked_(scope) { return foCounterValue_('FO_KEYFAIL_' + scope) > 120; }
 function foSendChallenge_(u, purpose) {
   if (foCounter_('FO_OTPSENDS', 3600) > FO.OTP_SENDS_PER_HOUR) return { ok: false, error: 'Too many codes sent. Please wait an hour.' };
   const id = foRandom_(), otp = foOtp_(), now = Date.now();
