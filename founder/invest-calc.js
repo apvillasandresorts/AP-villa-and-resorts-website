@@ -200,7 +200,42 @@ var FoInvCalc = (function () {
   function pct(x, d) { return x == null || !isFinite(x) ? '–' : (x * 100).toFixed(d == null ? 1 : d) + '%'; }
   function signed(x, d) { return x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : '') + (x * 100).toFixed(d == null ? 1 : d) + '%'; }
 
-  return { num: num, days: days, xirr: xirr, deposit: deposit, recurring: recurring, value: value, portfolio: portfolio, CLASS: CLASS,
+  // ---------------------------------------------------------------- broker import ----------------
+  function csvRows(text) {
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch; }
+      else if (ch === '"') q = true; else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows.map(function (r) { return r.map(function (c) { return c.trim(); }); });
+  }
+  /** Holdings export from any Indian broker (Zerodha Console / Kite, Groww, Upstox, Angel, ICICI, HDFC…): finds the header row,
+   *  then symbol (or ISIN, mapped with `isinMap`), quantity and average price. Returns [{symbol, units, avg_cost}] merged by symbol. */
+  function parseHoldingsCsv(text, isinMap) {
+    var rows = csvRows(String(text || '').replace(/^\uFEFF/, '')), find = function (h, re) { for (var i = 0; i < h.length; i++) if (re.test(h[i])) return i; return -1; };
+    var SYM = /^(symbol|instrument|trading ?symbol|tradingsymbol|scrip( name| code)?|stock symbol|nse symbol|security( name)?)$/i, ISIN = /isin/i, QTY = /^(qty|quantity)\b|^qty\.?$|^(total|net|available) (qty|quantity)/i, AVG = /^(avg|average)\.? ?(buy )?(price|cost|rate)|^buy avg|^avg\.? cost|^average buy price/i;
+    for (var r = 0; r < Math.min(rows.length, 40); r++) {
+      var h = rows[r], cs = find(h, SYM), ci = find(h, ISIN), cq = find(h, QTY), ca = find(h, AVG);
+      if ((cs < 0 && ci < 0) || cq < 0 || ca < 0) continue;
+      var out = {}, order = [];
+      rows.slice(r + 1).forEach(function (x) {
+        var sym = cs >= 0 ? String(x[cs] || '').toUpperCase().replace(/\.(NS|BO)$/, '').replace(/-(EQ|BE|BZ|SM|ST)$/, '').replace(/[^A-Z0-9&_-]/g, '') : '';
+        if (!sym && ci >= 0 && isinMap) sym = isinMap[String(x[ci] || '').toUpperCase()] || '';
+        var u = num(x[cq]), a = num(x[ca]);
+        if (!sym || !(u > 0) || a == null) return;
+        if (!out[sym]) { out[sym] = { symbol: sym, units: 0, cost: 0 }; order.push(sym); }
+        out[sym].units += u; out[sym].cost += u * a;
+      });
+      return order.map(function (k) { var o = out[k]; return { symbol: k, units: o.units, avg_cost: Math.round(o.cost / o.units * 10000) / 10000 }; });
+    }
+    return [];
+  }
+
+  return { parseHoldingsCsv: parseHoldingsCsv, num: num, days: days, xirr: xirr, deposit: deposit, recurring: recurring, value: value, portfolio: portfolio, CLASS: CLASS,
     QUESTIONS: QUESTIONS, PROFILES: PROFILES, ALLOC: ALLOC, profileOf: profileOf, goal: goal, sipFor: sipFor, gmpRange: gmpRange, ipoVerdict: ipoVerdict, median: median, pct: pct, signed: signed };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoInvCalc;

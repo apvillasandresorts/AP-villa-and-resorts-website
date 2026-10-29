@@ -75,3 +75,13 @@ test('IPO verdicts follow the spec rules; GMP is a multi-source range', () => {
   assert.equal(sme.verdict, 'Avoid'); assert.ok(sme.sme_warning);
   assert.equal(C.ipoVerdict({ name: 'x' }).verdict, 'Waiting for data');
 });
+
+test('broker holdings CSV: Zerodha Console (preamble), Kite, Groww by ISIN', () => {
+  const zerodha = 'Client ID,AB1234\n\nSymbol,ISIN,Sector,Quantity Available,Quantity Discrepant,Average Price,Previous Closing Price\nRELIANCE,INE002A01018,Oil,10,0,1250.5,1300\nGOLDBEES-BE,INF204KB17I5,,100,0,60,117\nTCS,INE467B01029,IT,0,0,3000,3100\n';
+  assert.deepEqual(C.parseHoldingsCsv(zerodha), [{ symbol: 'RELIANCE', units: 10, avg_cost: 1250.5 }, { symbol: 'GOLDBEES', units: 100, avg_cost: 60 }]);
+  const kite = '"Instrument","Qty.","Avg. cost","LTP"\n"INFY","5","1,500.00","1600"\n"INFY","5","1,700.00","1600"\n';
+  assert.deepEqual(C.parseHoldingsCsv(kite), [{ symbol: 'INFY', units: 10, avg_cost: 1600 }]);
+  const groww = 'Stock Name,ISIN,Quantity,Average buy price,Closing price\nHDFC Bank Ltd,INE040A01034,4,1500,1600\nUnknown,INE000000000,1,10,10\n';
+  assert.deepEqual(C.parseHoldingsCsv(groww, { INE040A01034: 'HDFCBANK' }), [{ symbol: 'HDFCBANK', units: 4, avg_cost: 1500 }]);
+  assert.deepEqual(C.parseHoldingsCsv('a,b\n1,2'), []);
+});

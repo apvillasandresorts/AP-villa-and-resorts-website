@@ -1,7 +1,8 @@
 /**
  * AP Villas Founder OS · Investments (Founder OS Markets, free build). Founder-only: nothing here is in the shared data bundle.
- * The analytics run in the founder's PRIVATE repo ap-markets (GitHub Actions, free data: NSE archives, IBJA, AMFI, FRED). It talks to
- * this file with its own "markets" key, which can reach only FO_MK_ROUTES: pull open paper orders + the list of symbols to price
+ * The analytics run in the founder's PRIVATE repo ap-markets (GitHub Actions, free data: NSE archives, IBJA, AMFI, FRED, SEBI filings,
+ * market RSS). It signs in with a GitHub OIDC token (GitHub's signature, that repo, main branch: nothing to copy by hand) or a markets key,
+ * and either can reach only FO_MK_ROUTES: pull open paper orders + the list of symbols to price
  * (never the quantities or values of real holdings), push fills and the daily snapshot. Real holdings are valued here, inside Google.
  * Paper only: there is no code path that places a real order. Labels are "model score" / "paper verdict", never "buy" or "tip".
  */
@@ -11,6 +12,8 @@ const FO_INV = {
   RISK: { max_stock_pct: 10, max_sector_pct: 25, max_bullion_pct: 30, max_sme_pct: 20, riskoff_gross_pct: 60, dd_pause_pct: 15 },
   DISCLAIMER: 'Educational model output for paper trading. Not investment advice.',
   SNAP_KEEP_DAYS: 30,
+  SIP_KINDS: ['mf', 'stock', 'etf', 'ppf', 'epf', 'nps', 'bond', 'cash', 'other'],
+  IPO_RANK: { filed: 0, upcoming: 1, open: 2, closed: 3, allotted: 4, listed: 5 },
 };
 
 // ---------------------------------------------------------------- key ----------------
@@ -25,11 +28,46 @@ const FO_MK_ROUTES = {
   'f.mk.ping': b => ({ pong: true, today: foToday_() }),
   'f.mk.pull': b => foMkPull_(b), 'f.mk.report': b => foMkReport_(b), 'f.mk.snapshot': b => foMkSnapshot_(b), 'f.mk.bullion': b => foMkBullion_(b),
 };
-/** Entry point for requests carrying markets_key (FoCore.gs foApi_). */
+// GitHub Actions OIDC: GitHub signs a short-lived token that names the repo and branch; we check the RS256 signature against GitHub's
+// published keys, then the issuer, audience, repo, branch and expiry. Apps Script has no RSA verify, so it is done with BigInt.
+const FO_GH_OIDC = { iss: 'https://token.actions.githubusercontent.com', aud: 'ap-founder-os-markets', repo: 'apvillasandresorts/ap-markets', ref: 'refs/heads/main' };
+function foB64uBytes_(s) { s = String(s || ''); return Utilities.base64DecodeWebSafe(s + '='.repeat((4 - s.length % 4) % 4)); }
+function foBytesHex_(bytes) { return bytes.map(b => ((b & 255) + 256).toString(16).slice(1)).join(''); }
+function foModPow_(b, e, m) { let r = 1n; b %= m; while (e > 0n) { if (e & 1n) r = r * b % m; e >>= 1n; b = b * b % m; } return r; }
+function foGhJwks_(fresh) {
+  const c = CacheService.getScriptCache(), hit = !fresh && c.get('FO_GH_JWKS'); if (hit) return JSON.parse(hit);
+  const r = UrlFetchApp.fetch(FO_GH_OIDC.iss + '/.well-known/jwks', { muteHttpExceptions: true }); if (r.getResponseCode() !== 200) return [];
+  const keys = (JSON.parse(r.getContentText()).keys || []).filter(k => k.kty === 'RSA').map(k => ({ kid: k.kid, n: k.n, e: k.e }));
+  c.put('FO_GH_JWKS', JSON.stringify(keys), 6 * 3600); return keys;
+}
+/** Verified claims of a GitHub Actions OIDC token from our repo's main branch, or null. */
+function foGhOidc_(tok) {
+  const p = String(tok || '').split('.'); if (p.length !== 3 || tok.length > 6000) return null;
+  try {
+    const head = JSON.parse(Utilities.newBlob(foB64uBytes_(p[0])).getDataAsString()); if (head.alg !== 'RS256') return null;
+    let k = foGhJwks_(false).find(x => x.kid === head.kid); if (!k) k = foGhJwks_(true).find(x => x.kid === head.kid); if (!k) return null;
+    const nHex = foBytesHex_(foB64uBytes_(k.n)).replace(/^(00)+/, ''), len = Math.ceil(nHex.length / 2), sHex = foBytesHex_(foB64uBytes_(p[2]));
+    if (len < 256 || sHex.length !== len * 2) return null;
+    const n = BigInt('0x' + nHex), sig = BigInt('0x' + sHex); if (sig >= n) return null;
+    const em = foModPow_(sig, BigInt('0x' + foBytesHex_(foB64uBytes_(k.e))), n).toString(16).padStart(len * 2, '0');
+    const t = '3031300d060960864801650304020105000420' + foBytesHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, p[0] + '.' + p[1], Utilities.Charset.UTF_8));
+    if (em !== '0001' + 'ff'.repeat(len - 3 - t.length / 2) + '00' + t) return null;
+    const c = JSON.parse(Utilities.newBlob(foB64uBytes_(p[1])).getDataAsString()), now = Date.now() / 1000;
+    if (c.iss !== FO_GH_OIDC.iss || c.aud !== FO_GH_OIDC.aud || c.repository !== FO_GH_OIDC.repo || c.ref !== FO_GH_OIDC.ref) return null;
+    if (!(c.exp > now) || (c.nbf && c.nbf > now + 60) || (c.iat && c.iat > now + 60)) return null;
+    return c;
+  } catch (e) { return null; }
+}
+function foMarketsAuthed_(b) {
+  if (b.gh_oidc) return !!foGhOidc_(b.gh_oidc);
+  const stored = PropertiesService.getScriptProperties().getProperty('FO_MARKETS_KEY');
+  return !!stored && String(b.markets_key).length >= 40 && foSafeEqual_(foHmac_('markets:' + b.markets_key), stored);
+}
+/** Entry point for requests carrying markets_key or gh_oidc (FoCore.gs foApi_). */
 function foMarketsApi_(b) {
-  const p = PropertiesService.getScriptProperties(), stored = p.getProperty('FO_MARKETS_KEY');
   if (foKeyLocked_('markets')) return { ok: false, auth: false, error: 'Markets key not accepted.' };
-  if (!stored || String(b.markets_key).length < 40 || !foSafeEqual_(foHmac_('markets:' + b.markets_key), stored)) { foKeyFail_('markets', 'bad markets key'); return { ok: false, auth: false, error: 'Markets key not accepted.' }; }
+  if (!foMarketsAuthed_(b)) { foKeyFail_('markets', b.gh_oidc ? 'bad github token' : 'bad markets key'); return { ok: false, auth: false, error: 'Markets key not accepted.' }; }
+  if (b.gh_oidc) foInvSettingSet_('engine_seen', JSON.stringify({ via: 'github', at: foNow_() }));
   if (foCounter_('FO_MK_CALLS', 3600) > 120) return { ok: false, error: 'Too many markets calls this hour.' };
   const fn = FO_MK_ROUTES[String(b.action || '')]; if (!fn) return { ok: false, error: 'Not allowed for the markets key.' };
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
@@ -133,13 +171,84 @@ function foMkSnapshot_(b) {
   if (pc && nc && pc.split('@')[0] !== nc.split('@')[0]) foInvAlert_('champ_' + nc, 'new champion model', 'The challenger ' + nc + ' passed every promotion rule and replaced ' + pc + '. One click in Model health rolls it back.');
   Object.keys(s.paper || {}).forEach(id => { const a = s.paper[id]; if (a && a.peak && a.equity && a.equity < a.peak * (1 - FO_INV.RISK.dd_pause_pct / 100)) foInvAlert_('dd_' + id + '_' + s.asof, 'paper account paused', id + ' is more than ' + FO_INV.RISK.dd_pause_pct + '% below its peak: new entries pause until you review it.'); });
   ['gold999', 'silver999'].forEach(m => { const x = s.bullion && s.bullion[m], h = x && x.history; if (h && h.length > 1) { const ch = h[h.length - 1][1] / h[h.length - 2][1] - 1; if (Math.abs(ch) > 0.02) foInvAlert_(m + s.asof, (m === 'gold999' ? 'gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '%', 'IBJA ' + (m === 'gold999' ? '999 gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '% on ' + h[h.length - 1][0] + '.'); } });
-  if (foInvSettings_().daily_email !== 'off' && s.dq && s.dq.ok) foInvDailyEmail_(s);
-  return { stored: true, summary: { asof: s.asof, kb: Math.round(json.length / 1024) } };
+  const done = { ipos: 0, sips: 0 };
+  try { done.ipos = foInvAutoIpo_(s); } catch (e) { foAudit_('markets', 'auto_ipo_failed', String(e).slice(0, 200), 'error'); }
+  try { done.sips = foInvAutoSip_(s); } catch (e) { foAudit_('markets', 'auto_sip_failed', String(e).slice(0, 200), 'error'); }
+  if (foInvSettings_().daily_email !== 'off' && s.dq && s.dq.ok) foInvDailyEmail_(s, done);
+  return { stored: true, summary: { asof: s.asof, kb: Math.round(json.length / 1024), ipos: done.ipos, sips: done.sips } };
 }
 function foMkBullion_(b) {
   const r = b.rates || {}; if (!r.gold999) return { ok: false, error: 'rates missing' };
   foInvSettingSet_('bullion_live', JSON.stringify({ date: b.date, session: b.session, rates: r, at: foNow_() }));
   return { summary: { session: b.session } };
+}
+
+// ---------------------------------------------------------------- automatic updates (no typing) ----------------
+const foInvIpoKey_ = name => String(name || '').toLowerCase().replace(/&/g, 'and').replace(/\b(limited|ltd|pvt|private|india|the)\b\.?/g, ' ').replace(/[^a-z0-9]/g, '');
+/** IPO board from the engine's feeds: SEBI RHP → upcoming, prospectus → closed, NSE listing → listed with listing-day prices.
+ *  Only moves a status forward and only fills empty fields: what you typed is never overwritten. Returns rows touched. */
+function foInvAutoIpo_(s) {
+  const f = s.ipo_feed; if (!f) return 0;
+  const today = foToday_(), ago = d => Math.round((Date.parse(today) - Date.parse(d)) / 86400000), byKey = {}; let n = 0;
+  foRows_('InvIpos').forEach(r => { byKey[foInvIpoKey_(r.name)] = r; });
+  const put = (key, name, patch, create) => {
+    const r = byKey[key];
+    if (!r) { if (!create) return; const rec = Object.assign({ ipo_id: foId_('IPO'), name: String(name).slice(0, 120), type: 'mainboard', auto: 'yes', updated_at: foNow_(), updated_by: 'engine' }, patch); foAppend_('InvIpos', rec); byKey[key] = rec; n++; return; }
+    const upd = {};
+    if ((FO_INV.IPO_RANK[patch.status] || 0) > (FO_INV.IPO_RANK[r.status] || 0)) upd.status = patch.status;
+    Object.keys(patch).forEach(k => { if (k !== 'status' && patch[k] != null && patch[k] !== '' && (r[k] === '' || r[k] == null)) upd[k] = patch[k]; });
+    if (Object.keys(upd).length && r._row) { foUpdate_('InvIpos', r._row, Object.assign({}, r, upd, { updated_at: foNow_(), updated_by: r.updated_by === 'engine' ? 'engine' : r.updated_by })); Object.assign(r, upd); n++; }
+  };
+  const filed = {};
+  (f.filings || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).forEach(x => {
+    if (x.stage === 'drhp' || x.kind === 'notice' || !x.date) return;
+    const key = foInvIpoKey_(x.name); filed[key] = true;
+    if (x.stage === 'rhp' && ago(x.date) <= 45) put(key, x.name, { status: 'upcoming', source_url: x.url }, true);
+    if (x.stage === 'prospectus' && ago(x.date) <= 30) put(key, x.name, { status: 'closed', source_url: x.url }, true);
+  });
+  (f.listings || []).forEach(l => {
+    const key = foInvIpoKey_(l.name); if (!byKey[key] && !filed[key]) return;   // a listing without an IPO on the board (transfers, SME) stays in "New on NSE"
+    const patch = { listing: l.listed, type: l.board === 'sme' ? 'sme' : '' };
+    if (l.listed <= today && l.list_open) Object.assign(patch, { status: 'listed', listing_open: l.list_open, listing_close: l.list_close });
+    put(key, l.name, patch, !!filed[key]);
+  });
+  return n;
+}
+/** Monthly plans (SIP / contributions) post themselves on the due date: units from that evening's NAV or close, the value for
+ *  PPF / EPF / NPS / bonds / cash grows by the amount. Up to 3 missed months are caught up. Returns transactions added. */
+function foInvAutoSip_(s) {
+  const today = foToday_(); let n = 0;
+  const txns = foRows_('InvTxns');
+  foRows_('InvHoldings').forEach(h => {
+    const amt = foInvNum_(h.sip_amount), day = Math.round(foInvNum_(h.sip_day));
+    if (h.status === 'closed' || !(amt > 0) || !(day >= 1 && day <= 28) || FO_INV.SIP_KINDS.indexOf(h.kind) < 0) return;
+    const last = String(h.sip_last || ''), t0 = new Date(today + 'T00:00:00Z'), dues = [];
+    if (!last) { foUpdate_('InvHoldings', h._row, Object.assign({}, h, { sip_last: today })); return; }
+    for (let i = 2; i >= 0; i--) { const d = new Date(Date.UTC(t0.getUTCFullYear(), t0.getUTCMonth() - i, day)).toISOString().slice(0, 10); if (d > last && d <= today) dues.push(d); }
+    if (!dues.length) return;
+    let px = null, basis = '';
+    if (h.kind === 'mf') { const v = s.nav && s.nav[h.fund_code]; if (v && v.nav) { px = Number(v.nav); basis = 'AMFI NAV ' + v.date; } }
+    else if (h.kind === 'stock' || h.kind === 'etf') { const v = s.prices && s.prices[h.symbol]; if (v && v.close) { px = Number(v.close); basis = 'NSE close ' + v.date; } }
+    const priced = h.kind === 'mf' || h.kind === 'stock' || h.kind === 'etf'; if (priced && !(px > 0)) return;   // no price yet: try the next run
+    const rec = Object.assign({}, h); delete rec._row;
+    let units = foInvNum_(h.units) || 0, avg = foInvNum_(h.avg_cost) || 0, inv = h.invested === '' ? null : foInvNum_(h.invested), cv = h.current_value === '' ? null : foInvNum_(h.current_value);
+    if (!txns.some(t => t.holding_id === h.holding_id)) {   // keep XIRR right: the money already in becomes an opening transaction
+      const open = inv != null ? inv : units * avg;
+      if (open > 0) foAppend_('InvTxns', { txn_id: foId_('IT'), holding_id: h.holding_id, date: h.start_date || h.value_date || today, type: priced ? 'buy' : 'deposit', units: priced ? units : '', price: priced ? avg : '', amount: Math.round(open * 100) / 100, note: 'Opening balance (added automatically with the monthly plan)', created_at: foNow_(), created_by: 'engine' });
+    }
+    dues.forEach(d => {
+      let u = '', a = amt;
+      if (priced) { u = h.kind === 'mf' ? Math.floor(amt / px * 1000) / 1000 : Math.floor(amt / px); if (!(u > 0)) return; a = Math.round(u * px * 100) / 100; avg = (units * avg + a) / (units + u); units += u; }
+      else { const r = foInvNum_(h.rate_pct); if (cv != null && r > 0 && rec.value_date && rec.value_date < d) cv = cv * Math.pow(1 + r / 100, (Date.parse(d) - Date.parse(rec.value_date)) / 86400000 / 365); cv = (cv || 0) + a; rec.value_date = d; }
+      if (inv != null) inv += a;
+      foAppend_('InvTxns', { txn_id: foId_('IT'), holding_id: h.holding_id, date: d, type: priced ? 'buy' : 'deposit', units: u, price: priced ? px : '', amount: a, note: 'Monthly plan, posted automatically' + (basis ? ' (' + basis + ')' : ''), created_at: foNow_(), created_by: 'engine' }); n++;
+    });
+    if (priced) { rec.units = Math.round(units * 10000) / 10000; rec.avg_cost = Math.round(avg * 10000) / 10000; } else rec.current_value = Math.round(cv * 100) / 100;
+    if (inv != null) rec.invested = Math.round(inv * 100) / 100;
+    rec.sip_last = dues[dues.length - 1]; rec.updated_at = foNow_(); rec.updated_by = 'engine';
+    foUpdate_('InvHoldings', h._row, rec);
+  });
+  return n;
 }
 
 // ---------------------------------------------------------------- portal (founder) ----------------
@@ -151,7 +260,7 @@ function foInvBundle_() {
     ipos: foRows_('InvIpos').map(foInvClean_), daily: foRows_('InvDaily').slice(-90).map(foInvClean_),
     profile: S.profile ? JSON.parse(S.profile) : null, goals: S.goals ? JSON.parse(S.goals) : [], bullion_live: S.bullion_live ? JSON.parse(S.bullion_live) : null,
     key: meta ? JSON.parse(meta) : null, snapshot: snap, risk_defaults: FO_INV.RISK, disclaimer: FO_INV.DISCLAIMER,
-    strategies: foInvStrategies_(), control: foInvJson_(S.model_control, null), daily_email: S.daily_email !== 'off',
+    strategies: foInvStrategies_(), control: foInvJson_(S.model_control, null), daily_email: S.daily_email !== 'off', engine_seen: foInvJson_(S.engine_seen, null),
   };
 }
 function foInvHoldingSave_(b, user) {
@@ -167,8 +276,11 @@ function foInvHoldingSave_(b, user) {
     current_value: h.current_value === '' || h.current_value == null ? '' : foInvNum_(h.current_value), value_date: /^\d{4}-\d{2}-\d{2}$/.test(h.value_date || '') ? h.value_date : '',
     purity: String(h.purity || '').slice(0, 6), account: String(h.account || '').slice(0, 60), goal: String(h.goal || '').slice(0, 60), notes: String(h.notes || '').slice(0, 500),
     status: h.status === 'closed' ? 'closed' : 'active',
+    sip_amount: h.sip_amount === '' || h.sip_amount == null ? '' : foInvNum_(h.sip_amount), sip_day: h.sip_day === '' || h.sip_day == null ? '' : Math.round(foInvNum_(h.sip_day)),
   };
-  for (const k of ['units', 'avg_cost', 'invested', 'rate_pct', 'current_value', 'monthly_amount']) if (rec[k] !== '' && (!isFinite(rec[k]) || rec[k] < 0)) return { ok: false, error: 'Check the number in "' + k.replace('_', ' ') + '".' };
+  if (rec.sip_amount !== '' && FO_INV.SIP_KINDS.indexOf(kind) < 0) return { ok: false, error: 'Automatic monthly investing works for funds, stocks, ETFs, PPF, EPF, NPS, bonds and cash.' };
+  if (rec.sip_amount !== '' && !(rec.sip_day >= 1 && rec.sip_day <= 28)) return { ok: false, error: 'Pick the SIP day of the month (1 to 28).' };
+  for (const k of ['units', 'avg_cost', 'invested', 'rate_pct', 'current_value', 'monthly_amount', 'sip_amount']) if (rec[k] !== '' && (!isFinite(rec[k]) || rec[k] < 0)) return { ok: false, error: 'Check the number in "' + k.replace('_', ' ') + '".' };
   if ((kind === 'stock' || kind === 'etf') && !rec.symbol) return { ok: false, error: 'Add the NSE symbol (for example RELIANCE or GOLDBEES).' };
   if (kind === 'mf' && !rec.fund_code) return { ok: false, error: 'Add the AMFI scheme code (6 digits, shown on your statement or on amfiindia.com).' };
   if (['stock', 'etf', 'mf', 'gold', 'silver', 'sgb'].indexOf(kind) >= 0 && !(rec.units > 0)) return { ok: false, error: kind === 'gold' || kind === 'silver' ? 'Add the weight in grams.' : 'Add how many units you hold.' };
@@ -176,6 +288,8 @@ function foInvHoldingSave_(b, user) {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const row = h.holding_id && foRows_('InvHoldings').find(x => x.holding_id === h.holding_id);
+    // a new or changed monthly plan starts from the next due date (earlier ones are already in your numbers)
+    rec.sip_last = rec.sip_amount === '' ? '' : row && String(row.sip_amount) === String(rec.sip_amount) && String(row.sip_day) === String(rec.sip_day) && row.sip_last ? row.sip_last : foToday_();
     if (row) { foUpdate_('InvHoldings', row._row, Object.assign({}, row, rec, { updated_at: foNow_(), updated_by: user.email })); foAudit_(user.email, 'inv_holding_update', row.holding_id, 'ok'); return { holding_id: row.holding_id }; }
     const id = foId_('IH'); foAppend_('InvHoldings', Object.assign(rec, { holding_id: id, created_at: foNow_(), updated_at: foNow_(), updated_by: user.email }));
     foAudit_(user.email, 'inv_holding_add', id + ' ' + kind, 'ok'); return { holding_id: id };
@@ -304,7 +418,7 @@ function foInvSettingsSave_(b, user) {
   return {};
 }
 /** 18:00 one-page summary (spec 6 daily report), once per trading day. */
-function foInvDailyEmail_(s) {
+function foInvDailyEmail_(s, done) {
   if (foInvSettings_().daily_mail_last === s.asof) return;
   const P = (x, d) => x == null ? '–' : (x * 100).toFixed(d == null ? 1 : d) + '%', R = x => x == null ? '–' : '₹' + Math.round(x).toLocaleString('en-IN');
   const esc = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -316,7 +430,8 @@ function foInvDailyEmail_(s) {
     '<table cellpadding="4" style="border-collapse:collapse;font-size:13px"><tr style="background:#E7EFEA"><th>#</th><th>Stock</th><th>Score</th><th>P(top 20%)</th><th>Why</th></tr>' + top + '</table>' +
     '<p>Gold 24K: ' + (g ? R(g * 10) + ' per 10 g' : '–') + ' · Silver: ' + (b.silver999 ? R(b.silver999.last) + ' per kg' : '–') + ' (IBJA, excl. GST)</p>' +
     '<p>Model Autopilot (paper): ' + (auto && auto.equity ? R(auto.equity) + ', return ' + P(auto.stats && auto.stats.total_return) : 'not started') + '</p>' +
-    '<p>IPOs: ' + ipos + '</p><p>Model health: <b>' + esc(m.light || '–') + '</b> · ' + esc(m.note || '') + '</p>' +
+    '<p>IPOs: ' + ipos + '</p>' + (done && (done.ipos || done.sips) ? '<p>Updated for you today: ' + [done.ipos ? done.ipos + ' IPO board change' + (done.ipos > 1 ? 's' : '') : '', done.sips ? done.sips + ' SIP / contribution' + (done.sips > 1 ? 's' : '') + ' posted' : ''].filter(String).join(' · ') + '</p>' : '') +
+    ((s.news || []).length ? '<p><b>In the news (your companies)</b></p><ul>' + s.news.slice(0, 8).map(x => '<li><b>' + esc(x.symbol) + '</b>: <a href="' + esc(x.url) + '">' + esc(x.title) + '</a> <small>(' + esc(x.source) + ')</small></li>').join('') + '</ul>' : '') + '<p>Model health: <b>' + esc(m.light || '–') + '</b> · ' + esc(m.note || '') + '</p>' +
     '<p style="color:#777;font-size:12px">' + FO_INV.DISCLAIMER + ' <a href="https://www.apvillasandresorts.in/founder/#/investments">Open Investments</a> · turn this email off in Investments → Settings.</p></div>';
   try { MailApp.sendEmail({ to: PropertiesService.getScriptProperties().getProperty('FO_FOUNDER_EMAIL'), subject: 'Markets ' + s.asof + ' · ' + (r.label || 'Neutral') + ' · top: ' + (s.top || []).slice(0, 3).map(t => t.symbol).join(', '), htmlBody: html, body: 'Markets summary for ' + s.asof + '. ' + FO_INV.DISCLAIMER }); foInvSettingSet_('daily_mail_last', s.asof); } catch (e) {}
 }

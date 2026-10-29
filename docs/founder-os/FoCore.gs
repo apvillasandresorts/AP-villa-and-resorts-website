@@ -74,13 +74,13 @@ const FO_TABS = {
   Employees: ['emp_id', 'name', 'role', 'role_title', 'work_mode', 'property_ids', 'phone', 'email', 'joined', 'salary_amount', 'salary_cycle', 'pay_day', 'status', 'notes', 'created_at', 'updated_at', 'updated_by'],
   SalaryPayments: ['pay_id', 'emp_id', 'emp_name', 'period', 'amount', 'paid_on', 'mode', 'ref', 'kind', 'note', 'expense_id', 'created_at', 'updated_at', 'updated_by'],
   // Investments (FoInvest.gs): founder-only, never in the shared data bundle
-  InvHoldings: ['holding_id', 'kind', 'name', 'symbol', 'fund_code', 'units', 'avg_cost', 'invested', 'start_date', 'rate_pct', 'compounding', 'maturity_date', 'monthly_amount', 'current_value', 'value_date', 'purity', 'account', 'goal', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
+  InvHoldings: ['holding_id', 'kind', 'name', 'symbol', 'fund_code', 'units', 'avg_cost', 'invested', 'start_date', 'rate_pct', 'compounding', 'maturity_date', 'monthly_amount', 'current_value', 'value_date', 'purity', 'account', 'goal', 'notes', 'status', 'created_at', 'updated_at', 'updated_by', 'sip_amount', 'sip_day', 'sip_last'],
   InvTxns: ['txn_id', 'holding_id', 'date', 'type', 'units', 'price', 'amount', 'note', 'created_at', 'created_by'],
   InvAccounts: ['account_id', 'name', 'strategy', 'starting_cash', 'benchmark', 'risk_json', 'created_at', 'status', 'notes', 'rules_id'],
   InvOrders: ['order_id', 'account_id', 'symbol', 'side', 'type', 'qty', 'limit_price', 'trigger_price', 'trigger_dir', 'target', 'stop', 'amount', 'sip_day', 'validity', 'status', 'filled_qty', 'note', 'origin', 'parent', 'oco_with', 'last_sip', 'placed_at', 'updated_at', 'placed_by'],
   InvFills: ['fill_id', 'order_id', 'account_id', 'symbol', 'side', 'qty', 'price', 'date', 'charges', 'charges_json', 'slippage_bps', 'origin', 'created_at'],
   InvWatch: ['symbol', 'kind', 'note', 'added_at'],
-  InvIpos: ['ipo_id', 'name', 'type', 'status', 'open', 'close', 'allotment', 'listing', 'price_low', 'price_high', 'lot', 'issue_size_cr', 'fresh_cr', 'ofs_cr', 'sub_qib', 'sub_bnii', 'sub_snii', 'sub_nii', 'sub_retail', 'sub_emp', 'sub_total', 'sub_history', 'gmp_json', 'pe_post', 'peer_pe', 'rev_cagr', 'pat_cagr', 'roe', 'roce', 'de', 'anchor_cr', 'anchor_names', 'lead_managers', 'red_flags', 'listing_open', 'listing_close', 'notes', 'updated_at', 'updated_by'],
+  InvIpos: ['ipo_id', 'name', 'type', 'status', 'open', 'close', 'allotment', 'listing', 'price_low', 'price_high', 'lot', 'issue_size_cr', 'fresh_cr', 'ofs_cr', 'sub_qib', 'sub_bnii', 'sub_snii', 'sub_nii', 'sub_retail', 'sub_emp', 'sub_total', 'sub_history', 'gmp_json', 'pe_post', 'peer_pe', 'rev_cagr', 'pat_cagr', 'roe', 'roce', 'de', 'anchor_cr', 'anchor_names', 'lead_managers', 'red_flags', 'listing_open', 'listing_close', 'notes', 'updated_at', 'updated_by', 'source_url', 'auto'],
   InvDaily: ['date', 'light', 'regime', 'top5', 'gold', 'silver', 'paper_equity', 'open_ipos', 'created_at'],
   InvSettings: ['key', 'value', 'updated_at'],
   EmployeeReviews: ['review_id', 'emp_id', 'date', 'kind', 'rating', 'note', 'created_at', 'updated_at', 'updated_by'],
@@ -473,7 +473,7 @@ function foApi_(b) {
     if (a === 'f.login.verify') return foLoginVerify_(b);
     if (a === 'f.login.resend') return foLoginResend_(b);
     if (b.agent_key && !b.token) return foAgentApi_(b);   // channel agent (FoChannels.gs): jobs and channel reads only, never guests
-    if (b.markets_key && !b.token && typeof foMarketsApi_ === 'function') return foMarketsApi_(b);   // markets engine (FoInvest.gs): paper orders + snapshot only, never real holdings
+    if ((b.markets_key || b.gh_oidc) && !b.token && typeof foMarketsApi_ === 'function') return foMarketsApi_(b);   // markets engine (FoInvest.gs): paper orders + snapshot only, never real holdings
     if (b.key && !b.token) return foMachineApi_(b);   // automation key (FoMarket.gs): a few machine-only actions, no guest data
     const sess = foAuth_(b.token);
     if (!sess.ok) return { ok: false, auth: false, error: 'Your session has ended. Please sign in again.' };

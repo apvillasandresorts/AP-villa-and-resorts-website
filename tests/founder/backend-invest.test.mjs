@@ -152,3 +152,77 @@ test('strategy lab: rules validated, engine-run paper account, engine orders all
   mk('f.mk.snapshot', { snapshot: SNAP({ asof: '2026-10-31' }) });
   assert.equal(env.mails.filter(m => /^Markets /.test(m.subject || '')).length, n + 1);
 });
+
+// ------------------------------------------------------------ automation: GitHub OIDC sign-in, IPO board, monthly plans ------------------------------------------------------------
+import crypto from 'node:crypto';
+function ghKit(env) {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const jwk = Object.assign(publicKey.export({ format: 'jwk' }), { kid: 'k1', alg: 'RS256', use: 'sig' });
+  env.net.handler = r => /token\.actions\.githubusercontent\.com\/\.well-known\/jwks/.test(r.url) ? { code: 200, body: JSON.stringify({ keys: [jwk] }) } : { code: 404, body: '' };
+  const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+  return (claims, key) => {
+    const now = Math.floor(env.clock.now() / 1000);
+    const c = Object.assign({ iss: 'https://token.actions.githubusercontent.com', aud: 'ap-founder-os-markets', repository: 'apvillasandresorts/ap-markets', ref: 'refs/heads/main', iat: now, nbf: now, exp: now + 300 }, claims);
+    const h = b64({ alg: 'RS256', typ: 'JWT', kid: 'k1' }) + '.' + b64(c);
+    return h + '.' + crypto.sign('sha256', Buffer.from(h), key || privateKey).toString('base64url');
+  };
+}
+
+test('the engine signs in with a GitHub OIDC token from ap-markets main only (no key to copy)', async () => {
+  const { env } = await ready();
+  const jwt = ghKit(env), gh = (tok, action) => env.api({ action: action || 'f.mk.ping', gh_oidc: tok });
+  assert.equal(gh(jwt({})).pong, true);
+  assert.match(gh(jwt({ repository: 'someone/ap-markets' })).error, /not accepted/, 'other repos are refused');
+  assert.match(gh(jwt({ ref: 'refs/heads/feature' })).error, /not accepted/, 'other branches are refused');
+  assert.match(gh(jwt({ aud: 'sts.amazonaws.com' })).error, /not accepted/, 'other audiences are refused');
+  assert.match(gh(jwt({ exp: Math.floor(env.clock.now() / 1000) - 10 })).error, /not accepted/, 'expired tokens are refused');
+  const other = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey;
+  assert.match(gh(jwt({}, other)).error, /not accepted/, 'a token not signed by GitHub is refused');
+  const t = jwt({}).split('.'); t[1] = Buffer.from(JSON.stringify({ iss: 'https://token.actions.githubusercontent.com', aud: 'ap-founder-os-markets', repository: 'apvillasandresorts/ap-markets', ref: 'refs/heads/main', exp: 9e9 })).toString('base64url');
+  assert.match(gh(t.join('.')).error, /not accepted/, 'tampered claims are refused');
+  assert.match(gh(jwt({}), 'f.inv.bundle').error, /not allowed|not accepted/i, 'the engine still reaches only f.mk.*');
+});
+
+test('IPO board fills itself from SEBI filings and NSE listings, never overwriting what you typed', async () => {
+  const { env, call, mk } = await ready();
+  const today = new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10), ago = n => new Date(Date.parse(today) - n * 86400000).toISOString().slice(0, 10);
+  call('f.inv.ipo.save', { ipo: { name: 'BLS Polymers Ltd', status: 'upcoming', price_high: 120, notes: 'mine' } });
+  const feed = { filings: [
+    { name: 'BLS Polymers Limited', stage: 'rhp', kind: 'filing', date: ago(10), url: 'https://www.sebi.gov.in/a.html' },
+    { name: 'SFC Environmental Technologies Ltd.', stage: 'rhp', kind: 'filing', date: ago(7), url: 'https://www.sebi.gov.in/b.html' },
+    { name: 'Paras Healthcare Limited', stage: 'prospectus', kind: 'filing', date: ago(3), url: 'https://www.sebi.gov.in/c.html' },
+    { name: 'Oravel Stays Limited', stage: 'drhp', kind: 'filing', date: ago(2), url: 'https://www.sebi.gov.in/d.html' },
+    { name: 'Old Co Limited', stage: 'rhp', kind: 'filing', date: ago(200), url: 'https://www.sebi.gov.in/e.html' }],
+    listings: [{ symbol: 'BLSP', name: 'BLS Polymers Limited', board: 'mainboard', listed: ago(1), list_open: 130, list_close: 128 }, { symbol: 'INDTONER', name: 'Indian Toners & Developers Limited', board: 'mainboard', listed: ago(1), list_open: 300 }] };
+  assert.equal(mk('f.mk.snapshot', { snapshot: SNAP({ ipo_feed: feed }) }).ok, true);
+  const L = call('f.inv.bundle').ipos, by = n => L.find(i => i.name.startsWith(n));
+  assert.deepEqual([by('BLS').status, Number(by('BLS').listing_open), by('BLS').notes, Number(by('BLS').price_high)], ['listed', 130, 'mine', 120]);
+  assert.equal(by('SFC').status, 'upcoming'); assert.equal(by('SFC').source_url, 'https://www.sebi.gov.in/b.html'); assert.equal(by('SFC').auto, 'yes');
+  assert.equal(by('Paras').status, 'closed');
+  assert.equal(L.some(i => /Oravel|Old Co|Indian Toners/.test(i.name)), false, 'drafts, stale filings and transfers stay off the board');
+  call('f.inv.ipo.save', { ipo: Object.assign({}, by('SFC'), { status: 'open' }) });
+  mk('f.mk.snapshot', { snapshot: SNAP({ ipo_feed: feed }) });
+  assert.equal(call('f.inv.bundle').ipos.find(i => i.name.startsWith('SFC')).status, 'open', 'never moves a status backwards');
+});
+
+test('monthly plans post themselves: SIP units from the NAV, contributions grow PPF, XIRR keeps the opening money', async () => {
+  const { env, call, mk } = await ready();
+  const today = new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10);
+  const mf = call('f.inv.holding.save', { holding: { kind: 'mf', name: 'Index fund', fund_code: '120503', units: 100, avg_cost: 50, start_date: '2025-01-01', sip_amount: 5000, sip_day: 5 } }).holding_id;
+  const ppf = call('f.inv.holding.save', { holding: { kind: 'ppf', name: 'PPF', current_value: 200000, value_date: '2025-04-01', invested: 150000, sip_amount: 10000, sip_day: 10 } }).holding_id;
+  assert.match(call('f.inv.holding.save', { holding: { kind: 'fd', name: 'FD', invested: 1000, rate_pct: 7, start_date: '2026-01-01', sip_amount: 100, sip_day: 3 } }).error, /monthly investing/);
+  // the plan starts from the next due date: pretend it was set up 40 days ago
+  const back = new Date(Date.parse(today) - 40 * 86400000).toISOString().slice(0, 10), sh = env.dataSheet().getSheetByName('InvHoldings'), col = sh.cells[0].indexOf('sip_last') + 1;
+  for (let r = 2; r <= sh.getLastRow(); r++) sh.set(r, col, back);
+  env.cache.clear();
+  mk('f.mk.snapshot', { snapshot: SNAP({ nav: { 120503: { nav: 62.5, date: today, name: 'Index fund' } } }) });
+  const b = call('f.inv.bundle'), h = id => b.holdings.find(x => x.holding_id === id), tx = id => b.txns.filter(t => t.holding_id === id);
+  const due = tx(mf).filter(t => /Monthly plan/.test(t.note));
+  assert.ok(due.length >= 1 && due.length <= 2, 'one or two due dates in 40 days');
+  assert.equal(Number(h(mf).units), 100 + due.length * 80, '₹5,000 at NAV 62.5 = 80 units each');
+  assert.equal(tx(mf)[0].note.startsWith('Opening balance'), true); assert.equal(Number(tx(mf)[0].amount), 5000);
+  assert.equal(tx(ppf).filter(t => t.type === 'deposit' && /Monthly plan/.test(t.note)).length >= 1, true);
+  assert.ok(Number(h(ppf).current_value) > 200000 + 10000, 'PPF value grows by the contribution');
+  const n = b.txns.length; mk('f.mk.snapshot', { snapshot: SNAP({ nav: { 120503: { nav: 62.5, date: today } } }) });
+  assert.equal(call('f.inv.bundle').txns.length, n, 'a second run the same day posts nothing');
+});
