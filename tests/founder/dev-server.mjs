@@ -89,6 +89,21 @@ env.fo.foSetup();
   // the same nights scanned again later at higher prices (momentum + spike in the preview)
   env.api({ action: 'f.m.market.import', key, rates: drates.filter(r => r.stay_date === addD(t0, 5)).map(r => Object.assign({}, r, { observed_at: t0, price_per_night: Math.round(r.price_per_night * 1.3), price_total: '', platform: 'Booking.com', source_url: r.source_url + '?bk' })) });
   try { const kw = JSON.parse(readFileSync(new URL('../../research/search-keywords.json', import.meta.url), 'utf8')); env.api(Object.assign({ action: 'f.m.searchkw.import', key, date: t0 }, kw)); } catch (e) { /* run node scripts/search-demand/run.mjs --dry for a real keyword report */ }
+  // Investments: the real snapshot from a local ap-markets run (sibling repo) when present, plus SAMPLE holdings / paper / IPO entries
+  {
+    const t3 = await env.login('local preview only phrase'), inv = (a, b) => env.api(Object.assign({ action: a, token: t3 }, b));
+    const mkey = inv('f.inv.key').key;
+    try { env.api({ action: 'f.mk.snapshot', markets_key: mkey, snapshot: JSON.parse(readFileSync(new URL('../../../ap-markets/data/out/snapshot.json', import.meta.url), 'utf8')) }); } catch (e) { /* run python -m markets.run daily --dry in ap-markets */ }
+    [{ kind: 'stock', name: 'SAMPLE Reliance', symbol: 'RELIANCE', units: 20, avg_cost: 1250, start_date: '2025-06-02' }, { kind: 'etf', name: 'SAMPLE Gold ETF', symbol: 'GOLDBEES', units: 400, avg_cost: 80, start_date: '2025-03-10' },
+      { kind: 'mf', name: 'SAMPLE ELSS fund', fund_code: '120503', units: 300, avg_cost: 90, start_date: '2025-01-15' }, { kind: 'fd', name: 'SAMPLE bank FD', invested: 300000, rate_pct: 7.1, compounding: 'quarterly', start_date: '2025-11-01', maturity_date: '2027-11-01' },
+      { kind: 'ppf', name: 'SAMPLE PPF', current_value: 450000, value_date: '2026-04-01', invested: 380000, start_date: '2019-04-01', rate_pct: 7.1 }, { kind: 'gold', name: 'SAMPLE coins', units: 20, purity: '999', avg_cost: 7000, start_date: '2024-10-01' }, { kind: 'cash', name: 'SAMPLE savings', current_value: 150000 }]
+      .forEach(h => inv('f.inv.holding.save', { holding: h }));
+    inv('f.inv.watch.add', { symbol: 'HDFCBANK' });
+    const pa = inv('f.inv.account.save', { account: { name: 'SAMPLE swing account', starting_cash: 1000000 } }).account_id;
+    inv('f.inv.order.place', { order: { account_id: pa, symbol: 'TCS', side: 'buy', type: 'limit', qty: 10, limit_price: 3000 } });
+    inv('f.inv.ipo.save', { ipo: { name: 'SAMPLE Acme Engineering Ltd', type: 'mainboard', status: 'open', open: t0, close: addD(t0, 2), listing: addD(t0, 5), price_low: 285, price_high: 300, lot: 50, issue_size_cr: 1200, fresh_cr: 800, ofs_cr: 400, sub_qib: 45, sub_nii: 22, sub_retail: 6.5, sub_total: 24, pe_post: 34, peer_pe: 38, rev_cagr: 22, pat_cagr: 28, roe: 19, roce: 23, de: 0.4, gmp: [{ source: 'SAMPLE site A', gmp: 62 }, { source: 'SAMPLE site B', gmp: 55 }, { source: 'SAMPLE site C', gmp: 70 }] } });
+    inv('f.inv.ipo.save', { ipo: { name: 'SAMPLE Tiny Traders (SME)', type: 'sme', status: 'upcoming', open: addD(t0, 4), close: addD(t0, 6), price_high: 90, lot: 1600, sub_qib: 1.1, sub_retail: 40, gmp: [{ source: 'SAMPLE site A', gmp: 60 }] } });
+  }
   env.fo.foHourly();
   env.api({ action: 'f.logout', token: tok });
 }

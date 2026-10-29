@@ -211,3 +211,15 @@ bookings are reconciled from the ledger (Direct · Website, or found via Website
 
 ## Phases
 All 10 phases are built. GA4 reporting needs the Analytics Data API service enabled once (see above); everything else runs on the ledger.
+
+## Investments (Founder OS Markets, free build)
+
+Founder-only module (`#/investments`), built from the "Founder OS Markets — Product Specification" with the owner's choices of 29 Oct 2026: free data and hosting, real holdings plus paper trading, founder-only.
+
+- **Engine:** private repo `apvillasandresorts/ap-markets` (Python, GitHub Actions). Every trading evening at 16:45 IST it ingests NSE archives (prices, delivery %, index closes with P/E), IBJA gold/silver, AMFI NAVs and FRED macro data. It then scores the Nifty 200 (technical + calibrated ML + flow), learns from matured predictions, fills paper orders at the next open with Indian charges, and sends one snapshot here. IBJA rates also run at 12:30 and 17:30.
+- **Back end:** `FoInvest.gs` (paste into the Apps Script project). Tabs InvHoldings, InvTxns, InvAccounts, InvOrders, InvFills, InvWatch, InvIpos, InvDaily, InvSettings. Snapshots are kept 30 days in Drive "AP Villas Founder OS Reports/Markets". Nothing is in the shared `f.data` bundle.
+- **Markets key** (portal → Investments → Settings), stored in GitHub as the secret `FO_MARKETS_KEY` in ap-markets. It can only call `f.mk.pull`, `f.mk.report`, `f.mk.snapshot` and `f.mk.bullion`. A pull returns paper orders and the list of symbols and fund codes to price, never your real quantities or values. Wrong keys have their own lockout counter (`foKeyFail_('markets')`).
+- **Portal:** `founder/invest.js` (screens), `founder/invest-calc.js` (real-holdings valuation, XIRR, deposits, risk profile, goal Monte Carlo, IPO verdicts) and `founder/invest-academy.js` (concept cards and quiz).
+- **Alerts** (email, once each): data-quality block, red model health, drift, a new champion model, a paper account more than 15% below its peak, and gold or silver moving more than 2% in a day.
+- **Not on the free plan:** company fundamentals, forensic scores and DCF; intraday and MCX data; FII/DII flows; an IPO feed (IPOs are typed in). Each is a configuration slot in the engine.
+- **Never:** live orders, signals shown to others (SEBI RA rules), or keys in Sheets or pages.

@@ -73,6 +73,16 @@ const FO_TABS = {
   SearchExtra: ['date', 'kind', 'key', 'data'],
   Employees: ['emp_id', 'name', 'role', 'role_title', 'work_mode', 'property_ids', 'phone', 'email', 'joined', 'salary_amount', 'salary_cycle', 'pay_day', 'status', 'notes', 'created_at', 'updated_at', 'updated_by'],
   SalaryPayments: ['pay_id', 'emp_id', 'emp_name', 'period', 'amount', 'paid_on', 'mode', 'ref', 'kind', 'note', 'expense_id', 'created_at', 'updated_at', 'updated_by'],
+  // Investments (FoInvest.gs): founder-only, never in the shared data bundle
+  InvHoldings: ['holding_id', 'kind', 'name', 'symbol', 'fund_code', 'units', 'avg_cost', 'invested', 'start_date', 'rate_pct', 'compounding', 'maturity_date', 'monthly_amount', 'current_value', 'value_date', 'purity', 'account', 'goal', 'notes', 'status', 'created_at', 'updated_at', 'updated_by'],
+  InvTxns: ['txn_id', 'holding_id', 'date', 'type', 'units', 'price', 'amount', 'note', 'created_at', 'created_by'],
+  InvAccounts: ['account_id', 'name', 'strategy', 'starting_cash', 'benchmark', 'risk_json', 'created_at', 'status', 'notes'],
+  InvOrders: ['order_id', 'account_id', 'symbol', 'side', 'type', 'qty', 'limit_price', 'trigger_price', 'trigger_dir', 'target', 'stop', 'amount', 'sip_day', 'validity', 'status', 'filled_qty', 'note', 'origin', 'parent', 'oco_with', 'last_sip', 'placed_at', 'updated_at', 'placed_by'],
+  InvFills: ['fill_id', 'order_id', 'account_id', 'symbol', 'side', 'qty', 'price', 'date', 'charges', 'charges_json', 'slippage_bps', 'origin', 'created_at'],
+  InvWatch: ['symbol', 'kind', 'note', 'added_at'],
+  InvIpos: ['ipo_id', 'name', 'type', 'status', 'open', 'close', 'allotment', 'listing', 'price_low', 'price_high', 'lot', 'issue_size_cr', 'fresh_cr', 'ofs_cr', 'sub_qib', 'sub_bnii', 'sub_snii', 'sub_nii', 'sub_retail', 'sub_emp', 'sub_total', 'sub_history', 'gmp_json', 'pe_post', 'peer_pe', 'rev_cagr', 'pat_cagr', 'roe', 'roce', 'de', 'anchor_cr', 'anchor_names', 'lead_managers', 'red_flags', 'listing_open', 'listing_close', 'notes', 'updated_at', 'updated_by'],
+  InvDaily: ['date', 'light', 'regime', 'top5', 'gold', 'silver', 'paper_equity', 'open_ipos', 'created_at'],
+  InvSettings: ['key', 'value', 'updated_at'],
   EmployeeReviews: ['review_id', 'emp_id', 'date', 'kind', 'rating', 'note', 'created_at', 'updated_at', 'updated_by'],
   CrmMessages: ['msg_id', 'at', 'channel', 'direction', 'contact_type', 'contact_id', 'name', 'to', 'subject', 'body', 'status', 'template', 'related', 'by', 'created_at', 'updated_at', 'updated_by'],
   CrmLeads: ['lead_id', 'name', 'phone', 'email', 'source', 'villa', 'checkin', 'nights', 'guests', 'stage', 'value_inr', 'next_followup', 'lost_reason', 'notes', 'created_at', 'updated_at', 'updated_by'],
@@ -429,6 +439,11 @@ function foRoutes_() {
     'f.crm.task.save': [foCrmTaskSave_, 'manager'], 'f.crm.task.delete': [(b, u) => foDelete_('CrmTasks', 'task_id', b.task_id, u), 'manager'],
     'f.crm.template.save': [foCrmTemplateSave_, 'manager'], 'f.crm.template.delete': [(b, u) => foDelete_('CrmTemplates', 'template_id', b.template_id, u), 'manager'], 'f.brain.ask': [foBrainAsk_, 'manager'], 'f.brain.act': [foBrainAct_, 'manager'], 'f.brain.status': [() => ({ result: foBrainStatus_() }), 'viewer'],
     // AP Channel Manager (FoChannels.gs)
+    'f.inv.bundle': [b => foInvBundle_(b), 'founder'], 'f.inv.holding.save': [foInvHoldingSave_, 'founder'], 'f.inv.holding.delete': [(b, u) => foDelete_('InvHoldings', 'holding_id', b.holding_id, u), 'founder'],
+    'f.inv.txn.save': [foInvTxnSave_, 'founder'], 'f.inv.txn.delete': [(b, u) => foDelete_('InvTxns', 'txn_id', b.txn_id, u), 'founder'],
+    'f.inv.account.save': [foInvAccountSave_, 'founder'], 'f.inv.order.place': [foInvOrderPlace_, 'founder'], 'f.inv.order.cancel': [foInvOrderCancel_, 'founder'],
+    'f.inv.watch.add': [foInvWatchAdd_, 'founder'], 'f.inv.watch.remove': [foInvWatchRemove_, 'founder'], 'f.inv.ipo.save': [foInvIpoSave_, 'founder'], 'f.inv.ipo.delete': [(b, u) => foDelete_('InvIpos', 'ipo_id', b.ipo_id, u), 'founder'],
+    'f.inv.profile.save': [foInvProfileSave_, 'founder'], 'f.inv.key': [foInvKeyCreate_, 'founder'], 'f.inv.key.revoke': [foInvKeyRevoke_, 'founder'],
     'f.cm.listings.add': [foCmListingsAdd_, 'founder'], 'f.cm.listings.update': [foCmListingsUpdate_, 'founder'], 'f.cm.listings.delete': [(b, u) => foDelete_('Listings', 'listing_id', b.listing_id, u), 'founder'],
     'f.cm.calendar': [b => foCmCalendar_(b), 'viewer'], 'f.cm.ratedesk': [b => foCmRatedesk_(b), 'viewer'],
     'f.cm.jobs.propose': [foCmJobsPropose_, 'founder'], 'f.cm.jobs.approve': [foCmJobsApprove_, 'founder'], 'f.cm.jobs.cancel': [foCmJobsCancel_, 'founder'], 'f.cm.jobs.retry': [foCmJobsRetry_, 'founder'],
@@ -457,6 +472,7 @@ function foApi_(b) {
     if (a === 'f.login.verify') return foLoginVerify_(b);
     if (a === 'f.login.resend') return foLoginResend_(b);
     if (b.agent_key && !b.token) return foAgentApi_(b);   // channel agent (FoChannels.gs): jobs and channel reads only, never guests
+    if (b.markets_key && !b.token && typeof foMarketsApi_ === 'function') return foMarketsApi_(b);   // markets engine (FoInvest.gs): paper orders + snapshot only, never real holdings
     if (b.key && !b.token) return foMachineApi_(b);   // automation key (FoMarket.gs): a few machine-only actions, no guest data
     const sess = foAuth_(b.token);
     if (!sess.ok) return { ok: false, auth: false, error: 'Your session has ended. Please sign in again.' };

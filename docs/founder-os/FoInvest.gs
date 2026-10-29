@@ -1,0 +1,264 @@
+/**
+ * AP Villas Founder OS · Investments (Founder OS Markets, free build). Founder-only: nothing here is in the shared data bundle.
+ * The analytics run in the founder's PRIVATE repo ap-markets (GitHub Actions, free data: NSE archives, IBJA, AMFI, FRED). It talks to
+ * this file with its own "markets" key, which can reach only FO_MK_ROUTES: pull open paper orders + the list of symbols to price
+ * (never the quantities or values of real holdings), push fills and the daily snapshot. Real holdings are valued here, inside Google.
+ * Paper only: there is no code path that places a real order. Labels are "model score" / "paper verdict", never "buy" or "tip".
+ */
+const FO_INV = {
+  KINDS: ['stock', 'etf', 'mf', 'gold', 'silver', 'sgb', 'fd', 'rd', 'ppf', 'epf', 'nps', 'bond', 'cash', 'property', 'other'],
+  ORDER_TYPES: ['market', 'limit', 'sl', 'sl-m', 'gtt', 'sip'],
+  RISK: { max_stock_pct: 10, max_sector_pct: 25, max_bullion_pct: 30, max_sme_pct: 20, riskoff_gross_pct: 60, dd_pause_pct: 15 },
+  DISCLAIMER: 'Educational model output for paper trading. Not investment advice.',
+  SNAP_KEEP_DAYS: 30,
+};
+
+// ---------------------------------------------------------------- key ----------------
+function foInvKeyCreate_(b, user) {
+  const key = 'apm_' + foRandom_() + foRandom_(), p = PropertiesService.getScriptProperties();
+  p.setProperty('FO_MARKETS_KEY', foHmac_('markets:' + key)); p.setProperty('FO_MARKETS_META', JSON.stringify({ created_at: foNow_(), created_by: user.email }));
+  foAudit_(user.email, 'markets_key_created', 'previous markets key (if any) revoked', 'ok');
+  return { key, note: 'Shown once. Add it as the GitHub secret FO_MARKETS_KEY in the private repo ap-markets; nowhere else.' };
+}
+function foInvKeyRevoke_(b, user) { const p = PropertiesService.getScriptProperties(); p.deleteProperty('FO_MARKETS_KEY'); p.deleteProperty('FO_MARKETS_META'); foAudit_(user.email, 'markets_key_revoked', '', 'ok'); return {}; }
+const FO_MK_ROUTES = {
+  'f.mk.ping': b => ({ pong: true, today: foToday_() }),
+  'f.mk.pull': b => foMkPull_(b), 'f.mk.report': b => foMkReport_(b), 'f.mk.snapshot': b => foMkSnapshot_(b), 'f.mk.bullion': b => foMkBullion_(b),
+};
+/** Entry point for requests carrying markets_key (FoCore.gs foApi_). */
+function foMarketsApi_(b) {
+  const p = PropertiesService.getScriptProperties(), stored = p.getProperty('FO_MARKETS_KEY');
+  if (foKeyLocked_('markets')) return { ok: false, auth: false, error: 'Markets key not accepted.' };
+  if (!stored || String(b.markets_key).length < 40 || !foSafeEqual_(foHmac_('markets:' + b.markets_key), stored)) { foKeyFail_('markets', 'bad markets key'); return { ok: false, auth: false, error: 'Markets key not accepted.' }; }
+  if (foCounter_('FO_MK_CALLS', 3600) > 120) return { ok: false, error: 'Too many markets calls this hour.' };
+  const fn = FO_MK_ROUTES[String(b.action || '')]; if (!fn) return { ok: false, error: 'Not allowed for the markets key.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try { const out = fn(b) || {}; foFlush_(); if (out.ok === undefined) out.ok = true; if (b.action !== 'f.mk.ping') foAudit_('markets', b.action, JSON.stringify(out.summary || '').slice(0, 300), 'ok'); delete out.summary; return out; }
+  finally { lock.releaseLock(); }
+}
+
+// ---------------------------------------------------------------- helpers ----------------
+const foInvNum_ = v => { const n = Number(String(v == null ? '' : v).replace(/[₹,\s]/g, '')); return isFinite(n) ? n : NaN; };
+const foInvSym_ = v => String(v || '').toUpperCase().replace(/[^A-Z0-9&_-]/g, '').slice(0, 20);
+function foInvClean_(r) { const o = Object.assign({}, r); delete o._row; return o; }
+function foInvSettings_() { const o = {}; foRows_('InvSettings').forEach(r => { o[r.key] = r.value; }); return o; }
+function foInvSettingSet_(key, value) {
+  const row = foRows_('InvSettings').find(r => r.key === key), rec = { key, value: String(value == null ? '' : value).slice(0, 40000), updated_at: foNow_() };
+  if (row) foUpdate_('InvSettings', row._row, rec); else foAppend_('InvSettings', rec);
+}
+function foInvFolder_() {
+  const parent = foReportsFolder_(), it = parent.getFoldersByName('Markets');
+  return it.hasNext() ? it.next() : parent.createFolder('Markets');
+}
+/** Latest snapshot from the markets engine (parsed), or null. */
+function foInvSnapshot_() {
+  const id = PropertiesService.getScriptProperties().getProperty('FO_MK_SNAP'); if (!id) return null;
+  try { return JSON.parse(DriveApp.getFileById(id).getBlob().getDataAsString()); } catch (e) { return null; }
+}
+function foInvAlert_(key, subject, text) {
+  try {
+    const c = CacheService.getScriptCache(), k = 'FO_INV_AL_' + key; if (c.get(k)) return; c.put(k, '1', 20 * 3600);
+    MailApp.sendEmail({ to: PropertiesService.getScriptProperties().getProperty('FO_FOUNDER_EMAIL'), subject: 'Founder OS Markets · ' + subject, body: text + '\n\n' + FO_INV.DISCLAIMER + '\nhttps://www.apvillasandresorts.in/founder/#/investments' });
+  } catch (e) {}
+}
+function foInvEnsureAutopilot_() {
+  if (foRows_('InvAccounts').some(a => a.strategy === 'autopilot')) return;
+  foAppend_('InvAccounts', { account_id: 'PA-AUTOPILOT', name: 'Model Autopilot', strategy: 'autopilot', starting_cash: 1000000, benchmark: 'Nifty 500', risk_json: '{}', created_at: foToday_(), status: 'active', notes: 'Trades the model top 10 every week, mechanically: the honest scorecard of the model.' });
+}
+
+// ---------------------------------------------------------------- engine side (markets key) ----------------
+/** What the engine needs: paper accounts/orders/fills, symbols to price and fund codes. Never real quantities or values. */
+function foMkPull_(b) {
+  foInvEnsureAutopilot_();
+  const H = foRows_('InvHoldings').filter(h => h.status !== 'closed'), W = foRows_('InvWatch'), O = foRows_('InvOrders'), F = foRows_('InvFills');
+  const syms = new Set(), funds = new Set();
+  H.forEach(h => { if ((h.kind === 'stock' || h.kind === 'etf' || h.kind === 'sgb') && h.symbol) syms.add(h.symbol); if (h.kind === 'mf' && h.fund_code) funds.add(String(h.fund_code)); });
+  W.forEach(w => { if (w.kind === 'mf') funds.add(String(w.symbol)); else syms.add(w.symbol); });
+  O.forEach(o => syms.add(o.symbol)); F.forEach(f => syms.add(f.symbol));
+  return {
+    accounts: foRows_('InvAccounts').filter(a => a.status !== 'closed').map(a => ({ account_id: a.account_id, name: a.name, strategy: a.strategy, starting_cash: Number(a.starting_cash) || 1000000, benchmark: a.benchmark, risk_json: a.risk_json || '{}', created_at: a.created_at })),
+    orders: O.filter(o => o.status === 'open' || o.status === 'partial').map(o => { const x = foInvClean_(o); ['qty', 'limit_price', 'trigger_price', 'target', 'stop', 'amount', 'sip_day', 'filled_qty'].forEach(k => { x[k] = x[k] === '' ? null : Number(x[k]); }); return x; }),
+    fills: F.map(f => ({ fill_id: f.fill_id, order_id: f.order_id, account_id: f.account_id, symbol: f.symbol, side: f.side, qty: Number(f.qty), price: Number(f.price), date: f.date, charges: Number(f.charges) || 0 })),
+    symbols: Array.from(syms).filter(Boolean), fund_codes: Array.from(funds).filter(Boolean),
+  };
+}
+function foMkReport_(b) {
+  foInvEnsureAutopilot_();
+  const have = new Set(foRows_('InvFills').map(f => f.fill_id)); let nf = 0, nu = 0, no = 0;
+  (b.fills || []).slice(0, 500).forEach(f => {
+    if (!f.fill_id || have.has(f.fill_id)) return; have.add(f.fill_id);
+    foAppend_('InvFills', { fill_id: f.fill_id, order_id: f.order_id, account_id: f.account_id, symbol: foInvSym_(f.symbol), side: f.side === 'sell' ? 'sell' : 'buy', qty: Number(f.qty), price: Number(f.price), date: f.date, charges: Number(f.charges) || 0, charges_json: String(f.charges_json || '').slice(0, 900), slippage_bps: f.slippage_bps, origin: f.origin || 'paper', created_at: foNow_() }); nf++;
+  });
+  const byId = {}; foRows_('InvOrders').forEach(o => { byId[o.order_id] = o; });
+  const touch = (o, patch) => { const n = Object.assign({}, o, patch, { updated_at: foNow_() }); foUpdate_('InvOrders', o._row, n); byId[o.order_id] = Object.assign(n, { _row: o._row }); nu++; };
+  (b.updates || []).slice(0, 500).forEach(u => {
+    const o = byId[u.order_id]; if (!o || o.status === 'cancelled') return;
+    const patch = { status: ['open', 'partial', 'filled', 'rejected', 'expired'].indexOf(u.status) >= 0 ? u.status : o.status, note: String(u.note || o.note || '').slice(0, 300) };
+    if (u.filled_qty != null) patch.filled_qty = u.filled_qty;
+    if (u.convert_to) patch.type = u.convert_to;
+    if (u.placed_at) patch.placed_at = u.placed_at;
+    if (u.last_sip) patch.last_sip = u.last_sip;
+    touch(o, patch);
+    (u.children || []).forEach(k => { if (byId[k.order_id]) return; foAppend_('InvOrders', Object.assign({ status: 'open', filled_qty: 0, origin: 'bracket', note: '', updated_at: foNow_(), placed_by: 'engine' }, k)); byId[k.order_id] = k; no++; });
+    if (u.cancel && byId[u.cancel] && byId[u.cancel]._row && (byId[u.cancel].status === 'open' || byId[u.cancel].status === 'partial')) touch(byId[u.cancel], { status: 'cancelled', note: 'Other leg of the bracket filled.' });
+  });
+  (b.new_orders || []).slice(0, 60).forEach(o => {
+    const acc = foRows_('InvAccounts').find(a => a.account_id === o.account_id && a.strategy === 'autopilot'); if (!acc) return;   // the engine may only trade the autopilot account
+    foAppend_('InvOrders', { order_id: foId_('PO'), account_id: o.account_id, symbol: foInvSym_(o.symbol), side: o.side === 'sell' ? 'sell' : 'buy', type: 'market', qty: Math.max(1, Math.floor(Number(o.qty) || 0)), validity: 'day', status: 'open', filled_qty: 0, note: String(o.note || '').slice(0, 200), origin: 'autopilot', placed_at: foNow_(), updated_at: foNow_(), placed_by: 'engine' }); no++;
+  });
+  return { fills: nf, updates: nu, orders: no, summary: { fills: nf, updates: nu, orders: no } };
+}
+function foMkSnapshot_(b) {
+  const s = b.snapshot; if (!s || typeof s !== 'object' || !s.asof) return { ok: false, error: 'snapshot missing' };
+  foInvEnsureAutopilot_();
+  const json = JSON.stringify(s); if (json.length > 8e6) return { ok: false, error: 'snapshot too large' };
+  const p = PropertiesService.getScriptProperties(), prev = foInvSnapshot_();
+  const file = foInvFolder_().createFile(Utilities.newBlob(json, 'application/json', 'markets-' + s.asof + '.json'));
+  p.setProperty('FO_MK_SNAP', file.getId());
+  // keep 30 days of snapshots (the archive of past calls)
+  try { const it = foInvFolder_().getFiles(), cut = Date.now() - FO_INV.SNAP_KEEP_DAYS * 86400000; while (it.hasNext()) { const f = it.next(); if (f.getDateCreated().getTime() < cut) f.setTrashed(true); } } catch (e) {}
+  // the five headline numbers, one row per day (morning view + alerts)
+  const top5 = (s.top || []).slice(0, 5).map(t => t.symbol).join(' '), g = s.bullion && s.bullion.today && s.bullion.today.gold999, sv = s.bullion && s.bullion.silver999 && s.bullion.silver999.last;
+  const auto = s.paper && s.paper['PA-AUTOPILOT'], eq = auto && auto.equity;
+  const ipos = foRows_('InvIpos').filter(i => i.status === 'open' || i.status === 'upcoming').length;
+  const row = foRows_('InvDaily').find(r => r.date === s.asof), rec = { date: s.asof, light: s.model && s.model.light, regime: s.regime && s.regime.label, top5, gold: g || '', silver: sv || '', paper_equity: eq || '', open_ipos: ipos, created_at: foNow_() };
+  if (row) foUpdate_('InvDaily', row._row, rec); else foAppend_('InvDaily', rec);
+  // alerts (spec 16): model health red, data-quality block, drift, champion change, paper drawdown stop, bullion move > 2 %
+  if (s.dq && !s.dq.ok) foInvAlert_('dq_' + s.asof, 'data-quality block', 'Scores were not published for ' + s.asof + ': ' + (s.dq.issues || []).join(' '));
+  if (s.model && s.model.light === 'red' && (!prev || !prev.model || prev.model.light !== 'red')) foInvAlert_('red_' + s.asof, 'model health is red', s.model.note || '');
+  if (s.model && s.model.drift_alarm && !(prev && prev.model && prev.model.drift_alarm)) foInvAlert_('drift_' + s.asof, 'drift alarm', 'Feature or concept drift detected; a retrain is scheduled.');
+  const pc = prev && prev.model && prev.model.champion && prev.model.champion.version, nc = s.model && s.model.champion && s.model.champion.version;
+  if (pc && nc && pc.split('@')[0] !== nc.split('@')[0]) foInvAlert_('champ_' + nc, 'new champion model', 'The challenger ' + nc + ' passed every promotion rule and replaced ' + pc + '. One click in Model health rolls it back.');
+  Object.keys(s.paper || {}).forEach(id => { const a = s.paper[id]; if (a && a.peak && a.equity && a.equity < a.peak * (1 - FO_INV.RISK.dd_pause_pct / 100)) foInvAlert_('dd_' + id + '_' + s.asof, 'paper account paused', id + ' is more than ' + FO_INV.RISK.dd_pause_pct + '% below its peak: new entries pause until you review it.'); });
+  ['gold999', 'silver999'].forEach(m => { const x = s.bullion && s.bullion[m], h = x && x.history; if (h && h.length > 1) { const ch = h[h.length - 1][1] / h[h.length - 2][1] - 1; if (Math.abs(ch) > 0.02) foInvAlert_(m + s.asof, (m === 'gold999' ? 'gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '%', 'IBJA ' + (m === 'gold999' ? '999 gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '% on ' + h[h.length - 1][0] + '.'); } });
+  return { stored: true, summary: { asof: s.asof, kb: Math.round(json.length / 1024) } };
+}
+function foMkBullion_(b) {
+  const r = b.rates || {}; if (!r.gold999) return { ok: false, error: 'rates missing' };
+  foInvSettingSet_('bullion_live', JSON.stringify({ date: b.date, session: b.session, rates: r, at: foNow_() }));
+  return { summary: { session: b.session } };
+}
+
+// ---------------------------------------------------------------- portal (founder) ----------------
+function foInvBundle_() {
+  const S = foInvSettings_(), snap = foInvSnapshot_(), meta = PropertiesService.getScriptProperties().getProperty('FO_MARKETS_META');
+  return {
+    holdings: foRows_('InvHoldings').map(foInvClean_), txns: foRows_('InvTxns').map(foInvClean_), accounts: foRows_('InvAccounts').map(foInvClean_),
+    orders: foRows_('InvOrders').slice(-400).map(foInvClean_), fills: foRows_('InvFills').slice(-800).map(foInvClean_), watch: foRows_('InvWatch').map(foInvClean_),
+    ipos: foRows_('InvIpos').map(foInvClean_), daily: foRows_('InvDaily').slice(-90).map(foInvClean_),
+    profile: S.profile ? JSON.parse(S.profile) : null, goals: S.goals ? JSON.parse(S.goals) : [], bullion_live: S.bullion_live ? JSON.parse(S.bullion_live) : null,
+    key: meta ? JSON.parse(meta) : null, snapshot: snap, risk_defaults: FO_INV.RISK, disclaimer: FO_INV.DISCLAIMER,
+  };
+}
+function foInvHoldingSave_(b, user) {
+  const h = b.holding || {}, kind = String(h.kind || '');
+  if (FO_INV.KINDS.indexOf(kind) < 0) return { ok: false, error: 'Pick what kind of investment this is.' };
+  const name = String(h.name || '').trim().slice(0, 120); if (!name) return { ok: false, error: 'Give it a name.' };
+  const rec = {
+    kind, name, symbol: foInvSym_(h.symbol), fund_code: String(h.fund_code || '').replace(/\D/g, '').slice(0, 10), units: h.units === '' || h.units == null ? '' : foInvNum_(h.units),
+    avg_cost: h.avg_cost === '' || h.avg_cost == null ? '' : foInvNum_(h.avg_cost), invested: h.invested === '' || h.invested == null ? '' : foInvNum_(h.invested),
+    start_date: /^\d{4}-\d{2}-\d{2}$/.test(h.start_date || '') ? h.start_date : '', rate_pct: h.rate_pct === '' || h.rate_pct == null ? '' : foInvNum_(h.rate_pct),
+    compounding: ['yearly', 'half-yearly', 'quarterly', 'monthly', 'simple'].indexOf(h.compounding) >= 0 ? h.compounding : '',
+    maturity_date: /^\d{4}-\d{2}-\d{2}$/.test(h.maturity_date || '') ? h.maturity_date : '', monthly_amount: h.monthly_amount === '' || h.monthly_amount == null ? '' : foInvNum_(h.monthly_amount),
+    current_value: h.current_value === '' || h.current_value == null ? '' : foInvNum_(h.current_value), value_date: /^\d{4}-\d{2}-\d{2}$/.test(h.value_date || '') ? h.value_date : '',
+    purity: String(h.purity || '').slice(0, 6), account: String(h.account || '').slice(0, 60), goal: String(h.goal || '').slice(0, 60), notes: String(h.notes || '').slice(0, 500),
+    status: h.status === 'closed' ? 'closed' : 'active',
+  };
+  for (const k of ['units', 'avg_cost', 'invested', 'rate_pct', 'current_value', 'monthly_amount']) if (rec[k] !== '' && (!isFinite(rec[k]) || rec[k] < 0)) return { ok: false, error: 'Check the number in "' + k.replace('_', ' ') + '".' };
+  if ((kind === 'stock' || kind === 'etf') && !rec.symbol) return { ok: false, error: 'Add the NSE symbol (for example RELIANCE or GOLDBEES).' };
+  if (kind === 'mf' && !rec.fund_code) return { ok: false, error: 'Add the AMFI scheme code (6 digits, shown on your statement or on amfiindia.com).' };
+  if (['stock', 'etf', 'mf', 'gold', 'silver', 'sgb'].indexOf(kind) >= 0 && !(rec.units > 0)) return { ok: false, error: kind === 'gold' || kind === 'silver' ? 'Add the weight in grams.' : 'Add how many units you hold.' };
+  if (['fd', 'rd', 'ppf', 'epf', 'nps', 'bond', 'cash', 'property', 'other'].indexOf(kind) >= 0 && !(rec.invested > 0) && !(rec.current_value > 0)) return { ok: false, error: 'Add the amount invested or its current value.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const row = h.holding_id && foRows_('InvHoldings').find(x => x.holding_id === h.holding_id);
+    if (row) { foUpdate_('InvHoldings', row._row, Object.assign({}, row, rec, { updated_at: foNow_(), updated_by: user.email })); foAudit_(user.email, 'inv_holding_update', row.holding_id, 'ok'); return { holding_id: row.holding_id }; }
+    const id = foId_('IH'); foAppend_('InvHoldings', Object.assign(rec, { holding_id: id, created_at: foNow_(), updated_at: foNow_(), updated_by: user.email }));
+    foAudit_(user.email, 'inv_holding_add', id + ' ' + kind, 'ok'); return { holding_id: id };
+  } finally { lock.releaseLock(); }
+}
+function foInvTxnSave_(b, user) {
+  const t = b.txn || {}, h = foRows_('InvHoldings').find(x => x.holding_id === t.holding_id); if (!h) return { ok: false, error: 'Holding not found.' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t.date || '')) return { ok: false, error: 'Pick the date.' };
+  const type = ['buy', 'sell', 'deposit', 'withdrawal', 'dividend', 'interest'].indexOf(t.type) >= 0 ? t.type : null; if (!type) return { ok: false, error: 'Pick the type.' };
+  const amount = foInvNum_(t.amount); if (!(amount > 0)) return { ok: false, error: 'Add the amount in ₹.' };
+  const id = foId_('IT');
+  foAppend_('InvTxns', { txn_id: id, holding_id: h.holding_id, date: t.date, type, units: t.units === '' || t.units == null ? '' : foInvNum_(t.units), price: t.price === '' || t.price == null ? '' : foInvNum_(t.price), amount, note: String(t.note || '').slice(0, 200), created_at: foNow_(), created_by: user.email });
+  return { txn_id: id };
+}
+function foInvAccountSave_(b, user) {
+  const a = b.account || {}, name = String(a.name || '').trim().slice(0, 60); if (!name) return { ok: false, error: 'Name the paper account.' };
+  const cash = foInvNum_(a.starting_cash || 1000000); if (!(cash >= 10000 && cash <= 1e9)) return { ok: false, error: 'Starting cash must be between ₹10,000 and ₹100 crore.' };
+  const risk = {}; Object.keys(FO_INV.RISK).forEach(k => { const v = foInvNum_(a.risk && a.risk[k]); if (isFinite(v) && v > 0 && v <= 100) risk[k] = v; });
+  const strategy = ['manual', 'model_top10', 'ipo', 'bullion', 'custom'].indexOf(a.strategy) >= 0 ? a.strategy : 'manual';
+  const row = a.account_id && foRows_('InvAccounts').find(x => x.account_id === a.account_id);
+  if (row) { if (row.strategy === 'autopilot') return { ok: false, error: 'The Model Autopilot account is run by the model.' }; foUpdate_('InvAccounts', row._row, Object.assign({}, row, { name, risk_json: JSON.stringify(risk), notes: String(a.notes || '').slice(0, 300), status: a.status === 'closed' ? 'closed' : 'active' })); return { account_id: row.account_id }; }
+  const id = foId_('PA'); foAppend_('InvAccounts', { account_id: id, name, strategy, starting_cash: cash, benchmark: 'Nifty 500', risk_json: JSON.stringify(risk), created_at: foToday_(), status: 'active', notes: String(a.notes || '').slice(0, 300) });
+  foAudit_(user.email, 'inv_paper_account', id, 'ok'); return { account_id: id };
+}
+/** Pre-trade risk check with the last marked state of the account (the engine re-checks at the fill). */
+function foInvRiskCheck_(acc, o, snap) {
+  const st = snap && snap.paper && snap.paper[acc.account_id]; if (!st || !st.equity || o.side !== 'buy') return null;
+  let risk = {}; try { risk = JSON.parse(acc.risk_json || '{}'); } catch (e) {}
+  const R = Object.assign({}, FO_INV.RISK, risk), eq = st.equity, px = (snap.prices[o.symbol] || {}).close || o.limit_price || 0, val = (o.type === 'sip' ? o.amount : o.qty * px) || 0;
+  if (st.peak && eq < st.peak * (1 - R.dd_pause_pct / 100)) return 'Paused: this account is more than ' + R.dd_pause_pct + '% below its peak. Review it before new entries.';
+  const pos = st.positions || [], cur = pos.filter(p => p.symbol === o.symbol).reduce((a, p) => a + (p.value || 0), 0);
+  if ((cur + val) / eq > R.max_stock_pct / 100 + 1e-9) return 'Over the ' + R.max_stock_pct + '% per-stock limit (this order makes it ' + Math.round((cur + val) / eq * 100) + '%).';
+  const m = snap.prices[o.symbol] || {};
+  if (m.kind === 'stock' && m.sector) { const sv = pos.filter(p => p.sector === m.sector && p.kind === 'stock').reduce((a, p) => a + (p.value || 0), 0); if ((sv + val) / eq > R.max_sector_pct / 100 + 1e-9) return 'Over the ' + R.max_sector_pct + '% per-sector limit (' + m.sector + ').'; }
+  if (m.kind === 'gold' || m.kind === 'silver') { const bv = pos.filter(p => p.kind === 'gold' || p.kind === 'silver').reduce((a, p) => a + (p.value || 0), 0); if ((bv + val) / eq > R.max_bullion_pct / 100 + 1e-9) return 'Over the ' + R.max_bullion_pct + '% gold + silver limit.'; }
+  if (snap.regime && snap.regime.label === 'Risk-off') { const gross = pos.reduce((a, p) => a + (p.value || 0), 0); if ((gross + val) / eq > R.riskoff_gross_pct / 100 + 1e-9) return 'Risk-off market: gross exposure is capped at ' + R.riskoff_gross_pct + '%.'; }
+  return null;
+}
+function foInvOrderPlace_(b, user) {
+  const o = b.order || {}, acc = foRows_('InvAccounts').find(a => a.account_id === o.account_id && a.status !== 'closed');
+  if (!acc) return { ok: false, error: 'Pick a paper account.' };
+  if (acc.strategy === 'autopilot') return { ok: false, error: 'The Model Autopilot account trades on its own. Use another paper account.' };
+  const sym = foInvSym_(o.symbol), type = FO_INV.ORDER_TYPES.indexOf(o.type) >= 0 ? o.type : null, side = o.side === 'sell' ? 'sell' : o.side === 'buy' ? 'buy' : null;
+  if (!sym || !type || !side) return { ok: false, error: 'Symbol, side and order type are needed.' };
+  const snap = foInvSnapshot_(); if (snap && snap.prices && !snap.prices[sym]) return { ok: false, error: sym + ' is not in the price data. Add it to your watchlist first; it is priced from the next daily run.' };
+  const rec = { order_id: foId_('PO'), account_id: acc.account_id, symbol: sym, side, type, qty: type === 'sip' ? '' : Math.floor(foInvNum_(o.qty)), limit_price: '', trigger_price: '', trigger_dir: '', target: '', stop: '', amount: '', sip_day: '', validity: o.validity === 'gtc' ? 'gtc' : 'day', status: 'open', filled_qty: 0, note: '', origin: 'paper', parent: '', oco_with: '', last_sip: '', placed_at: foNow_(), updated_at: foNow_(), placed_by: user.email };
+  if (type !== 'sip' && !(rec.qty >= 1)) return { ok: false, error: 'Quantity must be at least 1.' };
+  if (type === 'limit' || type === 'sl') { rec.limit_price = foInvNum_(o.limit_price); if (!(rec.limit_price > 0)) return { ok: false, error: 'Add the limit price.' }; }
+  if (type === 'sl' || type === 'sl-m' || type === 'gtt') { rec.trigger_price = foInvNum_(o.trigger_price); if (!(rec.trigger_price > 0)) return { ok: false, error: 'Add the trigger price.' }; }
+  if (type === 'gtt') { rec.validity = 'gtc'; rec.trigger_dir = o.trigger_dir === 'above' ? 'above' : o.trigger_dir === 'below' ? 'below' : ''; if (o.limit_price) rec.limit_price = foInvNum_(o.limit_price); }
+  if (type === 'sip') { rec.amount = foInvNum_(o.amount); rec.sip_day = Math.min(28, Math.max(1, Math.floor(foInvNum_(o.sip_day) || 1))); rec.validity = 'gtc'; if (!(rec.amount >= 100) || side !== 'buy') return { ok: false, error: 'A SIP buys a fixed amount (₹100 or more) every month.' }; }
+  if (o.target || o.stop) { if (side !== 'buy') return { ok: false, error: 'Bracket targets and stops are for buy orders.' }; rec.target = o.target ? foInvNum_(o.target) : ''; rec.stop = o.stop ? foInvNum_(o.stop) : ''; const px = ((snap && snap.prices[sym]) || {}).close; if (px && ((rec.target && rec.target <= px) || (rec.stop && rec.stop >= px))) return { ok: false, error: 'The target must be above and the stop below the last close (' + px + ').' }; }
+  const why = foInvRiskCheck_(acc, rec, snap); if (why) return { ok: false, error: why };
+  foAppend_('InvOrders', rec); foAudit_(user.email, 'inv_paper_order', rec.order_id + ' ' + side + ' ' + sym, 'ok');
+  return { order_id: rec.order_id, note: 'Paper order queued: it fills at the next trading day\'s open, from real NSE prices, after the evening run.' };
+}
+function foInvOrderCancel_(b, user) {
+  const o = foRows_('InvOrders').find(x => x.order_id === b.order_id); if (!o) return { ok: false, error: 'Order not found.' };
+  if (o.status !== 'open' && o.status !== 'partial') return { ok: false, error: 'Only open orders can be cancelled.' };
+  foUpdate_('InvOrders', o._row, Object.assign({}, o, { status: 'cancelled', note: 'Cancelled by you.', updated_at: foNow_() })); return {};
+}
+function foInvWatchAdd_(b, user) {
+  const kind = b.kind === 'mf' ? 'mf' : 'symbol', sym = kind === 'mf' ? String(b.symbol || '').replace(/\D/g, '').slice(0, 10) : foInvSym_(b.symbol);
+  if (!sym) return { ok: false, error: kind === 'mf' ? 'Add the AMFI scheme code.' : 'Add the NSE symbol.' };
+  if (foRows_('InvWatch').some(w => w.symbol === sym)) return { added: false };
+  foAppend_('InvWatch', { symbol: sym, kind, note: String(b.note || '').slice(0, 120), added_at: foNow_() }); return { added: true };
+}
+function foInvWatchRemove_(b) { const w = foRows_('InvWatch').find(x => x.symbol === b.symbol); if (w) foDeleteRow_('InvWatch', w._row); return {}; }
+/** IPO board entries (typed in from the RHP, exchange and GMP pages: the free plan has no licensed IPO feed). GMP is kept per source with a timestamp. */
+function foInvIpoSave_(b, user) {
+  const i = b.ipo || {}, name = String(i.name || '').trim().slice(0, 100); if (!name) return { ok: false, error: 'Name the IPO.' };
+  const nums = ['price_low', 'price_high', 'lot', 'issue_size_cr', 'fresh_cr', 'ofs_cr', 'sub_qib', 'sub_bnii', 'sub_snii', 'sub_nii', 'sub_retail', 'sub_emp', 'sub_total', 'pe_post', 'peer_pe', 'rev_cagr', 'pat_cagr', 'roe', 'roce', 'de', 'anchor_cr', 'listing_open', 'listing_close'];
+  const rec = { name, type: i.type === 'sme' ? 'sme' : 'mainboard', status: ['upcoming', 'open', 'closed', 'allotted', 'listed'].indexOf(i.status) >= 0 ? i.status : 'upcoming' };
+  ['open', 'close', 'allotment', 'listing'].forEach(k => { rec[k] = /^\d{4}-\d{2}-\d{2}$/.test(i[k] || '') ? i[k] : ''; });
+  for (const k of nums) { const v = i[k] === '' || i[k] == null ? '' : foInvNum_(i[k]); if (v !== '' && !isFinite(v)) return { ok: false, error: 'Check the number in ' + k.replace(/_/g, ' ') + '.' }; rec[k] = v; }
+  let gmp = []; try { gmp = (Array.isArray(i.gmp) ? i.gmp : JSON.parse(i.gmp_json || '[]')).filter(g => g && isFinite(Number(g.gmp)) && g.source).slice(-200).map(g => ({ at: String(g.at || foNow_()).slice(0, 25), source: String(g.source).slice(0, 60), gmp: Number(g.gmp), kostak: g.kostak === '' || g.kostak == null ? null : Number(g.kostak) })); } catch (e) {}
+  rec.gmp_json = JSON.stringify(gmp); rec.red_flags = String(i.red_flags || '').slice(0, 400); rec.anchor_names = String(i.anchor_names || '').slice(0, 300); rec.lead_managers = String(i.lead_managers || '').slice(0, 200); rec.notes = String(i.notes || '').slice(0, 800);
+  rec.sub_history = String(i.sub_history || '').slice(0, 4000);
+  const row = i.ipo_id && foRows_('InvIpos').find(x => x.ipo_id === i.ipo_id);
+  if (row) { foUpdate_('InvIpos', row._row, Object.assign({}, row, rec, { updated_at: foNow_(), updated_by: user.email })); return { ipo_id: row.ipo_id }; }
+  const id = foId_('IPO'); foAppend_('InvIpos', Object.assign(rec, { ipo_id: id, updated_at: foNow_(), updated_by: user.email })); return { ipo_id: id };
+}
+function foInvProfileSave_(b, user) {
+  const p = b.profile || {}, answers = Array.isArray(p.answers) ? p.answers.slice(0, 10).map(x => Math.max(0, Math.min(4, Math.floor(Number(x) || 0)))) : [];
+  const allowed = ['Conservative', 'Moderate', 'Balanced', 'Growth', 'Aggressive'];
+  const rec = { answers, profile: allowed.indexOf(p.profile) >= 0 ? p.profile : 'Balanced', allocation: p.allocation && typeof p.allocation === 'object' ? p.allocation : null, at: foNow_() };
+  foInvSettingSet_('profile', JSON.stringify(rec));
+  if (Array.isArray(b.goals)) foInvSettingSet_('goals', JSON.stringify(b.goals.slice(0, 12).map(g => ({ name: String(g.name || '').slice(0, 60), target: foInvNum_(g.target) || 0, years: Math.max(1, Math.min(50, foInvNum_(g.years) || 10)), sip: foInvNum_(g.sip) || 0, start: foInvNum_(g.start) || 0, method: String(g.method || 'strategic_tilt').slice(0, 30) }))));
+  foAudit_(user.email, 'inv_profile', rec.profile, 'ok'); return {};
+}
