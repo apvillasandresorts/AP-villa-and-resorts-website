@@ -226,3 +226,12 @@ test('monthly plans post themselves: SIP units from the NAV, contributions grow 
   const n = b.txns.length; mk('f.mk.snapshot', { snapshot: SNAP({ nav: { 120503: { nav: 62.5, date: today } } }) });
   assert.equal(call('f.inv.bundle').txns.length, n, 'a second run the same day posts nothing');
 });
+
+test('valuation lab saves estimates with their inputs, founder only', async () => {
+  const { env, call } = await ready();
+  assert.match(call('f.inv.valuation.save', { valuation: { symbol: 'TCS', method: 'dcf', per_share: -5 } }).error, /positive value/);
+  const id = call('f.inv.valuation.save', { valuation: { symbol: 'tcs', name: 'TCS', method: 'dcf', per_share: 3456.789, price: 3000, inputs: { g1: 0.1, wacc: 0.12, gT: 0.05, netDebt: -400, '<bad>': 1 } } }).id;
+  let b = call('f.inv.bundle'); assert.equal(b.valuations[0].symbol, 'TCS'); assert.equal(b.valuations[0].per_share, 3456.79); assert.deepEqual(b.valuations[0].inputs, { g1: 0.1, wacc: 0.12, gT: 0.05, netDebt: -400 });
+  call('f.inv.valuation.delete', { id }); assert.equal(call('f.inv.bundle').valuations.length, 0);
+  env.setUserRole('manager'); assert.match(call('f.inv.valuation.save', { valuation: { symbol: 'TCS', method: 'dcf', per_share: 1 } }).error, /role/);
+});

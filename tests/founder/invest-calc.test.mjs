@@ -85,3 +85,20 @@ test('broker holdings CSV: Zerodha Console (preamble), Kite, Groww by ISIN', () 
   assert.deepEqual(C.parseHoldingsCsv(groww, { INE040A01034: 'HDFCBANK' }), [{ symbol: 'HDFCBANK', units: 4, avg_cost: 1500 }]);
   assert.deepEqual(C.parseHoldingsCsv('a,b\n1,2'), []);
 });
+
+test('valuation lab: WACC, DCF, reverse DCF, sensitivity, banks, relative', () => {
+  const w = C.wacc({ rf: 0.07, beta: 1.2, erp: 0.06, kd: 0.09, tax: 0.25, wd: 0.2 });
+  close(w.ke, 0.142); close(w.wacc, 0.142 * 0.8 + 0.0675 * 0.2);
+  // no growth, no reinvestment, flat margin: value = NOPAT / WACC (perpetuity) minus net debt
+  const flat = { revenue: 1000, g1: 0, gT: 0, margin0: 0.2, margin: 0.2, tax: 0.25, s2c: 2, wacc: 0.1, netDebt: 100, shares: 10, roicT: 0.15 };
+  close(C.dcf(flat).ev, 150 / 0.1, 1e-6); close(C.dcf(flat).per_share, (1500 - 100) / 10, 1e-6);
+  const base = Object.assign({}, flat, { g1: 0.12, gT: 0.05, margin0: 0.15, margin: 0.2, fade: true });
+  const v = C.dcf(base); assert.equal(v.rows.length, 10); close(v.rows[9].growth, 0.05); close(v.rows[4].margin, 0.2);
+  assert.ok(v.tv_share > 0.4 && v.tv_share < 0.95);
+  close(C.reverseDcf(v.per_share, base), 0.12, 1e-4);
+  const g = C.sensitivity(base, [0.09, 0.1, 0.11], [0.04, 0.05]); assert.ok(g[0][0] > g[2][0] && g[1][1] > g[1][0]);
+  const sc = C.scenarios(base); assert.ok(sc[0].per_share < sc[1].per_share && sc[1].per_share < sc[2].per_share);
+  assert.match(C.dcf(Object.assign({}, base, { wacc: 0.04 })).error, /WACC/);
+  close(C.residualIncome({ bvps: 500, roe: 0.16, g: 0.08, ke: 0.13 }).pb, 1.6);
+  assert.deepEqual(C.relative({ eps: 50, pe: 20, bvps: 0, ebitda: 300, ev_ebitda: 10, netDebt: 500, shares: 10 }).map(r => Math.round(r.per_share)), [1000, 250]);
+});

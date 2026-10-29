@@ -260,7 +260,7 @@ function foInvBundle_() {
     ipos: foRows_('InvIpos').map(foInvClean_), daily: foRows_('InvDaily').slice(-90).map(foInvClean_),
     profile: S.profile ? JSON.parse(S.profile) : null, goals: S.goals ? JSON.parse(S.goals) : [], bullion_live: S.bullion_live ? JSON.parse(S.bullion_live) : null,
     key: meta ? JSON.parse(meta) : null, snapshot: snap, risk_defaults: FO_INV.RISK, disclaimer: FO_INV.DISCLAIMER,
-    strategies: foInvStrategies_(), control: foInvJson_(S.model_control, null), daily_email: S.daily_email !== 'off', engine_seen: foInvJson_(S.engine_seen, null),
+    strategies: foInvStrategies_(), control: foInvJson_(S.model_control, null), daily_email: S.daily_email !== 'off', engine_seen: foInvJson_(S.engine_seen, null), valuations: foInvJson_(S.valuations, []),
   };
 }
 function foInvHoldingSave_(b, user) {
@@ -418,6 +418,19 @@ function foInvSettingsSave_(b, user) {
   return {};
 }
 /** 18:00 one-page summary (spec 6 daily report), once per trading day. */
+/** Valuation lab: saved fair-value estimates (inputs kept so they can be reopened and re-run). Up to 60, newest first. */
+function foInvValuationSave_(b, user) {
+  const v = b.valuation || {}, sym = foInvSym_(v.symbol), name = String(v.name || sym).trim().slice(0, 80);
+  if (!name) return { ok: false, error: 'Pick the stock or name the valuation.' };
+  const method = ['dcf', 'bank', 'relative'].indexOf(v.method) >= 0 ? v.method : null; if (!method) return { ok: false, error: 'Pick the method.' };
+  const per = foInvNum_(v.per_share); if (!(per > 0) || per > 1e7) return { ok: false, error: 'The model did not give a positive value per share: check the inputs.' };
+  const inputs = {}; Object.keys(v.inputs || {}).slice(0, 40).forEach(k => { const n = foInvNum_(v.inputs[k]); if (/^[A-Za-z0-9_]{1,20}$/.test(k)) inputs[k] = isFinite(n) ? n : String(v.inputs[k]).slice(0, 40); });
+  const list = foInvJson_(foInvSettings_().valuations, []).filter(x => x.id !== v.id);
+  const rec = { id: v.id || foId_('VL'), symbol: sym, name, method, per_share: Math.round(per * 100) / 100, price_then: foInvNum_(v.price) || null, inputs, note: String(v.note || '').slice(0, 300), at: foNow_() };
+  list.unshift(rec); foInvSettingSet_('valuations', JSON.stringify(list.slice(0, 60)));
+  foAudit_(user.email, 'inv_valuation_save', rec.id + ' ' + sym, 'ok'); return { id: rec.id };
+}
+function foInvValuationDelete_(b, user) { foInvSettingSet_('valuations', JSON.stringify(foInvJson_(foInvSettings_().valuations, []).filter(x => x.id !== b.id))); return {}; }
 function foInvDailyEmail_(s, done) {
   if (foInvSettings_().daily_mail_last === s.asof) return;
   const P = (x, d) => x == null ? '–' : (x * 100).toFixed(d == null ? 1 : d) + '%', R = x => x == null ? '–' : '₹' + Math.round(x).toLocaleString('en-IN');

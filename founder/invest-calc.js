@@ -200,6 +200,56 @@ var FoInvCalc = (function () {
   function pct(x, d) { return x == null || !isFinite(x) ? '–' : (x * 100).toFixed(d == null ? 1 : d) + '%'; }
   function signed(x, d) { return x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : '') + (x * 100).toFixed(d == null ? 1 : d) + '%'; }
 
+  // ---------------------------------------------------------------- valuation lab (spec module 4) ----------------
+  /** CAPM cost of equity and WACC. Rates as decimals: rf (India 10Y), erp, kd (pre-tax cost of debt), wd (debt / (debt + equity)). */
+  function wacc(o) {
+    var ke = o.rf + o.beta * o.erp, wd = Math.min(Math.max(o.wd || 0, 0), 0.9);
+    return { ke: ke, kd_after_tax: (o.kd || 0) * (1 - o.tax), wacc: ke * (1 - wd) + (o.kd || 0) * (1 - o.tax) * wd, wd: wd };
+  }
+  /** FCFF DCF, 5 explicit years + optional 5-year fade of growth to terminal (3-stage). Money in ₹ crore, shares in crore.
+   *  Margin moves in a straight line from today's to the target by year 5; reinvestment = revenue growth / sales-to-capital;
+   *  terminal reinvestment = gT / terminal ROIC (growth must be paid for). */
+  function dcf(o) {
+    var years = o.fade ? 10 : 5, rows = [], rev = o.revenue, pv = 0, nopat = 0, w = o.wacc;
+    if (!(w > o.gT)) return { error: 'WACC must be above terminal growth.' };
+    for (var t = 1; t <= years; t++) {
+      var g = t <= 5 ? o.g1 : o.g1 + (o.gT - o.g1) * (t - 5) / 5;
+      var m = t <= 5 ? o.margin0 + (o.margin - o.margin0) * t / 5 : o.margin;
+      var r2 = rev * (1 + g), ebit = r2 * m; nopat = ebit * (1 - o.tax);
+      var reinv = (r2 - rev) / (o.s2c || 2), fcff = nopat - reinv, df = Math.pow(1 + w, t);
+      pv += fcff / df; rows.push({ year: t, growth: g, revenue: r2, margin: m, ebit: ebit, nopat: nopat, reinvest: reinv, fcff: fcff, pv: fcff / df }); rev = r2;
+    }
+    var roic = o.roicT || 0.15, tv = nopat * (1 + o.gT) * (1 - o.gT / roic) / (w - o.gT), pvtv = tv / Math.pow(1 + w, years);
+    var ev = pv + pvtv, eq = ev - (o.netDebt || 0);
+    return { rows: rows, pv_fcff: pv, tv: tv, pv_tv: pvtv, tv_share: pvtv / ev, ev: ev, equity: eq, per_share: o.shares ? eq / o.shares : null };
+  }
+  /** Growth (years 1–5) the market price implies, holding every other input; null when no growth in −30%…+80% fits. */
+  function reverseDcf(price, o) {
+    var f = function (g) { return dcf(Object.assign({}, o, { g1: g })).per_share - price; }, lo = -0.3, hi = 0.8, flo = f(lo), fhi = f(hi);
+    if (!isFinite(flo) || !isFinite(fhi) || flo * fhi > 0) return null;
+    for (var k = 0; k < 80; k++) { var m = (lo + hi) / 2, fm = f(m); if (flo * fm <= 0) hi = m; else { lo = m; flo = fm; } }
+    return (lo + hi) / 2;
+  }
+  /** Value per share across a WACC × terminal-growth grid. */
+  function sensitivity(o, waccs, gs) { return waccs.map(function (w) { return gs.map(function (g) { return w > g ? dcf(Object.assign({}, o, { wacc: w, gT: g })).per_share : null; }); }); }
+  /** Bull / base / bear: growth ±40% of itself, target margin ±2 points. */
+  function scenarios(o) {
+    return [['Bear', 0.6, -0.02], ['Base', 1, 0], ['Bull', 1.4, 0.02]].map(function (x) { var r = dcf(Object.assign({}, o, { g1: o.g1 * x[1], margin: o.margin + x[2] })); return { name: x[0], g1: o.g1 * x[1], margin: o.margin + x[2], per_share: r.per_share }; });
+  }
+  /** Banks and NBFCs: justified P/B = (ROE − g) / (Ke − g), value = book value per share × justified P/B. */
+  function residualIncome(o) {
+    if (!(o.ke > o.g)) return { error: 'Cost of equity must be above growth.' };
+    var pb = (o.roe - o.g) / (o.ke - o.g); return { pb: pb, per_share: o.bvps * pb };
+  }
+  /** Relative valuation per share from peer multiples (any input left empty is skipped). */
+  function relative(o) {
+    var out = [];
+    if (o.eps > 0 && o.pe > 0) out.push({ method: 'P/E', multiple: o.pe, per_share: o.eps * o.pe });
+    if (o.bvps > 0 && o.pb > 0) out.push({ method: 'P/B', multiple: o.pb, per_share: o.bvps * o.pb });
+    if (o.ebitda > 0 && o.ev_ebitda > 0 && o.shares > 0) out.push({ method: 'EV/EBITDA', multiple: o.ev_ebitda, per_share: (o.ebitda * o.ev_ebitda - (o.netDebt || 0)) / o.shares });
+    return out;
+  }
+
   // ---------------------------------------------------------------- broker import ----------------
   function csvRows(text) {
     var rows = [], row = [], cell = '', q = false;
@@ -235,7 +285,7 @@ var FoInvCalc = (function () {
     return [];
   }
 
-  return { parseHoldingsCsv: parseHoldingsCsv, num: num, days: days, xirr: xirr, deposit: deposit, recurring: recurring, value: value, portfolio: portfolio, CLASS: CLASS,
+  return { wacc: wacc, dcf: dcf, reverseDcf: reverseDcf, sensitivity: sensitivity, scenarios: scenarios, residualIncome: residualIncome, relative: relative, parseHoldingsCsv: parseHoldingsCsv, num: num, days: days, xirr: xirr, deposit: deposit, recurring: recurring, value: value, portfolio: portfolio, CLASS: CLASS,
     QUESTIONS: QUESTIONS, PROFILES: PROFILES, ALLOC: ALLOC, profileOf: profileOf, goal: goal, sipFor: sipFor, gmpRange: gmpRange, ipoVerdict: ipoVerdict, median: median, pct: pct, signed: signed };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FoInvCalc;

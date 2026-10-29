@@ -444,7 +444,7 @@ function foRoutes_() {
     'f.inv.account.save': [foInvAccountSave_, 'founder'], 'f.inv.order.place': [foInvOrderPlace_, 'founder'], 'f.inv.order.cancel': [foInvOrderCancel_, 'founder'],
     'f.inv.watch.add': [foInvWatchAdd_, 'founder'], 'f.inv.watch.remove': [foInvWatchRemove_, 'founder'], 'f.inv.ipo.save': [foInvIpoSave_, 'founder'], 'f.inv.ipo.delete': [(b, u) => foDelete_('InvIpos', 'ipo_id', b.ipo_id, u), 'founder'],
     'f.inv.profile.save': [foInvProfileSave_, 'founder'], 'f.inv.strategy.save': [foInvStrategySave_, 'founder'], 'f.inv.strategy.delete': [foInvStrategyDelete_, 'founder'], 'f.inv.strategy.paper': [foInvStrategyPaper_, 'founder'],
-    'f.inv.model.rollback': [foInvRollback_, 'founder'], 'f.inv.settings.set': [foInvSettingsSave_, 'founder'], 'f.inv.key': [foInvKeyCreate_, 'founder'], 'f.inv.key.revoke': [foInvKeyRevoke_, 'founder'],
+    'f.inv.model.rollback': [foInvRollback_, 'founder'], 'f.inv.settings.set': [foInvSettingsSave_, 'founder'], 'f.inv.valuation.save': [foInvValuationSave_, 'founder'], 'f.inv.valuation.delete': [foInvValuationDelete_, 'founder'], 'f.inv.key': [foInvKeyCreate_, 'founder'], 'f.inv.key.revoke': [foInvKeyRevoke_, 'founder'],
     'f.cm.listings.add': [foCmListingsAdd_, 'founder'], 'f.cm.listings.update': [foCmListingsUpdate_, 'founder'], 'f.cm.listings.delete': [(b, u) => foDelete_('Listings', 'listing_id', b.listing_id, u), 'founder'],
     'f.cm.calendar': [b => foCmCalendar_(b), 'viewer'], 'f.cm.ratedesk': [b => foCmRatedesk_(b), 'viewer'],
     'f.cm.jobs.propose': [foCmJobsPropose_, 'founder'], 'f.cm.jobs.approve': [foCmJobsApprove_, 'founder'], 'f.cm.jobs.cancel': [foCmJobsCancel_, 'founder'], 'f.cm.jobs.retry': [foCmJobsRetry_, 'founder'],
