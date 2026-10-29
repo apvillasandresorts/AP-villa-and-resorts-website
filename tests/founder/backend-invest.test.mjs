@@ -126,3 +126,29 @@ test('IPO board and risk profile', async () => {
   assert.equal(call('f.inv.profile.save', { profile: { answers: [3, 3, 2, 9], profile: 'Growth' }, goals: [{ name: 'House', target: 5000000, years: 8, sip: 30000 }] }).ok, true);
   const b = call('f.inv.bundle'); assert.equal(b.profile.profile, 'Growth'); assert.deepEqual(b.profile.answers, [3, 3, 2, 4]); assert.equal(b.goals[0].years, 8);
 });
+
+test('strategy lab: rules validated, engine-run paper account, engine orders allowed only there; rollback and daily email', async () => {
+  const { env, call, mk } = await ready();
+  assert.match(call('f.inv.strategy.save', { strategy: { name: 'x', entry: [{ field: 'nope', op: '>', value: 1 }] } }).error, /entry rule/);
+  const s = call('f.inv.strategy.save', { strategy: { name: 'Trend', entry: [{ field: 'vs_ema50', op: '>', value: 0 }], exit: [{ field: 'vs_ema50', op: '<', value: 0 }], top_n: 5 } });
+  assert.equal(s.ok, true, s.error);
+  const pa = call('f.inv.strategy.paper', { id: s.id }); assert.equal(pa.ok, true, pa.error);
+  assert.match(call('f.inv.strategy.paper', { id: s.id }).error, /already/);
+  assert.match(call('f.inv.strategy.delete', { id: s.id }).error, /close that account/);
+  const p = mk('f.mk.pull'); assert.equal(p.strategies.length, 1); assert.ok(p.accounts.some(a => a.rules_id === s.id));
+  mk('f.mk.snapshot', { snapshot: SNAP() });
+  assert.match(call('f.inv.order.place', { order: { account_id: pa.account_id, symbol: 'TCS', side: 'buy', type: 'market', qty: 1 } }).error, /its strategy/);
+  assert.equal(mk('f.mk.report', { new_orders: [{ account_id: pa.account_id, symbol: 'TCS', side: 'buy', qty: 2 }] }).orders, 1);
+  assert.equal(call('f.inv.bundle').orders.find(o => o.account_id === pa.account_id).origin, 'strategy');
+  assert.match(call('f.inv.model.rollback', { version: 'bad' }).error, /retired/);
+  assert.equal(call('f.inv.model.rollback', { version: 'v1-logit@2026-10-25' }).ok, true);
+  assert.equal(mk('f.mk.pull').control.rollback_to, 'v1-logit@2026-10-25');
+  mk('f.mk.report', { control_done: { rollback_to: 'v1-logit@2026-10-25' } });
+  assert.equal(mk('f.mk.pull').control, null);
+  const n = env.mails.filter(m => /^Markets /.test(m.subject || '')).length;
+  mk('f.mk.snapshot', { snapshot: SNAP({ asof: '2026-10-30' }) }); mk('f.mk.snapshot', { snapshot: SNAP({ asof: '2026-10-30' }) });
+  assert.equal(env.mails.filter(m => /^Markets /.test(m.subject || '')).length, n + 1, 'one daily email per day');
+  call('f.inv.settings.set', { daily_email: false });
+  mk('f.mk.snapshot', { snapshot: SNAP({ asof: '2026-10-31' }) });
+  assert.equal(env.mails.filter(m => /^Markets /.test(m.subject || '')).length, n + 1);
+});

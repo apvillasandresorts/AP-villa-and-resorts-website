@@ -76,10 +76,11 @@ function foMkPull_(b) {
   W.forEach(w => { if (w.kind === 'mf') funds.add(String(w.symbol)); else syms.add(w.symbol); });
   O.forEach(o => syms.add(o.symbol)); F.forEach(f => syms.add(f.symbol));
   return {
-    accounts: foRows_('InvAccounts').filter(a => a.status !== 'closed').map(a => ({ account_id: a.account_id, name: a.name, strategy: a.strategy, starting_cash: Number(a.starting_cash) || 1000000, benchmark: a.benchmark, risk_json: a.risk_json || '{}', created_at: a.created_at })),
+    accounts: foRows_('InvAccounts').filter(a => a.status !== 'closed').map(a => ({ account_id: a.account_id, name: a.name, strategy: a.strategy, rules_id: a.rules_id || '', starting_cash: Number(a.starting_cash) || 1000000, benchmark: a.benchmark, risk_json: a.risk_json || '{}', created_at: a.created_at })),
     orders: O.filter(o => o.status === 'open' || o.status === 'partial').map(o => { const x = foInvClean_(o); ['qty', 'limit_price', 'trigger_price', 'target', 'stop', 'amount', 'sip_day', 'filled_qty'].forEach(k => { x[k] = x[k] === '' ? null : Number(x[k]); }); return x; }),
     fills: F.map(f => ({ fill_id: f.fill_id, order_id: f.order_id, account_id: f.account_id, symbol: f.symbol, side: f.side, qty: Number(f.qty), price: Number(f.price), date: f.date, charges: Number(f.charges) || 0 })),
     symbols: Array.from(syms).filter(Boolean), fund_codes: Array.from(funds).filter(Boolean),
+    strategies: foInvStrategies_(), control: foInvJson_(foInvSettings_().model_control, null),
   };
 }
 function foMkReport_(b) {
@@ -103,9 +104,10 @@ function foMkReport_(b) {
     if (u.cancel && byId[u.cancel] && byId[u.cancel]._row && (byId[u.cancel].status === 'open' || byId[u.cancel].status === 'partial')) touch(byId[u.cancel], { status: 'cancelled', note: 'Other leg of the bracket filled.' });
   });
   (b.new_orders || []).slice(0, 60).forEach(o => {
-    const acc = foRows_('InvAccounts').find(a => a.account_id === o.account_id && a.strategy === 'autopilot'); if (!acc) return;   // the engine may only trade the autopilot account
-    foAppend_('InvOrders', { order_id: foId_('PO'), account_id: o.account_id, symbol: foInvSym_(o.symbol), side: o.side === 'sell' ? 'sell' : 'buy', type: 'market', qty: Math.max(1, Math.floor(Number(o.qty) || 0)), validity: 'day', status: 'open', filled_qty: 0, note: String(o.note || '').slice(0, 200), origin: 'autopilot', placed_at: foNow_(), updated_at: foNow_(), placed_by: 'engine' }); no++;
+    const acc = foRows_('InvAccounts').find(a => a.account_id === o.account_id && (a.strategy === 'autopilot' || a.strategy === 'rules') && a.status !== 'closed'); if (!acc) return;   // the engine may only trade model-run accounts
+    foAppend_('InvOrders', { order_id: foId_('PO'), account_id: o.account_id, symbol: foInvSym_(o.symbol), side: o.side === 'sell' ? 'sell' : 'buy', type: 'market', qty: Math.max(1, Math.floor(Number(o.qty) || 0)), validity: 'day', status: 'open', filled_qty: 0, note: String(o.note || '').slice(0, 200), origin: acc.strategy === 'rules' ? 'strategy' : 'autopilot', placed_at: foNow_(), updated_at: foNow_(), placed_by: 'engine' }); no++;
   });
+  if (b.control_done && b.control_done.rollback_to) { const c = foInvJson_(foInvSettings_().model_control, null); if (c && c.rollback_to === b.control_done.rollback_to) foInvSettingSet_('model_control', ''); }
   return { fills: nf, updates: nu, orders: no, summary: { fills: nf, updates: nu, orders: no } };
 }
 function foMkSnapshot_(b) {
@@ -131,6 +133,7 @@ function foMkSnapshot_(b) {
   if (pc && nc && pc.split('@')[0] !== nc.split('@')[0]) foInvAlert_('champ_' + nc, 'new champion model', 'The challenger ' + nc + ' passed every promotion rule and replaced ' + pc + '. One click in Model health rolls it back.');
   Object.keys(s.paper || {}).forEach(id => { const a = s.paper[id]; if (a && a.peak && a.equity && a.equity < a.peak * (1 - FO_INV.RISK.dd_pause_pct / 100)) foInvAlert_('dd_' + id + '_' + s.asof, 'paper account paused', id + ' is more than ' + FO_INV.RISK.dd_pause_pct + '% below its peak: new entries pause until you review it.'); });
   ['gold999', 'silver999'].forEach(m => { const x = s.bullion && s.bullion[m], h = x && x.history; if (h && h.length > 1) { const ch = h[h.length - 1][1] / h[h.length - 2][1] - 1; if (Math.abs(ch) > 0.02) foInvAlert_(m + s.asof, (m === 'gold999' ? 'gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '%', 'IBJA ' + (m === 'gold999' ? '999 gold' : 'silver') + ' moved ' + (ch * 100).toFixed(1) + '% on ' + h[h.length - 1][0] + '.'); } });
+  if (foInvSettings_().daily_email !== 'off' && s.dq && s.dq.ok) foInvDailyEmail_(s);
   return { stored: true, summary: { asof: s.asof, kb: Math.round(json.length / 1024) } };
 }
 function foMkBullion_(b) {
@@ -148,6 +151,7 @@ function foInvBundle_() {
     ipos: foRows_('InvIpos').map(foInvClean_), daily: foRows_('InvDaily').slice(-90).map(foInvClean_),
     profile: S.profile ? JSON.parse(S.profile) : null, goals: S.goals ? JSON.parse(S.goals) : [], bullion_live: S.bullion_live ? JSON.parse(S.bullion_live) : null,
     key: meta ? JSON.parse(meta) : null, snapshot: snap, risk_defaults: FO_INV.RISK, disclaimer: FO_INV.DISCLAIMER,
+    strategies: foInvStrategies_(), control: foInvJson_(S.model_control, null), daily_email: S.daily_email !== 'off',
   };
 }
 function foInvHoldingSave_(b, user) {
@@ -192,7 +196,7 @@ function foInvAccountSave_(b, user) {
   const risk = {}; Object.keys(FO_INV.RISK).forEach(k => { const v = foInvNum_(a.risk && a.risk[k]); if (isFinite(v) && v > 0 && v <= 100) risk[k] = v; });
   const strategy = ['manual', 'model_top10', 'ipo', 'bullion', 'custom'].indexOf(a.strategy) >= 0 ? a.strategy : 'manual';
   const row = a.account_id && foRows_('InvAccounts').find(x => x.account_id === a.account_id);
-  if (row) { if (row.strategy === 'autopilot') return { ok: false, error: 'The Model Autopilot account is run by the model.' }; foUpdate_('InvAccounts', row._row, Object.assign({}, row, { name, risk_json: JSON.stringify(risk), notes: String(a.notes || '').slice(0, 300), status: a.status === 'closed' ? 'closed' : 'active' })); return { account_id: row.account_id }; }
+  if (row) { if (row.strategy === 'autopilot' || row.strategy === 'rules') return { ok: false, error: 'The Model Autopilot account is run by the model.' }; foUpdate_('InvAccounts', row._row, Object.assign({}, row, { name, risk_json: JSON.stringify(risk), notes: String(a.notes || '').slice(0, 300), status: a.status === 'closed' ? 'closed' : 'active' })); return { account_id: row.account_id }; }
   const id = foId_('PA'); foAppend_('InvAccounts', { account_id: id, name, strategy, starting_cash: cash, benchmark: 'Nifty 500', risk_json: JSON.stringify(risk), created_at: foToday_(), status: 'active', notes: String(a.notes || '').slice(0, 300) });
   foAudit_(user.email, 'inv_paper_account', id, 'ok'); return { account_id: id };
 }
@@ -213,7 +217,7 @@ function foInvRiskCheck_(acc, o, snap) {
 function foInvOrderPlace_(b, user) {
   const o = b.order || {}, acc = foRows_('InvAccounts').find(a => a.account_id === o.account_id && a.status !== 'closed');
   if (!acc) return { ok: false, error: 'Pick a paper account.' };
-  if (acc.strategy === 'autopilot') return { ok: false, error: 'The Model Autopilot account trades on its own. Use another paper account.' };
+  if (acc.strategy === 'autopilot' || acc.strategy === 'rules') return { ok: false, error: 'This account is run by ' + (acc.strategy === 'rules' ? 'its strategy' : 'the model') + ' and trades on its own. Use another paper account.' };
   const sym = foInvSym_(o.symbol), type = FO_INV.ORDER_TYPES.indexOf(o.type) >= 0 ? o.type : null, side = o.side === 'sell' ? 'sell' : o.side === 'buy' ? 'buy' : null;
   if (!sym || !type || !side) return { ok: false, error: 'Symbol, side and order type are needed.' };
   const snap = foInvSnapshot_(); if (snap && snap.prices && !snap.prices[sym]) return { ok: false, error: sym + ' is not in the price data. Add it to your watchlist first; it is priced from the next daily run.' };
@@ -261,4 +265,58 @@ function foInvProfileSave_(b, user) {
   foInvSettingSet_('profile', JSON.stringify(rec));
   if (Array.isArray(b.goals)) foInvSettingSet_('goals', JSON.stringify(b.goals.slice(0, 12).map(g => ({ name: String(g.name || '').slice(0, 60), target: foInvNum_(g.target) || 0, years: Math.max(1, Math.min(50, foInvNum_(g.years) || 10)), sip: foInvNum_(g.sip) || 0, start: foInvNum_(g.start) || 0, method: String(g.method || 'strategic_tilt').slice(0, 30) }))));
   foAudit_(user.email, 'inv_profile', rec.profile, 'ok'); return {};
+}
+
+// ---------------------------------------------------------------- strategy lab, rollback, settings, daily report ----------------
+function foInvJson_(v, d) { try { return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function foInvStrategies_() { return foInvJson_(foInvSettings_().strategies, []); }
+const FO_INV_FIELDS = ['technical', 'trend', 'momentum', 'volume', 'rsi14', 'adx14', 'vs_ema200', 'vs_ema50', 'ret_3m', 'ret_6m', 'supertrend', 'high52', 'deliv_pct', 'vol_ratio', 'ev_golden_cross', 'ev_high52_breakout', 'ev_donchian55', 'ev_supertrend_flip'];
+function foInvRules_(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 8).map(c => ({ field: String(c.field), op: String(c.op), value: Number(c.value) }))
+    .filter(c => FO_INV_FIELDS.indexOf(c.field) >= 0 && ['>', '<', '>=', '<=', '=='].indexOf(c.op) >= 0 && isFinite(c.value));
+}
+function foInvStrategySave_(b, user) {
+  const x = b.strategy || {}, name = String(x.name || '').trim().slice(0, 60); if (!name) return { ok: false, error: 'Name the strategy.' };
+  const entry = foInvRules_(x.entry), exit = foInvRules_(x.exit); if (!entry.length) return { ok: false, error: 'Add at least one entry rule.' };
+  const list = foInvStrategies_(); if (!x.id && list.length >= 12) return { ok: false, error: 'Up to 12 strategies: delete one first.' };
+  const rec = { id: x.id || foId_('ST'), name, entry, exit, top_n: Math.min(30, Math.max(1, Math.floor(Number(x.top_n) || 10))), max_hold: Math.min(250, Math.max(0, Math.floor(Number(x.max_hold) || 0))), updated_at: foNow_() };
+  const i = list.findIndex(s => s.id === rec.id); if (i >= 0) list[i] = rec; else list.push(rec);
+  foInvSettingSet_('strategies', JSON.stringify(list)); foAudit_(user.email, 'inv_strategy', rec.id, 'ok');
+  return { id: rec.id, note: 'Saved: it is backtested in the next evening run.' };
+}
+function foInvStrategyDelete_(b, user) {
+  if (foRows_('InvAccounts').some(a => a.rules_id === b.id && a.status !== 'closed')) return { ok: false, error: 'A paper account follows this strategy: close that account first.' };
+  foInvSettingSet_('strategies', JSON.stringify(foInvStrategies_().filter(s => s.id !== b.id))); return {};
+}
+function foInvStrategyPaper_(b, user) {
+  const st = foInvStrategies_().find(s => s.id === b.id); if (!st) return { ok: false, error: 'Strategy not found.' };
+  if (foRows_('InvAccounts').some(a => a.rules_id === st.id && a.status !== 'closed')) return { ok: false, error: 'A paper account already follows this strategy.' };
+  const id = foId_('PA'); foAppend_('InvAccounts', { account_id: id, name: st.name + ' (strategy)', strategy: 'rules', rules_id: st.id, starting_cash: 1000000, benchmark: 'Nifty 500', risk_json: '{}', created_at: foToday_(), status: 'active', notes: 'Trades the strategy rules every evening, next-day open fills.' });
+  foAudit_(user.email, 'inv_strategy_paper', st.id + ' → ' + id, 'ok'); return { account_id: id, note: 'Paper account created: it starts trading the rules from the next evening run.' };
+}
+function foInvRollback_(b, user) {
+  const v = String(b.version || '').slice(0, 60); if (!/^v\d[\w.-]*@\d{4}-\d{2}-\d{2}$/.test(v)) return { ok: false, error: 'Pick a retired model version.' };
+  foInvSettingSet_('model_control', JSON.stringify({ rollback_to: v, at: foNow_(), by: user.email })); foAudit_(user.email, 'inv_model_rollback', v, 'ok');
+  return { note: 'Rollback queued: the engine switches the champion to ' + v + ' in its next run.' };
+}
+function foInvSettingsSave_(b, user) {
+  if (b.daily_email != null) foInvSettingSet_('daily_email', b.daily_email ? 'on' : 'off');
+  return {};
+}
+/** 18:00 one-page summary (spec 6 daily report), once per trading day. */
+function foInvDailyEmail_(s) {
+  if (foInvSettings_().daily_mail_last === s.asof) return;
+  const P = (x, d) => x == null ? '–' : (x * 100).toFixed(d == null ? 1 : d) + '%', R = x => x == null ? '–' : '₹' + Math.round(x).toLocaleString('en-IN');
+  const esc = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const top = (s.top || []).slice(0, 10).map(t => '<tr><td>' + t.rank + '</td><td><b>' + esc(t.symbol) + '</b></td><td>' + Math.round(t.composite) + '</td><td>' + P(t.ml_prob, 0) + '</td><td>' + esc((t.reasons || []).map(r => r.text).join('; ')) + '</td></tr>').join('');
+  const b = s.bullion || {}, g = b.today && b.today.gold999, auto = (s.paper || {})['PA-AUTOPILOT'], m = s.model || {}, r = s.regime || {};
+  const ipos = foRows_('InvIpos').filter(i => i.status === 'open' || i.status === 'upcoming').map(i => esc(i.name) + ' (' + esc(i.status) + ')').join(', ') || 'none on your board';
+  const html = '<div style="font-family:Arial,sans-serif;max-width:640px"><h2 style="color:#0F4D3A">Markets · ' + esc(s.asof) + '</h2>' +
+    '<p><b>' + esc(r.label || 'Neutral') + '</b> market · Nifty 50 ' + esc(r.nifty) + ' · breadth ' + esc(r.breadth) + '% · India VIX ' + esc(r.vix) + '</p>' +
+    '<table cellpadding="4" style="border-collapse:collapse;font-size:13px"><tr style="background:#E7EFEA"><th>#</th><th>Stock</th><th>Score</th><th>P(top 20%)</th><th>Why</th></tr>' + top + '</table>' +
+    '<p>Gold 24K: ' + (g ? R(g * 10) + ' per 10 g' : '–') + ' · Silver: ' + (b.silver999 ? R(b.silver999.last) + ' per kg' : '–') + ' (IBJA, excl. GST)</p>' +
+    '<p>Model Autopilot (paper): ' + (auto && auto.equity ? R(auto.equity) + ', return ' + P(auto.stats && auto.stats.total_return) : 'not started') + '</p>' +
+    '<p>IPOs: ' + ipos + '</p><p>Model health: <b>' + esc(m.light || '–') + '</b> · ' + esc(m.note || '') + '</p>' +
+    '<p style="color:#777;font-size:12px">' + FO_INV.DISCLAIMER + ' <a href="https://www.apvillasandresorts.in/founder/#/investments">Open Investments</a> · turn this email off in Investments → Settings.</p></div>';
+  try { MailApp.sendEmail({ to: PropertiesService.getScriptProperties().getProperty('FO_FOUNDER_EMAIL'), subject: 'Markets ' + s.asof + ' · ' + (r.label || 'Neutral') + ' · top: ' + (s.top || []).slice(0, 3).map(t => t.symbol).join(', '), htmlBody: html, body: 'Markets summary for ' + s.asof + '. ' + FO_INV.DISCLAIMER }); foInvSettingSet_('daily_mail_last', s.asof); } catch (e) {}
 }
