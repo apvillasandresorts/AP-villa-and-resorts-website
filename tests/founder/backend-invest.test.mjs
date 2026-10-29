@@ -205,6 +205,25 @@ test('IPO board fills itself from SEBI filings and NSE listings, never overwriti
   assert.equal(call('f.inv.bundle').ipos.find(i => i.name.startsWith('SFC')).status, 'open', 'never moves a status backwards');
 });
 
+test('live IPO subscription fills the board: category numbers replace, a new open issue is added, history keeps one point a day', async () => {
+  const { env, call, mk } = await ready();
+  const today = new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10);
+  call('f.inv.ipo.save', { ipo: { name: 'BLS Polymers Ltd', status: 'upcoming', sub_total: 3, notes: 'mine' } });
+  const feed = { filings: [], listings: [], subscription: [
+    { name: 'BLS Polymers Limited', board: 'mainboard', status: 'open', total: 241.22, qib: 200.25, nii: 559.2, retail: 128.36, url: 'https://ipos.markets/ipo/bls-polymers-limited' },
+    { name: 'Wiscon Industries Limited', board: 'sme', status: 'open', total: 4.1, retail: 6 },
+    { name: 'Old Listed Limited', board: 'mainboard', status: 'listed', total: 10 },
+    { name: 'No Numbers Limited', board: 'mainboard', status: 'open', total: null }] };
+  mk('f.mk.snapshot', { snapshot: SNAP({ ipo_feed: feed }) });
+  mk('f.mk.snapshot', { snapshot: SNAP({ ipo_feed: feed }) });
+  const L = call('f.inv.bundle').ipos, by = n => L.find(i => i.name.startsWith(n));
+  assert.deepEqual([by('BLS').status, Number(by('BLS').sub_total), Number(by('BLS').sub_qib), Number(by('BLS').sub_retail), by('BLS').notes], ['open', 241.22, 200.25, 128.36, 'mine']);
+  assert.deepEqual(JSON.parse(by('BLS').sub_history), [[today, 241.22]]);
+  assert.deepEqual([by('Wiscon').status, by('Wiscon').type, Number(by('Wiscon').sub_total), by('Wiscon').auto], ['open', 'sme', 4.1, 'yes']);
+  assert.equal(L.some(i => /Old Listed/.test(i.name)), false, 'only open issues are added');
+  assert.deepEqual([by('No Numbers').status, by('No Numbers').sub_total, by('No Numbers').sub_history], ['open', '', ''], 'an open issue without numbers yet is listed, blank');
+});
+
 test('monthly plans post themselves: SIP units from the NAV, contributions grow PPF, XIRR keeps the opening money', async () => {
   const { env, call, mk } = await ready();
   const today = new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10);

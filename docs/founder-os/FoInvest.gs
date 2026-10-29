@@ -212,6 +212,22 @@ function foInvAutoIpo_(s) {
     if (l.listed <= today && l.list_open) Object.assign(patch, { status: 'listed', listing_open: l.list_open, listing_close: l.list_close });
     put(key, l.name, patch, !!filed[key]);
   });
+  // category-wise subscription (NSE / BSE via the free ipos.markets API): official numbers, so they replace what was there
+  (f.subscription || []).forEach(x => {
+    if (!x.name) return;
+    const key = foInvIpoKey_(x.name), st = x.status === 'open' ? 'open' : x.status === 'closed' ? 'closed' : '';
+    if (!byKey[key] && x.status === 'open') put(key, x.name, { status: 'open', type: x.board === 'sme' ? 'sme' : 'mainboard', source_url: x.url || '' }, true);
+    const r = byKey[key]; if (!r) return;
+    const sub = { sub_qib: x.qib, sub_nii: x.nii, sub_bnii: x.bnii, sub_snii: x.snii, sub_retail: x.retail, sub_emp: x.emp, sub_total: x.total }, upd = {};
+    Object.keys(sub).forEach(k => { if (sub[k] != null && Number(r[k]) !== Number(sub[k])) upd[k] = sub[k]; });
+    if (st && (FO_INV.IPO_RANK[st] || 0) > (FO_INV.IPO_RANK[r.status] || 0)) upd.status = st;
+    if (!Object.keys(upd).length) return;
+    let hist = []; try { hist = JSON.parse(r.sub_history || '[]'); } catch (e) {}
+    if (x.total != null) { hist = hist.filter(h => h[0] !== today).concat([[today, x.total]]).slice(-10); upd.sub_history = JSON.stringify(hist); }
+    if (r._row) foUpdate_('InvIpos', r._row, Object.assign({}, r, upd, { updated_at: foNow_() }));
+    else { const all = foRows_('InvIpos').find(y => y.ipo_id === r.ipo_id); if (all) foUpdate_('InvIpos', all._row, Object.assign({}, all, upd, { updated_at: foNow_() })); }
+    Object.assign(r, upd); n++;
+  });
   return n;
 }
 /** Monthly plans (SIP / contributions) post themselves on the due date: units from that evening's NAV or close, the value for
