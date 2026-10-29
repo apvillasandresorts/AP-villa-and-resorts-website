@@ -33,7 +33,7 @@ const FO_MK_ROUTES = {
 const FO_GH_OIDC = { iss: 'https://token.actions.githubusercontent.com', aud: 'ap-founder-os-markets', repo: 'apvillasandresorts/ap-markets', ref: 'refs/heads/main' };
 function foB64uBytes_(s) { s = String(s || ''); return Utilities.base64DecodeWebSafe(s + '='.repeat((4 - s.length % 4) % 4)); }
 function foBytesHex_(bytes) { return bytes.map(b => ((b & 255) + 256).toString(16).slice(1)).join(''); }
-function foModPow_(b, e, m) { let r = 1n; b %= m; while (e > 0n) { if (e & 1n) r = r * b % m; e >>= 1n; b = b * b % m; } return r; }
+function foModPow_(b, e, m) { const ZERO = BigInt(0), ONE = BigInt(1); let r = ONE; b %= m; while (e > ZERO) { if (e & ONE) r = r * b % m; e >>= ONE; b = b * b % m; } return r; }   // BigInt() calls, not 1n literals: the Apps Script editor's parser rejects those
 function foGhJwks_(fresh) {
   const c = CacheService.getScriptCache(), hit = !fresh && c.get('FO_GH_JWKS'); if (hit) return JSON.parse(hit);
   const r = UrlFetchApp.fetch(FO_GH_OIDC.iss + '/.well-known/jwks', { muteHttpExceptions: true }); if (r.getResponseCode() !== 200) return [];
