@@ -6,8 +6,8 @@
  * GEMINI_MODEL). No key = the brain says so; nothing else breaks.
  *
  * Privacy: the model only ever receives a business summary built here (totals, occupancy, prices, competitor medians, public news
- * headlines, system status). Never guest names, phones, emails, ID numbers or booking references. Questions and history are scrubbed
- * of emails/phone/ID-like numbers before they leave Google. Answers are advice only: the brain cannot change data.
+ * headlines, system status). Never guest names, phones, emails, ID numbers or booking references. Every ₹ figure in an answer is checked against that summary (foBrainUnverified_). Questions and history are scrubbed
+ * of emails/phone/ID-like numbers before they leave Google. Answers are advice only: changes go through foBrainAct_ and need the owner's confirmation.
  */
 const FO_BRAIN = { BUDGET_MS: 35000, PER_DAY: 150, MAX_Q: 1200, MAX_HISTORY: 6, GROQ_MODEL: 'openai/gpt-oss-120b', GEMINI_MODEL: 'gemini-3.6-flash' };
 
@@ -16,10 +16,14 @@ const FO_BRAIN_SYSTEM = [
   'You get: a JSON BUSINESS SUMMARY (ledger totals, occupancy, every one of the next 14 nights with the recommended price, chance to sell, market median and sell-outs, competitors, Google search demand and top/rising Ujjain searches, news, website, forecast accuracy) and sometimes WEB RESEARCH from live Google searches with numbered sources.',
   'Think like a revenue manager: look for what is NOT obvious: nights where competitors are selling out but we are priced low, weak nights to fill now, rising searches that signal demand before bookings arrive, gaps between weekday and weekend, a competitor or event that changes the picture, channel mix, money left on the table. Quantify the effect in ₹ or nights where the data allows.',
   'Answer format (Markdown): one bold headline with the answer; then **Why** (2–4 bullets, each with a number from the data or a cited source); then **Do this** (1–3 concrete actions with dates and ₹ figures); then **Watch** (what would change the advice). Keep it under 220 words unless asked for detail.',
-  'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in Hindi if the question is in Hindi.',
-  'You only advise; you cannot change prices, bookings or settings. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
+  'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in English. Use Hindi only when the question itself is written in Hindi (Devanagari script); an Indian name or a Hindi word is not a reason to switch.',
+  'Quality bar: lead with the answer, no filler, no restating the question, no generic advice that would fit any hotel. Tie every point to a date, villa or figure from the data. If the data cannot answer, say so in one line and name what is missing. Answer only what was asked; for a simple question skip the Why/Do this/Watch sections.',
+  'This chat only advises; saving is done by a separate step. If the owner asks to record or change something, say in one line that it has not been saved and ask for the guest, booking or amount that is missing. Never give example amounts or made-up steps. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
 ].join('\n');
 const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 2 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
+
+/** The language is decided here, not by the model, which otherwise switches to Hindi on an Indian name. */
+function foBrainLang_(q) { return /[\u0900-\u097F]/.test(q) ? 'Reply in Hindi.' : 'Reply in English only.'; }
 
 /** Route: f.brain.ask { question, history: [{role, text}], page } → { answer, provider, model, context_at }. */
 function foBrainAsk_(b, user) {
@@ -34,11 +38,34 @@ function foBrainAsk_(b, user) {
   const research = b.web === false ? null : foBrainResearch_(q, hist);
   const web = research && research.findings.length ? '\n\nWEB RESEARCH (live Google search, ' + foNow_().slice(0, 16) + '):\n' + research.findings.map(f => 'Q: ' + f.query + '\n' + f.text).join('\n\n') +
     '\nSOURCES:\n' + research.sources.map((x, i) => '[' + (i + 1) + '] ' + x.title).join('\n') : '';
-  const prompt = 'BUSINESS SUMMARY (' + ctx.as_of + '):\n' + JSON.stringify(ctx) + web + (page ? '\n\nThe owner is looking at: ' + page : '') + '\n\nQUESTION: ' + q;
-  const r = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt);
+  const prompt = 'BUSINESS SUMMARY (' + ctx.as_of + '):\n' + JSON.stringify(ctx) + web + (page ? '\n\nThe owner is looking at: ' + page : '') + '\n\nQUESTION: ' + q + '\n\n' + foBrainLang_(q);
+  let r = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt), unverified = [];
+  if (r.ok) {
+    // every ₹ figure must come from the data: one correction round, then whatever is left is flagged to the owner
+    const source = prompt + ' ' + hist.map(h => h.text).join(' ');
+    unverified = foBrainUnverified_(r.text, source);
+    if (unverified.length && Date.now() - t0 < FO_BRAIN.BUDGET_MS) {
+      const fix = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt + '\n\nYour draft answer:\n' + r.text + '\n\nThese figures are not in the data: ' + unverified.join(', ') + '. Rewrite the answer without them, or mark a figure you calculated from the data as ESTIMATE and show the sum. Reply with the final answer only.');
+      if (fix.ok) { const left = foBrainUnverified_(fix.text, source); if (left.length <= unverified.length) { r = fix; unverified = left; } }
+    }
+  }
   foBrainLog_(user.email, q, r, Date.now() - t0);
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
-  return { answer: r.text, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
+  return { answer: foBrainCleanCites_(r.text), unverified, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
+}
+
+/** ₹ figures in an answer that appear nowhere in its sources. Lines marked ESTIMATE show their working, so they pass. */
+function foBrainUnverified_(text, source) {
+  const digits = v => String(v).replace(/[,\s]/g, '').replace(/\.0+$/, ''), known = {}, out = [];
+  (String(source).match(/\d[\d,]*(?:\.\d+)?/g) || []).forEach(n => { known[digits(n)] = 1; });
+  String(text).split('\n').filter(l => !/ESTIMATE/i.test(l)).forEach(l => {
+    (l.match(/(?:₹|Rs\.?\s*|INR\s*)\s*\d[\d,]*(?:\.\d+)?\s*(?:k\b|lakh|cr\b|crore)?/gi) || []).forEach(m => {
+      if (/k\b|lakh|cr/i.test(m)) return;   // rounded forms cannot be compared exactly
+      const n = digits(m.replace(/[^\d.,]/g, '').replace(/^\./, '')), round = String(Math.round(Number(n)));
+      if (!known[n] && !known[round] && out.indexOf(m.trim()) < 0) out.push(m.trim());
+    });
+  });
+  return out;
 }
 
 /**
@@ -324,13 +351,14 @@ function foBrainTestResearch() {
 // ---------------------------------------------------------------- AP Brain actions (fill in, ask, confirm, save) ----------------
 /**
  * Route f.brain.act { text, draft }: turns a message or a pasted booking voucher into a draft action for the owner to confirm:
- * add_booking, add_expense, record_salary, add_employee, add_lead. The model only extracts fields; this code validates them, works out
+ * add_booking, add_expense, record_salary, add_employee, add_lead, and changes to records that exist: record_payment, update_booking,
+ * add_task, complete_task, update_lead. Existing records are matched here, so the guest list is never sent to a model. The model only extracts fields; this code validates them, works out
  * what is still missing and returns the question to ask plus the exact save request. Nothing is saved here: the portal shows a
  * confirmation card and saves through the normal routes (same checks, double-booking guard and audit log as the forms).
  * Privacy: vouchers contain guest details, so they go only to providers that do not train on API data (Groq, Cerebras, Mistral),
  * never to the Gemini free tier or OpenRouter; ID numbers (Aadhaar-style 12 digits) are masked; the log keeps only the action type.
  */
-const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'none'];
+const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'record_payment', 'update_booking', 'add_task', 'complete_task', 'update_lead', 'none'];
 function foBrainAct_(b, user) {
   const text = String(b.text || '').replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[id-number]').trim().slice(0, 6000);
   if (!text) return { ok: false, error: 'Type or paste the details first.' };
@@ -349,6 +377,12 @@ function foBrainAct_(b, user) {
     'add_employee fields: name, role (caretaker|sweeper|intern|manager|cook|driver|security|other), work_mode (on-site|remote), phone, email, property_ids, salary_amount, salary_cycle (monthly|weekly|daily|stipend|per-task), pay_day, joined.',
     'add_lead fields: name, phone, email, source, villa, checkin, nights, guests, value_inr, next_followup, notes.',
     'channel_change fields (prices, availability and restrictions on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id (a villa id, or "all" for every villa), type (rate|pct|recommended|close|open|min_stay|max_stay|cta|ctd|stop_sell|units), value (rupees for rate, percent for pct e.g. 10 or -15, nights for min_stay/max_stay (0 = no limit), number for units, on|off for cta/ctd/stop_sell; cta = no check-ins, ctd = no check-outs), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
+    'record_payment (the guest paid, cleared dues, completed or settled payments, or money was refunded) fields: guest_name, booking_ref (booking or OTA number), guest_phone, property_id, checkin, amount (leave out when the guest paid everything pending), date, method (upi|cash|bank|card|other), reference, type (payment|refund).',
+    'update_booking (cancel, no-show, new dates, new amount or a note on an existing booking) fields: guest_name, booking_ref, guest_phone, property_id, checkin (only to identify the stay), status (confirmed|tentative|cancelled|no_show), new_checkin, new_checkout, new_property_id, gross_amount, discount, adults, children, note.',
+    'add_task (a reminder or to-do) fields: title, due, notes. complete_task (a to-do is done) fields: title.',
+    'update_lead (an existing enquiry moved on) fields: name, phone, stage (new|contacted|quoted|won|lost), next_followup, lost_reason, value_inr, notes.',
+    'Statements such as "Ravi Kumar completed all pending payments, update it" or "mark Ravi fully paid" are record_payment, not questions. Questions about payments ("how much is pending?") are "none".',
+    'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
   ].filter(Boolean).join('\n');
@@ -376,7 +410,7 @@ function foActPlan_(intent, f, D, today) {
   if (f.property_id && !prop(f.property_id) && f.property_id !== 'all') { const p2 = propByName(f.property_id); f.property_id = p2 ? p2.property_id : ''; }
   const inr = v => '₹' + Math.round(foNum_(v)).toLocaleString('en-IN'), missing = [], lines = [];
   const need = (k, label) => { if (f[k] === undefined || f[k] === '' || f[k] === null) missing.push({ key: k, label }); };
-  let route = '', payload = {};
+  let route = '', payload = {}, closed = false;
   if (intent === 'add_booking') {
     f.status = f.status === 'tentative' ? 'tentative' : 'confirmed';
     need('property_id', 'which villa'); need('guest_name', 'guest name'); need('checkin', 'check-in date'); need('checkout', 'check-out date'); need('channel', 'booked through (Airbnb, Booking.com, direct…)'); need('gross_amount', 'total amount the guest pays');
@@ -432,7 +466,86 @@ function foActPlan_(intent, f, D, today) {
       ['Nights', (f.from || '?') + (f.to && f.to !== f.from ? ' → ' + f.to : '') + (wds.length ? ' · only ' + wds.map(n => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][n]).join(', ') : '')], ['Channels', chans.length ? chans.map(c => names[c]).join(', ') : 'all three'],
       ['Safety', 'prices stay inside your floor/ceiling; every change is read back (or done by you in Phone assist)']);
     route = 'f.cm.bulk'; payload = { bulk: { villas: f.property_id === 'all' ? props.map(p => p.property_id) : [f.property_id], from: f.from, to: f.to, weekdays: wds, channels: chans, set, approve: true } };
+  } else if (intent === 'record_payment') {
+    const pays = foRows_('Payments'), refund = f.type === 'refund', found = foActBookings_(f).filter(x => refund || x.status !== 'cancelled'), due = x => foBookingDue_(x, pays);
+    const stay = x => (prop(x.property_id) || {}).name + ' · ' + x.checkin + ' → ' + x.checkout, people = found.map(x => foActTokens_(x.guest_name).join(' ')).filter((n, i, a) => a.indexOf(n) === i);
+    f.type = refund ? 'refund' : 'payment'; f.date = foDate_(f.date) || today;
+    let items = [];
+    if (!found.length) missing.push({ key: 'guest_name', label: 'the guest (I found no booking for "' + (f.guest_name || f.booking_ref || f.guest_phone || '?') + '"; send the booking number, phone or exact name)' });
+    else if (people.length > 1) { found.forEach(x => lines.push([x.guest_name, stay(x)])); missing.push({ key: 'guest_name', label: 'which of these guests' }); }
+    else {
+      const open = found.filter(x => due(x) > 0.5).sort((x, y) => String(x.checkin) < String(y.checkin) ? -1 : 1), total = open.reduce((t, x) => t + due(x), 0), amount = foNum_(f.amount);
+      if (refund || !open.length && found.length === 1 && !foHasNum_(found[0].gross_amount) && amount > 0) {
+        if (found.length > 1) missing.push({ key: 'checkin', label: 'which stay (its check-in date)' }); else if (!(amount > 0)) missing.push({ key: 'amount', label: 'the amount' });
+        else items = [{ booking_id: found[0].booking_id, amount, expect_due: '' }];
+      } else if (!open.length) {
+        closed = true; f.settled = true; found.forEach(x => lines.push([stay(x), foHasNum_(x.gross_amount) ? 'nothing pending' : 'no amount on this booking']));
+      } else if (amount > total + 1) missing.push({ key: 'amount', label: 'a smaller amount (only ' + inr(total) + ' is pending)' });
+      else { let left = amount > 0 ? amount : total; open.forEach(x => { const pay = Math.min(left, due(x)); if (pay > 0.5) { items.push({ booking_id: x.booking_id, amount: pay, expect_due: due(x) }); left -= pay; } }); }
+    }
+    items.forEach(it => { const x = found.find(y => y.booking_id === it.booking_id); lines.push([stay(x), inr(it.amount) + (it.expect_due === '' ? '' : ' of ' + inr(it.expect_due) + ' pending')]); });
+    if (items.length) { lines.unshift(['Guest', found[0].guest_name]); lines.push(['Type', f.type + ' · ' + f.date + (f.method ? ' · ' + f.method : '') + (f.reference ? ' · ' + f.reference : '')]); }
+    route = 'f.payment.settle'; payload = { payment: { type: f.type, date: f.date, method: f.method || '', reference: f.reference || '', items } };
+    if (closed) return { fields: f, missing, question: 'Nothing is pending for ' + found[0].guest_name + ', so I changed nothing.', lines, route: '', payload: {}, ready: false, closed: true };
+  } else if (intent === 'update_booking') {
+    let found = foActBookings_(f); const upcoming = found.filter(x => String(x.checkout) >= today);
+    if (found.length > 1 && upcoming.length === 1) found = upcoming;
+    const status = /cancel/i.test(f.status || '') ? 'cancelled' : /no.?show/i.test(f.status || '') ? 'no_show' : ['confirmed', 'tentative'].indexOf(f.status) >= 0 ? f.status : '';
+    const x = found.length === 1 ? found[0] : null, set = {}, np = f.new_property_id ? prop(f.new_property_id) || propByName(f.new_property_id) : null;
+    if (status) set.status = status; if (foDate_(f.new_checkin)) set.checkin = foDate_(f.new_checkin); if (foDate_(f.new_checkout)) set.checkout = foDate_(f.new_checkout); if (np) set.property_id = np.property_id;
+    ['gross_amount', 'discount', 'adults', 'children'].forEach(k => { if (foHasNum_(f[k])) set[k] = foNum_(f[k]); });
+    if (f.note && x) set.notes = (x.notes ? x.notes + ' · ' : '') + f.note;
+    if (!found.length) missing.push({ key: 'guest_name', label: 'the booking (I found none for "' + (f.guest_name || f.booking_ref || f.guest_phone || '?') + '")' });
+    else if (!x) { found.forEach(y => lines.push([y.guest_name, (prop(y.property_id) || {}).name + ' · ' + y.checkin + ' → ' + y.checkout + ' · ' + y.status])); missing.push({ key: 'checkin', label: 'which of these stays (its check-in date)' }); }
+    if (!Object.keys(set).length) missing.push({ key: 'status', label: 'what to change' });
+    if (x) { lines.push(['Booking', x.guest_name + ' · ' + (prop(x.property_id) || {}).name + ' · ' + x.checkin + ' → ' + x.checkout]); Object.keys(set).forEach(k => lines.push([k.replace('_', ' '), (k === 'property_id' ? (prop(x[k]) || {}).name + ' → ' + np.name : k === 'notes' ? f.note : String(x[k] === '' ? '—' : x[k]) + ' → ' + set[k])]));
+      if (set.status === 'cancelled') lines.push(['Money', 'anything collected stays recorded; add a refund if you return it']); }
+    route = 'f.booking.save'; payload = { booking: Object.assign({ booking_id: x ? x.booking_id : '', version: x ? x.version : '' }, set) };
+  } else if (intent === 'add_task') {
+    f.due = foDate_(f.due) || ''; need('title', 'what the task is');
+    lines.push(['Task', f.title || '—'], ['Due', f.due || 'no date'], ['Notes', f.notes || '—']);
+    route = 'f.crm.task.save'; payload = { task: { title: f.title, due: f.due, notes: f.notes || '' } };
+  } else if (intent === 'complete_task') {
+    const hits = (D.crm_tasks || []).filter(t => !t.done && foActNameMatch_(f.title, t.title));
+    if (!hits.length) missing.push({ key: 'title', label: 'which task (no open task matches "' + (f.title || '?') + '")' });
+    else if (hits.length > 1) { hits.forEach(t => lines.push([t.title, t.due || 'no date'])); missing.push({ key: 'title', label: 'which of these tasks' }); }
+    const t = hits.length === 1 ? hits[0] : null; if (t) lines.push(['Task', t.title], ['Mark as', 'done']);
+    route = 'f.crm.task.save'; payload = { task: t ? { task_id: t.task_id, title: t.title, due: t.due, contact_type: t.contact_type, contact_id: t.contact_id, notes: t.notes, done: true } : {} };
+  } else if (intent === 'update_lead') {
+    const digits = String(f.phone || '').replace(/\D/g, '').slice(-10), hits = (D.crm_leads || []).filter(l => digits ? String(l.phone).replace(/\D/g, '').slice(-10) === digits : foActNameMatch_(f.name, l.name));
+    if (!hits.length) missing.push({ key: 'name', label: 'the enquiry (none matches "' + (f.name || f.phone || '?') + '")' });
+    else if (hits.length > 1) { hits.forEach(l => lines.push([l.name, l.stage + (l.checkin ? ' · ' + l.checkin : '')])); missing.push({ key: 'phone', label: 'which enquiry (send the phone number)' }); }
+    const l = hits.length === 1 ? hits[0] : null, set = {};
+    if (FO_CRM_STAGES.indexOf(f.stage) >= 0) set.stage = f.stage; if (foDate_(f.next_followup)) set.next_followup = foDate_(f.next_followup); if (f.lost_reason) set.lost_reason = f.lost_reason; if (foHasNum_(f.value_inr)) set.value_inr = foNum_(f.value_inr);
+    if (f.notes && l) set.notes = (l.notes ? l.notes + ' · ' : '') + f.notes;
+    if (!Object.keys(set).length) missing.push({ key: 'stage', label: 'what changed (stage, follow-up date or a note)' });
+    if (l) { lines.push(['Enquiry', l.name]); Object.keys(set).forEach(k => lines.push([k.replace('_', ' '), k === 'notes' ? f.notes : String(l[k] === '' ? '—' : l[k]) + ' → ' + set[k]])); }
+    route = 'f.crm.lead.save'; payload = { lead: l ? Object.assign({}, l, set) : {} }; delete payload.lead._row;
   }
   const question = missing.length ? 'To finish this I still need: ' + missing.map(m => m.label).join(', ') + '.' : '';
   return { fields: f, missing, question, lines, route, payload, ready: !missing.length };
+}
+function foActTokens_(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9ऀ-ॿ ]+/g, ' ').split(/\s+/).filter(Boolean); }
+function foActOneEdit_(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++edits > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+/** Names match when every word of the shorter name is in the longer one (one typo allowed in long words, initials count): "Damodar Dholkar" = "Damodar Shashikant Dholkar". */
+function foActNameMatch_(q, name) {
+  const a = foActTokens_(q), b = foActTokens_(name), s = a.length <= b.length ? a : b, l = a.length <= b.length ? b : a;
+  if (!s.length || !s.some(t => t.length > 1)) return false;
+  return s.every(t => l.some(u => u === t || t.length === 1 && u[0] === t || u.length === 1 && t[0] === u || t.length >= 5 && foActOneEdit_(t, u)));
+}
+/** Live bookings for a guest, by booking or OTA number, then phone, then name; villa and check-in narrow it down. Read fresh so a balance is never stale. */
+function foActBookings_(f) {
+  const rows = foRows_('Bookings').filter(x => x.status !== 'void'), ref = String(f.booking_ref || '').trim().toLowerCase(), phone = String(f.guest_phone || '').replace(/\D/g, '').slice(-10);
+  let hits = [];
+  if (ref) hits = rows.filter(x => String(x.booking_id).toLowerCase() === ref || String(x.external_id).toLowerCase() === ref);
+  if (!hits.length && phone.length === 10) { const ids = foRows_('Guests').filter(g => String(g.phone).replace(/\D/g, '').slice(-10) === phone).map(g => g.guest_id); hits = rows.filter(x => ids.indexOf(x.guest_id) >= 0); }
+  if (!hits.length && f.guest_name) hits = rows.filter(x => foActNameMatch_(f.guest_name, x.guest_name));
+  if (f.property_id && f.property_id !== 'all') hits = hits.filter(x => x.property_id === f.property_id);
+  const on = foDate_(f.checkin); if (on) hits = hits.filter(x => foDate_(x.checkin) === on);
+  return hits;
 }

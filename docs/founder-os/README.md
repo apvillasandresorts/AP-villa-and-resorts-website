@@ -170,6 +170,8 @@ on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details
   extracts fields, the server validates them and asks for anything missing, the panel shows a confirmation card, and "Confirm & save" calls the
   normal route (`f.booking.save`, `f.expense.save`, `f.hr.pay.save`, `f.hr.emp.save`, `f.crm.lead.save`) with all their checks. Guest details go only
   to Groq, Cerebras or Mistral (never the Gemini free tier or OpenRouter); Aadhaar-style 12-digit numbers are masked; the log keeps only the action type.
+- **Changes to existing records:** "Damodar Dholkar completed all pending payments", "Priya cancelled", "move Ravi to 12 Nov", "remind me to call the plumber Friday", "plumber task done", "Asha enquiry is won". Guests, tasks and enquiries are matched inside Apps Script, so the guest list never goes to a model. The owner sees the exact amounts and taps Confirm; `f.payment.settle` rechecks each balance, so a second tap saves nothing.
+- **Language and figures:** replies are English unless the question is in Devanagari (set in code). Every ₹ figure is checked against the data; a mismatch gets one correction round and anything left is shown as "Check before using".
 - Editor checks: `foBrainTest` (each provider), `foBrainTestResearch`. Daily AI brief email (Settings `brain_daily`). Log: BrainLog tab.
 
 ## People & HR and CRM

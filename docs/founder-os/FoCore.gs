@@ -415,7 +415,7 @@ function foRoutes_() {
     'f.logout': [foLogout_, 'viewer'], 'f.logout.all': [foLogoutAll_, 'viewer'], 'f.sessions': [foSessionsList_, 'viewer'], 'f.passphrase': [foChangePass_, 'viewer'],
     'f.data': [foDataLoad_, 'viewer'], 'f.audit': [foAuditList_, 'founder'],
     'f.sync': [foSyncNow_, 'manager'], 'f.booking.save': [foCmAfter_(foBookingSave_), 'manager'], 'f.booking.note': [foBookingNote_, 'manager'],
-    'f.booking.history': [foBookingHistory_, 'viewer'], 'f.bookings.delete.request': [foBookingsDeleteRequest_, 'founder'], 'f.bookings.delete.confirm': [foBookingsDeleteConfirm_, 'founder'], 'f.payment.add': [foPaymentAdd_, 'manager'],
+    'f.booking.history': [foBookingHistory_, 'viewer'], 'f.bookings.delete.request': [foBookingsDeleteRequest_, 'founder'], 'f.bookings.delete.confirm': [foBookingsDeleteConfirm_, 'founder'], 'f.payment.add': [foPaymentAdd_, 'manager'], 'f.payment.settle': [foPaymentSettle_, 'manager'],
     'f.block.save': [foCmAfter_(foBlockSave_), 'manager'], 'f.block.delete': [foCmAfter_(foBlockDelete_), 'manager'],
     'f.exception.resolve': [foExceptionResolve_, 'manager'], 'f.import.rows': [foImportRows_, 'manager'],
     'f.channel.save': [foChannelSave_, 'founder'],

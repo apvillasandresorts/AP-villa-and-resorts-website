@@ -302,6 +302,29 @@ function foPaymentAdd_(b, user) {
   } finally { lock.releaseLock(); }
 }
 
+/** What the guest still owes: the same formula as outstanding_receivables in founder/metrics.js. */
+function foBookingDue_(bk, pays) {
+  const mine = pays.filter(p => p.booking_id === bk.booking_id), sum = t => mine.filter(p => p.type === t).reduce((s, p) => s + foNum_(p.amount), 0);
+  return foNum_(bk.gross_amount) - foNum_(bk.discount) + foNum_(bk.retained_amount) - sum('payment') + sum('refund');
+}
+/** Several payments in one step (AP Brain "paid everything pending"). All balances are checked first, so a second tap or an old card saves nothing. */
+function foPaymentSettle_(b, user) {
+  const x = b.payment || {}, items = Array.isArray(x.items) ? x.items.slice(0, 20) : [];
+  if (!items.length) return { ok: false, error: 'Nothing to record.' };
+  const rows = foRows_('Bookings'), pays = foRows_('Payments');
+  for (const it of items) {
+    const bk = rows.find(r => r.booking_id === it.booking_id); if (!bk) return { ok: false, error: 'Booking not found.' };
+    if (foHasNum_(it.expect_due) && Math.abs(foBookingDue_(bk, pays) - foNum_(it.expect_due)) > 1) return { ok: false, error: 'The balance on ' + bk.booking_id + ' has changed since this card was made. Ask again.' };
+  }
+  const saved = [];
+  for (const it of items) {
+    const r = foPaymentAdd_({ booking_id: it.booking_id, amount: it.amount, type: x.type, date: x.date, method: x.method, reference: x.reference }, user);
+    if (r.ok === false) return { ok: false, error: r.error + (saved.length ? ' (' + saved.length + ' saved before this)' : '') };
+    saved.push(r.payment.payment_id);
+  }
+  return { saved };
+}
+
 // ---------------------------------------------------------------- maintenance / owner blocks ----------------
 function foBlockSave_(b, user) {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);

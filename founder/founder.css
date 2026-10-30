@@ -346,8 +346,8 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .dk-ladder span.is-cur { border-color: #2F7D4F; background: color-mix(in srgb, #2F7D4F 12%, transparent); }
 .seo-spark { color: var(--em, #2F7D4F); vertical-align: middle; }
 /* AP Brain chat */
-.fo-brain { max-height: 52vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
-.fo-brain__msg { padding: 10px 12px; border-radius: 14px; line-height: 1.5; font-size: 14px; max-width: 92%; }
+.fo-brain { max-height: 52vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.fo-brain__msg { padding: 10px 12px; border-radius: 14px; line-height: 1.5; font-size: 14px; max-width: 92%; min-width: 0; overflow-wrap: anywhere; }
 .fo-brain__msg small { display: block; margin-top: 6px; }
 .fo-brain__msg--user { align-self: flex-end; background: color-mix(in srgb, #2F7D4F 14%, var(--card)); }
 .fo-brain__msg--assistant { align-self: flex-start; background: color-mix(in srgb, #C9A227 12%, var(--card)); border: 1px solid var(--line); }
