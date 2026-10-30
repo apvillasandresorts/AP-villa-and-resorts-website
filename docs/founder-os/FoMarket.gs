@@ -15,6 +15,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.summary': b => foMachineSummary_(b),
   'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
   'f.m.seo.done': b => foSeoTopicDone_(b),
+  'f.m.seo.peek': () => ({ waiting: foRows_('SeoTopics').filter(t => t.status === 'approved').length }),   // blog-queue.yml: anything accepted in the portal?
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
   'f.m.compset': b => foCompSetPublic_(b),
   'f.m.bots.report': b => foBotsReport_(b),

@@ -140,6 +140,7 @@ function foDailyIfDue_() {
     foJob_('ga_signal', () => foGaSignal_(today));   // optional: never blocks the day being marked done
     foJob_('seo_ranks', () => foSeoRanks_(today));   // optional: keyword positions from Search Console
     foJob_('desk_signals', () => foDeskOwnSignals_(today) + '; ' + foSignalsPrune_(today));   // GA4 + Search Console demand signals; old signals pruned
+    foJob_('blog_ideas', () => foBlogSuggest_(today).added + ' blog ideas');   // optional: never blocks the day
     foJob_('brain_brief', () => foBrainDailyBrief_(today));   // optional AI morning brief (free Groq/Gemini); never blocks the day
     foJob_('health', () => { const h = foHealth_({ refresh: true }).health; return h.summary.fail + ' failing, ' + h.summary.warn + ' to check: ' + h.checks.filter(c => c.status !== 'ok').map(c => c.name).join('; '); });
     if (ok) foSettingSet_('last_daily', today);

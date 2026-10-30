@@ -125,3 +125,28 @@ test('system health: every check reported in plain words, problems first-class, 
   env.setUserRole('viewer');
   assert.equal(env.api({ action: 'f.health', token }).ok, true);
 });
+
+test('blog engine: ideas come from events and searches, covered topics are left out, and an accepted topic is only "published" after the publish agent', async () => {
+  const { env, token } = await ready(r => /published\.json/.test(r.url) ? { code: 200, body: JSON.stringify({ posts: [{ title: 'Bhasma Aarti Guide', keyword: 'bhasma aarti booking' }] }) } : { code: 500, body: '' });
+  const t0 = env.fo.foRows_ ? env.api({ action: 'f.data', token }).data : null;
+  const today = (t0 && t0.today) || '2026-10-16', add = n => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
+  assert.equal(env.api({ action: 'f.event.save', token, event: { name: 'Kartik Mela', start: add(20), end: add(22), kind: 'festival' } }).ok, true);
+  const bad = env.api({ action: 'f.blog.suggest', key: 'x' }); assert.equal(bad.ok, false);
+  const r = env.api({ action: 'f.blog.suggest', token }); assert.equal(r.ok, true, r.error); assert.ok(r.result.added >= 1);
+  const ideas = env.tab('SeoTopics').filter(x => x.status === 'suggested');
+  assert.match(ideas[0].keyword, /kartik mela ujjain/); assert.ok(Number(ideas[0].score) >= 50); assert.match(ideas[0].why, /20 days/);
+  assert.equal(env.api({ action: 'f.blog.suggest', token }).result.added, 0, 'no duplicates');
+  assert.equal(env.fo.foBlogSame_('bhasma aarti booking online', 'Bhasma Aarti Guide bhasma aarti booking'), true);
+  const { key } = env.api({ action: 'f.automation.create', token }), id = ideas[0].topic_id;
+  assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 0);
+  assert.equal(env.api({ action: 'f.blog.accept', token, topic_id: id }).ok, true);
+  assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 1);
+  const n = env.api({ action: 'f.m.seo.next', key }); assert.equal(n.topic.topic_id, id); assert.equal(n.topic.approved, true);
+  const st = () => env.tab('SeoTopics').find(x => x.topic_id === id).status;
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, slug: 'kartik-mela' }); assert.equal(st(), 'written');
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, status: 'review' }); assert.equal(st(), 'review');
+  env.api({ action: 'f.blog.accept', token, topic_id: id }); env.api({ action: 'f.m.seo.next', key });
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, slug: 'kartik-mela', status: 'live' }); assert.equal(st(), 'published');
+  assert.match(env.api({ action: 'f.blog.accept', token, topic_id: id }).error, /already published/);
+  env.setUserRole('manager'); assert.match(env.api({ action: 'f.blog.accept', token, topic_id: id }).error, /role/);
+});

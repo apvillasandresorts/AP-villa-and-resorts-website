@@ -41,6 +41,8 @@ jobs:
       skip: ${{ steps.guard.outputs.skip }}
       slug: ${{ steps.detect.outputs.slug }}
       branch: ${{ steps.detect.outputs.branch }}
+      topic_id: ${{ steps.req.outputs.topic_id }}
+      approved: ${{ steps.req.outputs.approved }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -81,7 +83,7 @@ jobs:
         run: |
           [ -z "$FOUNDER_OS_KEY" ] && { echo "No automation key: Claude picks a timely topic."; exit 0; }
           node scripts/push-market.mjs --seo-next "$RUNNER_TEMP/topic.json" || exit 0
-          node -e "const t=require(process.argv[1]); if(!t.topic_id) process.exit(0); const s=[t.title,t.keyword&&('Keyword: '+t.keyword),t.intent&&('Search intent: '+t.intent),t.notes&&('Owner notes: '+t.notes)].filter(Boolean).join('. ').replace(/[\r\n\"\$\`]/g,' ').slice(0,600); require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'topic='+s+'\ntopic_id='+t.topic_id+'\n')" "$RUNNER_TEMP/topic.json"
+          node -e "const t=require(process.argv[1]); if(!t.topic_id) process.exit(0); const s=[t.title,t.keyword&&('Keyword: '+t.keyword),t.intent&&('Search intent: '+t.intent),t.notes&&('Owner notes: '+t.notes)].filter(Boolean).join('. ').replace(/[\r\n\"\$\`]/g,' ').slice(0,600); require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'topic='+s+'\ntopic_id='+t.topic_id+'\napproved='+(t.approved?'true':'false')+'\n')" "$RUNNER_TEMP/topic.json"
 
       - name: Write the post with Claude
         if: steps.guard.outputs.skip != 'true'
@@ -107,6 +109,23 @@ jobs:
             --model ${{ env.BLOG_MODEL }}
             --max-turns 80
             --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*)"
+
+      - name: Photo agent
+        if: steps.guard.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You choose the photos for the one new post in blog/ (the new, uncommitted .html file). For every section that shows a place, festival or ritual, pick the most relevant real photo.
+            Look first in content/photo-library.json. If nothing there really shows the subject, search with `node scripts/commons-photo.mjs` (free, commercially licensed Wikimedia Commons photos; it records the credit and licence).
+            Rules: only real photos, never AI images of the temple, Ujjain or the villas. Alt text must say what the photo really shows, and a villa photo must never be called a temple photo. Commons photos need a visible credit caption.
+            The "Where to stay" section keeps a real Rudrangan Suites photo. Replace a weak or generic photo; leave a good one alone. Do not change the wording of the post except alt text and captions. No git commands.
+            Finish only when `node scripts/validate-post.mjs <slug>` passes.
+          claude_args: >-
+            --model ${{ env.BLOG_MODEL }}
+            --max-turns 30
+            --allowedTools "Read,Edit,Glob,Grep,Bash(node:*)"
 
       - name: Detect new post and push branch
         id: detect
@@ -138,7 +157,7 @@ jobs:
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
       - name: Mark the requested topic as written
-        if: steps.guard.outputs.skip != 'true' && steps.req.outputs.topic_id != ''
+        if: always() && steps.guard.outputs.skip != 'true' && steps.req.outputs.topic_id != ''
         env:
           FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
           TOPIC_ID: ${{ steps.req.outputs.topic_id }}
@@ -362,7 +381,28 @@ jobs:
           cat body.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Auto-publish
-        if: needs.check.outputs.passed == 'true' && (github.event.inputs.auto_publish == 'true' || vars.AUTO_PUBLISH == 'true')
+        id: merge
+        if: needs.check.outputs.passed == 'true' && (github.event.inputs.auto_publish == 'true' || vars.AUTO_PUBLISH == 'true' || needs.write.outputs.approved == 'true')
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh pr merge "${{ steps.pr.outputs.url }}" --squash --delete-branch
+
+      - uses: actions/checkout@v4
+        if: always() && needs.write.outputs.topic_id != ''
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        if: always() && needs.write.outputs.topic_id != ''
+        with:
+          node-version: 20
+
+      - name: Tell the Founder OS how it ended
+        if: always() && needs.write.outputs.topic_id != ''
+        env:
+          FOUNDER_OS_KEY: ${{ secrets.FOUNDER_OS_KEY }}
+          TOPIC_ID: ${{ needs.write.outputs.topic_id }}
+          SLUG: ${{ needs.write.outputs.slug }}
+          MERGED: ${{ steps.merge.outcome }}
+        run: node scripts/push-market.mjs --seo-done "$TOPIC_ID" "$SLUG" $([ "$MERGED" = "success" ] && echo live || echo review) || true
