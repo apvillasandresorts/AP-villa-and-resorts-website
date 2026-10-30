@@ -116,7 +116,10 @@ test('nightly copy to AP Apeiron: off without a key; only allowlisted fields lea
 test('paste box: founder only, checks the key, never returns or logs it; Run now works any time; removing it stops the copy', async () => {
   const calls = []; const env = makeEnv({ http: r => { calls.push(r); return { code: 200, body: JSON.stringify({ matched: true, mismatches: 0, db: {} }) }; } }); env.fo.foSetup(); const token = await env.login();
   const KEY = 'sb_secret_' + 'a'.repeat(30);
-  assert.match(env.api({ action: 'f.cloud.save', token, key: 'sb_publishable_x' }).error, /secret key/);
+  assert.match(env.api({ action: 'f.cloud.save', token, key: 'sb_publishable_x' }).error, /publishable key/);
+  assert.match(env.api({ action: 'f.cloud.save', token, key: '' }).error, /Paste the key/);
+  assert.match(env.api({ action: 'f.cloud.save', token, key: 'sb_secret_97x•••••••' }).error, /hidden version/);
+  const r0 = env.api({ action: 'f.cloud.save', token, key: 'sb_secret_aaaaa\n' + 'a'.repeat(25) + '  ' }); assert.equal(r0.ok, true, r0.error); assert.equal(env.props.get('FO_CLOUD_KEY'), KEY, 'stray line breaks are removed');
   const r = env.api({ action: 'f.cloud.save', token, key: KEY }); assert.equal(r.ok, true, r.error); assert.doesNotMatch(JSON.stringify(r), /sb_secret_/);
   assert.equal(env.props.get('FO_CLOUD_KEY'), KEY); assert.equal(env.props.get('FO_CLOUD_ORG'), 'ap-villasandresorts');
   const d = env.api({ action: 'f.data', token: await env.login() }); assert.equal(d.channel_manager.cloud.set, true); assert.doesNotMatch(JSON.stringify(d), /sb_secret_/); assert.doesNotMatch(JSON.stringify(env.tab('Audit')), /sb_secret_/);

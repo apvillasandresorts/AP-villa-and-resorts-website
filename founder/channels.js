@@ -281,7 +281,7 @@
       U.api('f.cm.agent.key', {}).then(function (j) { if (!j.ok) return toast(j.error, true); $('#ag-out', body).innerHTML = '<div class="fo-alert"><b>Copy this now (shown once):</b><br><input readonly value="' + esc(j.key) + '" class="cm-copy" style="width:100%"><br><small>' + esc(j.note) + '</small></div>'; var k = $('#ag-out .cm-copy', body); k.focus(); k.select(); });
     };
     var ar = $('#ag-rev'); if (ar) ar.onclick = function () { if (confirm('Revoke the agent key? The agent stops at once.')) save('f.cm.agent.revoke', {}, 'Agent key revoked'); };
-    var cs = $('#cl-save'); if (cs) cs.onclick = function () { var k = $('#cl-key'); save('f.cloud.save', { key: k.value }, 'Key saved').then(function () { k.value = ''; }); };
+    var cs = $('#cl-save'); if (cs) cs.onclick = function () { var k = $('#cl-key'); save('f.cloud.save', { key: k.value }, 'Key saved'); };
     var cr = $('#cl-run'); if (cr) cr.onclick = function () { cr.disabled = true; toast('Copying, about a minute…'); U.api('f.cloud.run', {}).then(function (j) { toast(j.ok ? String(j.detail).slice(0, 90) : j.error, !j.ok); return U.load(true); }); };
     var cd = $('#cl-del'); if (cd) cd.onclick = function () { if (confirm('Remove the key? The nightly copy stops.')) save('f.cloud.clear', {}, 'Key removed'); };
     var si = $('#cm-signin-save'); if (si) si.onclick = function () { save('f.cm.signin.set', { url: val(body, 'cm-signin') }, 'Sign-in link saved'); };

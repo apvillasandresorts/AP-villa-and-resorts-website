@@ -262,7 +262,11 @@ function foCloudMonths_() {
 }
 /** Portal paste box: the key is stored and never returned, logged or shown again. The other settings are this tenant's own. */
 function foCloudSave_(b, user) {
-  const key = String(b.key || '').trim(); if (!/^sb_secret_[A-Za-z0-9_-]{10,}$/.test(key)) return { ok: false, error: 'That is not a Supabase secret key (it starts with sb_secret_).' };
+  const key = String(b.key || '').replace(/\s+/g, '');
+  if (!key) return { ok: false, error: 'Paste the key first.' };
+  if (/[^\x21-\x7e]/.test(key)) return { ok: false, error: 'That is the hidden version of the key. In Supabase press the eye icon or the copy button beside it, then paste again.' };
+  if (/^sb_publishable_/.test(key)) return { ok: false, error: 'That is the publishable key. Copy the one under Secret keys.' };
+  if (!/^sb_secret_\S{10,}$/.test(key)) return { ok: false, error: 'That is not a Supabase secret key (it starts with sb_secret_).' };
   const p = PropertiesService.getScriptProperties();
   p.setProperties({ FO_CLOUD_KEY: key, FO_CLOUD_URL: 'https://hxcibbnelfxxqfzgatep.supabase.co', FO_CLOUD_ORG: 'ap-villasandresorts', FO_CLOUD_CITY: 'Ujjain', FO_CLOUD_SAVED: foNow_() });
   foAudit_(user.email, 'cloud_key_saved', 'AP Apeiron copy key saved', 'ok'); foTouch_(); return { saved_at: foNow_() };
