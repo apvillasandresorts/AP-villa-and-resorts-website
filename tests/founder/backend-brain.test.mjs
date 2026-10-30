@@ -432,3 +432,13 @@ test('tidying: wrong weekdays are corrected, rupees go first, and an ACTIONS lin
   const r = env.fo.foBrainProposals_('Answer.\n**ACTIONS:** ```json\n[]\n```\nConfidence: High', { email: 'x', role: 'founder' });
   assert.equal(r.text, 'Answer.\nConfidence: High');
 });
+
+test('AP Brain reads the channel engine: status, sessions, approvals and the nightly check, without a model and without guest data', async () => {
+  const { env, token } = await ready(() => { throw new Error('must not call a model'); });
+  const key = env.api({ action: 'f.cm.agent.key', token }).key, agent = (action, b) => env.api(Object.assign({ action, agent_key: key, agent_id: 'vm1' }, b));
+  let r = env.api({ action: 'f.brain.act', token: await env.login(), text: 'is the channel agent working?' }); assert.equal(r.ok, true, r.error);
+  assert.equal(r.result.intent, 'lookup'); assert.match(r.result.question, /No channel agent is running/);
+  agent('agent.heartbeat', { version: '0.2.0', sessions: { airbnb: 'login', booking: 'ok' } });
+  r = env.api({ action: 'f.brain.act', token: await env.login(), text: 'channel status' }); assert.match(r.result.question, /online/);
+  const text = JSON.stringify(r.result.lines); assert.match(text, /Airbnb/); assert.match(text, /paused/); assert.match(text, /Booking\.com/);
+});

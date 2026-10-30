@@ -340,7 +340,7 @@
   function viewFinance(page) {
     var T = U.tabs('finance', [['summary', 'Summary'], ['ledger', 'Monthly ledger'], ['statements', 'P&L & balance sheet'], ['gst', 'GST'], ['expenses', 'Expenses'], ['budget', 'Budget vs actual'], ['receivables', 'Receivables'], ['cashflow', 'Cash-flow outlook'], ['overview', 'Cost analysis']]);
     var r = range();
-    page.innerHTML = U.hello('Finance & accounts', 'Money in, money out, profit, GST and what you are owed. Management accounts from your Founder OS records (not audited); estimates are labelled.') + T.html + '<div id="fi"></div>';
+    page.innerHTML = U.hello('Finance & accounts', 'Money in, money out, profit, GST and what you are owed. Management accounts from AP Mandala records (not audited); estimates are labelled.') + T.html + '<div id="fi"></div>';
     U.wireTabs(page, 'finance');
     var body = $('#fi'), Dt = D(), F = f();
     if (['summary', 'ledger', 'statements', 'gst'].indexOf(T.cur) >= 0) { ({ summary: finSummary, ledger: finLedger, statements: finStatements, gst: finGst })[T.cur](body); wireExports(page, 'finance'); return; }

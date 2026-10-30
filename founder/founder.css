@@ -420,6 +420,7 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .fo-brainbtn.fo-brainpill { width: auto; padding: 0 14px 0 10px; gap: 6px; display: inline-flex; align-items: center; border-radius: 99px; font-weight: 700; font-size: 13px; color: #1C1405;
   background: linear-gradient(135deg, #F3D98B, #C9A24F); border: 0; box-shadow: 0 0 0 1px rgba(201,162,79,.5), 0 4px 14px rgba(201,162,79,.35); position: relative; overflow: hidden; }
 .fo-brainpill .ic { width: 16px; height: 16px; }
+.fo-brainemoji { font-size: 17px; line-height: 1; }
 .fo-brainpill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); transform: translateX(-120%); animation: fx-sheen 3.5s ease-in-out infinite; }
 @keyframes fx-sheen { 60%, 100% { transform: translateX(120%); } }
 @media (max-width: 640px) { .fo-brainpill b { display: none; } .fo-brainbtn.fo-brainpill { padding: 0 9px; } }

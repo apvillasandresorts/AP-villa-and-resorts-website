@@ -437,8 +437,8 @@ function foBrainAct_(b, user) {
     'setting fields: brain_daily (on|off), only for the daily AP Brain email.',
     'paper_order (practice trade, never real money) fields: symbol (NSE symbol, e.g. INFY for Infosys), side (buy|sell), qty, account. watch_add fields: symbol (NSE symbol).',
     'message_guest (write a WhatsApp to a guest) fields: guest_name, booking_ref, message (the words the owner gave, else leave out).',
-    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price|blogs|issues|salaries|expenses|ipos), guest_name, booking_ref, guest_phone, property_id, from, to (for one date, both the same date).',
-    'Questions about what is pending or who owes money are lookup. Publishing a blog or asking about blog drafts is lookup with what=blogs. Asking to resolve data issues is lookup with what=issues. "What is the price for AP Suite on Saturday?" is lookup with what=price. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
+    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price|blogs|issues|salaries|expenses|ipos|channels), guest_name, booking_ref, guest_phone, property_id, from, to (for one date, both the same date).',
+    'Questions about what is pending or who owes money are lookup. Publishing a blog or asking about blog drafts is lookup with what=blogs. Asking to resolve data issues is lookup with what=issues. Asking whether channels, OTAs, the agent or the sync are working is lookup with what=channels. "What is the price for AP Suite on Saturday?" is lookup with what=price. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
     'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
@@ -477,6 +477,7 @@ function foActQuick_(text, today) {
   if (/\b(open|pending|my|show|list)\s+(tasks?|to-?dos?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'tasks' } };
   if (/\b(open|show|list|pending|my)\s+(enquir(y|ies)|inquir(y|ies)|leads?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'leads' } };
   if (/\b(data )?issues\b/.test(t) && !/\bwhy\b/.test(t)) return { intent: 'lookup', fields: { what: 'issues' } };
+  if (/\b(channels?|ota|otas|agent|bot|bots|sync|reconcil\w*|session|sessions)\b/.test(t) && /\b(status|health|working|online|running|paused|stuck|nightly|signed)\b/.test(t) && !/\b(raise|lower|close|open|block|set|price|rate|min|max|no)\b/.test(t)) return { intent: 'lookup', fields: { what: 'channels' } };
   if (/\b(blog|post)s?\b/.test(t) && /\b(publish|draft|drafts|status|pending|waiting|queued|latest)\b/.test(t) && !/\b(write|about|on)\b/.test(t)) return { intent: 'lookup', fields: { what: 'blogs' } };
   if (/\bsalar(y|ies)\b/.test(t) && /\b(list|show|who|this month|paid so far)\b/.test(t) && !/\d/.test(t)) return { intent: 'lookup', fields: { what: 'salaries' } };
   if (/\bipos?\b/.test(t) && /\b(open|which|show|list|current)\b/.test(t)) return { intent: 'lookup', fields: { what: 'ipos' } };
@@ -528,6 +529,13 @@ function foActLookup_(f, D, today, user) {
     const on = x => { const i = foDate_(x.checkin), o = foDate_(x.checkout); return f.what === 'arrivals' ? i >= from && i <= to : f.what === 'departures' ? o >= from && o <= to : i <= to && o > from; };
     const list = rows.filter(x => ['confirmed', 'tentative'].indexOf(x.status) >= 0 && on(x)).sort((a, b) => foDate_(a.checkin) < foDate_(b.checkin) ? -1 : 1);
     return done({ arrivals: 'Arrivals', departures: 'Departures', in_house: 'Staying' }[f.what] + ' ' + from + (to !== from ? ' → ' + to : '') + ':', list.map(x => [x.guest_name, stay(x)]));
+  }
+  if (f.what === 'channels') {
+    const c = foCmBundle_(), hb = c.heartbeat, waiting = st => (c.jobs || []).filter(j => j.state === st).length, online = c.agent_online, own = (c.listings || []).filter(l => l.role === 'own').length;
+    const rows = FO_CM.CHANNELS.map(ch => { const s = c.settings[ch] || {}, sess = hb && hb.sessions && hb.sessions[ch]; return [FO_CM.NAMES[ch], (!s.enabled ? 'off' : s.paused ? 'paused: ' + (s.pause_reason || '') : s.dryRun ? 'dry run, nothing saved' : 'live') + (sess ? ' · session ' + sess.replace(/_/g, ' ') : '')]; });
+    rows.push(['Listings registered', String(own)], ['Waiting for your approval', String(waiting('proposed'))], ['Needs you', String(waiting('needs_human'))]);
+    if (c.reconcile) rows.push(['Last nightly check', foDate_(c.reconcile.at) + ': ' + c.reconcile.checked + ' nights compared, ' + c.reconcile.drift + ' differed']);
+    return done(online ? 'Channel agent is online (last seen ' + hb.at + ').' : hb ? 'Channel agent is offline (last seen ' + hb.at + '). Phone assist and the calendar feeds still work.' : 'No channel agent is running yet, so nothing is being sent to the OTAs automatically.', rows);
   }
   if (f.what === 'issues') return done((D.exceptions || []).length + ' open data issues (resolve each in Operations Center, so nothing is closed unseen):', (D.exceptions || []).map(e => [e.detail || e.description || e.type, e.severity || '']));
   if (f.what === 'salaries') { const m = (foDate_(f.from) || today).slice(0, 7), list = (D.salary_payments || []).filter(x => String(x.period).slice(0, 7) === m); return done('Pay recorded for ' + m + ', ' + inr(list.reduce((t, x) => t + foNum_(x.amount), 0)) + ' in all:', list.map(x => [x.emp_name + ' · ' + x.kind, inr(x.amount)])); }

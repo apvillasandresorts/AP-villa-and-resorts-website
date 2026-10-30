@@ -102,7 +102,7 @@
   // ------------------------------------------------------------ sign-in ------------------------------------------------------------
   var L = { step: 'cred', email: '', challenge: '', purpose: '', to: '', resendAt: 0 };
   function renderLogin(msg) {
-    document.title = 'Sign in · Founder OS';
+    document.title = 'Sign in · AP Mandala';
     var otp = L.step === 'otp';
     var FX = window.FoFX;
     root.innerHTML = '<div class="fo-login">' + (FX ? FX.wires({ seed: 23, lanes: 14 }) +
@@ -110,7 +110,7 @@
         '<p>Market prices, Google searches, news and every booking flow into one brain that tells you the price that sells, night by night.</p>' +
         '<div class="fo-login__chips"><span>8 booking platforms</span><span>Google searches daily</span><span>Live news</span><span>AP Brain</span></div></div>' : '') +
       '<form class="fo-login__card" novalidate autocomplete="on">' + (FX ? '<div class="fo-login__mobile-brain">' + FX.brain('m') + '</div>' : '') +
-      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span>FOUNDER OS</span></div></div>' +
+      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span>AP MANDALA</span></div></div>' +
       (otp
         ? '<h1>Check your email</h1><p class="sub">We sent a 6-digit code to <b>' + esc(L.to) + '</b>. It expires in 5 minutes.</p>' +
           '<label class="fo-field">One-time code<input class="fo-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus></label>' +
@@ -211,12 +211,12 @@
     S.view = MODULES.some(function (m) { return m.id === h[0] && (!m.founderOnly || (S.user && S.user.role === 'founder')); }) ? h[0] : 'overview';
     if (h[1]) S.tab[S.view] = h[1];
     var mod = MODULES.filter(function (m) { return m.id === S.view; })[0];
-    document.title = mod.label + ' · Founder OS';
+    document.title = mod.label + ' · AP Mandala';
     var r = currentRange(), ex = openEx(), high = ex.filter(function (e) { return e.severity === 'high'; }).length;
     var initials = ((S.user && S.user.name) || 'AS').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     root.className = '';
     root.innerHTML = '<div class="fo-shell' + (S.collapsed ? ' is-collapsed' : '') + '">' +
-      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span>FOUNDER OS</span></div></div><nav class="fo-nav">' +
+      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span>AP MANDALA</span></div></div><nav class="fo-nav">' +
       MODULES.map(function (m) {
         if (m.g) return '<div class="fo-nav__group">' + esc(m.g) + '</div>';
         if (m.founderOnly && !(S.user && S.user.role === 'founder')) return '';   // personal finance: founder only
@@ -231,7 +231,7 @@
         .map(function (o) { return '<option value="' + o[0] + '"' + (S.range === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
       '<span id="fo-custom"' + (S.range === 'custom' ? '' : ' hidden') + '><input type="date" id="fo-from" value="' + esc(r.from) + '"> – <input type="date" id="fo-to" value="' + esc(r.to) + '"></span>' +
       '<select id="fo-prop" aria-label="Villa"><option value="all">All villas</option>' + S.data.properties.map(function (p) { return '<option value="' + esc(p.property_id) + '"' + (S.property === p.property_id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
-      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn fo-brainpill" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain: questions about your business, answered by AI">' + icon('idea') + '<b>Ask AP Brain</b></button>' : '') +
+      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn fo-brainpill" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain: questions about your business, answered by AI"><span class="fo-brainemoji" aria-hidden="true">🧠</span><b>Ask AP Brain</b></button>' : '') +
       '<button class="fo-iconbtn" id="fo-bell" aria-label="Notifications">' + icon('bell') + (ex.length ? '<span class="dot">' + (high || ex.length) + '</span>' : '') + '</button>' +
       '<button class="fo-iconbtn" id="fo-theme" aria-label="Light or dark">' + icon('moon') + '</button>' +
       '<div class="fo-profile" id="fo-prof" tabindex="0"><span class="fo-avatar">' + esc(initials) + '</span><span>' + esc((S.user && S.user.name || 'Founder').split(' ')[0]) + '</span></div>' +
@@ -573,7 +573,7 @@
   var BRAIN = { history: [] };
   function brainPanel() {
     var ideas = ['Give me the 5 sharpest insights about my business today', 'Who has pending payments?', 'Raise all villas 10% this weekend', 'Add expense: electricity bill ₹2,450 for AP Suite today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
-    var p = drawer('<div class="fo-brainp__head"><div class="fo-brainp__orb">' + (window.FoFX ? window.FoFX.brain('p') : '') + '</div><div class="fo-brainp__title"><h2 class="serif">AP Brain</h2><div id="br-status">Ready</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+    var p = drawer('<div class="fo-brainp__head"><div class="fo-brainp__orb">' + (window.FoFX ? window.FoFX.brain('p') : '') + '</div><div class="fo-brainp__title"><h2 class="serif">🧠 AP Brain</h2><div id="br-status">Ready</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
       '<div class="fo-brain" id="br-log"></div><div class="fo-brainp__ideas" id="br-ideas">' + ideas.map(function (q) { return '<button type="button" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
       '<div class="fo-brainp__foot"><form id="br-form"><textarea id="br-q" rows="2" maxlength="1200" aria-label="Ask AP Brain" placeholder="Ask anything, give an order, or paste a voucher (English or हिंदी)"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
       '<label class="fo-hint"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Use Google for fresh market information</label><div class="fo-hint">Saves only what you confirm. Records are looked up inside your own system; a pasted voucher is read only by Groq, Cerebras or Mistral.</div></div>');
@@ -1039,7 +1039,7 @@
         ['Local research tools (Claude Code on the Mac)', 'on', '/research · /market-scan · /exec-summary', 'Free Search MCP (no key). Optional: Trends MCP (free 100 requests/month, needs your key).']]],
       ['Delivery & storage', [
         ['Reports', 'on', 'Archived as HTML + PDF in Drive', 'Daily/weekly/monthly/quarterly/annual and monthly market reports. Email only for types you choose.'],
-        ['Data store', 'on', 'Private Google Sheet', 'All Founder OS data; never published.']]],
+        ['Data store', 'on', 'Private Google Sheet', 'All AP Mandala data; never published.']]],
     ];
     page.innerHTML = hello('Integrations & automation', 'What is connected, what runs on its own, and what still needs you.') + '<div class="fo-card" id="health" style="margin-bottom:6px"><h3>System health <small>every connection and job, tested live</small><span class="fo-card__tools"><button class="btn btn--sm" id="health-run">Check again</button></span></h3><div id="health-b"><div class="fo-loading"><div class="fo-spin"></div><div>Testing every connection…</div></div></div></div>' + items.map(function (g) { return '<h3 style="margin:18px 2px 8px">' + esc(g[0]) + '</h3><div class="fo-grid fo-grid--2">' + g[1].map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>'; }).join('');
     function health(refresh) {
