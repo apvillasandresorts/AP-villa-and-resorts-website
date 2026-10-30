@@ -401,6 +401,7 @@ test('every dashboard area has an action: blocks, blog topics, keywords, campaig
   const check = (intent, fields, tab) => { const r = go(intent, fields); assert.equal(r.ready, true, intent + ': ' + r.question); const j = save(env, token, r); assert.equal(j.ok, true, intent + ': ' + j.error); if (tab) assert.ok(env.tab(tab).length >= 1, tab); };
   const pid = env.tab('Properties')[0].property_id;
   check('block_dates', { property_id: pid, start: '2026-12-01', end: '2026-12-03', reason: 'Painting' }, 'Blocks');
+  assert.equal(env.tab('Blocks')[0].end, '2026-12-04', 'the last blocked day is the 3rd');
   check('blog_topic', { title: 'Kartik mela guide', keyword: 'kartik mela ujjain', priority: 'high' }, 'SeoTopics');
   check('seo_keyword', { keyword: 'villa near mahakal' }, 'SeoKeywords');
   check('campaign', { name: 'Diwali offer', channel: 'instagram' }, 'Campaigns');
@@ -423,4 +424,11 @@ test('a message draft opens WhatsApp for the owner to send', async () => {
   const { env, token } = await actEnv(() => ({ intent: 'message_guest', fields: { guest_name: 'Priya Sharma' } }));
   const r = env.api({ action: 'f.brain.act', token, text: 'whatsapp Priya Sharma about her balance' }).result;
   assert.equal(r.ready, false, 'nothing to save'); assert.match(r.link.url, /^https:\/\/wa\.me\/919876543210\?text=/); assert.match(decodeURIComponent(r.link.url), /₹11,500/);
+});
+
+test('tidying: wrong weekdays are corrected, rupees go first, and an ACTIONS line is found wherever the model puts it', async () => {
+  const { env } = await ready();
+  assert.equal(env.fo.foBrainTidy_('2026-11-15 Sat at 2 600 ₹ and 2026-11-05 (Monday) ₹4,500'), '2026-11-15 Sun at ₹2,600 and 2026-11-05 (Thursday) ₹4,500');
+  const r = env.fo.foBrainProposals_('Answer.\n**ACTIONS:** ```json\n[]\n```\nConfidence: High', { email: 'x', role: 'founder' });
+  assert.equal(r.text, 'Answer.\nConfidence: High');
 });
