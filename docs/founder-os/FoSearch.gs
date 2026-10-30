@@ -138,7 +138,7 @@ function foSeoTopicDone_(b) {
  * the events ahead, boosts what Google Analytics shows already pulls readers, leaves out what the blog has covered, and keeps the best 8. The score ranks ideas against each other
  * from these signals; it is not a promise of traffic. A free model polishes titles; without one a plain title is used. No guest data is involved.
  */
-const FO_BLOG = { KEEP: 8, PLACE: /ujjain|mahakal|omkareshwar|simhastha|kumbh|harsiddhi|kaal ?bhairav|ram ghat|bhasma|shipra|mangalnath|sandipani|chintaman/i,
+const FO_BLOG = { KEEP: 8, MIN_SCORE: 45, PLACE: /ujjain|mahakal|omkareshwar|simhastha|kumbh|harsiddhi|kaal ?bhairav|ram ghat|bhasma|shipra|mangalnath|sandipani|chintaman/i,
   FIT: /\b(stay|hotel|villa|room|resort|dharamshala|darshan|aarti|bhasma|temple|yatra|trip|tour|itinerary|reach|distance|train|bus|flight|parking|timing|booking)\b/i, STOP: ['ujjain', 'the', 'and', 'for', 'with', 'from', 'guide', 'best', 'complete', 'how', 'what', 'when', 'your', 'near', '2025', '2026', '2027'] };
 function foBlogWords_(s) { return foActTokens_(s).filter(w => w.length > 2 && FO_BLOG.STOP.indexOf(w) < 0); }
 function foBlogSame_(a, b) { const x = foBlogWords_(a), y = foBlogWords_(b); if (!x.length || !y.length) return false; const n = x.filter(w => y.indexOf(w) >= 0).length; return n / Math.min(x.length, y.length) >= 0.75; }
@@ -215,7 +215,7 @@ function foBlogPolish_(list) {
 function foBlogSuggest_(today) {
   const published = foBlogPublished_(), health = {}, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, Math.round((c.demand + c.timing + c.rank + c.fit) * (c.fit < 10 ? 0.75 : 1))) })).sort((a, b) => b.score - a.score);
   const topics = foRows_('SeoTopics'), open = topics.filter(t => t.status !== 'suggested'), taken = published.concat(open.reduce((a, t) => a.concat([t.keyword, t.title].filter(Boolean)), [])), best = [];
-  cands.forEach(c => { if (best.length < FO_BLOG.KEEP && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c); });
+  cands.forEach(c => { if (c.score >= FO_BLOG.MIN_SCORE && best.length < FO_BLOG.KEEP && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c); });
   if (!best.length) { foSettingSet_('blog_health', JSON.stringify(Object.assign(health, { at: foNow_() }))); return { added: 0, waiting: topics.length - open.length, health }; }   // no data today: keep yesterday's ideas
   topics.filter(t => t.status === 'suggested').sort((a, b) => b._row - a._row).forEach(t => foDeleteRow_('SeoTopics', t._row));   // ideas follow the data: rebuilt on every run
   const now = foNow_();
