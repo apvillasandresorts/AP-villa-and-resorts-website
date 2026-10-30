@@ -328,3 +328,37 @@ test('answer check: an invented ₹ figure triggers one correction; if it stays,
   assert.equal(n, 2); assert.deepEqual(b.unverified, ['₹98,765']);
   assert.equal(env.fo.foBrainUnverified_('Set ₹4,500 and ₹4,500.00 or Rs 1,200', 'price 4500 total 1200.5').join(), 'Rs 1,200');
 });
+
+test('lookups: who owes what comes from the ledger, and no guest detail reaches a model', async () => {
+  let reply = { intent: 'lookup', fields: { what: 'pending_payments' } };
+  const { env, token } = await actEnv(() => reply);
+  const a = env.api({ action: 'f.brain.act', token, text: 'Who has pending payments?' }).result;
+  assert.equal(a.closed, true); assert.match(a.question, /₹11,500/); assert.match(a.lines.flat().join(' '), /Priya Sharma/);
+  reply = { intent: 'lookup', fields: { what: 'arrivals', from: '2026-10-17' } };
+  assert.match(env.api({ action: 'f.brain.act', token, text: 'arrivals' }).result.lines.flat().join(' '), /Priya/);
+  assert.ok(!env.net.calls.filter(c => /groq/.test(c.url)).map(c => c.payload).join('\n').includes('Sharma'), 'ledger names stay in Apps Script');
+});
+
+test('prices: several villas at once show a preview; several orders in one message give one card each; a bad date range is refused', async () => {
+  let reply = { intent: 'channel_change', fields: { property_id: 'AP Suite, Villa Aranya', type: 'pct', value: 10, from: '2026-11-13', to: '2026-11-14', weekdays: '5,6' } };
+  const { env, token } = await actEnv(() => reply);
+  const a = env.api({ action: 'f.brain.act', token, text: 'raise AP Suite and Villa Aranya 10% next weekend' }).result;
+  assert.equal(a.ready, true, a.question); assert.equal(a.payload.bulk.villas.length, 2);
+  assert.match(a.lines.flat().join(' '), /villa-night/); assert.equal(a.payload.bulk.preview, undefined);
+  assert.equal(env.tab('ChannelJobs').length, 0, 'the preview writes nothing');
+  reply = { actions: [{ intent: 'channel_change', fields: { property_id: 'AP Suite', type: 'rate', value: 4000, from: '2026-11-13' } }, { intent: 'add_task', fields: { title: 'Check Airbnb' } }] };
+  const m = env.api({ action: 'f.brain.act', token, text: 'x' }).result;
+  assert.equal(m.intent, 'multi'); assert.equal(m.items.length, 2); assert.equal(m.items[1].route, 'f.crm.task.save');
+  reply = { intent: 'channel_change', fields: { property_id: 'AP Suite', type: 'rate', value: 4000, from: '2029-01-01' } };
+  const bad = env.api({ action: 'f.brain.act', token, text: 'x' }).result;
+  assert.equal(bad.ready, false); assert.match(bad.question, /year ahead/);
+});
+
+test('decisions: a recommendation comes with a ready confirm card, and the ACTIONS line never shows in the answer', async () => {
+  const text = 'Saturday is weak. Hold the rest.\nACTIONS: [{"intent":"channel_change","fields":{"property_id":"AP Suite","type":"pct","value":-10,"from":"2026-11-14"}},{"intent":"add_booking","fields":{}}]';
+  const { env, token } = await ready(() => groqOk(text));
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'What should I do about weak nights?', web: false });
+  assert.equal(r.answer, 'Saturday is weak. Hold the rest.');
+  assert.equal(r.proposals.length, 1, 'only price and task proposals are allowed'); assert.equal(r.proposals[0].route, 'f.cm.bulk'); assert.equal(r.proposals[0].ready, true);
+});

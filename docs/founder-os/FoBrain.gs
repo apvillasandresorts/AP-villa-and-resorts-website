@@ -18,6 +18,7 @@ const FO_BRAIN_SYSTEM = [
   'Answer format (Markdown): one bold headline with the answer; then **Why** (2–4 bullets, each with a number from the data or a cited source); then **Do this** (1–3 concrete actions with dates and ₹ figures); then **Watch** (what would change the advice). Keep it under 220 words unless asked for detail.',
   'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in English. Use Hindi only when the question itself is written in Hindi (Devanagari script); an Indian name or a Hindi word is not a reason to switch.',
   'Quality bar: lead with the answer, no filler, no restating the question, no generic advice that would fit any hotel. Tie every point to a date, villa or figure from the data. If the data cannot answer, say so in one line and name what is missing. Answer only what was asked; for a simple question skip the Why/Do this/Watch sections.',
+  'When you recommend a change to prices or availability, or a follow-up, put a last line starting exactly with ACTIONS: followed by a JSON array of at most 3 items, each {"intent":"channel_change" or "add_task","fields":{...}}. channel_change fields: property_id (villa id from the summary, or "all"), type (rate|pct|recommended|close|open|min_stay), value, from, to (YYYY-MM-DD), weekdays (optional comma list 0-6, Sunday=0). add_task fields: title, due. The owner gets a confirm button for each, so use only figures your answer already justifies. Leave the line out when you recommend no change.',
   'This chat only advises; saving is done by a separate step. If the owner asks to record or change something, say in one line that it has not been saved and ask for the guest, booking or amount that is missing. Never give example amounts or made-up steps. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
 ].join('\n');
 const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 2 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
@@ -51,7 +52,16 @@ function foBrainAsk_(b, user) {
   }
   foBrainLog_(user.email, q, r, Date.now() - t0);
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
-  return { answer: foBrainCleanCites_(r.text), unverified, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
+  const split = foBrainProposals_(r.text, user);
+  return { answer: foBrainCleanCites_(split.text), proposals: split.proposals, unverified, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
+}
+
+/** Takes the ACTIONS: line off an answer and turns it into confirm cards, through the same checks as a typed request. Nothing is saved here. */
+function foBrainProposals_(text, user) {
+  const m = String(text).match(/\n?\s*ACTIONS:\s*(\[[\s\S]*\])\s*$/); if (!m) return { text: String(text).replace(/\n?\s*ACTIONS:\s*$/, ''), proposals: [] };
+  let list = []; try { list = JSON.parse(m[1]); } catch (e) {}
+  const D = foDataLoad_(), today = foToday_(), proposals = (Array.isArray(list) ? list : []).slice(0, 3).filter(a => a && ['channel_change', 'add_task'].indexOf(a.intent) >= 0).map(a => foActDraft_(a.intent, foActClean_(a.fields || {}), D, today, user)).filter(a => a.ready);
+  return { text: String(text).slice(0, m.index).trim(), proposals };
 }
 
 /** ₹ figures in an answer that appear nowhere in its sources. Lines marked ESTIMATE show their working, so they pass. */
@@ -358,7 +368,7 @@ function foBrainTestResearch() {
  * Privacy: vouchers contain guest details, so they go only to providers that do not train on API data (Groq, Cerebras, Mistral),
  * never to the Gemini free tier or OpenRouter; ID numbers (Aadhaar-style 12 digits) are masked; the log keeps only the action type.
  */
-const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'record_payment', 'update_booking', 'add_task', 'complete_task', 'update_lead', 'none'];
+const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'record_payment', 'update_booking', 'add_task', 'complete_task', 'update_lead', 'lookup', 'none'];
 function foBrainAct_(b, user) {
   const text = String(b.text || '').replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[id-number]').trim().slice(0, 6000);
   if (!text) return { ok: false, error: 'Type or paste the details first.' };
@@ -370,18 +380,21 @@ function foBrainAct_(b, user) {
   const sys = [
     'You turn the owner\'s message (or a pasted OTA booking voucher / confirmation) into ONE action for AP Villas & Resorts, Ujjain. Reply with ONLY JSON, no prose:',
     '{"intent": one of ' + JSON.stringify(FO_ACT_INTENTS) + ', "fields": {...}, "note": "one short sentence for the owner"}',
-    'Today is ' + today + ' (Asia/Kolkata). Dates as YYYY-MM-DD. Money as plain numbers in rupees (no symbols or commas). Only fill what the text says; never guess names, phones, amounts or dates.',
+    'If the message asks for several separate changes, reply {"actions": [{"intent":...,"fields":{...}}, ...]} with at most 5 items.',
+    'Today is ' + today + ', a ' + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(today + 'T00:00:00Z').getUTCDay()] + ' (Asia/Kolkata). The weekend means Friday and Saturday nights. Dates as YYYY-MM-DD. Money as plain numbers in rupees (no symbols or commas). Only fill what the text says; never guess names, phones, amounts or dates.',
     'add_booking fields: property_id (one of: ' + villas + '), guest_name, guest_phone, guest_email, checkin, checkout, adults, children, channel (one of: ' + chans + '), external_id (OTA booking number), gross_amount (total the guest pays), commission, taxes, status (confirmed|tentative), notes.',
     'add_expense fields: date, category (one of: ' + cats + '), amount, property_id (a villa id or "all"), vendor, note.',
     'record_salary fields: emp_id (one of: ' + staff + '), amount, paid_on, period (YYYY-MM), mode (upi|cash|bank|other), kind (salary|advance|bonus|stipend|deduction), ref.',
     'add_employee fields: name, role (caretaker|sweeper|intern|manager|cook|driver|security|other), work_mode (on-site|remote), phone, email, property_ids, salary_amount, salary_cycle (monthly|weekly|daily|stipend|per-task), pay_day, joined.',
     'add_lead fields: name, phone, email, source, villa, checkin, nights, guests, value_inr, next_followup, notes.',
-    'channel_change fields (prices, availability and restrictions on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id (a villa id, or "all" for every villa), type (rate|pct|recommended|close|open|min_stay|max_stay|cta|ctd|stop_sell|units), value (rupees for rate, percent for pct e.g. 10 or -15, nights for min_stay/max_stay (0 = no limit), number for units, on|off for cta/ctd/stop_sell; cta = no check-ins, ctd = no check-outs), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
+    'channel_change fields (prices, availability and restrictions on MakeMyTrip/Goibibo, Booking.com, Airbnb): property_id (a villa id, a comma list of villa ids, or "all" for every villa), type (rate|pct|recommended|close|open|min_stay|max_stay|cta|ctd|stop_sell|units), value (rupees for rate, percent for pct e.g. 10 or -15, nights for min_stay/max_stay (0 = no limit), number for units, on|off for cta/ctd/stop_sell; cta = no check-ins, ctd = no check-outs), basis (net = what the owner keeps | channel = price guests see; default net), from, to, weekdays (comma list of 0-6, Sunday=0, e.g. "5,6" for Fri+Sat nights), channels (comma list of mmt,booking,airbnb; empty = all).',
     'record_payment (the guest paid, cleared dues, completed or settled payments, or money was refunded) fields: guest_name, booking_ref (booking or OTA number), guest_phone, property_id, checkin, amount (leave out when the guest paid everything pending), date, method (upi|cash|bank|card|other), reference, type (payment|refund).',
     'update_booking (cancel, no-show, new dates, new amount or a note on an existing booking) fields: guest_name, booking_ref, guest_phone, property_id, checkin (only to identify the stay), status (confirmed|tentative|cancelled|no_show), new_checkin, new_checkout, new_property_id, gross_amount, discount, adults, children, note.',
     'add_task (a reminder or to-do) fields: title, due, notes. complete_task (a to-do is done) fields: title.',
     'update_lead (an existing enquiry moved on) fields: name, phone, stage (new|contacted|quoted|won|lost), next_followup, lost_reason, value_inr, notes.',
     'Statements such as "Ravi Kumar completed all pending payments, update it" or "mark Ravi fully paid" are record_payment, not questions. Questions about payments ("how much is pending?") are "none".',
+    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price), guest_name, booking_ref, guest_phone, property_id, from, to.',
+    'Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
     'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
@@ -390,12 +403,55 @@ function foBrainAct_(b, user) {
   foBrainLog_(user.email, '[action] ' + (r.ok ? 'reply' : 'failed'), r, 0);
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
   let j = {}; try { const m = String(r.text).match(/\{[\s\S]*\}/); j = JSON.parse(m ? m[0] : '{}'); } catch (e) {}
+  if (Array.isArray(j.actions) && j.actions.length > 1) {
+    const items = j.actions.slice(0, 5).filter(a => a && FO_ACT_INTENTS.indexOf(a.intent) >= 0 && ['none', 'lookup'].indexOf(a.intent) < 0).map(a => foActDraft_(a.intent, foActClean_(a.fields || {}), D, today, user));
+    return { result: { intent: 'multi', items, provider: r.provider } };
+  }
+  if (Array.isArray(j.actions) && j.actions[0]) j = j.actions[0];
   let intent = FO_ACT_INTENTS.indexOf(j.intent) >= 0 ? j.intent : 'none';
   if (intent === 'none' && draft) intent = draft.intent;
   if (intent === 'none') return { result: { intent: 'none' } };
   const fields = Object.assign({}, draft && draft.intent === intent ? draft.fields : {}, foActClean_(j.fields || {}));
-  const out = foActPlan_(intent, fields, D, today);
-  return { result: Object.assign(out, { intent, note: foClean_(j.note, 200), provider: r.provider }) };
+  if (intent === 'lookup') return { result: Object.assign(foActLookup_(fields, D, today), { intent, provider: r.provider }) };
+  return { result: Object.assign(foActDraft_(intent, fields, D, today, user), { intent, note: foClean_(j.note, 200), provider: r.provider }) };
+}
+/** A draft, and for channel changes the bulk-edit preview (nights, jobs, floor and ceiling warnings) so the card shows what would really happen. */
+function foActDraft_(intent, fields, D, today, user) {
+  const out = Object.assign(foActPlan_(intent, fields, D, today), { intent });
+  if (out.ready && out.route === 'f.cm.bulk') {
+    const pv = foCmBulk_({ bulk: Object.assign({}, out.payload.bulk, { preview: true }) }, user);
+    if (pv.ok === false) { out.ready = false; out.closed = true; out.question = 'This cannot be saved: ' + pv.error; return out; }
+    const x = pv.result; out.lines.push(['Effect', x.nights + ' villa-night' + (x.nights === 1 ? '' : 's') + ' · ' + x.jobs + ' channel update' + (x.jobs === 1 ? '' : 's')]);
+    x.warnings.concat(x.errors).slice(0, 4).forEach(w => out.lines.push(['Note', w]));
+  }
+  return out;
+}
+/** Reads records for the owner. Built here and shown only in the portal: guest details from a lookup never go to a model. */
+function foActLookup_(f, D, today) {
+  const props = D.properties || [], name = id => (props.find(p => p.property_id === id) || {}).name || id, inr = v => '₹' + Math.round(foNum_(v)).toLocaleString('en-IN'), live = x => ['confirmed', 'no_show'].indexOf(x.status) >= 0;
+  const pid = f.property_id && f.property_id !== 'all' ? (props.find(p => p.property_id === f.property_id || foActNameMatch_(f.property_id, p.name)) || {}).property_id : '', from = foDate_(f.from) || today, to = foDate_(f.to) || from;
+  const rows = foRows_('Bookings').filter(x => !pid || x.property_id === pid), pays = foRows_('Payments'), stay = x => name(x.property_id) + ' · ' + foDate_(x.checkin) + ' → ' + foDate_(x.checkout), lines = [];
+  const done = (title, list) => { const more = list.length - 15; list.slice(0, 15).forEach(l => lines.push(l)); if (more > 0) lines.push(['…', more + ' more']); return { lines, question: list.length ? title : 'Nothing found for that.', fields: f, missing: [], route: '', payload: {}, ready: false, closed: true }; };
+  if (f.what === 'pending_payments') {
+    const list = rows.filter(x => live(x) && foBookingDue_(x, pays) > 0.5).sort((a, b) => foBookingDue_(b, pays) - foBookingDue_(a, pays)), total = list.reduce((t, x) => t + foBookingDue_(x, pays), 0);
+    return done(list.length + ' booking' + (list.length === 1 ? '' : 's') + ' with money pending, ' + inr(total) + ' in all:', list.map(x => [x.guest_name + ' · ' + stay(x), inr(foBookingDue_(x, pays))]));
+  }
+  if (f.what === 'guest') {
+    const list = foActBookings_(f);
+    return done(list.length + ' booking' + (list.length === 1 ? '' : 's') + ' found:', list.map(x => [x.guest_name + ' · ' + stay(x) + ' · ' + x.status + (x.channel ? ' · ' + x.channel : ''), foHasNum_(x.gross_amount) ? inr(x.gross_amount) + ' · pending ' + inr(Math.max(0, foBookingDue_(x, pays))) : 'no amount']));
+  }
+  if (['arrivals', 'departures', 'in_house'].indexOf(f.what) >= 0) {
+    const on = x => { const i = foDate_(x.checkin), o = foDate_(x.checkout); return f.what === 'arrivals' ? i >= from && i <= to : f.what === 'departures' ? o >= from && o <= to : i <= to && o > from; };
+    const list = rows.filter(x => ['confirmed', 'tentative'].indexOf(x.status) >= 0 && on(x)).sort((a, b) => foDate_(a.checkin) < foDate_(b.checkin) ? -1 : 1);
+    return done({ arrivals: 'Arrivals', departures: 'Departures', in_house: 'Staying' }[f.what] + ' ' + from + (to !== from ? ' → ' + to : '') + ':', list.map(x => [x.guest_name, stay(x)]));
+  }
+  if (f.what === 'tasks') return done('Open tasks:', (D.crm_tasks || []).filter(t => !t.done).sort((a, b) => String(a.due || '9') < String(b.due || '9') ? -1 : 1).map(t => [t.title, t.due || 'no date']));
+  if (f.what === 'leads') return done('Open enquiries:', (D.crm_leads || []).filter(l => ['won', 'lost'].indexOf(l.stage) < 0).map(l => [l.name || l.phone || l.email, l.stage + (l.next_followup ? ' · follow up ' + l.next_followup : '')]));
+  if (f.what === 'price') {
+    const list = []; (pid ? [pid] : props.map(p => p.property_id)).forEach(v => { const night = (foCmDesk_(D, v, 90) || []).filter(n => n.date >= from && n.date <= to), ari = foCmAri_(v); night.slice(0, 7).forEach(n => { const set = foNum_((ari[n.date] || {}).price_net); list.push([name(v) + ' · ' + n.date, inr(set || n.rec_net) + (set ? ' (set by you)' : ' (recommended)') + ' · you keep']); }); });
+    return done('Prices:', list);
+  }
+  return Object.assign(done('', []), { question: 'Tell me what to look up: pending payments, a guest, arrivals, departures, tasks, enquiries or a price.' });
 }
 /** Same chain as the brain, minus the providers whose free tiers may use the data (Gemini free, OpenRouter). */
 function foBrainCallSafe_(system, history, prompt) {
@@ -407,7 +463,8 @@ function foActClean_(f) { const o = {}; Object.keys(f || {}).forEach(k => { cons
 /** Validate and complete the draft: defaults, what is still missing, the confirmation lines and the exact save request. */
 function foActPlan_(intent, f, D, today) {
   const props = D.properties || [], prop = id => props.find(p => p.property_id === id), propByName = s => props.find(p => String(s || '').toLowerCase().indexOf(String(p.name).toLowerCase()) >= 0 || String(p.name).toLowerCase().indexOf(String(s || '').toLowerCase()) >= 0);
-  if (f.property_id && !prop(f.property_id) && f.property_id !== 'all') { const p2 = propByName(f.property_id); f.property_id = p2 ? p2.property_id : ''; }
+  if (intent === 'channel_change' && /,/.test(String(f.property_id || ''))) f.property_id = String(f.property_id).split(',').map(x => { const t = x.trim(), q = prop(t) || propByName(t); return q ? q.property_id : ''; }).filter(Boolean).join(',');
+  else if (f.property_id && !prop(f.property_id) && f.property_id !== 'all') { const p2 = propByName(f.property_id); f.property_id = p2 ? p2.property_id : ''; }
   const inr = v => '₹' + Math.round(foNum_(v)).toLocaleString('en-IN'), missing = [], lines = [];
   const need = (k, label) => { if (f[k] === undefined || f[k] === '' || f[k] === null) missing.push({ key: k, label }); };
   let route = '', payload = {}, closed = false;
@@ -462,10 +519,11 @@ function foActPlan_(intent, f, D, today) {
     else set[f.type] = on;
     const what = f.type === 'rate' && f.value ? ' ' + inr(f.value) + (f.basis === 'net' ? ' (you keep; commission added per channel)' : ' (guest price)') : f.type === 'pct' && f.value ? ' ' + (foNum_(f.value) > 0 ? '+' : '') + foNum_(f.value) + '%' :
       ['min_stay', 'max_stay'].indexOf(f.type) >= 0 && foHasNum_(f.value) ? ' ' + (foNum_(f.value) || 'no limit') + (foNum_(f.value) ? ' nights' : '') : f.type === 'units' && foHasNum_(f.value) ? ' ' + foNum_(f.value) : ['cta', 'ctd', 'stop_sell'].indexOf(f.type) >= 0 ? (on ? ' ON' : ' OFF') : '';
-    lines.push(['Villa', f.property_id === 'all' ? 'All villas' : f.property_id ? (prop(f.property_id) || {}).name || '—' : '—'], ['Change', types[f.type] + what],
+    const vs = f.property_id === 'all' ? props.map(p => p.property_id) : String(f.property_id || '').split(',').filter(Boolean);
+    lines.push(['Villa', f.property_id === 'all' ? 'All villas' : vs.map(v => (prop(v) || {}).name || '—').join(', ') || '—'], ['Change', types[f.type] + what],
       ['Nights', (f.from || '?') + (f.to && f.to !== f.from ? ' → ' + f.to : '') + (wds.length ? ' · only ' + wds.map(n => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][n]).join(', ') : '')], ['Channels', chans.length ? chans.map(c => names[c]).join(', ') : 'all three'],
-      ['Safety', 'prices stay inside your floor/ceiling; every change is read back (or done by you in Phone assist)']);
-    route = 'f.cm.bulk'; payload = { bulk: { villas: f.property_id === 'all' ? props.map(p => p.property_id) : [f.property_id], from: f.from, to: f.to, weekdays: wds, channels: chans, set, approve: true } };
+      ['Safety', 'saved to your calendar now; prices stay inside your floor/ceiling; each channel updates when its bot or Phone assist runs']);
+    route = 'f.cm.bulk'; payload = { bulk: { villas: vs, from: f.from, to: f.to, weekdays: wds, channels: chans, set, approve: true } };
   } else if (intent === 'record_payment') {
     const pays = foRows_('Payments'), refund = f.type === 'refund', found = foActBookings_(f).filter(x => refund || x.status !== 'cancelled'), due = x => foBookingDue_(x, pays);
     const stay = x => (prop(x.property_id) || {}).name + ' · ' + x.checkin + ' → ' + x.checkout, people = found.map(x => foActTokens_(x.guest_name).join(' ')).filter((n, i, a) => a.indexOf(n) === i);
