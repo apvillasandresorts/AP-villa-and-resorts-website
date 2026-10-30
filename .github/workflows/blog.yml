@@ -235,12 +235,12 @@ jobs:
             Validator output: see validate.txt in the repo root.
           claude_args: >-
             --model ${{ env.BLOG_MODEL }}
-            --max-turns 40
+            --max-turns 90
             --allowedTools "Read,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*)"
 
       - name: Push fixes
         id: pushfix
-        if: steps.fix.outcome == 'success'
+        if: steps.fix.outcome == 'success' || steps.fix.outcome == 'failure'   # a fix that ran out of turns may still be good; the checks below decide
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -253,13 +253,13 @@ jobs:
 
       - name: Validate again
         id: validate2
-        if: steps.fix.outcome == 'success'
+        if: steps.fix.outcome == 'success' || steps.fix.outcome == 'failure'   # a fix that ran out of turns may still be good; the checks below decide
         continue-on-error: true
         run: node scripts/validate-post.mjs "${{ needs.write.outputs.slug }}" --summary summary.json
 
       - name: Fact review again
         id: review2
-        if: steps.fix.outcome == 'success'
+        if: steps.fix.outcome == 'success' || steps.fix.outcome == 'failure'   # a fix that ran out of turns may still be good; the checks below decide
         continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
