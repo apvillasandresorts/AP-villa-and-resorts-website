@@ -110,18 +110,10 @@ function foSeoTopicSave_(b, user) {
   return foUpsert_('SeoTopics', 'topic_id', 'TOP', rec, user, x => !x.title && !x.keyword ? 'Give a topic or a keyword.' : null);
 }
 /** Automation: the next queued topic (high priority first, then oldest), marked in progress so two runs never take the same one. */
-/** An accepted topic that a live post has covered since (the daily run can get there first) must not become a second post. */
-function foSeoDropCovered_() {
-  const waiting = foRows_('SeoTopics').filter(t => t.status === 'approved'); if (!waiting.length) return 0;
-  const live = foBlogPublished_(), hits = waiting.filter(t => live.some(x => foBlogSame_(t.keyword, x) || foBlogSame_(t.title, x)));
-  hits.forEach(t => { t.status = 'covered'; t.updated_at = foNow_(); t.updated_by = 'automation'; foUpdate_('SeoTopics', t._row, t); });
-  return hits.length;
-}
 function foSeoNextTopic_() {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const rank = { high: 0, normal: 1, low: 2 };
-    foSeoDropCovered_();
     // a topic stuck "in progress" for more than a day (failed run) goes back to the queue
     foRows_('SeoTopics').filter(t => t.status === 'in_progress' && t.started_at && Date.now() - Date.parse(t.started_at) > 864e5).forEach(t => { t.status = t.auto === 'yes' ? 'approved' : 'queued'; foUpdate_('SeoTopics', t._row, t); });
     // topics accepted in the portal go first: the owner is waiting for them

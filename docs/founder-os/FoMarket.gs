@@ -15,7 +15,7 @@ const FO_MACHINE_ROUTES = {
   'f.m.summary': b => foMachineSummary_(b),
   'f.m.seo.next': b => foSeoNextTopic_(b),   // blog pipeline: next requested topic
   'f.m.seo.done': b => foSeoTopicDone_(b),
-  'f.m.seo.peek': () => { foSeoDropCovered_(); return { waiting: foRows_('SeoTopics').filter(t => t.status === 'approved').length }; },   // blog-queue.yml: anything accepted in the portal?
+  'f.m.seo.peek': () => ({ waiting: foRows_('SeoTopics').filter(t => t.status === 'approved').length }),   // blog-queue.yml: anything accepted in the portal?
   'f.m.blog.check': () => { const r = foBlogSuggest_(foToday_()), s = foBlogStatus_(); return { result: { added: r.added, health: r.health, live: s.live, ideas: foRows_('SeoTopics').filter(t => t.status === 'suggested').map(t => ({ title: t.title, keyword: t.keyword, score: t.score, why: t.why, target_date: foDate_(t.target_date) })) } }; },   // automated test of the blog engine, no sign-in
   'f.m.signals.import': b => foSignalsImport_(b, 'automation'),   // public-data signals only (news, calendar, holidays, weather)
   'f.m.compset': b => foCompSetPublic_(b),

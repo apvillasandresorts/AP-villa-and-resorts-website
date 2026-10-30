@@ -194,17 +194,3 @@ test('blog engine: topics in open drafts are left out, a stale idea is removed, 
   gh = { code: 200, body: JSON.stringify([{ number: 11, title: 'New post: Mahashivratri Darshan Ujjain', labels: [{ name: 'blog-post' }], head: { ref: 'blog/mahashivratri-darshan' } }]) };
   env.api({ action: 'f.blog.suggest', token }); assert.doesNotMatch(titles(), /mahashivratri/, 'an idea that became a draft is removed');
 });
-
-test('blog engine: an accepted topic that a live post now covers is set aside, not written a second time', async () => {
-  let posts = [];
-  const { env, token } = await ready(r => /published\.json/.test(r.url) ? { code: 200, body: JSON.stringify({ posts }) } : { code: 500, body: '' });
-  const today = new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10), add = n => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
-  env.api({ action: 'f.event.save', token, event: { name: 'Kartik Purnima', start: add(20), end: add(21), kind: 'festival' } });
-  env.api({ action: 'f.blog.suggest', token });
-  const t = env.tab('SeoTopics').find(x => /kartik purnima/.test(x.keyword)), { key } = env.api({ action: 'f.automation.create', token });
-  env.api({ action: 'f.blog.accept', token, topic_id: t.topic_id }); assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 1);
-  posts = [{ title: 'Kartik Purnima Ujjain 2026: Dates, Snan and Festive Details', keyword: 'kartik purnima ujjain 2026' }];
-  assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 0);
-  assert.equal(env.tab('SeoTopics').find(x => x.topic_id === t.topic_id).status, 'covered');
-  assert.equal(env.api({ action: 'f.m.seo.next', key }).topic, null);
-});
