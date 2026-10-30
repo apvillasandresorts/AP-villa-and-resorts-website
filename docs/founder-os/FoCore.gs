@@ -458,7 +458,7 @@ function foRoutes_() {
     'f.comp.rerank': [(b, u) => ({ result: foCompRerank_(foToday_()) }), 'manager'], 'f.desk.settings': [foDeskSettingsSave_, 'founder'],
     'f.gsc': [foGscApi_, 'viewer'], 'f.seo.audit': [foSeoAudit_, 'manager'], 'f.campaign.report': [foCampaignReport_, 'viewer'],
     'f.seo.keyword.save': [foSeoKeywordSave_, 'manager'], 'f.seo.keyword.delete': [(b, u) => foDelete_('SeoKeywords', 'keyword_id', b.id, u), 'manager'],
-    'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.blog.suggest': [b => ({ result: foBlogSuggest_(foToday_()) }), 'manager'], 'f.blog.accept': [foBlogAccept_, 'founder'], 'f.blog.skip': [foBlogSkip_, 'manager'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],
+    'f.seo.topic.save': [foSeoTopicSave_, 'manager'], 'f.blog.suggest': [b => ({ result: foBlogSuggest_(foToday_()) }), 'manager'], 'f.blog.accept': [foBlogAccept_, 'founder'], 'f.blog.skip': [foBlogSkip_, 'manager'], 'f.blog.status': [() => ({ result: foBlogStatus_() }), 'viewer'], 'f.seo.topic.delete': [(b, u) => foDelete_('SeoTopics', 'topic_id', b.id, u), 'manager'],
     'f.campaign.save': [foCampaignSave_, 'manager'], 'f.campaign.delete': [(b, u) => foDelete_('Campaigns', 'campaign_id', b.id, u), 'manager'],
   };
 }

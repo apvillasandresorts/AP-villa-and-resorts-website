@@ -6,6 +6,7 @@
 //   node scripts/push-market.mjs --signals research/signals-auto.json  (pricing-desk signals: weather, holidays, calendar, news)
 //   node scripts/push-market.mjs --outlook research/outlook.html       (morning 30-day market outlook)
 //   node scripts/push-market.mjs --seo-next topic.json            (blog pipeline: next requested blog topic from SEO & marketing)
+//   node scripts/push-market.mjs --blog-check out.json            (runs the blog engine, saves ideas and source health; local only)
 //   node scripts/push-market.mjs --seo-peek                       (blog-queue.yml: how many topics were accepted in the portal)
 //   node scripts/push-market.mjs --seo-done <topic_id> <slug|-> [failed|live|review]
 // Key: env FOUNDER_OS_KEY (GitHub secret) or ~/.config/ap-villas/founder-os-key (local, chmod 600).
@@ -32,6 +33,7 @@ try {
   else if (a.includes('--outlook')) { const u = await call('f.m.report.upload', { type: 'outlook', period_key: new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10), html: readFileSync(opt('outlook'), 'utf8') }); console.log('Outlook: ' + u.status); }
   else if (a.includes('--summary')) { write(opt('summary'), (await call('f.m.summary', {})).summary); }
   else if (a.includes('--seo-next')) { const t = (await call('f.m.seo.next', {})).topic; write(opt('seo-next'), t || {}); console.log(t ? 'Requested topic: ' + (t.title || t.keyword) : 'No requested topics queued.'); }
+  else if (a.includes('--blog-check')) { write(opt('blog-check'), (await call('f.m.blog.check', {})).result); }   // local only: aggregates, never in public CI logs
   else if (a.includes('--seo-peek')) { const r = await call('f.m.seo.peek', {}); console.log('waiting=' + r.waiting); }
   else if (a.includes('--seo-done')) { const i = a.indexOf('--seo-done'); const r = await call('f.m.seo.done', { topic_id: a[i + 1], slug: a[i + 2] === '-' ? '' : a[i + 2], status: ['failed', 'live', 'review'].indexOf(a[i + 3]) >= 0 ? a[i + 3] : 'done' }); console.log('Topic marked ' + r.status); }
   else if (a.includes('--ga4')) { const i = a.indexOf('--ga4'); write(a[i + 3], (await call('f.m.ga4', { from: a[i + 1], to: a[i + 2] })).ga); }

@@ -135,23 +135,26 @@ function foSeoTopicDone_(b) {
 // ---------------------------------------------------------------- blog engine: ideas from real demand ----------------
 /**
  * Daily, or "Find new ideas" in CRM → Blog engine. Scores what people are searching around Ujjain, what Google already shows the site for and
- * the events ahead, leaves out what the blog has covered, and keeps the best 8 as suggestions. The score ranks ideas against each other
+ * the events ahead, boosts what Google Analytics shows already pulls readers, leaves out what the blog has covered, and keeps the best 8. The score ranks ideas against each other
  * from these signals; it is not a promise of traffic. A free model polishes titles; without one a plain title is used. No guest data is involved.
  */
-const FO_BLOG = { KEEP: 8, EXPIRE_DAYS: 10, PLACE: /ujjain|mahakal|omkareshwar|simhastha|kumbh|harsiddhi|kaal ?bhairav|ram ghat|bhasma|shipra|mangalnath|sandipani|chintaman/i,
+const FO_BLOG = { KEEP: 8, PLACE: /ujjain|mahakal|omkareshwar|simhastha|kumbh|harsiddhi|kaal ?bhairav|ram ghat|bhasma|shipra|mangalnath|sandipani|chintaman/i,
   FIT: /\b(stay|hotel|villa|room|resort|dharamshala|darshan|aarti|bhasma|temple|yatra|trip|tour|itinerary|reach|distance|train|bus|flight|parking|timing|booking)\b/i, STOP: ['the', 'and', 'for', 'with', 'from', 'guide', 'best', 'complete', 'how', 'what', 'when', 'your', 'near', '2025', '2026', '2027'] };
 function foBlogWords_(s) { return foActTokens_(s).filter(w => w.length > 2 && FO_BLOG.STOP.indexOf(w) < 0); }
 function foBlogSame_(a, b) { const x = foBlogWords_(a), y = foBlogWords_(b); if (!x.length || !y.length) return false; const n = x.filter(w => y.indexOf(w) >= 0).length; return n / Math.min(x.length, y.length) >= 0.75; }
-function foBlogCandidates_(today) {
+function foBlogCandidates_(today, health) {
+  health = health || {};
   const out = [], add = FoMetrics.addDays, days = d => Math.round((Date.parse(d) - Date.parse(today)) / 864e5), fit = k => FO_BLOG.FIT.test(k) ? 10 : 4;
   // 1) events ahead: a post needs 2–5 weeks to be found before the date
+  health.events = { ok: true, ahead: 0 };
   foRows_('Events').forEach(e => {
-    const d = foDate_(e.start); if (!d || d < add(today, 5) || d > add(today, 75)) return; const n = days(d);
+    const d = foDate_(e.start); if (!d || d < add(today, 5) || d > add(today, 75)) return; const n = days(d); health.events.ahead++;
     const keyword = String(e.name).toLowerCase() + (FO_BLOG.PLACE.test(e.name) ? '' : ' ujjain') + ' ' + d.slice(0, 4);
     out.push({ keyword, kind: 'festival', target_date: d, demand: e.kind === 'mega' ? 35 : e.kind === 'festival' ? 30 : 22, timing: n >= 14 && n <= 35 ? 30 : n > 35 ? 20 : 14, rank: 10, fit: 10, why: e.name + ' is in ' + n + ' days (' + d + '): publishing now gives Google time to find it.' });
   });
   // 2) what people search around Ujjain right now (Google Trends)
   const kw = foRows_('SearchKeywords'), last = kw.map(x => String(x.date)).sort().pop();
+  health.trends = { ok: !!last, as_of: last || '', age_days: last ? days(last) * -1 : null, keywords: kw.filter(x => String(x.date) === last).length };
   kw.filter(x => String(x.date) === last && FO_BLOG.PLACE.test(x.keyword)).forEach(x => {
     const avg = foNum_(x.avg7), change = foHasNum_(x.change) ? foNum_(x.change) : 0, rising = String(x.rising || ''); if (!rising && change < 10 && avg < 40) return;
     out.push({ keyword: String(x.keyword).toLowerCase(), kind: /darshan|aarti|temple|timing|bhasma/.test(x.keyword) ? 'informational' : 'local', target_date: '', demand: Math.min(40, Math.round(avg / 4) + (rising ? 14 : 0)), timing: rising ? 24 : change >= 10 ? 16 : 8, rank: 8, fit: fit(x.keyword),
@@ -160,12 +163,32 @@ function foBlogCandidates_(today) {
   // 3) searches where Google already shows the site just off the top: the cheapest wins
   try {
     const g = foGsc_(add(today, -30), add(today, -3)), o = g && g.opportunities;
+    health.gsc = g && g.connected ? { ok: true, from: g.from, to: g.to, queries: g.query_count, clicks: g.totals.clicks, impressions: g.totals.impressions, fetched_at: g.fetched_at } : { ok: false, reason: (g && g.reason) || 'No Search Console data.' };
     ((o && o.striking) || []).concat((o && o.questions) || []).forEach(r => {
       const k = String(r.query || r.key || '').toLowerCase(), pos = foNum_(r.position), imp = foNum_(r.impressions); if (!k || (pos && pos < 4)) return;
       out.push({ keyword: k, kind: 'informational', target_date: '', demand: Math.min(40, Math.round(imp / 5) + 8), timing: 14, rank: pos <= 12 ? 20 : 14, fit: fit(k), why: 'Google already shows your site for this ' + imp + ' times a month at position ' + Math.round(pos) + '; a dedicated post can lift it.' });
     });
-  } catch (e) {}
+  } catch (e) { health.gsc = { ok: false, reason: String(e.message || e).slice(0, 160) }; }
+  // 4) Google Analytics: what already brings readers. A topic close to a page people land on gets a lift, and the reason says so
+  try {
+    const ga = foGa4_(add(today, -28), add(today, -1));
+    if (ga && ga.connected) {
+      const pages = (ga.landing || []).filter(r => /^\/blog\//.test(r.landingPage || '')); health.ga4 = { ok: true, from: ga.from, to: ga.to, sessions: ga.totals.sessions || 0, blog_pages: pages.length, fetched_at: ga.fetched_at };
+      out.forEach(c => { const hit = pages.find(r => foBlogWords_(r.landingPage.replace(/[\/.-]/g, ' ').replace(/\bblog\b|\bhtml\b/g, '')).filter(w => foBlogWords_(c.keyword).indexOf(w) >= 0).length >= 2); if (hit && hit.sessions) { c.demand = Math.min(50, c.demand + Math.min(12, 3 + Math.round(hit.sessions / 5))); c.why += ' Your post ' + hit.landingPage + ' already brought ' + hit.sessions + ' sessions in 28 days, so readers want this.'; } });
+    } else health.ga4 = { ok: false, reason: (ga && ga.reason) || 'No Analytics data.' };
+  } catch (e) { health.ga4 = { ok: false, reason: String(e.message || e).slice(0, 160) }; }
   return out;
+}
+/** People on the website this minute (GA4 realtime, last 30 minutes). */
+function foBlogLive_() {
+  const hit = foCacheGet_('FO_BLOG_LIVE'); if (hit) return hit;
+  if (typeof AnalyticsData === 'undefined') return { ok: false, reason: 'The Google Analytics service is not enabled.' };
+  try {
+    const r = AnalyticsData.Properties.runRealtimeReport({ dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 8 }, 'properties/' + foSettings_().ga4_property);
+    const pages = (r.rows || []).map(x => ({ page: x.dimensionValues[0].value, users: Number(x.metricValues[0].value) })), t = (r.totals || [])[0];
+    const out = { ok: true, active_users: t ? Number(t.metricValues[0].value) : pages.reduce((a, x) => a + x.users, 0), pages, at: foNow_() };
+    foCachePut_('FO_BLOG_LIVE', out, 60); return out;
+  } catch (e) { return { ok: false, reason: String(e.message || e).slice(0, 160) }; }
 }
 function foBlogPublished_() {
   try { const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/apvillasandresorts/AP-villa-and-resorts-website/main/content/published.json', { muteHttpExceptions: true }); if (r.getResponseCode() === 200) return JSON.parse(r.getContentText()).posts.map(p => [p.title, p.keyword].join(' ')); } catch (e) {}
@@ -180,18 +203,18 @@ function foBlogPolish_(list) {
   return titled;
 }
 function foBlogSuggest_(today) {
-  const published = foBlogPublished_(), rows = foRows_('SeoTopics'), old = FoMetrics.addDays(today, -FO_BLOG.EXPIRE_DAYS);
-  rows.filter(t => t.status === 'suggested' && String(t.created_at).slice(0, 10) < old).sort((a, b) => b._row - a._row).forEach(t => foDeleteRow_('SeoTopics', t._row));
-  const topics = foRows_('SeoTopics'), fresh = topics.filter(t => t.status === 'suggested'), room = FO_BLOG.KEEP - fresh.length; if (room <= 0) return { added: 0, waiting: fresh.length };
-  const taken = published.concat(topics.map(t => [t.title, t.keyword].join(' '))), best = [];
-  foBlogCandidates_(today).map(c => Object.assign(c, { score: Math.min(99, c.demand + c.timing + c.rank + c.fit) })).sort((a, b) => b.score - a.score).forEach(c => {
-    if (best.length < room && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c);
-  });
-  if (!best.length) return { added: 0, waiting: fresh.length };
+  const published = foBlogPublished_(), health = {}, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, c.demand + c.timing + c.rank + c.fit) })).sort((a, b) => b.score - a.score);
+  const topics = foRows_('SeoTopics'), open = topics.filter(t => t.status !== 'suggested'), taken = published.concat(open.map(t => [t.title, t.keyword].join(' '))), best = [];
+  cands.forEach(c => { if (best.length < FO_BLOG.KEEP && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c); });
+  if (!best.length) { foSettingSet_('blog_health', JSON.stringify(Object.assign(health, { at: foNow_() }))); return { added: 0, waiting: topics.length - open.length, health }; }   // no data today: keep yesterday's ideas
+  topics.filter(t => t.status === 'suggested').sort((a, b) => b._row - a._row).forEach(t => foDeleteRow_('SeoTopics', t._row));   // ideas follow the data: rebuilt on every run
   const now = foNow_();
   foBlogPolish_(best).forEach(c => foAppend_('SeoTopics', { topic_id: foId_('TOP'), title: c.title, keyword: c.keyword, intent: ['informational', 'commercial', 'local', 'festival'].indexOf(c.kind) >= 0 ? c.kind : 'informational', priority: c.score >= 60 ? 'high' : 'normal', notes: '', status: 'suggested', source: 'engine', requested_by: 'blog engine', created_at: now, updated_at: now, updated_by: 'blog engine', score: c.score, why: foClean_(c.why, 300), target_date: c.target_date, auto: '' }));
-  return { added: best.length, waiting: fresh.length + best.length };
+  foSettingSet_('blog_health', JSON.stringify(Object.assign(health, { at: foNow_() })));
+  return { added: best.length, waiting: best.length, health };
 }
+/** For the portal strip and the automated check: live visitors, and when each source last delivered. */
+function foBlogStatus_() { let health = {}; try { health = JSON.parse(foSettings_().blog_health || '{}'); } catch (e) {} return { live: foBlogLive_(), health }; }
 /** The owner's click is the approval to write and publish this one post. blog-queue.yml picks it up within about 15 minutes. */
 function foBlogAccept_(b, user) {
   const t = foRows_('SeoTopics').find(x => x.topic_id === b.topic_id); if (!t) return { ok: false, error: 'Topic not found.' };
