@@ -205,7 +205,7 @@ function foBlogPublished_() {
   return [];
 }
 function foBlogPolish_(list) {
-  const titled = list.map(x => Object.assign({}, x, { title: x.keyword.charAt(0).toUpperCase() + x.keyword.slice(1) + ': A Practical Guide for Pilgrims' }));
+  const titled = list.map(x => Object.assign({}, x, { title: x.keyword.replace(/(^|[\s(])([a-z])/g, (m, p, c) => p + c.toUpperCase()) + ': A Practical Guide for Pilgrims' }));
   try {
     const r = foBrainCall_('You are an SEO editor for a pilgrim-family villa stay near Mahakaleshwar temple, Ujjain. For each keyword write a click-worthy, honest title of at most 60 characters that contains the keyword naturally. No invented facts, prices or dates. Reply with ONLY a JSON array of {"i": index, "title": "...", "keyword": "cleaned primary keyword"}.', [], JSON.stringify(list.map((x, i) => ({ i, keyword: x.keyword, why: x.why }))));
     if (r.ok) { const m = String(r.text).match(/\[[\s\S]*\]/); JSON.parse(m ? m[0] : '[]').forEach(a => { if (titled[a.i] && a.title) { titled[a.i].title = foClean_(a.title, 90); if (a.keyword) titled[a.i].keyword = foClean_(a.keyword, 120).toLowerCase(); } }); }
