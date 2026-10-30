@@ -572,11 +572,12 @@
   // ---------- AP Brain: questions about the business, answered by a free AI model from totals and prices only (docs/founder-os/FoBrain.gs) ----------
   var BRAIN = { history: [] };
   function brainPanel() {
-    var ideas = ['Give me the 5 sharpest insights about my business today', 'Add expense: electricity bill ₹2,450 for AP Suite today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
-    var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI that reads your totals, prices, competitors, news and Google, and can add bookings, expenses, salaries, staff and enquiries. It saves only what you confirm. Questions never include guest details; a pasted voucher is read only by Groq/Cerebras/Mistral (no training on your data).</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
-      '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
-      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything, paste a booking voucher, or type e.g. paid Mahesh ₹12,000 salary today (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
-      '<label class="fo-hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Search Google for fresh market information when it helps (competitors, events, Simhastha, travel)</label>');
+    var ideas = ['Give me the 5 sharpest insights about my business today', 'Who has pending payments?', 'Raise all villas 10% this weekend', 'Add expense: electricity bill ₹2,450 for AP Suite today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
+    var p = drawer('<div class="fo-brainp__head"><div class="fo-brainp__orb">' + (window.FoFX ? window.FoFX.brain('p') : '') + '</div><div class="fo-brainp__title"><h2 class="serif">AP Brain</h2><div id="br-status">Ready</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+      '<div class="fo-brain" id="br-log"></div><div class="fo-brainp__ideas" id="br-ideas">' + ideas.map(function (q) { return '<button type="button" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<div class="fo-brainp__foot"><form id="br-form"><textarea id="br-q" rows="2" maxlength="1200" aria-label="Ask AP Brain" placeholder="Ask anything, give an order, or paste a voucher (English or हिंदी)"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
+      '<label class="fo-hint"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Use Google for fresh market information</label><div class="fo-hint">Saves only what you confirm. Records are looked up inside your own system; a pasted voucher is read only by Groq, Cerebras or Mistral.</div></div>');
+    p.classList.add('fo-brainp');
     var log = $('#br-log', p);
     // the models answer in Markdown: show headings, bold, bullets and numbered points properly (escaped first, so no HTML gets through)
     function md(t) {
@@ -593,28 +594,40 @@
     }
     function card(m, i) {
       var r = m.action; if (!r) return '';
-      return '<div class="fo-brain__act"><b>' + esc({ add_booking: 'New booking', add_expense: 'New expense', record_salary: 'Salary payment', add_employee: 'New team member', add_lead: 'New enquiry' }[r.intent] || r.intent) + '</b>' +
+      return '<div class="fo-brain__act"><b>' + esc({ add_booking: 'New booking', add_expense: 'New expense', record_salary: 'Salary payment', add_employee: 'New team member', add_lead: 'New enquiry', record_payment: 'Payment update', update_booking: 'Booking update', add_task: 'New task', complete_task: 'Task done', update_lead: 'Enquiry update', channel_change: 'Price and availability', lookup: 'From your records', block_dates: 'Block dates', blog_topic: 'Blog topic', seo_keyword: 'SEO keyword', campaign: 'Campaign link', budget: 'Budget', event: 'Event', setting: 'Setting', paper_order: 'Paper trade', watch_add: 'Watchlist', message_guest: 'Message draft' }[r.intent] || r.intent) + '</b>' +
         r.lines.map(function (l) { return '<div><span>' + esc(l[0]) + '</span><span>' + esc(l[1]) + '</span></div>'; }).join('') +
         (r.ready ? (m.done === 'saved' ? '<p class="fo-brain__ok">✓ Saved</p>' : '<div class="fo-toolbar" style="margin:8px 0 0"><button class="btn btn--primary btn--sm" data-confirm="' + i + '"' + (m.done ? ' disabled' : '') + '>' + (m.done === 'saving' ? 'Saving…' : 'Confirm & save') + '</button><button class="btn btn--sm" data-cancel="' + i + '">Cancel</button></div><small class="fo-hint">Wrong detail? Just type the correction.</small>')
-          : '<small class="fo-hint">Reply with the missing details and I will update this.</small>') + '</div>';
+          : r.closed ? (r.link && /^https:\/\/wa\.me\//.test(r.link.url) ? '<a class="btn btn--primary btn--sm" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="' + esc(r.link.url) + '">' + esc(r.link.label) + '</a>' : '') : '<small class="fo-hint">Reply with the missing details and I will update this.</small>') + '</div>';
     }
-    function paint() { log.innerHTML = BRAIN.history.map(function (m, i) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + card(m, i) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight;
+    function think() {
+      var m = BRAIN.history[BRAIN.history.length - 1], busy = !!(m && m.pending), s = $('#br-status', p), n = 0;
+      p.classList.toggle('is-thinking', busy); if (s) s.textContent = busy ? 'Thinking' : 'Ready';
+      clearInterval(BRAIN.tick); if (!busy || !m.steps) return;
+      BRAIN.tick = setInterval(function () { var e = $('#br-step', p); if (!e || n >= m.steps.length - 1) return clearInterval(BRAIN.tick); n++; e.textContent = m.steps[n]; }, 3500);
+    }
+    function paint() { var seen = BRAIN.seen || 0, top = log.scrollTop; $('#br-ideas', p).style.display = BRAIN.history.length ? 'none' : ''; log.innerHTML = BRAIN.history.map(function (m, i) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + (i >= seen ? ' fo-brain__msg--new' : '') + '">' + (m.pending ? '<div class="fo-think"><span class="fo-think__dots"><i></i><i></i><i></i></span><span id="br-step">' + esc(m.text) + '</span></div>' : m.role === 'assistant' ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + card(m, i) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = top; log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); BRAIN.seen = BRAIN.history.length - (BRAIN.history.length && BRAIN.history[BRAIN.history.length - 1].pending ? 1 : 0); think();
       $$('[data-confirm]', log).forEach(function (b) { b.onclick = function () { confirmAct(Number(b.dataset.confirm)); }; });
       $$('[data-cancel]', log).forEach(function (b) { b.onclick = function () { BRAIN.draft = null; BRAIN.history[Number(b.dataset.cancel)].action.ready = false; BRAIN.history.push({ role: 'assistant', text: 'Cancelled. Nothing was saved.' }); paint(); }; });
     }
-    // records (bookings from a pasted voucher, expenses, salaries, staff, enquiries) go to f.brain.act; questions to f.brain.ask
+    // records and changes to them (bookings, payments, expenses, salaries, staff, enquiries, tasks) go to f.brain.act; it answers "none" for a question, which then goes on to f.brain.ask; questions to f.brain.ask
     var RESTRICT_ACT = /\b(set|make|put|add|remove|no|block)\b[\s\S]{0,40}\b(min(imum)?[- ]stay|max(imum)?[- ]stay|check-?ins?|check-?outs?|closed to (arrival|departure)|stop[- ]?sell|units? to sell)\b|\b(min(imum)?|max(imum)?)[- ]stay\b[\s\S]{0,30}\d/i;
     var CHANNEL_ACT = /\b(set|change|make|close|open|stop[- ]?sell|min(imum)? stay)\b[\s\S]*\b(airbnb|booking\.com|mmt|makemytrip|goibibo|all channels|every channel|channels?)\b/i;
-    var ACT = /\b(add|record|log|enter|paid|pay|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b/i;
+    var ACT = /\b(add|record|log|enter|update|mark|paid|pays?|payments?|cleared?|settled?|dues?|pending|balance|refund(ed)?|jama|baa?ki|kitna|cancel(led)?|no[- ]?show|reschedule|postpone|extend|remind|reminder|tasks?|to-?do|done|completed?|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead|blog|post|topic|keyword|campaign|utm|budget|event|festival|maintenance|repairs?|watchlist|buy|sell|ipos?|whatsapp|message|issues?|audit|publish|morning brief|email)\b|भुगतान|बकाया|जमा|रद्द/i;
+    var PRICE_ACT = /\b(set|change|raise|increase|lower|reduce|drop|cut|hike|update|apply)\b[\s\S]{0,60}\b(prices?|rates?|tariffs?|recommended)\b|\b(close|open|block|stop[- ]?sell)\b[\s\S]{0,40}\b(villa|suite|nights?|dates?|weekend|nov|dec|jan)\b|\d+\s?%/i;
+    var LOOK_ACT = /\b(who|kaun|how much|owes?|arrivals?|departures?|check(ing)?[- ]?(in|out)s?|in[- ]house|staying|enquir(y|ies))\b|\bprices? (on|for)\b/i;
+    function showAct(r) {
+      BRAIN.history.push({ role: 'assistant', action: r, private: true, text: (r.ready ? 'Please check and confirm:' : r.question) });
+    }
     function act(q) {
-      BRAIN.history.push({ role: 'user', text: q }); BRAIN.history.push({ role: 'assistant', text: 'Reading the details…', pending: true }); paint();
+      BRAIN.history.push({ role: 'user', text: q, private: true }); BRAIN.history.push({ role: 'assistant', text: 'Reading your message…', steps: ['Reading your message…', 'Checking your records…', 'Preparing it for you to confirm…'], pending: true }); paint();
       api('f.brain.act', { text: q, draft: BRAIN.draft || null }).then(function (j) {
         BRAIN.history.pop();
         if (!j.ok) { BRAIN.history.push({ role: 'assistant', text: j.error }); paint(); return; }
         var r = j.result;
         if (r.intent === 'none') { BRAIN.draft = null; paint(); return ask(q, true); }   // a question after all: answer it
-        BRAIN.draft = { intent: r.intent, fields: r.fields };
-        BRAIN.history.push({ role: 'assistant', action: r, text: (r.note ? r.note + '\n' : '') + (r.ready ? 'Please check and confirm:' : r.question) }); paint();
+        if (r.intent === 'multi') { BRAIN.draft = null; r.items.forEach(showAct); paint(); return; }
+        BRAIN.draft = r.closed ? null : { intent: r.intent, fields: r.fields };
+        showAct(r); paint();
       }).catch(function (e) { BRAIN.history.pop(); BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
     }
     function confirmAct(i) {
@@ -623,20 +636,22 @@
       api(r.route, r.payload).then(function (j) {
         if (!j.ok) { m.done = ''; BRAIN.history.push({ role: 'assistant', text: 'Not saved: ' + j.error + (j.conflicts ? ' (' + j.conflicts.length + ' overlapping booking' + (j.conflicts.length === 1 ? '' : 's') + ')' : '') + '. Tell me what to change.' }); paint(); return; }
         m.done = 'saved'; BRAIN.draft = null;
-        var id = (j.booking && j.booking.booking_id) || (j.record && (j.record.expense_id || j.record.pay_id || j.record.emp_id || j.record.lead_id)) || '';
+        var id = (j.saved && j.saved.join(', ')) || (j.result && j.result.jobs != null ? j.result.jobs + ' channel updates' : '') || (j.booking && j.booking.booking_id) || (j.record && (j.record.expense_id || j.record.pay_id || j.record.emp_id || j.record.lead_id || j.record.task_id)) || '';
         BRAIN.history.push({ role: 'assistant', text: '✓ Saved' + (id ? ' (' + id + ')' : '') + '. Everything that depends on it (dashboards, finance, pricing) updates now.' }); paint(); load(true);
       }).catch(function (e) { m.done = ''; BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
     }
     function ask(q, skipAct) {
       q = String(q || '').trim(); if (!q) return;
-      if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || RESTRICT_ACT.test(q) || q.length > 220)) return act(q);
+      if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || RESTRICT_ACT.test(q) || PRICE_ACT.test(q) || LOOK_ACT.test(q) || q.length > 220)) return act(q);
       var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
       if (!skipAct) BRAIN.history.push({ role: 'user', text: q });
-      BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();
-      var hist = BRAIN.history.filter(function (m) { return !m.pending; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
+      BRAIN.history.push({ role: 'assistant', text: 'Reading your data…', steps: ['Reading your data…', 'Comparing villas and nights…'].concat(web ? ['Researching the market…'] : [], ['Checking every figure…']), pending: true }); paint();
+      var hist = BRAIN.history.filter(function (m) { return !m.pending && !m.private; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
       api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2), web: web }).then(function (j) {
         BRAIN.history.pop();
-        BRAIN.history.push(j.ok ? { role: 'assistant', text: j.answer, meta: j.provider + ' · data as of ' + when(j.context_at) + (j.searched && j.searched.length ? ' · searched Google: ' + j.searched.join('; ') : ''), sources: j.sources || [] } : { role: 'assistant', text: j.error, meta: j.setup ? 'Setup needed (see Integrations & Automation)' : '' }); paint();
+        BRAIN.history.push(j.ok ? { role: 'assistant', text: j.answer + (j.unverified && j.unverified.length ? '\n\n**Check before using:** ' + j.unverified.join(', ') + ' could not be matched to your data.' : ''), meta: j.provider + ' · data as of ' + when(j.context_at) + (j.unverified && !j.unverified.length ? ' · figures checked' : '') + (j.searched && j.searched.length ? ' · searched Google: ' + j.searched.join('; ') : ''), sources: j.sources || [] } : { role: 'assistant', text: j.error, meta: j.setup ? 'Setup needed (see Integrations & Automation)' : '' });
+        if (j.ok) (j.proposals || []).forEach(showAct);
+        paint();
       }).catch(function (e) { BRAIN.history.pop(); BRAIN.history.push({ role: 'assistant', text: e.message }); paint(); });
     }
     paint();

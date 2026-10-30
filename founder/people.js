@@ -205,10 +205,10 @@
 
   // ============================================================ CRM ============================================================
   function viewCrm(page) {
-    var T = U.tabs('crm', [['inbox', 'Messages'], ['guests', 'Guests'], ['leads', 'Leads'], ['tasks', 'Follow-ups'], ['templates', 'Templates']]);
+    var T = U.tabs('crm', [['inbox', 'Messages'], ['guests', 'Guests'], ['leads', 'Leads'], ['tasks', 'Follow-ups'], ['templates', 'Templates'], ['blog', 'Blog engine']]);
     page.innerHTML = U.hello('CRM', 'Every email and WhatsApp message, your guests\' history, new enquiries (leads) and follow-ups. Email sends from your Google account; WhatsApp opens on your phone with the message ready.') + T.html + '<div id="crm"></div>';
     U.wireTabs(page, 'crm');
-    ({ inbox: crmInbox, guests: crmGuests, leads: crmLeads, tasks: crmTasks, templates: crmTemplates }[T.cur] || crmInbox)($('#crm'));
+    ({ inbox: crmInbox, guests: crmGuests, leads: crmLeads, tasks: crmTasks, templates: crmTemplates, blog: crmBlog }[T.cur] || crmInbox)($('#crm'));
   }
   function crmInbox(body) {
     var all = (D().crm_messages || []).slice().reverse(), f = S.crmF || { ch: '', who: '', q: '' };
@@ -304,6 +304,40 @@
     var a = $('#tk-add'); if (a) a.onclick = function () { var title = val(body, 'tk-t'); if (!title.trim()) return; save('f.crm.task.save', { task: { title: title, due: val(body, 'tk-d') } }, 'Added'); };
     $$('[data-done]', body).forEach(function (b) { b.onclick = function () { var x = tasks.filter(function (k) { return k.task_id === b.dataset.done; })[0]; save('f.crm.task.save', { task: Object.assign({}, x, { done: !x.done }) }); }; });
     $$('[data-deltk]', body).forEach(function (b) { b.onclick = function () { save('f.crm.task.delete', { task_id: b.dataset.deltk }, 'Deleted'); }; });
+  }
+  // ---------- blog engine: ideas from real demand → writer → photos → checks → live (back end: FoSearch.gs, .github/workflows/blog-queue.yml + blog.yml) ----------
+  var BLOG_TICK = null, BLOG_STEPS = [['approved', 'Accepted'], ['in_progress', 'Writing, choosing photos'], ['written', 'Checking facts'], ['published', 'Live']];
+  function crmBlog(body) {
+    var all = D().seo_topics || [], ideas = all.filter(function (t) { return t.status === 'suggested'; }).sort(function (a, b) { return num(b.score) - num(a.score); });
+    var moving = all.filter(function (t) { return t.auto === 'yes' && t.status !== 'skipped'; }).sort(function (a, b) { return a.updated_at < b.updated_at ? 1 : -1; }).slice(0, 12);
+    var stage = function (t) {
+      if (t.status === 'failed') return '<span class="fo-badge" style="background:var(--bad,#B5121B);color:#fff">Could not be written</span> <small class="fo-hint">Nothing was published. You can try again.</small>';
+      if (t.status === 'review') return '<span class="fo-badge">Needs your review</span> <small class="fo-hint">A check failed, so it was not published. The draft is waiting in GitHub.</small>';
+      var at = BLOG_STEPS.map(function (x) { return x[0]; }).indexOf(t.status);
+      return '<div class="bl-steps">' + BLOG_STEPS.map(function (x, i) { return '<span class="' + (i < at ? 'is-done' : i === at ? 'is-now' : '') + '">' + esc(x[1]) + '</span>'; }).join('') + '</div>';
+    };
+    body.innerHTML = '<div class="fo-note" style="margin-bottom:14px"><b>How it works:</b> every day the engine ranks what people search around Ujjain, where Google already shows your site, and the events ahead. Accept an idea and the agents write it, choose real photos, check every fact and publish it, usually within an hour. If any check fails it stays unpublished for your review.</div>' +
+      '<div id="bl-live" class="bl-live"><span class="fo-hint">Checking live data…</span></div><div class="fo-toolbar">' + (editor() ? '<button class="btn btn--primary" id="bl-find">Find new ideas</button>' : '') + '<button class="btn" id="bl-ref">Refresh progress</button></div>' +
+      (moving.length ? card('In progress and published', '', moving.map(function (t) { return '<div class="bl-row"><div><b>' + esc(t.title || t.keyword) + '</b>' + (t.status === 'published' && t.slug ? ' <a target="_blank" rel="noopener" href="https://www.apvillasandresorts.in/blog/' + esc(t.slug) + '.html">Open post ↗</a>' : '') + '</div>' + stage(t) + (['failed', 'review'].indexOf(t.status) >= 0 && founder() ? '<button class="btn btn--sm" data-bl-accept="' + esc(t.topic_id) + '">Try again</button>' : '') + '</div>'; }).join('')) : '') +
+      card('Suggested topics', ideas.length + ' ideas · score compares ideas, it does not promise traffic', ideas.length ? ideas.map(function (t) {
+        return '<div class="bl-idea"><div class="bl-score" title="Demand, timing, chance to rank and fit with your guests">' + esc(t.score) + '</div><div class="bl-body"><b>' + esc(t.title) + '</b><small>Keyword: ' + esc(t.keyword) + (t.target_date ? ' · for ' + dmy(String(t.target_date).slice(0, 10)) : '') + '</small><p>' + esc(t.why) + '</p>' +
+          (editor() ? '<div class="fo-toolbar" style="margin:6px 0 0">' + (founder() ? '<button class="btn btn--primary btn--sm" data-bl-accept="' + esc(t.topic_id) + '">Accept: write and publish</button>' : '') + '<button class="btn btn--sm" data-bl-skip="' + esc(t.topic_id) + '">Skip</button></div>' : '') + '</div></div>';
+      }).join('') : '<div class="fo-empty">No ideas waiting. Press “Find new ideas”, or add festivals under Trends & Events so the engine can plan ahead.</div>');
+    var again = function () { return U.load(true).then(function () { crmBlog(body); }); };
+    function liveStrip() {
+      var el = $('#bl-live', body); if (!el) return clearInterval(BLOG_TICK);
+      U.api('f.blog.status', {}).then(function (j) {
+        if (!j.ok || !$('#bl-live', body)) return; var L = j.result.live, h = j.result.health || {};
+        var src = function (name, x, good) { return '<span class="bl-src ' + (x && x.ok ? 'is-ok' : 'is-bad') + '" title="' + esc(x && !x.ok ? x.reason || '' : '') + '">' + esc(name) + ': ' + esc(x ? (x.ok ? good(x) : 'not connected') : 'not run yet') + '</span>'; };
+        el.innerHTML = '<div class="bl-now">' + (L.ok ? '<b>' + L.active_users + '</b> on the website now<small>' + esc((L.pages || []).slice(0, 3).map(function (p) { return p.page + ' (' + p.users + ')'; }).join(' · ') || 'no pages in the last 30 minutes') + '</small>' : '<small>Live visitors unavailable: ' + esc(L.reason || '') + '</small>') + '</div><div class="bl-srcs">' +
+          src('Google searches', h.trends, function (x) { return (x.age_days ? x.age_days + ' days old' : 'today') + ', ' + x.keywords + ' terms'; }) + src('Search Console', h.gsc, function (x) { return x.impressions + ' impressions, to ' + dmy(x.to); }) + src('Analytics', h.ga4, function (x) { return x.sessions + ' sessions in 28 days'; }) + src('Events', h.events, function (x) { return x.ahead + ' ahead'; }) + (h.at ? '<small class="fo-hint">Ideas ranked ' + when(h.at) + '</small>' : '') + '</div>';
+      });
+    }
+    clearInterval(BLOG_TICK); liveStrip(); BLOG_TICK = setInterval(liveStrip, 60000);
+    $('#bl-ref', body).onclick = again;
+    var f = $('#bl-find', body); if (f) f.onclick = function () { f.disabled = true; f.textContent = 'Looking…'; U.api('f.blog.suggest', {}).then(function (j) { if (!j.ok) toast(j.error, true); else toast(j.result.added ? j.result.added + ' new ideas' : 'No new ideas right now'); return again(); }); };
+    $$('[data-bl-accept]', body).forEach(function (b) { b.onclick = function () { if (!confirm('Write this post and publish it on the website if every check passes?')) return; b.disabled = true; U.api('f.blog.accept', { topic_id: b.dataset.blAccept }).then(function (j) { if (!j.ok) toast(j.error, true); else toast('Accepted. The agents start within about 15 minutes.'); return again(); }); }; });
+    $$('[data-bl-skip]', body).forEach(function (b) { b.onclick = function () { U.api('f.blog.skip', { topic_id: b.dataset.blSkip }).then(function (j) { if (!j.ok) toast(j.error, true); return again(); }); }; });
   }
   var STARTER = [
     { name: 'Booking confirmation', channel: 'whatsapp', audience: 'guest', body: 'Namaste {name} ji 🙏 Your stay at AP Villas is confirmed for {checkin}. Please complete your e-check-in before arrival: https://www.apvillasandresorts.in/checkin.html' },

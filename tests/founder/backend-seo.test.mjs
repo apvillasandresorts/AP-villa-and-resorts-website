@@ -125,3 +125,57 @@ test('system health: every check reported in plain words, problems first-class, 
   env.setUserRole('viewer');
   assert.equal(env.api({ action: 'f.health', token }).ok, true);
 });
+
+test('blog engine: ideas come from events and searches, covered topics are left out, and an accepted topic is only "published" after the publish agent', async () => {
+  const { env, token } = await ready(r => /published\.json/.test(r.url) ? { code: 200, body: JSON.stringify({ posts: [{ title: 'Bhasma Aarti Guide', keyword: 'bhasma aarti booking' }] }) } : { code: 500, body: '' });
+  const t0 = env.fo.foRows_ ? env.api({ action: 'f.data', token }).data : null;
+  const today = (t0 && t0.today) || '2026-10-16', add = n => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
+  assert.equal(env.api({ action: 'f.event.save', token, event: { name: 'Kartik Mela', start: add(20), end: add(22), kind: 'festival' } }).ok, true);
+  const bad = env.api({ action: 'f.blog.suggest', key: 'x' }); assert.equal(bad.ok, false);
+  const r = env.api({ action: 'f.blog.suggest', token }); assert.equal(r.ok, true, r.error); assert.ok(r.result.added >= 1);
+  const ideas = env.tab('SeoTopics').filter(x => x.status === 'suggested');
+  assert.match(ideas[0].keyword, /kartik mela ujjain/); assert.ok(Number(ideas[0].score) >= 50); assert.match(ideas[0].why, /20 days/);
+  assert.equal(env.tab('SeoTopics').filter(x => x.status === 'suggested').length, ideas.length, 'a rerun replaces ideas, never stacks them');
+  ideas.splice(0, ideas.length, ...env.tab('SeoTopics').filter(x => x.status === 'suggested'));
+  assert.equal(env.fo.foBlogSame_('bhasma aarti booking online', 'Bhasma Aarti Guide bhasma aarti booking'), true);
+  const { key } = env.api({ action: 'f.automation.create', token }), id = ideas[0].topic_id;
+  assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 0);
+  assert.equal(env.api({ action: 'f.blog.accept', token, topic_id: id }).ok, true);
+  assert.equal(env.api({ action: 'f.m.seo.peek', key }).waiting, 1);
+  const n = env.api({ action: 'f.m.seo.next', key }); assert.equal(n.topic.topic_id, id); assert.equal(n.topic.approved, true);
+  const st = () => env.tab('SeoTopics').find(x => x.topic_id === id).status;
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, slug: 'kartik-mela' }); assert.equal(st(), 'written');
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, status: 'review' }); assert.equal(st(), 'review');
+  env.api({ action: 'f.blog.accept', token, topic_id: id }); env.api({ action: 'f.m.seo.next', key });
+  env.api({ action: 'f.m.seo.done', key, topic_id: id, slug: 'kartik-mela', status: 'live' }); assert.equal(st(), 'published');
+  assert.match(env.api({ action: 'f.blog.accept', token, topic_id: id }).error, /already published/);
+  env.setUserRole('manager'); assert.match(env.api({ action: 'f.blog.accept', token, topic_id: id }).error, /role/);
+});
+
+test('blog engine: source health is reported, Analytics lifts related topics, live visitors come from GA4 realtime, and the automation key can run it', async () => {
+  const analytics = { Properties: {
+    batchRunReports: b => ({ reports: b.requests.map(r => ({ rows: r.dimensions[0] && r.dimensions[0].name === 'landingPage' ? [{ dimensionValues: [{ value: '/blog/kartik-mela-darshan.html' }], metricValues: [{ value: '40' }, { value: '20' }, { value: '1' }] }] : [] })) }),
+    runRealtimeReport: () => ({ rows: [{ dimensionValues: [{ value: 'Home' }], metricValues: [{ value: '3' }] }] }) } };
+  const env = makeEnv({ analytics, http: () => ({ code: 500, body: '' }) }); env.fo.foSetup(); const token = await env.login();
+  const today = '2026-10-16', add = n => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
+  env.api({ action: 'f.event.save', token, event: { name: 'Kartik Mela', start: add(20), end: add(20), kind: 'festival' } });
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const r = env.api({ action: 'f.m.blog.check', key }); assert.equal(r.ok, true, r.error);
+  assert.equal(r.result.health.events.ahead, 1); assert.equal(r.result.health.ga4.ok, true); assert.equal(r.result.health.gsc.ok, false, 'a dead source is shown, not hidden');
+  assert.match(r.result.ideas[0].why, /40 sessions/); assert.equal(r.result.live.active_users, 3);
+  assert.equal(env.api({ action: 'f.blog.status', token }).result.health.ga4.sessions, 0);
+});
+
+test('blog engine: a festival covered under another name is not suggested again', async () => {
+  const { env } = await ready();
+  assert.equal(env.fo.foBlogSame_('vaikunth chaturdashi hari har milan ujjain 2026', 'hari har milan ujjain 2026'), true);
+  assert.equal(env.fo.foBlogSame_('kartik purnima ujjain 2026', 'ujjain in november'), false);
+});
+test('blog engine: festivals come from the calendar signal', async () => {
+  const { env, token } = await ready(() => ({ code: 500, body: '' }));
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const imp = env.fo.foSignalsImport_({ signals: [{ signal_id: 'calendar', for_date: '2026-11-05', index: 1.4, raw_value: 'Kartik', source_url: 'https://example.com/c', fetched_at: '2026-10-16T06:00:00+05:30', status: 'live', notes: 'Kartik Purnima' }] }, 'automation');
+  assert.equal(imp.result.added, 1, JSON.stringify(imp.result));
+  const list = env.fo.foBlogCandidates_('2026-10-16', {});
+  assert.ok(list.some(c => /kartik purnima ujjain 2026/.test(c.keyword) && c.target_date === '2026-11-05'), JSON.stringify(list));
+});

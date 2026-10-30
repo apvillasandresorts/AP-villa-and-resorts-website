@@ -255,3 +255,180 @@ test('actions: restrictions in plain words — "no check-ins on 14 Nov for all v
   const b = env.api({ action: 'f.brain.act', token, text: 'min stay on weekends in December for Villa Aranya' });
   assert.equal(b.result.ready, false); assert.match(b.result.question, /minimum nights/);
 });
+
+function actEnv(reply, more = []) {
+  const rows = CHECKINS.concat(more);
+  return (async () => { const env = makeEnv({ checkins: rows, http: r => /groq/.test(r.url) ? groqOk(JSON.stringify(reply())) : { code: 500, body: '' } }); env.fo.foSetup(); const token = await env.login(); env.api({ action: 'f.sync', token }); env.props.set('GROQ_API_KEY', 'gsk_test'); return { env, token }; })();
+}
+const save = (env, token, r) => env.api(Object.assign({ action: r.route, token }, r.payload));
+
+test('actions: "completed all pending payments" finds the guest by a fuller name, settles the balance, and a second tap saves nothing', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'record_payment', fields: { guest_name: 'Priya Devi Sharma' } }));
+  const a = env.api({ action: 'f.brain.act', token, text: 'Priya Devi Sharma completed all pending payments update it' });
+  assert.equal(a.result.ready, true, a.result.question); assert.equal(a.result.route, 'f.payment.settle');
+  assert.equal(a.result.payload.payment.items[0].amount, 11500); assert.match(a.result.lines.flat().join(' '), /11,500/);
+  const sent = env.net.calls.filter(c => /groq/.test(c.url)).map(c => c.payload).join('\n');
+  assert.ok(!sent.includes('9876543210') && !sent.includes('4523119876'), 'no ledger details go to the model');
+  assert.equal(save(env, token, a.result).ok, true);
+  const pay = env.tab('Payments').filter(p => p.origin === 'manual');
+  assert.equal(pay.length, 1); assert.equal(Number(pay[0].amount), 11500);
+  assert.match(save(env, token, a.result).error, /has changed/);
+  assert.equal(env.tab('Payments').filter(p => p.origin === 'manual').length, 1);
+  const again = env.api({ action: 'f.brain.act', token, text: 'Priya paid everything' }).result;
+  assert.equal(again.closed, true); assert.equal(again.ready, false); assert.match(again.question, /Nothing is pending/);
+});
+
+test('actions: part payments, too much, an unknown guest and two different guests never save the wrong thing', async () => {
+  let reply = { intent: 'record_payment', fields: { guest_name: 'Priya Sharma', amount: 4000 } };
+  const other = Object.assign({}, CHECKINS[0], { Reference: 'ECI-2', 'Booking ID': '77', 'Main guest': 'Priya Verma', Mobile: '9000000000', Email: 'v@example.com', 'Check-in': '2026-11-17', 'Check-out': '2026-11-18' });
+  const { env, token } = await actEnv(() => reply, [other]);
+  assert.equal(env.api({ action: 'f.brain.act', token, text: 'x' }).result.payload.payment.items[0].amount, 4000);
+  reply.fields.amount = 50000;
+  assert.match(env.api({ action: 'f.brain.act', token, text: 'x' }).result.question, /only ₹11,500 is pending/);
+  reply = { intent: 'record_payment', fields: { guest_name: 'Nobody Known' } };
+  assert.match(env.api({ action: 'f.brain.act', token, text: 'x' }).result.question, /no booking/);
+  reply = { intent: 'record_payment', fields: { guest_name: 'Priya' } };
+  const two = env.api({ action: 'f.brain.act', token, text: 'x' }).result;
+  assert.equal(two.ready, false); assert.match(two.question, /which of these guests/);
+});
+
+test('actions: cancelling a booking keeps everything else; tasks are added and ticked off', async () => {
+  let reply = { intent: 'update_booking', fields: { guest_name: 'Priya Sharma', status: 'cancel' } };
+  const { env, token } = await actEnv(() => reply);
+  const a = env.api({ action: 'f.brain.act', token, text: 'Priya Sharma cancelled' }).result;
+  assert.equal(a.ready, true, a.question); assert.equal(save(env, token, a).ok, true);
+  const bk = env.tab('Bookings')[0]; assert.equal(bk.status, 'cancelled'); assert.equal(bk.checkin, '2026-10-17'); assert.equal(Number(bk.gross_amount), 16500);
+  reply = { intent: 'add_task', fields: { title: 'Call the plumber', due: '2026-10-20' } };
+  assert.equal(save(env, token, env.api({ action: 'f.brain.act', token, text: 'x' }).result).ok, true);
+  env.cache.clear && env.cache.clear();
+  reply = { intent: 'complete_task', fields: { title: 'plumber' } };
+  const d = env.api({ action: 'f.brain.act', token, text: 'done with plumber' }).result;
+  assert.equal(d.ready, true, d.question); assert.equal(save(env, token, d).ok, true);
+  assert.equal(env.tab('CrmTasks')[0].done, 'yes');
+});
+
+test('language: English unless the question is in Devanagari; the model stray citation marks are removed', async () => {
+  const { env, token } = await ready(() => groqOk('Hold prices.【5†L1】'));
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Damodar Dholkar pending?', web: false });
+  assert.equal(r.answer, 'Hold prices.');
+  assert.match(env.net.calls.at(-1).payload, /Reply in English only/);
+  env.api({ action: 'f.brain.ask', token, question: 'आज का भाव क्या है?', web: false });
+  assert.match(env.net.calls.at(-1).payload, /Reply in Hindi\./);
+});
+
+test('answer check: an invented ₹ figure triggers one correction; if it stays, the owner is told', async () => {
+  let n = 0, mode = 'fixes';
+  const { env, token } = await ready(() => { n++; return groqOk(mode === 'fixes' && n > 1 ? 'Hold prices. ESTIMATE ₹5,000 = 2 nights × ₹2,500.' : 'Add ₹98,765 to the cash.'); });
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const a = env.api({ action: 'f.brain.ask', token, question: 'Cash?', web: false });
+  assert.equal(n, 2); assert.deepEqual(a.unverified, []); assert.match(a.answer, /ESTIMATE/);
+  mode = 'stuck'; n = 0;
+  const b = env.api({ action: 'f.brain.ask', token, question: 'Cash?', web: false });
+  assert.equal(n, 2); assert.deepEqual(b.unverified, ['₹98,765']);
+  assert.equal(env.fo.foBrainUnverified_('Use ₹4,500 and ₹4,500.00 or Rs 1,200', 'price 4500 total 1200.5').join(), 'Rs 1,200');
+});
+
+test('lookups: who owes what comes from the ledger, and no guest detail reaches a model', async () => {
+  let reply = { intent: 'lookup', fields: { what: 'pending_payments' } };
+  const { env, token } = await actEnv(() => reply);
+  const a = env.api({ action: 'f.brain.act', token, text: 'Who has pending payments?' }).result;
+  assert.equal(a.closed, true); assert.match(a.question, /₹11,500/); assert.match(a.lines.flat().join(' '), /Priya Sharma/);
+  reply = { intent: 'lookup', fields: { what: 'arrivals', from: '2026-10-17' } };
+  assert.match(env.api({ action: 'f.brain.act', token, text: 'arrivals' }).result.lines.flat().join(' '), /Priya/);
+  assert.ok(!env.net.calls.filter(c => /groq/.test(c.url)).map(c => c.payload).join('\n').includes('Sharma'), 'ledger names stay in Apps Script');
+});
+
+test('prices: several villas at once show a preview; several orders in one message give one card each; a bad date range is refused', async () => {
+  let reply = { intent: 'channel_change', fields: { property_id: 'AP Suite, Villa Aranya', type: 'pct', value: 10, from: '2026-11-13', to: '2026-11-14', weekdays: '5,6' } };
+  const { env, token } = await actEnv(() => reply);
+  const a = env.api({ action: 'f.brain.act', token, text: 'raise AP Suite and Villa Aranya 10% next weekend' }).result;
+  assert.equal(a.ready, true, a.question); assert.equal(a.payload.bulk.villas.length, 2);
+  assert.match(a.lines.flat().join(' '), /villa-night/); assert.equal(a.payload.bulk.preview, undefined);
+  assert.equal(env.tab('ChannelJobs').length, 0, 'the preview writes nothing');
+  reply = { actions: [{ intent: 'channel_change', fields: { property_id: 'AP Suite', type: 'rate', value: 4000, from: '2026-11-13' } }, { intent: 'add_task', fields: { title: 'Check Airbnb' } }] };
+  const m = env.api({ action: 'f.brain.act', token, text: 'x' }).result;
+  assert.equal(m.intent, 'multi'); assert.equal(m.items.length, 2); assert.equal(m.items[1].route, 'f.crm.task.save');
+  reply = { intent: 'channel_change', fields: { property_id: 'AP Suite', type: 'rate', value: 4000, from: '2029-01-01' } };
+  const bad = env.api({ action: 'f.brain.act', token, text: 'x' }).result;
+  assert.equal(bad.ready, false); assert.match(bad.question, /year ahead/);
+});
+
+test('decisions: a recommendation comes with a ready confirm card, and the ACTIONS line never shows in the answer', async () => {
+  const text = 'Saturday is weak. Hold the rest.\nACTIONS: [{"intent":"channel_change","fields":{"property_id":"AP Suite","type":"pct","value":-10,"from":"2026-11-14"}},{"intent":"add_booking","fields":{}}]';
+  const { env, token } = await ready(() => groqOk(text));
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'What should I do about weak nights?', web: false });
+  assert.equal(r.answer, 'Saturday is weak. Hold the rest.');
+  assert.equal(r.proposals.length, 1, 'only price and task proposals are allowed'); assert.equal(r.proposals[0].route, 'f.cm.bulk'); assert.equal(r.proposals[0].ready, true);
+});
+
+test('common requests need no model: who owes, a guest balance in Hinglish, paid in full, arrivals', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'none' }));
+  const groq = () => env.net.calls.filter(c => /groq/.test(c.url)).length, n = groq(), act = text => env.api({ action: 'f.brain.act', token, text }).result;
+  assert.match(act('Who has pending payments?').question, /₹11,500/);
+  assert.match(act('Priya Sharma ka kitna baaki hai?').lines.flat().join(' '), /pending ₹11,500/);
+  assert.equal(act('who is arriving tomorrow').intent, 'lookup');
+  const p = act('Priya Sharma completed all pending payments update it');
+  assert.equal(p.intent, 'record_payment'); assert.equal(p.ready, true); assert.equal(p.note, undefined);
+  assert.equal(groq(), n, 'no model call');
+  assert.equal(act('why are pending payments so high?').intent, 'none');
+  assert.equal(act('Priya Sharma paid 2000').intent, 'none', 'a figure needs the model');
+  assert.equal(act('has Priya Sharma paid everything?').intent, 'none');
+});
+
+test('accuracy: the model gets per-villa figures and worked-out findings, and a vague answer is sent back once', async () => {
+  let n = 0;
+  const { env, token } = await ready(() => { n++; return groqOk(n === 1 ? 'The summary does not show this.' : 'AP Suite: ₹0 on 2026-10-20, 1 night. Confidence: Low.'); });
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Why are receivables so high?', web: false });
+  assert.equal(n, 2); assert.match(r.answer, /Confidence/);
+  const sent = env.net.calls.filter(c => /groq/.test(c.url))[0].payload;
+  assert.match(sent, /per_villa/); assert.match(sent, /receivables_by_villa/); assert.ok(!sent.includes('Sharma'), 'still no guest names');
+  assert.equal(env.fo.foBrainContext_().per_villa.length > 0, true);
+});
+
+test('answers have room to finish: Gemini counts its thinking inside the output limit', async () => {
+  const { env, token } = await ready(r => /generativelanguage/.test(r.url) && !/models\?/.test(r.url) ? geminiOk('AP Suite: 2 nights, ₹0.') : { code: 500, body: '' });
+  env.props.set('GEMINI_API_KEY', 'AIza_test');
+  env.api({ action: 'f.brain.ask', token, question: 'Tonight?', web: false });
+  assert.equal(JSON.parse(env.net.calls.find(c => /generateContent/.test(c.url)).payload).generationConfig.maxOutputTokens, 4096);
+});
+
+test('every dashboard area has an action: blocks, blog topics, keywords, campaigns, budgets, events, settings, watchlist', async () => {
+  let reply;
+  const { env, token } = await actEnv(() => reply), go = (intent, fields) => { reply = { intent, fields }; return env.api({ action: 'f.brain.act', token, text: 'do it' }).result; };
+  const check = (intent, fields, tab) => { const r = go(intent, fields); assert.equal(r.ready, true, intent + ': ' + r.question); const j = save(env, token, r); assert.equal(j.ok, true, intent + ': ' + j.error); if (tab) assert.ok(env.tab(tab).length >= 1, tab); };
+  const pid = env.tab('Properties')[0].property_id;
+  check('block_dates', { property_id: pid, start: '2026-12-01', end: '2026-12-03', reason: 'Painting' }, 'Blocks');
+  assert.equal(env.tab('Blocks')[0].end, '2026-12-04', 'the last blocked day is the 3rd');
+  check('blog_topic', { title: 'Kartik mela guide', keyword: 'kartik mela ujjain', priority: 'high' }, 'SeoTopics');
+  check('seo_keyword', { keyword: 'villa near mahakal' }, 'SeoKeywords');
+  check('campaign', { name: 'Diwali offer', channel: 'instagram' }, 'Campaigns');
+  check('budget', { month: '2026-11', category: env.fo.foBrainTestCat_ ? env.fo.foBrainTestCat_() : 'utilities', amount: 20000 }, 'Budgets');
+  check('event', { name: 'Kartik Purnima', start: '2026-11-05' }, 'Events');
+  check('setting', { brain_daily: 'off' });
+  check('watch_add', { symbol: 'infy' }, 'InvWatch');
+  assert.equal(env.tab('InvWatch')[0].symbol, 'INFY');
+  assert.match(go('paper_order', { symbol: 'INFY', qty: 10, side: 'buy' }).question, /paper account/);
+});
+
+test('blog pipeline, issues and guest messages: nothing public or sent from AP Brain', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'none' }));
+  const blogs = env.api({ action: 'f.brain.act', token, text: 'publish the latest blog post' }).result;
+  assert.equal(blogs.intent, 'lookup'); assert.equal(blogs.ready, false); assert.match(blogs.question, /\/publish/);
+  assert.equal(env.api({ action: 'f.brain.act', token, text: 'show data issues' }).result.closed, true);
+});
+
+test('a message draft opens WhatsApp for the owner to send', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'message_guest', fields: { guest_name: 'Priya Sharma' } }));
+  const r = env.api({ action: 'f.brain.act', token, text: 'whatsapp Priya Sharma about her balance' }).result;
+  assert.equal(r.ready, false, 'nothing to save'); assert.match(r.link.url, /^https:\/\/wa\.me\/919876543210\?text=/); assert.match(decodeURIComponent(r.link.url), /₹11,500/);
+});
+
+test('tidying: wrong weekdays are corrected, rupees go first, and an ACTIONS line is found wherever the model puts it', async () => {
+  const { env } = await ready();
+  assert.equal(env.fo.foBrainTidy_('2026-11-15 Sat at 2 600 ₹ and 2026-11-05 (Monday) ₹4,500'), '2026-11-15 Sun at ₹2,600 and 2026-11-05 (Thursday) ₹4,500');
+  const r = env.fo.foBrainProposals_('Answer.\n**ACTIONS:** ```json\n[]\n```\nConfidence: High', { email: 'x', role: 'founder' });
+  assert.equal(r.text, 'Answer.\nConfidence: High');
+});

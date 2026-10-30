@@ -155,6 +155,9 @@ with Founder OS jobs, then saves anyway. A photo the phone cannot read or a PDF 
 on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details is offered. Test rows: run `ciDeleteTestEntries` in the editor
 (rows whose main guest starts with "TEST"; ID folders to Drive Trash).
 
+## Blog engine (CRM → Blog engine)
+Daily (and "Find new ideas") `foBlogSuggest_` in FoSearch.gs ranks events ahead, Google Trends around Ujjain and Search Console near-wins, leaves out what is already covered and keeps 8 ideas. The score compares ideas; it does not promise traffic. Accept (founder only) sets the topic to `approved`; `.github/workflows/blog-queue.yml` checks every 15 minutes with the automation key and starts `blog.yml`: writer → photo agent → validator and fact review → auto-merge only if everything passes (the click is the approval for that one post). Status flows back: in_progress → written → published, or review/failed. No GitHub token lives in Apps Script.
+
 ## AP Brain (live)
 `docs/founder-os/FoBrain.gs`. Top-bar button "Ask AP Brain" (manager+).
 - **Providers (all free, each optional, keys only in Script Properties):** Groq `GROQ_API_KEY` → Cerebras `CEREBRAS_API_KEY` → OpenRouter
@@ -170,6 +173,11 @@ on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details
   extracts fields, the server validates them and asks for anything missing, the panel shows a confirmation card, and "Confirm & save" calls the
   normal route (`f.booking.save`, `f.expense.save`, `f.hr.pay.save`, `f.hr.emp.save`, `f.crm.lead.save`) with all their checks. Guest details go only
   to Groq, Cerebras or Mistral (never the Gemini free tier or OpenRouter); Aadhaar-style 12-digit numbers are masked; the log keeps only the action type.
+- **Changes to existing records:** "Damodar Dholkar completed all pending payments", "Priya cancelled", "move Ravi to 12 Nov", "remind me to call the plumber Friday", "plumber task done", "Asha enquiry is won". Guests, tasks and enquiries are matched inside Apps Script, so the guest list never goes to a model. The owner sees the exact amounts and taps Confirm; `f.payment.settle` rechecks each balance, so a second tap saves nothing.
+- **Read:** "Who has pending payments?", "what does Damodar owe?", "who checks in tomorrow?", "open tasks", "price for AP Suite on Saturday". Answered from the sheets in Apps Script and shown only in the portal; lookup results are kept out of what later questions send to a model.
+- **Prices and bulk edit:** "raise all villas 10% this weekend", "AP Suite and Villa Aranya ₹4,500 on Saturday", several orders in one message (one card each). The card shows the bulk-edit preview (nights, channel updates, floor/ceiling warnings). Saving updates the portal calendar and queues channel jobs; OTAs change when the agent or Phone assist runs them.
+- **Decisions:** when an answer recommends a price, availability or follow-up change, the model adds an ACTIONS line that becomes a confirm card (channel changes and tasks only).
+- **Language and figures:** replies are English unless the question is in Devanagari (set in code). Every ₹ figure is checked against the data; a mismatch gets one correction round and anything left is shown as "Check before using".
 - Editor checks: `foBrainTest` (each provider), `foBrainTestResearch`. Daily AI brief email (Settings `brain_daily`). Log: BrainLog tab.
 
 ## People & HR and CRM
