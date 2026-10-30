@@ -253,6 +253,13 @@ function foCloudPayload_(p) {
   return { org_slug: p.getProperty('FO_CLOUD_ORG'), city: p.getProperty('FO_CLOUD_CITY') || '', properties: foCloudPick_(foRows_('Properties'), FO_CLOUD.PROPERTY), bookings, payments, expenses, blocks,
     totals: { bookings: bookings.length, gross: sum(bookings, 'gross_amount'), retained: sum(bookings, 'retained_amount'), payments: payments.length, paid: sum(payments, 'amount'), expenses: expenses.length, spent: sum(expenses, 'amount'), blocks: blocks.length } };
 }
+/** Per villa and check-in month, by the same rule the database uses, so any difference is a real one. */
+function foCloudMonths_() {
+  const o = {}, r2 = n => Math.round(n * 100) / 100;
+  foRows_('Bookings').forEach(b => { const d = foDate_(b.checkin); if (!d) return; const k = b.property_id + '|' + d.slice(0, 7), x = o[k] = o[k] || { bookings: 0, nights: 0, gross: 0, retained: 0 };
+    x.bookings++; x.nights += foHasNum_(b.nights) ? foNum_(b.nights) : 0; x.gross = r2(x.gross + (foHasNum_(b.gross_amount) ? foNum_(b.gross_amount) : 0)); x.retained = r2(x.retained + (foHasNum_(b.retained_amount) ? foNum_(b.retained_amount) : 0)); });
+  return o;
+}
 /** Once a day after 03:00 IST. A failed or mismatched run is emailed; the portal never depends on it. */
 function foCloudSyncIfDue_() {
   const p = PropertiesService.getScriptProperties(), today = foToday_();
@@ -260,7 +267,7 @@ function foCloudSyncIfDue_() {
   if (p.getProperty('FO_CLOUD_DAY') === today || Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) < 3) return 'not due';
   p.setProperty('FO_CLOUD_DAY', today);
   let detail = '', ok = false;
-  try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) foCloudCall_(p, 'refresh_learning', {}); }
+  try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) { const m = foCloudCall_(p, 'check_months', { org_slug: p.getProperty('FO_CLOUD_ORG'), source: foCloudMonths_() }); ok = !!m.matched; detail += ' · months ' + (ok ? 'matched' : 'MISMATCH ' + m.mismatches + ': ' + JSON.stringify(m.lines).slice(0, 400)); foCloudCall_(p, 'refresh_learning', {}); } }
   catch (e) { detail = String(e.message || e).slice(0, 300); }
   foAppend_('Jobs', { job: 'cloud_copy', started: foNow_(), finished: foNow_(), status: ok ? 'ok' : 'failed', detail });
   if (!ok) { try { MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Apeiron · nightly copy needs a look', body: detail }); } catch (e) {} }
