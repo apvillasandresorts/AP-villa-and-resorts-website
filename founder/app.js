@@ -110,7 +110,7 @@
         '<p>Market prices, Google searches, news and every booking flow into one brain that tells you the price that sells, night by night.</p>' +
         '<div class="fo-login__chips"><span>8 booking platforms</span><span>Google searches daily</span><span>Live news</span><span>AP Brain</span></div></div>' : '') +
       '<form class="fo-login__card" novalidate autocomplete="on">' + (FX ? '<div class="fo-login__mobile-brain">' + FX.brain('m') + '</div>' : '') +
-      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span class="fo-prod"><img src="/founder/apeiron-logo.svg" alt="">AP APEIRON</span></div></div>' +
+      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span class="fo-prod"><img src="/founder/apeiron-logo-192.png" alt="">AP APEIRON</span></div></div>' +
       (otp
         ? '<h1>Check your email</h1><p class="sub">We sent a 6-digit code to <b>' + esc(L.to) + '</b>. It expires in 5 minutes.</p>' +
           '<label class="fo-field">One-time code<input class="fo-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus></label>' +
@@ -216,7 +216,7 @@
     var initials = ((S.user && S.user.name) || 'AS').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     root.className = '';
     root.innerHTML = '<div class="fo-shell' + (S.collapsed ? ' is-collapsed' : '') + '">' +
-      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span class="fo-prod"><img src="/founder/apeiron-logo.svg" alt="">AP APEIRON</span></div></div><nav class="fo-nav">' +
+      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span class="fo-prod"><img src="/founder/apeiron-logo-192.png" alt="">AP APEIRON</span></div></div><nav class="fo-nav">' +
       MODULES.map(function (m) {
         if (m.g) return '<div class="fo-nav__group">' + esc(m.g) + '</div>';
         if (m.founderOnly && !(S.user && S.user.role === 'founder')) return '';   // personal finance: founder only
