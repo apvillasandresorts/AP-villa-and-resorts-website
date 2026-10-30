@@ -152,12 +152,20 @@ function foBlogCandidates_(today, health) {
     const keyword = String(e.name).toLowerCase() + (FO_BLOG.PLACE.test(e.name) ? '' : ' ujjain') + ' ' + d.slice(0, 4);
     out.push({ keyword, kind: 'festival', target_date: d, demand: e.kind === 'mega' ? 35 : e.kind === 'festival' ? 30 : 22, timing: n >= 14 && n <= 35 ? 30 : n > 35 ? 20 : 14, rank: 10, fit: 10, why: e.name + ' is in ' + n + ' days (' + d + '): publishing now gives Google time to find it.' });
   });
+  // festivals from the Hindu calendar signal (computed daily for Ujjain), so planning works even with an empty Events list
+  const fest = {}; foRows_('Signals').filter(x => x.signal_id === 'calendar' && x.notes && foNum_(x.index) >= 1.1 && foDate_(x.for_date) >= add(today, 5) && foDate_(x.for_date) <= add(today, 75)).forEach(x => String(x.notes).split(' · ').forEach(n => { const k = n.trim(), d = foDate_(x.for_date); if (k && (!fest[k] || d < fest[k].d)) fest[k] = { d, i: foNum_(x.index) }; }));
+  health.calendar = { ok: true, festivals: Object.keys(fest).length };
+  Object.keys(fest).forEach(k => { if (out.some(c => foBlogSame_(k, c.keyword))) return; const d = fest[k].d, n = days(d);
+    out.push({ keyword: k.toLowerCase() + ' ujjain ' + d.slice(0, 4), kind: 'festival', target_date: d, demand: Math.min(36, Math.round(16 + fest[k].i * 8)), timing: n >= 14 && n <= 35 ? 30 : n > 35 ? 20 : 14, rank: 12, fit: 10, why: k + ' is in ' + n + ' days (' + d + '), from the Ujjain Hindu calendar: publishing now gives Google time to find it.' }); });
   // 2) what people search around Ujjain right now (Google Trends)
+  const rivals = foRows_('Competitors').map(c => c.name).concat(foRows_('CompSet').map(c => c.name)).filter(Boolean);
+  const isBrand = k => /^(?!best|cheap|budget|luxury|family|top|good|ujjain|mahakal|near|private|pure)\S+( \S+)? (villa|villas|hotel|resort|lodge|inn|palace|dham|residency|homestay)\b/.test(k) || rivals.some(r => foBlogSame_(k, r));
   const kw = foRows_('SearchKeywords'), last = kw.map(x => String(x.date)).sort().pop();
   health.trends = { ok: !!last, as_of: last || '', age_days: last ? days(last) * -1 : null, keywords: kw.filter(x => String(x.date) === last).length };
   kw.filter(x => String(x.date) === last && FO_BLOG.PLACE.test(x.keyword)).forEach(x => {
-    const avg = foNum_(x.avg7), change = foHasNum_(x.change) ? foNum_(x.change) : 0, rising = String(x.rising || ''); if (!rising && change < 10 && avg < 40) return;
-    out.push({ keyword: String(x.keyword).toLowerCase(), kind: /darshan|aarti|temple|timing|bhasma/.test(x.keyword) ? 'informational' : 'local', target_date: '', demand: Math.min(40, Math.round(avg / 4) + (rising ? 14 : 0)), timing: rising ? 24 : change >= 10 ? 16 : 8, rank: 8, fit: fit(x.keyword),
+    const avg = foNum_(x.avg7), change = foHasNum_(x.change) ? foNum_(x.change) : 0, rising = String(x.rising || ''); if (!rising && change < 10 && avg < 40) return; if (isBrand(String(x.keyword).toLowerCase())) return;
+    const head = foBlogWords_(x.keyword).length <= 2;   // a one- or two-word phrase is too broad for a small site to win
+    out.push({ keyword: String(x.keyword).toLowerCase(), kind: /darshan|aarti|temple|timing|bhasma/.test(x.keyword) ? 'informational' : 'local', target_date: '', demand: Math.min(head ? 18 : 40, Math.round(avg / 4) + (rising ? 14 : 0)), timing: rising ? 24 : change >= 10 ? 16 : change < 0 ? 3 : 8, rank: head ? 3 : 10, fit: fit(x.keyword),
       why: rising ? 'Rising on Google now (' + rising + ').' : 'Steady Google interest' + (change ? ', ' + (change > 0 ? '+' : '') + Math.round(change) + '% against last month' : '') + '.' });
   });
   // 3) searches where Google already shows the site just off the top: the cheapest wins
@@ -165,7 +173,8 @@ function foBlogCandidates_(today, health) {
     const g = foGsc_(add(today, -30), add(today, -3)), o = g && g.opportunities;
     health.gsc = g && g.connected ? { ok: true, from: g.from, to: g.to, queries: g.query_count, clicks: g.totals.clicks, impressions: g.totals.impressions, fetched_at: g.fetched_at } : { ok: false, reason: (g && g.reason) || 'No Search Console data.' };
     ((o && o.striking) || []).concat((o && o.questions) || []).forEach(r => {
-      const k = String(r.query || r.key || '').toLowerCase(), pos = foNum_(r.position), imp = foNum_(r.impressions); if (!k || (pos && pos < 4)) return;
+      const k = String(r.query || r.key || '').toLowerCase(), pos = foNum_(r.position), imp = foNum_(r.impressions); if (!k || (pos && pos < 4) || isBrand(k)) return;
+      if (/^\/?blog\//.test(String(r.page || '').replace(/^\//, '')) && pos <= 10) return;   // your own post already ranks: a new one would compete with it
       out.push({ keyword: k, kind: 'informational', target_date: '', demand: Math.min(40, Math.round(imp / 5) + 8), timing: 14, rank: pos <= 12 ? 20 : 14, fit: fit(k), why: 'Google already shows your site for this ' + imp + ' times a month at position ' + Math.round(pos) + '; a dedicated post can lift it.' });
     });
   } catch (e) { health.gsc = { ok: false, reason: String(e.message || e).slice(0, 160) }; }
@@ -174,7 +183,7 @@ function foBlogCandidates_(today, health) {
     const ga = foGa4_(add(today, -28), add(today, -1));
     if (ga && ga.connected) {
       const pages = (ga.landing || []).filter(r => /^\/blog\//.test(r.landingPage || '')); health.ga4 = { ok: true, from: ga.from, to: ga.to, sessions: ga.totals.sessions || 0, blog_pages: pages.length, fetched_at: ga.fetched_at };
-      out.forEach(c => { const hit = pages.find(r => foBlogWords_(r.landingPage.replace(/[\/.-]/g, ' ').replace(/\bblog\b|\bhtml\b/g, '')).filter(w => foBlogWords_(c.keyword).indexOf(w) >= 0).length >= 2); if (hit && hit.sessions) { c.demand = Math.min(50, c.demand + Math.min(12, 3 + Math.round(hit.sessions / 5))); c.why += ' Your post ' + hit.landingPage + ' already brought ' + hit.sessions + ' sessions in 28 days, so readers want this.'; } });
+      out.forEach(c => { const hit = pages.find(r => foBlogWords_(r.landingPage.replace(/[\/.-]/g, ' ').replace(/\bblog\b|\bhtml\b/g, '')).filter(w => ['ujjain', 'mahakal', 'mahakaleshwar', 'temple'].indexOf(w) < 0 && foBlogWords_(c.keyword).indexOf(w) >= 0).length >= 2); if (hit && hit.sessions) { c.demand = Math.min(50, c.demand + Math.min(12, 3 + Math.round(hit.sessions / 5))); c.why += ' Your post ' + hit.landingPage + ' already brought ' + hit.sessions + ' sessions in 28 days, so readers want this.'; } });
     } else health.ga4 = { ok: false, reason: (ga && ga.reason) || 'No Analytics data.' };
   } catch (e) { health.ga4 = { ok: false, reason: String(e.message || e).slice(0, 160) }; }
   return out;
@@ -203,7 +212,7 @@ function foBlogPolish_(list) {
   return titled;
 }
 function foBlogSuggest_(today) {
-  const published = foBlogPublished_(), health = {}, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, c.demand + c.timing + c.rank + c.fit) })).sort((a, b) => b.score - a.score);
+  const published = foBlogPublished_(), health = {}, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, Math.round((c.demand + c.timing + c.rank + c.fit) * (c.fit < 10 ? 0.75 : 1))) })).sort((a, b) => b.score - a.score);
   const topics = foRows_('SeoTopics'), open = topics.filter(t => t.status !== 'suggested'), taken = published.concat(open.map(t => [t.title, t.keyword].join(' '))), best = [];
   cands.forEach(c => { if (best.length < FO_BLOG.KEEP && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c); });
   if (!best.length) { foSettingSet_('blog_health', JSON.stringify(Object.assign(health, { at: foNow_() }))); return { added: 0, waiting: topics.length - open.length, health }; }   // no data today: keep yesterday's ideas

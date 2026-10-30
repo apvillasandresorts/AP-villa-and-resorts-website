@@ -165,3 +165,12 @@ test('blog engine: source health is reported, Analytics lifts related topics, li
   assert.match(r.result.ideas[0].why, /40 sessions/); assert.equal(r.result.live.active_users, 3);
   assert.equal(env.api({ action: 'f.blog.status', token }).result.health.ga4.sessions, 0);
 });
+
+test('blog engine: festivals come from the calendar signal', async () => {
+  const { env, token } = await ready(() => ({ code: 500, body: '' }));
+  const { key } = env.api({ action: 'f.automation.create', token });
+  const imp = env.fo.foSignalsImport_({ signals: [{ signal_id: 'calendar', for_date: '2026-11-05', index: 1.4, raw_value: 'Kartik', source_url: 'https://example.com/c', fetched_at: '2026-10-16T06:00:00+05:30', status: 'live', notes: 'Kartik Purnima' }] }, 'automation');
+  assert.equal(imp.result.added, 1, JSON.stringify(imp.result));
+  const list = env.fo.foBlogCandidates_('2026-10-16', {});
+  assert.ok(list.some(c => /kartik purnima ujjain 2026/.test(c.keyword) && c.target_date === '2026-11-05'), JSON.stringify(list));
+});
