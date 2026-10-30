@@ -376,3 +376,14 @@ test('common requests need no model: who owes, a guest balance in Hinglish, paid
   assert.equal(act('Priya Sharma paid 2000').intent, 'none', 'a figure needs the model');
   assert.equal(act('has Priya Sharma paid everything?').intent, 'none');
 });
+
+test('accuracy: the model gets per-villa figures and worked-out findings, and a vague answer is sent back once', async () => {
+  let n = 0;
+  const { env, token } = await ready(() => { n++; return groqOk(n === 1 ? 'The summary does not show this.' : 'AP Suite: ₹0 on 2026-10-20, 1 night. Confidence: Low.'); });
+  env.props.set('GROQ_API_KEY', 'gsk_test');
+  const r = env.api({ action: 'f.brain.ask', token, question: 'Why are receivables so high?', web: false });
+  assert.equal(n, 2); assert.match(r.answer, /Confidence/);
+  const sent = env.net.calls.filter(c => /groq/.test(c.url))[0].payload;
+  assert.match(sent, /per_villa/); assert.match(sent, /receivables_by_villa/); assert.ok(!sent.includes('Sharma'), 'still no guest names');
+  assert.equal(env.fo.foBrainContext_().per_villa.length > 0, true);
+});

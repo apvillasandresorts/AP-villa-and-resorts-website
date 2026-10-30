@@ -573,10 +573,11 @@
   var BRAIN = { history: [] };
   function brainPanel() {
     var ideas = ['Give me the 5 sharpest insights about my business today', 'Who has pending payments?', 'Raise all villas 10% this weekend', 'Add expense: electricity bill ₹2,450 for AP Suite today', 'Which nights in the next 2 weeks look weak, and what should I do?', 'What price should I set for tonight and why?', 'Any new competition or events in Ujjain I should know about?', 'What are people searching on Google about Ujjain, and what should I write or advertise?'];
-    var p = drawer('<div class="fo-drawer__head"><div><h2 class="serif" style="font-size:24px">Ask AP Brain</h2><div class="fo-hint">A free AI that reads your totals, prices, competitors, news and Google, looks up your records, and can add or update bookings, payments, prices, availability, expenses, salaries, staff, enquiries and tasks. It saves only what you confirm. Questions never include guest details; a pasted voucher is read only by Groq/Cerebras/Mistral (no training on your data).</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
-      '<div class="fo-brain" id="br-log"></div><div class="dk-ladder" id="br-ideas" style="margin:10px 0">' + ideas.map(function (q) { return '<button class="btn btn--sm" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
-      '<form id="br-form" class="fo-toolbar" style="align-items:flex-end"><textarea id="br-q" rows="2" maxlength="1200" placeholder="Ask anything, paste a booking voucher, or type e.g. paid Mahesh ₹12,000 salary today (English or हिंदी)" style="flex:1;min-width:0"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
-      '<label class="fo-hint" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Search Google for fresh market information when it helps (competitors, events, Simhastha, travel)</label>');
+    var p = drawer('<div class="fo-brainp__head"><div class="fo-brainp__orb">' + (FX ? FX.brain('p') : '') + '</div><div class="fo-brainp__title"><h2 class="serif">AP Brain</h2><div id="br-status">Ready</div></div><button class="fo-iconbtn" data-close aria-label="Close">' + icon('x') + '</button></div>' +
+      '<div class="fo-brain" id="br-log"></div><div class="fo-brainp__ideas" id="br-ideas">' + ideas.map(function (q) { return '<button type="button" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<div class="fo-brainp__foot"><form id="br-form"><textarea id="br-q" rows="2" maxlength="1200" aria-label="Ask AP Brain" placeholder="Ask anything, give an order, or paste a voucher (English or हिंदी)"></textarea><button class="btn btn--primary" type="submit">Ask</button></form>' +
+      '<label class="fo-hint"><input type="checkbox" id="br-web"' + (BRAIN.web === false ? '' : ' checked') + '> Use Google for fresh market information</label><div class="fo-hint">Saves only what you confirm. Records are looked up inside your own system; a pasted voucher is read only by Groq, Cerebras or Mistral.</div></div>');
+    p.classList.add('fo-brainp');
     var log = $('#br-log', p);
     // the models answer in Markdown: show headings, bold, bullets and numbered points properly (escaped first, so no HTML gets through)
     function md(t) {
@@ -598,7 +599,13 @@
         (r.ready ? (m.done === 'saved' ? '<p class="fo-brain__ok">✓ Saved</p>' : '<div class="fo-toolbar" style="margin:8px 0 0"><button class="btn btn--primary btn--sm" data-confirm="' + i + '"' + (m.done ? ' disabled' : '') + '>' + (m.done === 'saving' ? 'Saving…' : 'Confirm & save') + '</button><button class="btn btn--sm" data-cancel="' + i + '">Cancel</button></div><small class="fo-hint">Wrong detail? Just type the correction.</small>')
           : r.closed ? '' : '<small class="fo-hint">Reply with the missing details and I will update this.</small>') + '</div>';
     }
-    function paint() { log.innerHTML = BRAIN.history.map(function (m, i) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + '">' + (m.role === 'assistant' && !m.pending ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + card(m, i) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = log.scrollHeight;
+    function think() {
+      var m = BRAIN.history[BRAIN.history.length - 1], busy = !!(m && m.pending), s = $('#br-status', p), n = 0;
+      p.classList.toggle('is-thinking', busy); if (s) s.textContent = busy ? 'Thinking' : 'Ready';
+      clearInterval(BRAIN.tick); if (!busy || !m.steps) return;
+      BRAIN.tick = setInterval(function () { var e = $('#br-step', p); if (!e || n >= m.steps.length - 1) return clearInterval(BRAIN.tick); n++; e.textContent = m.steps[n]; }, 3500);
+    }
+    function paint() { var seen = BRAIN.seen || 0, top = log.scrollTop; $('#br-ideas', p).style.display = BRAIN.history.length ? 'none' : ''; log.innerHTML = BRAIN.history.map(function (m, i) { return '<div class="fo-brain__msg fo-brain__msg--' + m.role + (i >= seen ? ' fo-brain__msg--new' : '') + '">' + (m.pending ? '<div class="fo-think"><span class="fo-think__dots"><i></i><i></i><i></i></span><span id="br-step">' + esc(m.text) + '</span></div>' : m.role === 'assistant' ? md(m.text) : esc(m.text).replace(/\n/g, '<br>')) + card(m, i) + (m.sources && m.sources.length ? '<div class="fo-brain__src"><b>Sources</b>' + m.sources.map(function (x, i) { return '<a href="' + esc(/^https:\/\//.test(x.url) ? x.url : '#') + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') + (m.meta ? '<small class="fo-hint">' + esc(m.meta) + '</small>' : '') + '</div>'; }).join(''); log.scrollTop = top; log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); BRAIN.seen = BRAIN.history.length - (BRAIN.history.length && BRAIN.history[BRAIN.history.length - 1].pending ? 1 : 0); think();
       $$('[data-confirm]', log).forEach(function (b) { b.onclick = function () { confirmAct(Number(b.dataset.confirm)); }; });
       $$('[data-cancel]', log).forEach(function (b) { b.onclick = function () { BRAIN.draft = null; BRAIN.history[Number(b.dataset.cancel)].action.ready = false; BRAIN.history.push({ role: 'assistant', text: 'Cancelled. Nothing was saved.' }); paint(); }; });
     }
@@ -612,7 +619,7 @@
       BRAIN.history.push({ role: 'assistant', action: r, private: true, text: (r.ready ? 'Please check and confirm:' : r.question) });
     }
     function act(q) {
-      BRAIN.history.push({ role: 'user', text: q, private: true }); BRAIN.history.push({ role: 'assistant', text: 'Reading the details…', pending: true }); paint();
+      BRAIN.history.push({ role: 'user', text: q, private: true }); BRAIN.history.push({ role: 'assistant', text: 'Reading your message…', steps: ['Reading your message…', 'Checking your records…', 'Preparing it for you to confirm…'], pending: true }); paint();
       api('f.brain.act', { text: q, draft: BRAIN.draft || null }).then(function (j) {
         BRAIN.history.pop();
         if (!j.ok) { BRAIN.history.push({ role: 'assistant', text: j.error }); paint(); return; }
@@ -638,7 +645,7 @@
       if (!skipAct && (BRAIN.draft || ACT.test(q) || CHANNEL_ACT.test(q) || RESTRICT_ACT.test(q) || PRICE_ACT.test(q) || LOOK_ACT.test(q) || q.length > 220)) return act(q);
       var web = $('#br-web', p) ? $('#br-web', p).checked : true; BRAIN.web = web;
       if (!skipAct) BRAIN.history.push({ role: 'user', text: q });
-      BRAIN.history.push({ role: 'assistant', text: web ? 'Reading your data and researching Google…' : 'Reading your data…', pending: true }); paint();
+      BRAIN.history.push({ role: 'assistant', text: 'Reading your data…', steps: ['Reading your data…', 'Comparing villas and nights…'].concat(web ? ['Researching the market…'] : [], ['Checking every figure…']), pending: true }); paint();
       var hist = BRAIN.history.filter(function (m) { return !m.pending && !m.private; }).slice(-7, -1).map(function (m) { return { role: m.role, text: m.text }; });
       api('f.brain.ask', { question: q, history: hist, page: location.hash.slice(2), web: web }).then(function (j) {
         BRAIN.history.pop();

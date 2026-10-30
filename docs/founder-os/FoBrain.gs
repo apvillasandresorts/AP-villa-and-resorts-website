@@ -17,6 +17,7 @@ const FO_BRAIN_SYSTEM = [
   'Think like a revenue manager: look for what is NOT obvious: nights where competitors are selling out but we are priced low, weak nights to fill now, rising searches that signal demand before bookings arrive, gaps between weekday and weekend, a competitor or event that changes the picture, channel mix, money left on the table. Quantify the effect in ₹ or nights where the data allows.',
   'Answer format (Markdown): one bold headline with the answer; then **Why** (2–4 bullets, each with a number from the data or a cited source); then **Do this** (1–3 concrete actions with dates and ₹ figures); then **Watch** (what would change the advice). Keep it under 220 words unless asked for detail.',
   'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in English. Use Hindi only when the question itself is written in Hindi (Devanagari script); an Indian name or a Hindi word is not a reason to switch.',
+  'Accuracy: start from FINDINGS, per_villa and receivables_by_villa, which are already worked out from the ledger. Name the villa, the exact date and the ₹ figure in every point, and compare it with something (last 30 days, the market median, another villa). Say "your records", never "the summary". Finish with one line: Confidence: High, Medium or Low, and why in a few words.',
   'Quality bar: lead with the answer, no filler, no restating the question, no generic advice that would fit any hotel. Tie every point to a date, villa or figure from the data. If the data cannot answer, say so in one line and name what is missing. Answer only what was asked; for a simple question skip the Why/Do this/Watch sections.',
   'When you recommend a change to prices or availability, or a follow-up, put a last line starting exactly with ACTIONS: followed by a JSON array of at most 3 items, each {"intent":"channel_change" or "add_task","fields":{...}}. channel_change fields: property_id (villa id from the summary, or "all"), type (rate|pct|recommended|close|open|min_stay), value, from, to (YYYY-MM-DD), weekdays (optional comma list 0-6, Sunday=0). add_task fields: title, due. The owner gets a confirm button for each, so use only figures your answer already justifies. Leave the line out when you recommend no change.',
   'This chat only advises; saving is done by a separate step. If the owner asks to record or change something, say in one line that it has not been saved and ask for the guest, booking or amount that is missing. Never give example amounts or made-up steps. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
@@ -45,8 +46,9 @@ function foBrainAsk_(b, user) {
     // every ₹ figure must come from the data: one correction round, then whatever is left is flagged to the owner
     const source = prompt + ' ' + hist.map(h => h.text).join(' ');
     unverified = foBrainUnverified_(r.text, source);
-    if (unverified.length && Date.now() - t0 < FO_BRAIN.BUDGET_MS) {
-      const fix = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt + '\n\nYour draft answer:\n' + r.text + '\n\nThese figures are not in the data: ' + unverified.join(', ') + '. Rewrite the answer without them, or mark a figure you calculated from the data as ESTIMATE and show the sum. Reply with the final answer only.');
+    const vague = foBrainVague_(r.text, q);
+    if ((unverified.length || vague) && Date.now() - t0 < FO_BRAIN.BUDGET_MS) {
+      const fix = foBrainCall_(FO_BRAIN_SYSTEM, hist, prompt + '\n\nYour draft answer:\n' + r.text + '\n\n' + (unverified.length ? 'These figures are not in the data: ' + unverified.join(', ') + '. Rewrite the answer without them, or mark a figure you calculated from the data as ESTIMATE and show the sum. ' : '') + (vague ? 'The draft is too vague: use FINDINGS, per_villa and receivables_by_villa, and name villas, dates and ₹ figures. ' : '') + 'Reply with the final answer only.');
       if (fix.ok) { const left = foBrainUnverified_(fix.text, source); if (left.length <= unverified.length) { r = fix; unverified = left; } }
     }
   }
@@ -54,6 +56,12 @@ function foBrainAsk_(b, user) {
   if (!r.ok) return { ok: false, error: r.error, setup: r.setup || false };
   const split = foBrainProposals_(r.text, user);
   return { answer: foBrainCleanCites_(split.text), proposals: split.proposals, unverified, provider: r.provider, model: r.model, context_at: ctx.as_of, searched: research ? research.queries : [], sources: research ? research.sources : [], research_via: research ? research.via : [] };
+}
+
+/** An analytical question answered without figures, or blaming the data it was given. */
+function foBrainVague_(text, q) {
+  if (!/\b(why|how|what should|should i|insight|weak|analy[sz]e|compare|best|worst|recommend|suggest|improve|forecast)\b/i.test(q)) return false;
+  return /the summary/i.test(text) || (String(text).match(/\d[\d,]*/g) || []).length < 2;
 }
 
 /** Takes the ACTIONS: line off an answer and turns it into confirm cards, through the same checks as a typed request. Nothing is saved here. */
@@ -179,8 +187,8 @@ function foBrainCall_(system, history, prompt, only) {
     for (let k = 0; k < list.length && k < 5; k++) {
       if (Date.now() - t0 > FO_BRAIN.BUDGET_MS) { tried.push('no time left'); break; }
       const model = list[k];
-      let r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.3, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content);
-      if (!r.ok && r.retry && !/^HTTP 429/.test(r.error)) { Utilities.sleep(1200); r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.3, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content); }
+      let r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content);
+      if (!r.ok && r.retry && !/^HTTP 429/.test(r.error)) { Utilities.sleep(1200); r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content); }
       tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
       // remember a replacement only for a retired model (404); a used-up daily allowance (429) comes back tomorrow
       if (r.ok) { if (looked && model !== p.getProperty(pv.prop + '_AUTO') && model !== p.getProperty(pv.prop)) p.setProperty(pv.prop + '_AUTO', model); return Object.assign(r, { provider: pv.name, model }); }
@@ -194,7 +202,7 @@ function foBrainCall_(system, history, prompt, only) {
     // Gemini's newest models are often "high demand" (503 after up to a minute): try the remembered/stable model first, then the next
     // candidates, one attempt each, and stop when the time budget for this answer is used (the portal waits at most 60 s).
     const call = model => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
-      { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
+      { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.15, maxOutputTokens: 1200 },
         contents: history.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.text }] })).concat([{ role: 'user', parts: [{ text: prompt }] }]) },
       j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join(''));
     const tried = [], list = [p.getProperty('GEMINI_MODEL'), p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i);
@@ -264,6 +272,13 @@ function foBrainContext_() {
   const ctx = { as_of: foNow_(), today, villas: (D.properties || []).filter(p => String(p.active) !== 'no').map(p => ({ id: p.property_id, name: p.name, bedrooms: p.bedrooms, sleeps: p.sleeps, from_rate_inr: r0(p.from_rate) })) };
   ctx.performance = { last_30_days: per(add(today, -30), add(today, -1)), next_30_days_on_books: per(today, add(today, 29)), next_31_90_days_on_books: per(add(today, 30), add(today, 89)) };
   try { const ytd = FoMetrics.range('ytd', today), y = FoMetrics.compute(D, ytd.from, ytd.to); ctx.performance.year_to_date = { revenue_inr: r0(y.net_accommodation_revenue), receivables_inr: r0(y.outstanding_receivables) }; } catch (e) {}
+  try {
+    const pm = (D.properties || []).filter(p => String(p.active) !== 'no'), one = (id, from, to) => { const m = FoMetrics.compute(D, from, to, { property: id }); return { occupancy_pct: pc(m.occupancy), revenue_inr: r0(m.net_accommodation_revenue), adr_inr: r0(m.adr), nights: m.occupied_nights }; };
+    ctx.per_villa = pm.map(p => ({ villa: p.name, last_30_days: one(p.property_id, add(today, -30), add(today, -1)), next_30_days: one(p.property_id, today, add(today, 29)) }));
+    const paid = {}; (D.payments || []).forEach(x => { paid[x.booking_id] = (paid[x.booking_id] || 0) + (x.type === 'refund' ? -1 : 1) * foNum_(x.amount); });
+    ctx.receivables_by_villa = pm.map(p => { const due = (D.bookings || []).filter(x => x.property_id === p.property_id && ['confirmed', 'no_show'].indexOf(x.status) >= 0 && foHasNum_(x.gross_amount)).map(x => ({ d: foNum_(x.gross_amount) - foNum_(x.discount) + foNum_(x.retained_amount) - (paid[x.booking_id] || 0), past: String(x.checkout) <= today })).filter(x => x.d > 0.5);
+      return { villa: p.name, bookings: due.length, total_inr: r0(due.reduce((t, x) => t + x.d, 0)), stay_already_over_inr: r0(due.filter(x => x.past).reduce((t, x) => t + x.d, 0)) }; }).filter(x => x.bookings);
+  } catch (e) {}
   ctx.channels_last_90_days = (D.bookings || []).filter(x => ['cancelled', 'void', 'no_show'].indexOf(x.status) < 0 && String(x.checkin) >= add(today, -90) && String(x.checkin) <= today).reduce((o, x) => { const c = x.channel || 'unknown'; o[c] = (o[c] || 0) + 1; return o; }, {});
   try {
     const cfg = FoDesk.settings(D);
@@ -275,6 +290,14 @@ function foBrainContext_() {
       new Date(x.date + 'T00:00:00Z').toUTCString().slice(0, 3), x.booked ? 'booked' : x.blocked ? 'blocked' : 'open', x.price, x.fill ? x.fill.chance : null, x.market.median ? Math.round(x.market.median) : (x.fill ? x.fill.median : null),
       x.market.sellout == null ? null : Math.round(x.market.sellout * 100), x.fill ? x.fill.ladder.length : x.market.n, x.confidence]) }));
     ctx.nights_15_to_60 = cal.map(c => ({ villa: c.name, weekly: [0, 1, 2, 3, 4, 5].map(w => { const rows = c.rows.slice(14 + w * 7, 21 + w * 7); return rows.length ? { from: rows[0].date, open: rows.filter(x => !x.booked && !x.blocked).length, avg_price: Math.round(rows.reduce((a, x) => a + x.price, 0) / rows.length), festival_or_event_nights: rows.filter(x => x.event).map(x => x.date) } : null; }).filter(Boolean) }));
+    // worked out here so the model reports facts instead of guessing patterns. Nights: [date, day, price_net_inr, chance_to_sell_pct, market_median_guest_inr, market_sold_out_pct]
+    ctx.FINDINGS = cal.map(c => {
+      const open = c.rows.slice(0, 30).filter(x => !x.booked && !x.blocked), row = x => [x.date, new Date(x.date + 'T00:00:00Z').toUTCString().slice(0, 3), x.price, x.fill ? x.fill.chance : null, x.market.median ? Math.round(x.market.median) : null, x.market.sellout == null ? null : Math.round(x.market.sellout * 100)];
+      const sell = x => x.market.sellout == null ? 0 : x.market.sellout;
+      return { villa: c.name, open_nights_next_30: open.length, booked_nights_next_30: 30 - open.length, open_fri_sat_next_30: open.filter(x => [5, 6].indexOf(new Date(x.date + 'T00:00:00Z').getUTCDay()) >= 0).length,
+        weakest_open_nights: open.filter(x => x.fill).sort((a, b) => a.fill.chance - b.fill.chance).slice(0, 4).map(row),
+        strongest_market_open_nights: open.filter(x => sell(x) >= 0.4).sort((a, b) => sell(b) - sell(a)).slice(0, 4).map(row), event_nights: open.filter(x => x.event).slice(0, 5).map(x => x.date) };
+    });
     try { const acc = FoDesk.forecastAccuracy(D, cfg.properties[0]); ctx.forecast_accuracy = { nights_checked: acc.nights, typical_error_pct: acc.mape == null ? null : Math.round(acc.mape * 1000) / 10 }; } catch (e) {}
     try { ctx.market = FoDesk.marketAnalytics(D, cfg.properties[0]); ctx.market = JSON.parse(JSON.stringify(ctx.market, (k, v) => Array.isArray(v) && v.length > 20 ? v.slice(0, 20) : v)); } catch (e) {}
     ctx.alerts = FoDesk.alerts(D, cal, []).map(a => a.text).slice(0, 10);
