@@ -80,7 +80,7 @@ export function makeEnv({ checkins = [], analytics = null, http = null } = {}) {
     console, JSON, Math, Number, String, Array, Object, Boolean, RegExp, isFinite, isNaN, parseInt, parseFloat, Error, Set, Map, encodeURIComponent,
     Logger: { log() {} },
     PropertiesService: { getScriptProperties: () => ({
-      getProperty: k => (props.has(k) ? props.get(k) : null), setProperty: (k, v) => { props.set(k, String(v)); }, deleteProperty: k => { props.delete(k); },
+      getProperty: k => (props.has(k) ? props.get(k) : null), setProperty: (k, v) => { props.set(k, String(v)); }, setProperties: o => { Object.keys(o).forEach(k => props.set(k, String(o[k]))); }, deleteProperty: k => { props.delete(k); },
       getProperties: () => Object.fromEntries(props),
     }) },
     CacheService: { getScriptCache: () => ({

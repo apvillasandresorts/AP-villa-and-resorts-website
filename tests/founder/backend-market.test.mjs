@@ -112,3 +112,16 @@ test('nightly copy to AP Apeiron: off without a key; only allowlisted fields lea
   env.clock.advance(864e5); reply = { code: 200, body: JSON.stringify({ matched: false, db: {} }) }; assert.match(env.fo.foCloudSyncIfDue_(), /MISMATCH/); assert.ok(env.mails.some(m => /nightly copy/.test(m.subject)));
   env.clock.advance(864e5); reply = { code: 500, body: 'boom' }; assert.match(env.fo.foCloudSyncIfDue_(), /500/);
 });
+
+test('paste box: founder only, checks the key, never returns or logs it; Run now works any time; removing it stops the copy', async () => {
+  const calls = []; const env = makeEnv({ http: r => { calls.push(r); return { code: 200, body: JSON.stringify({ matched: true, mismatches: 0, db: {} }) }; } }); env.fo.foSetup(); const token = await env.login();
+  const KEY = 'sb_secret_' + 'a'.repeat(30);
+  assert.match(env.api({ action: 'f.cloud.save', token, key: 'sb_publishable_x' }).error, /secret key/);
+  const r = env.api({ action: 'f.cloud.save', token, key: KEY }); assert.equal(r.ok, true, r.error); assert.doesNotMatch(JSON.stringify(r), /sb_secret_/);
+  assert.equal(env.props.get('FO_CLOUD_KEY'), KEY); assert.equal(env.props.get('FO_CLOUD_ORG'), 'ap-villasandresorts');
+  const d = env.api({ action: 'f.data', token: await env.login() }); assert.equal(d.channel_manager.cloud.set, true); assert.doesNotMatch(JSON.stringify(d), /sb_secret_/); assert.doesNotMatch(JSON.stringify(env.tab('Audit')), /sb_secret_/);
+  const run = env.api({ action: 'f.cloud.run', token: await env.login() }); assert.equal(run.ok, true, run.error); assert.match(run.detail, /matched/); assert.equal(calls[0].headers.apikey, KEY);
+  assert.equal(env.api({ action: 'f.data', token: await env.login() }).channel_manager.cloud.last.status, 'ok');
+  env.setUserRole('manager'); assert.match(env.api({ action: 'f.cloud.save', token: await env.login(), key: KEY }).error, /role/); env.setUserRole('founder');
+  env.api({ action: 'f.cloud.clear', token: await env.login() }); assert.equal(env.fo.foCloudSyncIfDue_(), 'off');
+});

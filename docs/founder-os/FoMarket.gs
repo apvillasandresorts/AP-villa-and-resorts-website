@@ -260,11 +260,24 @@ function foCloudMonths_() {
     x.bookings++; x.nights += foHasNum_(b.nights) ? foNum_(b.nights) : 0; x.gross = r2(x.gross + (foHasNum_(b.gross_amount) ? foNum_(b.gross_amount) : 0)); x.retained = r2(x.retained + (foHasNum_(b.retained_amount) ? foNum_(b.retained_amount) : 0)); });
   return o;
 }
+/** Portal paste box: the key is stored and never returned, logged or shown again. The other settings are this tenant's own. */
+function foCloudSave_(b, user) {
+  const key = String(b.key || '').trim(); if (!/^sb_secret_[A-Za-z0-9_-]{10,}$/.test(key)) return { ok: false, error: 'That is not a Supabase secret key (it starts with sb_secret_).' };
+  const p = PropertiesService.getScriptProperties();
+  p.setProperties({ FO_CLOUD_KEY: key, FO_CLOUD_URL: 'https://hxcibbnelfxxqfzgatep.supabase.co', FO_CLOUD_ORG: 'ap-villasandresorts', FO_CLOUD_CITY: 'Ujjain', FO_CLOUD_SAVED: foNow_() });
+  foAudit_(user.email, 'cloud_key_saved', 'AP Apeiron copy key saved', 'ok'); foTouch_(); return { saved_at: foNow_() };
+}
+function foCloudClear_(b, user) { const p = PropertiesService.getScriptProperties(); ['FO_CLOUD_KEY', 'FO_CLOUD_SAVED'].forEach(k => p.deleteProperty(k)); foAudit_(user.email, 'cloud_key_removed', '', 'ok'); foTouch_(); return {}; }
+function foCloudRun_(b, user) { foAudit_(user.email, 'cloud_copy_run', '', 'ok'); const detail = foCloudSyncIfDue_(true); foTouch_(); return { detail }; }
+function foCloudStatus_() {
+  const p = PropertiesService.getScriptProperties(), last = foRows_('Jobs').filter(j => j.job === 'cloud_copy').pop();
+  return { set: !!p.getProperty('FO_CLOUD_KEY'), saved_at: p.getProperty('FO_CLOUD_SAVED') || '', last: last ? { at: last.finished, status: last.status, detail: String(last.detail).slice(0, 300) } : null };
+}
 /** Once a day after 03:00 IST. A failed or mismatched run is emailed; the portal never depends on it. */
-function foCloudSyncIfDue_() {
+function foCloudSyncIfDue_(force) {
   const p = PropertiesService.getScriptProperties(), today = foToday_();
   if (!p.getProperty('FO_CLOUD_KEY') || !p.getProperty('FO_CLOUD_URL') || !p.getProperty('FO_CLOUD_ORG')) return 'off';
-  if (p.getProperty('FO_CLOUD_DAY') === today || Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) < 3) return 'not due';
+  if (!force && (p.getProperty('FO_CLOUD_DAY') === today || Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) < 3)) return 'not due';
   p.setProperty('FO_CLOUD_DAY', today);
   let detail = '', ok = false;
   try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) { const m = foCloudCall_(p, 'check_months', { org_slug: p.getProperty('FO_CLOUD_ORG'), source: foCloudMonths_() }); ok = !!m.matched; detail += ' · months ' + (ok ? 'matched' : 'MISMATCH ' + m.mismatches + ': ' + JSON.stringify(m.lines).slice(0, 400)); foCloudCall_(p, 'refresh_learning', {}); } }
