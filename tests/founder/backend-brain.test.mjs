@@ -326,7 +326,7 @@ test('answer check: an invented ₹ figure triggers one correction; if it stays,
   mode = 'stuck'; n = 0;
   const b = env.api({ action: 'f.brain.ask', token, question: 'Cash?', web: false });
   assert.equal(n, 2); assert.deepEqual(b.unverified, ['₹98,765']);
-  assert.equal(env.fo.foBrainUnverified_('Set ₹4,500 and ₹4,500.00 or Rs 1,200', 'price 4500 total 1200.5').join(), 'Rs 1,200');
+  assert.equal(env.fo.foBrainUnverified_('Use ₹4,500 and ₹4,500.00 or Rs 1,200', 'price 4500 total 1200.5').join(), 'Rs 1,200');
 });
 
 test('lookups: who owes what comes from the ledger, and no guest detail reaches a model', async () => {
