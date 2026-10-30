@@ -90,6 +90,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions" # the blog queue starts this workflow as a bot
           github_token: ${{ github.token }}
           prompt: |
             Follow content/blog-writer-instructions.md exactly and write ONE new blog post.
@@ -115,6 +116,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions" # the blog queue starts this workflow as a bot
           github_token: ${{ github.token }}
           prompt: |
             You choose the photos for the one new post in blog/ (the new, uncommitted .html file). For every section that shows a place, festival or ritual, pick the most relevant real photo.
@@ -193,6 +195,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions" # the blog queue starts this workflow as a bot
           github_token: ${{ github.token }}
           prompt: |
             You are a strict fact checker. Read blog/${{ needs.write.outputs.slug }}.html and content/business-facts.json.
@@ -218,6 +221,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions" # the blog queue starts this workflow as a bot
           github_token: ${{ github.token }}
           prompt: |
             The new post blog/${{ needs.write.outputs.slug }}.html failed review. Fix every problem below with the
@@ -264,6 +268,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions" # the blog queue starts this workflow as a bot
           github_token: ${{ github.token }}
           prompt: |
             You are a strict fact checker. Read blog/${{ needs.write.outputs.slug }}.html and content/business-facts.json.
