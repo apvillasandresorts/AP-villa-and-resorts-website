@@ -102,7 +102,7 @@
   // ------------------------------------------------------------ sign-in ------------------------------------------------------------
   var L = { step: 'cred', email: '', challenge: '', purpose: '', to: '', resendAt: 0 };
   function renderLogin(msg) {
-    document.title = 'Sign in · AP Mandala';
+    document.title = 'Sign in · AP Apeiron';
     var otp = L.step === 'otp';
     var FX = window.FoFX;
     root.innerHTML = '<div class="fo-login">' + (FX ? FX.wires({ seed: 23, lanes: 14 }) +
@@ -110,7 +110,7 @@
         '<p>Market prices, Google searches, news and every booking flow into one brain that tells you the price that sells, night by night.</p>' +
         '<div class="fo-login__chips"><span>8 booking platforms</span><span>Google searches daily</span><span>Live news</span><span>AP Brain</span></div></div>' : '') +
       '<form class="fo-login__card" novalidate autocomplete="on">' + (FX ? '<div class="fo-login__mobile-brain">' + FX.brain('m') + '</div>' : '') +
-      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span>AP MANDALA</span></div></div>' +
+      '<div class="fo-login__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas &amp; Resorts</b><span class="fo-prod"><img src="/founder/apeiron-logo.svg" alt="">AP APEIRON</span></div></div>' +
       (otp
         ? '<h1>Check your email</h1><p class="sub">We sent a 6-digit code to <b>' + esc(L.to) + '</b>. It expires in 5 minutes.</p>' +
           '<label class="fo-field">One-time code<input class="fo-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus></label>' +
@@ -211,12 +211,12 @@
     S.view = MODULES.some(function (m) { return m.id === h[0] && (!m.founderOnly || (S.user && S.user.role === 'founder')); }) ? h[0] : 'overview';
     if (h[1]) S.tab[S.view] = h[1];
     var mod = MODULES.filter(function (m) { return m.id === S.view; })[0];
-    document.title = mod.label + ' · AP Mandala';
+    document.title = mod.label + ' · AP Apeiron';
     var r = currentRange(), ex = openEx(), high = ex.filter(function (e) { return e.severity === 'high'; }).length;
     var initials = ((S.user && S.user.name) || 'AS').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     root.className = '';
     root.innerHTML = '<div class="fo-shell' + (S.collapsed ? ' is-collapsed' : '') + '">' +
-      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span>AP MANDALA</span></div></div><nav class="fo-nav">' +
+      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span class="fo-prod"><img src="/founder/apeiron-logo.svg" alt="">AP APEIRON</span></div></div><nav class="fo-nav">' +
       MODULES.map(function (m) {
         if (m.g) return '<div class="fo-nav__group">' + esc(m.g) + '</div>';
         if (m.founderOnly && !(S.user && S.user.role === 'founder')) return '';   // personal finance: founder only
@@ -1039,7 +1039,7 @@
         ['Local research tools (Claude Code on the Mac)', 'on', '/research · /market-scan · /exec-summary', 'Free Search MCP (no key). Optional: Trends MCP (free 100 requests/month, needs your key).']]],
       ['Delivery & storage', [
         ['Reports', 'on', 'Archived as HTML + PDF in Drive', 'Daily/weekly/monthly/quarterly/annual and monthly market reports. Email only for types you choose.'],
-        ['Data store', 'on', 'Private Google Sheet', 'All AP Mandala data; never published.']]],
+        ['Data store', 'on', 'Private Google Sheet', 'All AP Apeiron data; never published.']]],
     ];
     page.innerHTML = hello('Integrations & automation', 'What is connected, what runs on its own, and what still needs you.') + '<div class="fo-card" id="health" style="margin-bottom:6px"><h3>System health <small>every connection and job, tested live</small><span class="fo-card__tools"><button class="btn btn--sm" id="health-run">Check again</button></span></h3><div id="health-b"><div class="fo-loading"><div class="fo-spin"></div><div>Testing every connection…</div></div></div></div>' + items.map(function (g) { return '<h3 style="margin:18px 2px 8px">' + esc(g[0]) + '</h3><div class="fo-grid fo-grid--2">' + g[1].map(function (i) { return '<div class="fo-card"><h3>' + esc(i[0]) + '<span class="fo-status ' + i[1] + '">' + (i[1] === 'on' ? 'On' : i[1] === 'part' ? 'Partial' : 'Off') + '</span></h3><p style="margin:0 0 6px"><b>' + esc(i[2]) + '</b></p><p class="fo-hint" style="margin:0">' + esc(i[3]) + '</p></div>'; }).join('') + '</div>'; }).join('');
     function health(refresh) {

@@ -563,3 +563,6 @@ table.fo-table { width: 100%; border-collapse: collapse; font-size: 13px; backgr
 .bl-now b { font-size: 22px; color: var(--em-3); margin-right: 4px; } .bl-now small { display: block; color: var(--muted); }
 .bl-srcs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .bl-src { font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); }
 .bl-src.is-ok { color: var(--good); border-color: var(--good); } .bl-src.is-bad { color: #B5121B; border-color: #B5121B; }
+/* AP Apeiron product mark beside the tenant's own logo */
+.fo-prod { display: inline-flex; align-items: center; gap: 5px; }
+.fo-side__brand .fo-prod img, .fo-login__brand .fo-prod img { width: 16px; height: 16px; border-radius: 50%; margin: 0; box-shadow: none; }
