@@ -384,6 +384,14 @@
       "intent": "informational",
       "cluster": "festivals",
       "status": "published"
+    },
+    {
+      "slug": "where-to-stay-for-kartik-purnima-in-ujjain",
+      "title": "Where to Stay for Kartik Purnima in Ujjain 2026: Family Guide",
+      "keyword": "where to stay for kartik purnima in ujjain",
+      "intent": "festival",
+      "cluster": "where-to-stay",
+      "status": "published"
     }
   ]
 }
