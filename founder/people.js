@@ -311,7 +311,7 @@
     var all = D().seo_topics || [], ideas = all.filter(function (t) { return t.status === 'suggested'; }).sort(function (a, b) { return num(b.score) - num(a.score); });
     var moving = all.filter(function (t) { return t.auto === 'yes' && t.status !== 'skipped'; }).sort(function (a, b) { return a.updated_at < b.updated_at ? 1 : -1; }).slice(0, 12);
     var stage = function (t) {
-      if (t.status === 'failed') return '<span class="fo-badge" style="background:var(--bad,#B5121B);color:#fff">Could not be written</span> <small class="fo-hint">Nothing was published. You can try again.</small>';
+      if (t.status === 'failed') return '<span class="fo-badge" style="background:var(--bad,#B5121B);color:#fff">Could not be written</span> <small class="fo-hint">Nothing was published.</small>' + (founder() ? ' <button class="btn btn--sm" data-bl-accept="' + esc(t.topic_id) + '">Try again</button>' : '');
       if (t.status === 'review') return '<span class="fo-badge">Needs your review</span> <small class="fo-hint">A check failed, so it was not published. The draft is waiting in GitHub.</small>';
       var at = BLOG_STEPS.map(function (x) { return x[0]; }).indexOf(t.status);
       return '<div class="bl-steps">' + BLOG_STEPS.map(function (x, i) { return '<span class="' + (i < at ? 'is-done' : i === at ? 'is-now' : '') + '">' + esc(x[1]) + '</span>'; }).join('') + '</div>';
