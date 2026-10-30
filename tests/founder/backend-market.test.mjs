@@ -95,3 +95,20 @@ test('Ujjain keyword report: automation key only, one day replaces itself, bundl
   env.api({ action: 'f.settings.save', token, settings: { seo_anchor_volume: '2400' } });
   assert.equal(env.api({ action: 'f.data', token: await env.login() }).settings.seo_anchor_volume, '2400');
 });
+
+test('nightly copy to AP Apeiron: off without a key; only allowlisted fields leave; once a day; a mismatch or failure emails and never breaks the hour', async () => {
+  const calls = []; let reply = { code: 200, body: JSON.stringify({ matched: true, db: { bookings: 1 } }) };
+  const env = makeEnv({ http: r => { calls.push(r); return reply; } }); env.fo.foSetup(); const token = await env.login();
+  env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'Asha Secret', guest_phone: '9876543210', guest_email: 'asha@example.com', channel: 'Direct', checkin: '2026-11-10', checkout: '2026-11-12', gross_amount: 10000, status: 'confirmed', notes: 'allergic to nuts' } });
+  assert.equal(env.fo.foCloudSyncIfDue_(), 'off'); assert.equal(calls.length, 0);
+  env.props.set('FO_CLOUD_URL', 'https://x.supabase.co'); env.props.set('FO_CLOUD_KEY', 'test-key'); env.props.set('FO_CLOUD_ORG', 'ap-villasandresorts'); env.props.set('FO_CLOUD_CITY', 'Ujjain');
+  const hour = () => new Date(env.clock.now() + 330 * 60000).getUTCHours(); while (hour() !== 2) env.clock.advance(3600000);
+  assert.equal(env.fo.foCloudSyncIfDue_(), 'not due');
+  env.clock.advance(3600000); assert.match(env.fo.foCloudSyncIfDue_(), /^matched/);
+  const body = calls[0].payload; assert.doesNotMatch(body, /Asha|9876543210|example\.com|allergic|guest_name|guest_id/);
+  const sent = JSON.parse(body).payload; assert.equal(sent.bookings.length, env.tab('Bookings').length); assert.equal(sent.totals.gross, 10000);
+  assert.ok(sent.bookings.every(b => Object.keys(b).length === 17)); assert.match(calls[1].url, /refresh_learning/);
+  assert.equal(env.fo.foCloudSyncIfDue_(), 'not due', 'once a day'); assert.equal(calls[0].headers.apikey, 'test-key');
+  env.clock.advance(864e5); reply = { code: 200, body: JSON.stringify({ matched: false, db: {} }) }; assert.match(env.fo.foCloudSyncIfDue_(), /MISMATCH/); assert.ok(env.mails.some(m => /nightly copy/.test(m.subject)));
+  env.clock.advance(864e5); reply = { code: 500, body: 'boom' }; assert.match(env.fo.foCloudSyncIfDue_(), /500/);
+});

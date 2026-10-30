@@ -131,6 +131,7 @@ function foHourly() {
     catch (e) { foAppend_('Jobs', { job: 'desk', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e && e.message || e).slice(0, 900) }); }
     foFlush_();
   }
+  if (typeof foCloudSyncIfDue_ === 'function') { try { foCloudSyncIfDue_(); } catch (e) {} foFlush_(); }   // nightly one-way copy to AP Apeiron
   if (typeof foCmHourly_ === 'function') {   // AP Channel Manager: bookings anywhere close the other channels; daily rate proposals
     try { foCmHourly_(); } catch (e) { foAppend_('Jobs', { job: 'channels', started: foNow_(), finished: foNow_(), status: 'failed', detail: String(e && e.message || e).slice(0, 900) }); }
     foFlush_();

@@ -228,3 +228,41 @@ function foSearchKwImport_(b) {
     return { result: { keywords: k, extra: x } };
   } finally { lock.releaseLock(); }
 }
+
+// ---------------------------------------------------------------- nightly copy to AP Apeiron (P-07) ----------------
+/**
+ * One-way copy of the ledger to Supabase; the Sheet stays the source of truth. Only the fields named here leave: never guest names, phones,
+ * emails, notes, payment references or vendors. Off until the owner adds FO_CLOUD_URL, FO_CLOUD_KEY and FO_CLOUD_ORG to Script Properties.
+ */
+const FO_CLOUD = {
+  BOOKING: ['booking_id', 'property_id', 'external_id', 'channel', 'checkin', 'checkout', 'nights', 'adults', 'children', 'status', 'gross_amount', 'discount', 'taxes', 'commission', 'commission_basis', 'retained_amount', 'created_at'],
+  PAYMENT: ['payment_id', 'booking_id', 'date', 'type', 'amount', 'method'], EXPENSE: ['expense_id', 'property_id', 'date', 'category', 'amount', 'basis'], BLOCK: ['block_id', 'property_id', 'start', 'end'],
+  PROPERTY: ['property_id', 'name', 'bedrooms', 'sleeps'], DATES: ['checkin', 'checkout', 'date', 'start', 'end'], NUMS: ['nights', 'adults', 'children', 'gross_amount', 'discount', 'taxes', 'commission', 'retained_amount', 'amount', 'bedrooms', 'sleeps'],
+};
+function foCloudPick_(rows, keys) {
+  return rows.map(r => { const o = {}; keys.forEach(k => { const v = r[k]; o[k] = FO_CLOUD.DATES.indexOf(k) >= 0 ? (foDate_(v) || '') : FO_CLOUD.NUMS.indexOf(k) >= 0 ? (foHasNum_(v) ? foNum_(v) : '') : k === 'created_at' ? (isNaN(Date.parse(v)) ? '' : String(v)) : foClean_(v, 120); }); return o; });
+}
+function foCloudCall_(p, fn, body) {
+  const r = UrlFetchApp.fetch(p.getProperty('FO_CLOUD_URL') + '/rest/v1/rpc/' + fn, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { apikey: p.getProperty('FO_CLOUD_KEY') }, payload: JSON.stringify(body) });
+  if (r.getResponseCode() >= 300) throw new Error(fn + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 200));
+  return JSON.parse(r.getContentText() || 'null');
+}
+function foCloudPayload_(p) {
+  const sum = (rows, k) => Math.round(rows.reduce((a, r) => a + (foHasNum_(r[k]) ? foNum_(r[k]) : 0), 0) * 100) / 100;
+  const bookings = foCloudPick_(foRows_('Bookings'), FO_CLOUD.BOOKING), payments = foCloudPick_(foRows_('Payments'), FO_CLOUD.PAYMENT), expenses = foCloudPick_(foRows_('Expenses'), FO_CLOUD.EXPENSE), blocks = foCloudPick_(foRows_('Blocks'), FO_CLOUD.BLOCK);
+  return { org_slug: p.getProperty('FO_CLOUD_ORG'), city: p.getProperty('FO_CLOUD_CITY') || '', properties: foCloudPick_(foRows_('Properties'), FO_CLOUD.PROPERTY), bookings, payments, expenses, blocks,
+    totals: { bookings: bookings.length, gross: sum(bookings, 'gross_amount'), retained: sum(bookings, 'retained_amount'), payments: payments.length, paid: sum(payments, 'amount'), expenses: expenses.length, spent: sum(expenses, 'amount'), blocks: blocks.length } };
+}
+/** Once a day after 03:00 IST. A failed or mismatched run is emailed; the portal never depends on it. */
+function foCloudSyncIfDue_() {
+  const p = PropertiesService.getScriptProperties(), today = foToday_();
+  if (!p.getProperty('FO_CLOUD_KEY') || !p.getProperty('FO_CLOUD_URL') || !p.getProperty('FO_CLOUD_ORG')) return 'off';
+  if (p.getProperty('FO_CLOUD_DAY') === today || Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) < 3) return 'not due';
+  p.setProperty('FO_CLOUD_DAY', today);
+  let detail = '', ok = false;
+  try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) foCloudCall_(p, 'refresh_learning', {}); }
+  catch (e) { detail = String(e.message || e).slice(0, 300); }
+  foAppend_('Jobs', { job: 'cloud_copy', started: foNow_(), finished: foNow_(), status: ok ? 'ok' : 'failed', detail });
+  if (!ok) { try { MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Apeiron · nightly copy needs a look', body: detail }); } catch (e) {} }
+  return detail;
+}
