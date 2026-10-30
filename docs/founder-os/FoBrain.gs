@@ -187,8 +187,8 @@ function foBrainCall_(system, history, prompt, only) {
     for (let k = 0; k < list.length && k < 5; k++) {
       if (Date.now() - t0 > FO_BRAIN.BUDGET_MS) { tried.push('no time left'); break; }
       const model = list[k];
-      let r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content);
-      if (!r.ok && r.retry && !/^HTTP 429/.test(r.error)) { Utilities.sleep(1200); r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 1200, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content); }
+      let r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 2000, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content);
+      if (!r.ok && r.retry && !/^HTTP 429/.test(r.error)) { Utilities.sleep(1200); r = foBrainHttp_(pv.url, { Authorization: 'Bearer ' + key }, { model, temperature: 0.15, max_tokens: 2000, messages }, j => j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content); }
       tried.push(model + ' ' + (r.ok ? 'ok' : r.error));
       // remember a replacement only for a retired model (404); a used-up daily allowance (429) comes back tomorrow
       if (r.ok) { if (looked && model !== p.getProperty(pv.prop + '_AUTO') && model !== p.getProperty(pv.prop)) p.setProperty(pv.prop + '_AUTO', model); return Object.assign(r, { provider: pv.name, model }); }
@@ -202,7 +202,7 @@ function foBrainCall_(system, history, prompt, only) {
     // Gemini's newest models are often "high demand" (503 after up to a minute): try the remembered/stable model first, then the next
     // candidates, one attempt each, and stop when the time budget for this answer is used (the portal waits at most 60 s).
     const call = model => foBrainHttp_('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': gem },
-      { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.15, maxOutputTokens: 1200 },
+      { systemInstruction: { parts: [{ text: system }] }, generationConfig: { temperature: 0.15, maxOutputTokens: 4096 },
         contents: history.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.text }] })).concat([{ role: 'user', parts: [{ text: prompt }] }]) },
       j => j.candidates && j.candidates[0] && j.candidates[0].content && (j.candidates[0].content.parts || []).map(x => x.text || '').join(''));
     const tried = [], list = [p.getProperty('GEMINI_MODEL'), p.getProperty('GEMINI_MODEL_AUTO'), FO_BRAIN.GEMINI_MODEL].concat(foBrainGeminiList_(gem)).filter((m, i, a) => m && a.indexOf(m) === i);

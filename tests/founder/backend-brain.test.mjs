@@ -387,3 +387,10 @@ test('accuracy: the model gets per-villa figures and worked-out findings, and a 
   assert.match(sent, /per_villa/); assert.match(sent, /receivables_by_villa/); assert.ok(!sent.includes('Sharma'), 'still no guest names');
   assert.equal(env.fo.foBrainContext_().per_villa.length > 0, true);
 });
+
+test('answers have room to finish: Gemini counts its thinking inside the output limit', async () => {
+  const { env, token } = await ready(r => /generativelanguage/.test(r.url) && !/models\?/.test(r.url) ? geminiOk('AP Suite: 2 nights, ₹0.') : { code: 500, body: '' });
+  env.props.set('GEMINI_API_KEY', 'AIza_test');
+  env.api({ action: 'f.brain.ask', token, question: 'Tonight?', web: false });
+  assert.equal(JSON.parse(env.net.calls.find(c => /generateContent/.test(c.url)).payload).generationConfig.maxOutputTokens, 4096);
+});
