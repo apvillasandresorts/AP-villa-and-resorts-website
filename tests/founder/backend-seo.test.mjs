@@ -166,6 +166,11 @@ test('blog engine: source health is reported, Analytics lifts related topics, li
   assert.equal(env.api({ action: 'f.blog.status', token }).result.health.ga4.sessions, 0);
 });
 
+test('blog engine: a festival covered under another name is not suggested again', async () => {
+  const { env } = await ready();
+  assert.equal(env.fo.foBlogSame_('vaikunth chaturdashi hari har milan ujjain 2026', 'hari har milan ujjain 2026'), true);
+  assert.equal(env.fo.foBlogSame_('kartik purnima ujjain 2026', 'ujjain in november'), false);
+});
 test('blog engine: festivals come from the calendar signal', async () => {
   const { env, token } = await ready(() => ({ code: 500, body: '' }));
   const { key } = env.api({ action: 'f.automation.create', token });
