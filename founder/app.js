@@ -605,11 +605,11 @@
     // records and changes to them (bookings, payments, expenses, salaries, staff, enquiries, tasks) go to f.brain.act; it answers "none" for a question, which then goes on to f.brain.ask; questions to f.brain.ask
     var RESTRICT_ACT = /\b(set|make|put|add|remove|no|block)\b[\s\S]{0,40}\b(min(imum)?[- ]stay|max(imum)?[- ]stay|check-?ins?|check-?outs?|closed to (arrival|departure)|stop[- ]?sell|units? to sell)\b|\b(min(imum)?|max(imum)?)[- ]stay\b[\s\S]{0,30}\d/i;
     var CHANNEL_ACT = /\b(set|change|make|close|open|stop[- ]?sell|min(imum)? stay)\b[\s\S]*\b(airbnb|booking\.com|mmt|makemytrip|goibibo|all channels|every channel|channels?)\b/i;
-    var ACT = /\b(add|record|log|enter|update|mark|paid|pays?|payments?|cleared?|settled?|dues?|pending|balance|refund(ed)?|jama|baki|cancel(led)?|no[- ]?show|reschedule|postpone|extend|remind|reminder|tasks?|to-?do|done|completed?|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b|भुगतान|बकाया|जमा|रद्द/i;
+    var ACT = /\b(add|record|log|enter|update|mark|paid|pays?|payments?|cleared?|settled?|dues?|pending|balance|refund(ed)?|jama|baa?ki|kitna|cancel(led)?|no[- ]?show|reschedule|postpone|extend|remind|reminder|tasks?|to-?do|done|completed?|salary|stipend|expense|spent|bought|bill|booking|booked|book|voucher|reservation|confirmation|hire|hired|joined|new (staff|employee|caretaker|sweeper|intern)|enquiry|inquiry|lead)\b|भुगतान|बकाया|जमा|रद्द/i;
     var PRICE_ACT = /\b(set|change|raise|increase|lower|reduce|drop|cut|hike|update|apply)\b[\s\S]{0,60}\b(prices?|rates?|tariffs?|recommended)\b|\b(close|open|block|stop[- ]?sell)\b[\s\S]{0,40}\b(villa|suite|nights?|dates?|weekend|nov|dec|jan)\b|\d+\s?%/i;
-    var LOOK_ACT = /\b(who|how much|owes?|arrivals?|departures?|check(ing)?[- ]?(in|out)s?|in[- ]house|staying|enquir(y|ies))\b|\bprices? (on|for)\b/i;
+    var LOOK_ACT = /\b(who|kaun|how much|owes?|arrivals?|departures?|check(ing)?[- ]?(in|out)s?|in[- ]house|staying|enquir(y|ies))\b|\bprices? (on|for)\b/i;
     function showAct(r) {
-      BRAIN.history.push({ role: 'assistant', action: r, private: true, text: (r.note ? r.note + '\n' : '') + (r.ready ? 'Please check and confirm:' : r.question) });
+      BRAIN.history.push({ role: 'assistant', action: r, private: true, text: (r.ready ? 'Please check and confirm:' : r.question) });
     }
     function act(q) {
       BRAIN.history.push({ role: 'user', text: q, private: true }); BRAIN.history.push({ role: 'assistant', text: 'Reading the details…', pending: true }); paint();

@@ -362,3 +362,17 @@ test('decisions: a recommendation comes with a ready confirm card, and the ACTIO
   assert.equal(r.answer, 'Saturday is weak. Hold the rest.');
   assert.equal(r.proposals.length, 1, 'only price and task proposals are allowed'); assert.equal(r.proposals[0].route, 'f.cm.bulk'); assert.equal(r.proposals[0].ready, true);
 });
+
+test('common requests need no model: who owes, a guest balance in Hinglish, paid in full, arrivals', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'none' }));
+  const groq = () => env.net.calls.filter(c => /groq/.test(c.url)).length, n = groq(), act = text => env.api({ action: 'f.brain.act', token, text }).result;
+  assert.match(act('Who has pending payments?').question, /₹11,500/);
+  assert.match(act('Priya Sharma ka kitna baaki hai?').lines.flat().join(' '), /pending ₹11,500/);
+  assert.equal(act('who is arriving tomorrow').intent, 'lookup');
+  const p = act('Priya Sharma completed all pending payments update it');
+  assert.equal(p.intent, 'record_payment'); assert.equal(p.ready, true); assert.equal(p.note, undefined);
+  assert.equal(groq(), n, 'no model call');
+  assert.equal(act('why are pending payments so high?').intent, 'none');
+  assert.equal(act('Priya Sharma paid 2000').intent, 'none', 'a figure needs the model');
+  assert.equal(act('has Priya Sharma paid everything?').intent, 'none');
+});

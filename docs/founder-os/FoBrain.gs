@@ -374,6 +374,11 @@ function foBrainAct_(b, user) {
   if (!text) return { ok: false, error: 'Type or paste the details first.' };
   if (foCounter_('FO_BRAIN_' + foHmac_(user.email).slice(0, 12), 86400) > FO_BRAIN.PER_DAY) return { ok: false, error: 'AP Brain has answered ' + FO_BRAIN.PER_DAY + ' requests in the last 24 hours. Please try again tomorrow.' };
   const D = foDataLoad_(), today = foToday_(), draft = b.draft && FO_ACT_INTENTS.indexOf(b.draft.intent) >= 0 ? b.draft : null;
+  const quick = draft ? null : foActQuick_(text, today);
+  if (quick) {
+    foBrainLog_(user.email, '[action] ' + quick.intent, { ok: true, provider: 'rules', model: '' }, 0);
+    return { result: Object.assign(quick.intent === 'lookup' ? foActLookup_(quick.fields, D, today) : foActDraft_(quick.intent, quick.fields, D, today, user), { intent: quick.intent, provider: 'rules' }) };
+  }
   const villas = (D.properties || []).map(p => p.property_id + ' = ' + p.name).join('; ');
   const staff = (D.employees || []).filter(e => e.status === 'active').map(e => e.emp_id + ' = ' + e.name + ' (' + e.role + ', ' + (e.salary_amount || '?') + ')').join('; ') || 'none yet';
   const cats = FoInsights.EXPENSE_CATEGORIES.map(c => c[0]).join(', '), chans = foRows_('Channels').map(c => c.channel).join(', ');
@@ -392,9 +397,9 @@ function foBrainAct_(b, user) {
     'update_booking (cancel, no-show, new dates, new amount or a note on an existing booking) fields: guest_name, booking_ref, guest_phone, property_id, checkin (only to identify the stay), status (confirmed|tentative|cancelled|no_show), new_checkin, new_checkout, new_property_id, gross_amount, discount, adults, children, note.',
     'add_task (a reminder or to-do) fields: title, due, notes. complete_task (a to-do is done) fields: title.',
     'update_lead (an existing enquiry moved on) fields: name, phone, stage (new|contacted|quoted|won|lost), next_followup, lost_reason, value_inr, notes.',
-    'Statements such as "Ravi Kumar completed all pending payments, update it" or "mark Ravi fully paid" are record_payment, not questions. Questions about payments ("how much is pending?") are "none".',
+    'Statements such as "Ravi Kumar completed all pending payments, update it" or "mark Ravi fully paid" are record_payment, not questions.',
     'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price), guest_name, booking_ref, guest_phone, property_id, from, to.',
-    'Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
+    'Questions about what is pending or who owes money are lookup. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
     'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
@@ -413,7 +418,34 @@ function foBrainAct_(b, user) {
   if (intent === 'none') return { result: { intent: 'none' } };
   const fields = Object.assign({}, draft && draft.intent === intent ? draft.fields : {}, foActClean_(j.fields || {}));
   if (intent === 'lookup') return { result: Object.assign(foActLookup_(fields, D, today), { intent, provider: r.provider }) };
-  return { result: Object.assign(foActDraft_(intent, fields, D, today, user), { intent, note: foClean_(j.note, 200), provider: r.provider }) };
+  return { result: Object.assign(foActDraft_(intent, fields, D, today, user), { intent, provider: r.provider }) };
+}
+/** The common requests, understood without a model: faster, free, and they work when every provider is busy. English and Hinglish. */
+function foActQuick_(text, today) {
+  const t = String(text).toLowerCase(), owe = /\b(owes?|baa?ki|unpaid|outstanding|pending|dues?|balance|kitna)\b/.test(t), asks = /\b(who|whom|which|list|show|kaun|kis|kisk[ao])\b/.test(t);
+  if (owe && asks && !/\b(should|why|how to)\b/.test(t)) return { intent: 'lookup', fields: { what: 'pending_payments' } };
+  const change = /\b(set|no|close|open|block|stop|raise|lower|price|rate)\b/.test(t), day = /\b(tomorrow|kal)\b/.test(t) ? FoMetrics.addDays(today, 1) : today, when = /\b(today|tomorrow|aaj|kal|who|list|show|kaun)\b/.test(t);
+  if (when && !change) {
+    if (/\b(arrivals?|arriving|check(ing)?[- ]?ins?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'arrivals', from: day, to: day } };
+    if (/\b(departures?|leaving|check(ing)?[- ]?outs?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'departures', from: day, to: day } };
+    if (/\b(staying|in[- ]house)\b/.test(t)) return { intent: 'lookup', fields: { what: 'in_house', from: day, to: day } };
+  }
+  if (/\b(open|pending|my|show|list)\s+(tasks?|to-?dos?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'tasks' } };
+  const guest = foActGuestIn_(t); if (!guest) return null;
+  const paid = /\b(paid|pays|completed?|cleared?|settled?|chuka\w*|de diya|jama)\b/.test(t), all = /\b(all|full|fully|pending|dues?|balance|everything|poora|pura|baa?ki)\b/.test(t);
+  if (paid && all && !/\d/.test(t) && !/\?\s*$/.test(t) && !/^(has|did|kya)\b/.test(t)) return { intent: 'record_payment', fields: { guest_name: guest } };
+  if (owe || /\bhow much\b/.test(t) || /\b(bookings?|stay|details)\b/.test(t)) return { intent: 'lookup', fields: { what: 'guest', guest_name: guest } };
+  return null;
+}
+/** A guest named in the text: two words of their name, or their first name. Only the words the owner typed are used, so several guests can still match and be asked about. */
+function foActGuestIn_(t) {
+  const words = foActTokens_(t).filter(w => w.length > 2), seen = {}; let best = '';
+  foRows_('Bookings').forEach(x => {
+    const n = foActTokens_(x.guest_name).filter(w => w.length > 2), key = n.join(' '); if (!n.length || seen[key]) return; seen[key] = 1;
+    const hit = n.filter(a => words.some(w => w === a || a.length >= 5 && foActOneEdit_(w, a)));
+    if ((hit.length >= 2 || hit[0] === n[0] && hit.length) && hit.join(' ').length > best.length) best = hit.join(' ');
+  });
+  return best;
 }
 /** A draft, and for channel changes the bulk-edit preview (nights, jobs, floor and ceiling warnings) so the card shows what would really happen. */
 function foActDraft_(intent, fields, D, today, user) {
@@ -422,7 +454,9 @@ function foActDraft_(intent, fields, D, today, user) {
     const pv = foCmBulk_({ bulk: Object.assign({}, out.payload.bulk, { preview: true }) }, user);
     if (pv.ok === false) { out.ready = false; out.closed = true; out.question = 'This cannot be saved: ' + pv.error; return out; }
     const x = pv.result; out.lines.push(['Effect', x.nights + ' villa-night' + (x.nights === 1 ? '' : 's') + ' · ' + x.jobs + ' channel update' + (x.jobs === 1 ? '' : 's')]);
-    x.warnings.concat(x.errors).slice(0, 4).forEach(w => out.lines.push(['Note', w]));
+    const none = x.warnings.filter(w => / has no .* listing yet/.test(w)), villas = none.map(w => w.split(' has no ')[0]).filter((v, i, a) => a.indexOf(v) === i);
+    if (villas.length) out.lines.push(['Waiting', villas.join(', ') + ': no channel listing added yet, so those updates wait']);
+    x.warnings.filter(w => none.indexOf(w) < 0).concat(x.errors).slice(0, 4).forEach(w => out.lines.push(['Note', w]));
   }
   return out;
 }
