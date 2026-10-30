@@ -156,7 +156,7 @@ on WhatsApp; if nothing can be sent, a one-tap WhatsApp message with all details
 (rows whose main guest starts with "TEST"; ID folders to Drive Trash).
 
 ## Blog engine (CRM → Blog engine)
-Daily (and "Find new ideas") `foBlogSuggest_` in FoSearch.gs ranks events ahead, Google Trends around Ujjain and Search Console near-wins, leaves out what is already covered and keeps 8 ideas. The score compares ideas; it does not promise traffic. Accept (founder only) sets the topic to `approved`; `.github/workflows/blog-queue.yml` checks every 15 minutes with the automation key and starts `blog.yml`: writer → photo agent → validator and fact review → auto-merge only if everything passes (the click is the approval for that one post). Status flows back: in_progress → written → published, or review/failed. No GitHub token lives in Apps Script.
+Daily (and "Find new ideas") `foBlogSuggest_` in FoSearch.gs ranks events ahead, Google Trends around Ujjain and Search Console near-wins, leaves out what is already covered or waiting in an open draft and keeps 8 ideas. The score compares ideas; it does not promise traffic. Accept (founder only) sets the topic to `approved`; `.github/workflows/blog-queue.yml` checks with the automation key each time the market, news, signals or search jobs finish (about every 2 hours; its own cron is best effort) and starts `blog.yml`: writer → photo agent → validator and fact review → auto-merge only if everything passes (the click is the approval for that one post). Status flows back: in_progress → written → published, or review/failed. No GitHub token lives in Apps Script.
 
 ## AP Brain (live)
 `docs/founder-os/FoBrain.gs`. Top-bar button "Ask AP Brain" (manager+).

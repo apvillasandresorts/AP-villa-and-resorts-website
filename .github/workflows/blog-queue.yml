@@ -1,11 +1,20 @@
 # Founder OS → CRM → Blog engine: when the owner accepts a topic, this starts the blog pipeline.
 # Portal and GitHub never talk directly, so no GitHub token is stored in Apps Script.
+# GitHub drops frequent schedules under load (this one fired 0 times in its first hours while the jobs below ran), so the
+# queue is also checked each time one of those jobs ends: together they give a check about every 2 hours through the day.
 name: Blog queue
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,37 * * * *"
+  workflow_run:
+    workflows:
+      - "Market bots (competitor prices)"
+      - "News (Ujjain, Mahakal, travel)"
+      - "Pricing signals (automatic)"
+      - "Search demand (Google Trends)"
+    types: [completed]
 
 concurrency:
   group: blog-queue

@@ -336,7 +336,7 @@
     clearInterval(BLOG_TICK); liveStrip(); BLOG_TICK = setInterval(liveStrip, 60000);
     $('#bl-ref', body).onclick = again;
     var f = $('#bl-find', body); if (f) f.onclick = function () { f.disabled = true; f.textContent = 'Looking…'; U.api('f.blog.suggest', {}).then(function (j) { if (!j.ok) toast(j.error, true); else toast(j.result.added ? j.result.added + ' new ideas' : 'No new ideas right now'); return again(); }); };
-    $$('[data-bl-accept]', body).forEach(function (b) { b.onclick = function () { if (!confirm('Write this post and publish it on the website if every check passes?')) return; b.disabled = true; U.api('f.blog.accept', { topic_id: b.dataset.blAccept }).then(function (j) { if (!j.ok) toast(j.error, true); else toast('Accepted. The agents start within about 15 minutes.'); return again(); }); }; });
+    $$('[data-bl-accept]', body).forEach(function (b) { b.onclick = function () { if (!confirm('Write this post and publish it on the website if every check passes?')) return; b.disabled = true; U.api('f.blog.accept', { topic_id: b.dataset.blAccept }).then(function (j) { if (!j.ok) toast(j.error, true); else toast('Accepted. The agents start within about 2 hours.'); return again(); }); }; });
     $$('[data-bl-skip]', body).forEach(function (b) { b.onclick = function () { U.api('f.blog.skip', { topic_id: b.dataset.blSkip }).then(function (j) { if (!j.ok) toast(j.error, true); return again(); }); }; });
   }
   var STARTER = [

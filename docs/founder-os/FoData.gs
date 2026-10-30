@@ -114,6 +114,13 @@ function foIngest_(rec, ctx) {
       if (amt) foException_('amount_discrepancy', 'medium', match.booking_id, rec.origin_ref, 'Amount differs between records: ledger ₹' + foNum_(match.gross_amount) + ' vs ₹' + foNum_(rec.gross_amount) + '.', snapshot, ctx.ex);
       return 'matched';
     }
+    if (rec.origin === 'channel_agent') {   // the OTA decides stay dates and status: a moved stay must close its new nights now, only money waits for review
+      const before = { status: match.status, checkin: match.checkin, checkout: match.checkout }, moved = before.status !== rec.status || before.checkin !== rec.checkin || before.checkout !== rec.checkout;
+      if (foHasNum_(rec.gross_amount) && foNum_(rec.gross_amount) !== foNum_(match.gross_amount)) foException_('amount_discrepancy', 'medium', match.booking_id, rec.origin_ref + '#' + hash, 'The channel now shows ₹' + foNum_(rec.gross_amount) + ', the ledger ₹' + foNum_(match.gross_amount) + '.', snapshot, ctx.ex);
+      Object.assign(match, { status: rec.status, checkin: rec.checkin, checkout: rec.checkout, nights: foNights_(rec.checkin, rec.checkout), source_hash: hash, updated_at: foNow_(), updated_by: 'channel-agent', version: Number(match.version || 0) + 1 });
+      foUpdate_('Bookings', match._row, match); foHistory_(match.booking_id, 'channel-agent', 'channel_change', { before, after: { status: rec.status, checkin: rec.checkin, checkout: rec.checkout } });
+      return moved ? 'changed' : 'unchanged';
+    }
     // same source record changed since last import: never overwrite money or dates silently, ask the founder
     const old = match.source_hash ? JSON.parse(foSourceSnapshots_()[match.booking_id] || 'null') : null;
     foException_('source_changed', 'medium', match.booking_id, rec.origin_ref + '#' + hash, 'The source record changed after it was imported. Review and apply or keep the ledger values.', { before: old, after: snapshot, rec }, ctx.ex);

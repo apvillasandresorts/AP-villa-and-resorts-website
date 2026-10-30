@@ -110,10 +110,18 @@ function foSeoTopicSave_(b, user) {
   return foUpsert_('SeoTopics', 'topic_id', 'TOP', rec, user, x => !x.title && !x.keyword ? 'Give a topic or a keyword.' : null);
 }
 /** Automation: the next queued topic (high priority first, then oldest), marked in progress so two runs never take the same one. */
+/** An accepted topic that a live post has covered since (the daily run can get there first) must not become a second post. */
+function foSeoDropCovered_() {
+  const waiting = foRows_('SeoTopics').filter(t => t.status === 'approved'); if (!waiting.length) return 0;
+  const live = foBlogPublished_(), hits = waiting.filter(t => live.some(x => foBlogSame_(t.keyword, x) || foBlogSame_(t.title, x)));
+  hits.forEach(t => { t.status = 'covered'; t.updated_at = foNow_(); t.updated_by = 'automation'; foUpdate_('SeoTopics', t._row, t); });
+  return hits.length;
+}
 function foSeoNextTopic_() {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const rank = { high: 0, normal: 1, low: 2 };
+    foSeoDropCovered_();
     // a topic stuck "in progress" for more than a day (failed run) goes back to the queue
     foRows_('SeoTopics').filter(t => t.status === 'in_progress' && t.started_at && Date.now() - Date.parse(t.started_at) > 864e5).forEach(t => { t.status = t.auto === 'yes' ? 'approved' : 'queued'; foUpdate_('SeoTopics', t._row, t); });
     // topics accepted in the portal go first: the owner is waiting for them
@@ -204,6 +212,11 @@ function foBlogPublished_() {
   try { const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/apvillasandresorts/AP-villa-and-resorts-website/main/content/published.json', { muteHttpExceptions: true }); if (r.getResponseCode() === 200) return JSON.parse(r.getContentText()).posts.reduce((a, p) => a.concat([p.keyword, p.title].filter(Boolean)), []); } catch (e) {}
   return [];
 }
+/** Open blog pull requests from GitHub's public API, or null when they cannot be read. */
+function foBlogDrafts_() {
+  try { const r = UrlFetchApp.fetch('https://api.github.com/repos/apvillasandresorts/AP-villa-and-resorts-website/pulls?state=open&per_page=20', { muteHttpExceptions: true, headers: { Accept: 'application/vnd.github+json' } }); if (r.getResponseCode() === 200) return JSON.parse(r.getContentText()).filter(x => (x.labels || []).some(l => l.name === 'blog-post') || /^blog\//.test((x.head || {}).ref || '')); } catch (e) {}
+  return null;
+}
 function foBlogPolish_(list) {
   const titled = list.map(x => Object.assign({}, x, { title: x.keyword.replace(/(^|[\s(])([a-z])/g, (m, p, c) => p + c.toUpperCase()) + ': A Practical Guide for Pilgrims' }));
   try {
@@ -213,9 +226,10 @@ function foBlogPolish_(list) {
   return titled;
 }
 function foBlogSuggest_(today) {
-  const published = foBlogPublished_(), health = {}, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, Math.round((c.demand + c.timing + c.rank + c.fit) * (c.fit < 10 ? 0.75 : 1))) })).sort((a, b) => b.score - a.score);
+  const drafts = foBlogDrafts_(), published = foBlogPublished_().concat((drafts || []).reduce((a, x) => a.concat([String(x.title || '').replace(/^New post:\s*/i, ''), String((x.head || {}).ref || '').replace(/^blog\//, '').replace(/-/g, ' ')].filter(Boolean)), [])), health = { drafts: drafts ? { ok: true, open: drafts.length } : { ok: false, reason: 'Open drafts could not be read from GitHub.' } }, cands = foBlogCandidates_(today, health).map(c => Object.assign(c, { score: Math.min(99, Math.round((c.demand + c.timing + c.rank + c.fit) * (c.fit < 10 ? 0.75 : 1))) })).sort((a, b) => b.score - a.score);
   const topics = foRows_('SeoTopics'), open = topics.filter(t => t.status !== 'suggested'), taken = published.concat(open.reduce((a, t) => a.concat([t.keyword, t.title].filter(Boolean)), [])), best = [];
   cands.forEach(c => { if (c.score >= FO_BLOG.MIN_SCORE && best.length < FO_BLOG.KEEP && !taken.some(t => foBlogSame_(c.keyword, t)) && !best.some(b => foBlogSame_(c.keyword, b.keyword))) best.push(c); });
+  topics.filter(t => t.status === 'suggested' && taken.some(x => foBlogSame_(t.keyword, x))).sort((a, b) => b._row - a._row).forEach(t => foDeleteRow_('SeoTopics', t._row));   // covered since it was suggested
   if (!best.length) { foSettingSet_('blog_health', JSON.stringify(Object.assign(health, { at: foNow_() }))); return { added: 0, waiting: topics.length - open.length, health }; }   // no data today: keep yesterday's ideas
   topics.filter(t => t.status === 'suggested').sort((a, b) => b._row - a._row).forEach(t => foDeleteRow_('SeoTopics', t._row));   // ideas follow the data: rebuilt on every run
   const now = foNow_();
@@ -225,7 +239,7 @@ function foBlogSuggest_(today) {
 }
 /** For the portal strip and the automated check: live visitors, and when each source last delivered. */
 function foBlogStatus_() { let health = {}; try { health = JSON.parse(foSettings_().blog_health || '{}'); } catch (e) {} return { live: foBlogLive_(), health }; }
-/** The owner's click is the approval to write and publish this one post. blog-queue.yml picks it up within about 15 minutes. */
+/** The owner's click is the approval to write and publish this one post. blog-queue.yml picks it up within about 2 hours. */
 function foBlogAccept_(b, user) {
   const t = foRows_('SeoTopics').find(x => x.topic_id === b.topic_id); if (!t) return { ok: false, error: 'Topic not found.' };
   if (['suggested', 'queued', 'failed', 'review'].indexOf(t.status) < 0) return { ok: false, error: 'This topic is already ' + t.status.replace('_', ' ') + '.' };

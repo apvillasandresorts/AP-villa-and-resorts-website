@@ -19,6 +19,9 @@
   function founder() { return S.user && S.user.role === 'founder'; }
   function card(title, sub, body, tools) { return '<div class="fo-card"><h3>' + esc(title) + (sub ? ' <small>' + esc(sub) + '</small>' : '') + (tools ? '<span class="fo-card__tools">' + tools + '</span>' : '') + '</h3>' + body + '</div>'; }
   function kpi(label, value, note, cls) { return '<div class="fo-card"><div class="fo-kpi__label">' + esc(label) + '</div><div class="fo-kpi__value' + (cls ? ' ' + cls : '') + '">' + value + '</div>' + (note ? '<div class="fo-kpi__cmp"><span class="flat">' + note + '</span></div>' : '') + '</div>'; }
+  var SESSION_WORDS = { ok: 'signed in', ok_uncalibrated: 'signed in, not calibrated', login: 'sign-in needed', otp: 'code needed', captcha: 'security check', unusual_activity: 'blocked by channel', unknown_screen: 'page changed', recipe_break: 'page changed', error: 'could not check' };
+  function sessionWord(v) { return SESSION_WORDS[v] || String(v).replace(/_/g, ' '); }
+  function signinNeeded(v) { return ['login', 'otp', 'captcha', 'unusual_activity'].indexOf(v) >= 0; }
   function badge(t, cls) { return '<span class="fo-badge' + (cls ? ' ' + cls : '') + '">' + esc(t) + '</span>'; }
   function table(head, rows, empty, numCols) {
     numCols = numCols || [];
@@ -73,10 +76,11 @@
       kpi('Needs you', String(count('needs_human')), count('needs_human') ? 'sign-in, OTP or a failed write' : 'all clear', count('needs_human') ? 'down' : '') + '</div>' +
       card('Channels', 'session and switches', table(['Channel', 'Listings', 'Mode', 'Session', 'Status', ''], CH.map(function (ch) {
         var s = c.settings[ch] || {}, sess = hb && hb.sessions && hb.sessions[ch], own = c.listings.filter(function (l) { return l.role === 'own' && (l.platform === ch || (ch === 'mmt' && l.platform === 'goibibo')); }).length;
-        var status = !s.enabled ? badge('off') : s.paused ? badge('paused: ' + (s.pause_reason || ''), 'fo-badge--bad') : s.dryRun ? badge('dry-run until ' + dm(s.dry_until), 'fo-badge--gold') : badge('live', 'fo-badge--ok');
-        return ['<b>' + esc(NAMES[ch]) + '</b>', own + ' own', esc((MODES[s.mode] || MODES[0])[1]), sess ? badge(sess, sess === 'ok' ? 'fo-badge--ok' : 'fo-badge--bad') : '—', status,
-          founder() ? (s.paused ? '<button class="btn btn--sm" data-resume="' + ch + '">Resume</button>' : '<button class="btn btn--sm" data-pause="' + ch + '">Pause</button>') : ''];
+        var status = !s.enabled ? badge('off') : s.paused ? badge('paused: ' + (s.pause_reason || ''), 'fo-badge--bad') : s.dryRun ? badge('dry-run', 'fo-badge--gold') : badge('live', 'fo-badge--ok');
+        return ['<b>' + esc(NAMES[ch]) + '</b>', own + ' own', esc((MODES[s.mode] || MODES[0])[1]), sess ? badge(sessionWord(sess), /^ok/.test(sess) ? 'fo-badge--ok' : 'fo-badge--bad') : '—', status,
+          founder() ? (signinNeeded(sess) && c.signin_url ? '<a class="btn btn--sm btn--primary" href="' + esc(c.signin_url) + '" target="_blank" rel="noopener">Sign in again</a> ' : '') + (s.paused ? '<button class="btn btn--sm" data-resume="' + ch + '">Resume</button>' : '<button class="btn btn--sm" data-pause="' + ch + '">Pause</button>') : ''];
       }))) +
+      (c.reconcile ? '<p class="fo-hint">Nightly check ' + when(c.reconcile.at) + ': ' + c.reconcile.checked + ' nights compared' + (c.reconcile.unread ? ', ' + c.reconcile.unread + ' not read yet' : '') + ', ' + c.reconcile.drift + ' differed' + (c.reconcile.drift ? ' (' + c.reconcile.closed + ' closed at once, ' + c.reconcile.queued + ' re-sent, ' + c.reconcile.proposed + ' waiting for you' + (c.reconcile.capped ? ', ' + c.reconcile.capped + ' for tomorrow' : '') + ')' : '') + '.</p>' : '') +
       card('Latest activity', '', table(['When', 'Villa', 'Channel', 'Change', 'Nights', 'State'], js.slice().sort(function (a, b) { return String(b.done_at || b.approved_at || b.created_at) < String(a.done_at || a.approved_at || a.created_at) ? -1 : 1; }).slice(0, 12).map(function (j) {
         return [when(j.done_at || j.approved_at || j.created_at), esc(vname(j.villa)), esc(SHORT[j.channel]), jobValue(j) + (j.reason === 'booking_elsewhere' ? ' <small class="fo-hint">booked elsewhere</small>' : ''), range(j), badge(j.state.replace('_', ' '), STATE_CLS[j.state])];
       }), 'No changes yet.')) +
@@ -249,14 +253,15 @@
     body.innerHTML = window.FoChannelsCal.inventoryCard() + card('Channels', 'mode, dry-run, commission', table(['Channel', 'On', 'Mode', 'Dry-run', 'Commission %', 'Channel markup %', ''], CH.map(function (ch) {
       var s = c.settings[ch] || {};
       return ['<b>' + esc(NAMES[ch]) + '</b>', '<input type="checkbox" data-on="' + ch + '"' + (s.enabled ? ' checked' : '') + (f ? '' : ' disabled') + '>', sel('md-' + ch, MODES, String(s.mode || 0)),
-        '<input type="checkbox" data-dry="' + ch + '"' + (s.dryRun ? ' checked' : '') + (f ? '' : ' disabled') + '>' + (s.dryRun && s.dry_until ? ' <small class="fo-hint">until ' + dm(s.dry_until) + '</small>' : ''),
+        '<input type="checkbox" data-dry="' + ch + '"' + (s.dryRun ? ' checked' : '') + (f ? '' : ' disabled') + '>' ,
         input('cp-' + ch, Math.round((s.commission || 0) * 100), 'number', ' min="0" max="50" style="width:70px"'), input('mk-' + ch, Math.round((s.markup || 0) * 100), 'number', ' min="-30" max="30" style="width:70px"'),
         f ? '<button class="btn btn--sm" data-save="' + ch + '">Save</button>' : ''];
-    })) + '<p class="fo-hint"><b>Observe</b>: the agent only reads. <b>Propose</b>: price changes wait for your tap. <b>Auto-band</b>: changes inside your floor and ceiling, within 10% of the last price, at most once a day per night and never within a day of a booking go automatically. Dry-run: the agent fills the form and takes a screenshot but does not save (first 3 days of every channel).</p>') +
+    })) + '<p class="fo-hint"><b>Observe</b>: the agent only reads. <b>Propose</b>: price changes wait for your tap. <b>Auto-band</b>: changes inside your floor and ceiling, within 10% of the last price, at most once a day per night and never within a day of a booking go automatically. Dry-run: the agent fills the form and takes a screenshot but does not save. It stays on until you turn it off.</p>') +
       (!c.heartbeat ? card('Agent machine', 'set up later', '<p>The channel agent changes prices for you automatically. It needs a small always-on computer: free on Oracle Cloud (needs a card check, never charged) plus the free Tailscale app for a private remote screen on your phone. Until then <b>Phone assist</b> (Today tab) and the calendar feeds keep every channel right.</p>' +
         '<ol class="fo-steps"><li><a href="https://signup.cloud.oracle.com/" target="_blank" rel="noopener">Create the Oracle Cloud Free Tier account</a> (region India South or India West)</li><li><a href="https://login.tailscale.com/start" target="_blank" rel="noopener">Create a Tailscale account</a> and install the Tailscale app on your phone</li><li>Tell Claude in the console: it creates the machine settings, installs the agent and walks you through signing in to each extranet once.</li></ol>') : '') +
       card('Channel agent', c.heartbeat ? 'last seen ' + when(c.heartbeat.at) : 'not connected', '<p>' + (c.agent_key ? 'An agent key is active.' : 'No agent key yet.') + ' The key lets the agent pull jobs and report what it reads; it cannot see guests or bookings. It is shown once: put it in the agent machine\'s .env file, never in a repository.</p>' +
         (f ? '<div class="fo-toolbar"><button class="btn btn--primary" id="ag-new">' + (c.agent_key ? 'Replace the agent key' : 'Create the agent key') + '</button>' + (c.agent_key ? '<button class="btn btn--danger" id="ag-rev">Revoke</button>' : '') + '</div><div id="ag-out"></div>' : '')) +
+      (f ? card('Sign-in link', 'for session alerts', '<p>When a channel asks for a new sign-in, the email and the Today tab show this link to the agent machine\'s screen.</p>' + input('cm-signin', c.signin_url || '', 'url', ' style="width:100%" placeholder="http://agent-machine:6080/vnc.html"') + '<div class="fo-toolbar"><button class="btn" id="cm-signin-save">Save link</button></div>') : '') +
       card('Calendar feeds (iCal)', 'safety net', '<p>Import these into Airbnb (Calendar → Availability → Connect calendars) and Booking.com (Rates & availability → Sync calendars). Even when the agent is offline, nights booked anywhere stay closed there. Busy dates only, no guest data.</p>' +
         (Object.keys(c.ical || {}).length ? table(['Villa', 'Feed link'], Object.keys(c.ical).map(function (v) { return [esc(vname(v)), '<input readonly value="' + esc(c.ical[v]) + '" class="cm-copy" style="width:100%">']; })) : '') +
         (f ? '<div class="fo-toolbar"><button class="btn" id="ic-new">' + (Object.keys(c.ical || {}).length ? 'New links (old ones stop working)' : 'Create feed links') + '</button></div>' : ''));
@@ -273,6 +278,7 @@
       U.api('f.cm.agent.key', {}).then(function (j) { if (!j.ok) return toast(j.error, true); $('#ag-out', body).innerHTML = '<div class="fo-alert"><b>Copy this now (shown once):</b><br><input readonly value="' + esc(j.key) + '" class="cm-copy" style="width:100%"><br><small>' + esc(j.note) + '</small></div>'; var k = $('#ag-out .cm-copy', body); k.focus(); k.select(); });
     };
     var ar = $('#ag-rev'); if (ar) ar.onclick = function () { if (confirm('Revoke the agent key? The agent stops at once.')) save('f.cm.agent.revoke', {}, 'Agent key revoked'); };
+    var si = $('#cm-signin-save'); if (si) si.onclick = function () { save('f.cm.signin.set', { url: val(body, 'cm-signin') }, 'Sign-in link saved'); };
     var ic = $('#ic-new'); if (ic) ic.onclick = function () { save('f.cm.ical.token', {}, 'Feed links ready'); };
   }
 

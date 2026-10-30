@@ -280,3 +280,112 @@ test('wrong machine keys never pause the founder\'s sign-in (own counter), and a
   assert.ok(!env.mails.some(m => /sign-in paused/.test(m.subject || '')), 'no "sign-in paused" email');
   assert.ok(env.tab('Audit').filter(a => a.action === 'key_refused').length <= 40);
 });
+
+// ---------------------------------------------------------------- Phase 1 engine ----------------
+const IST = env => new Date(env.clock.now() + 330 * 60000).toISOString().slice(0, 10);
+const addDay = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const liveAll = (env, token) => ['mmt', 'booking', 'airbnb'].forEach(c => env.api({ action: 'f.cm.settings.set', token, settings: { channel: c, enabled: true, mode: 1, dry_run: false } }));
+const readAll = (agent, ch, from, n, row) => agent('agent.state', { channel: ch, villa: 'ap-suite', rows: Array.from({ length: n }, (_, i) => Object.assign({ date: addDay(from, i), rate: 5000, available: true }, row ? row(addDay(from, i)) : {})) });
+const approveAll = (env, token) => env.api({ action: 'f.cm.jobs.approve', token, job_ids: env.tab('ChannelJobs').filter(j => j.state === 'proposed').map(j => j.job_id) });
+const recon = (env, token) => { const r = env.api({ action: 'f.cm.reconcile', token }); assert.equal(r.ok, true, r.error); return r.result; };
+
+test('dry-run does not end by itself: only the owner turns it off', async () => {
+  const { env, token, agent } = await ready(); env.api({ action: 'f.cm.ratedesk', token, villa: 'ap-suite', days: 3 });
+  const s = () => agent('agent.pull').switches.channels.booking;
+  assert.equal(s().dryRun, true); env.clock.advance(10 * 864e5); assert.equal(s().dryRun, true);
+  env.api({ action: 'f.cm.settings.set', token: await env.login(), settings: { channel: 'booking', dry_run: false } }); assert.equal(s().dryRun, false);
+});
+test('reservation reads come every 5 minutes per villa·channel; the first read of a day is the full 400 days, then 90 days every 3 hours', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token);
+  const a = agent('agent.pull'); assert.equal(a.ok, true, a.error);
+  assert.deepEqual(a.res_reads.map(r => r.channel).sort(), ['airbnb', 'booking', 'mmt']); assert.ok(a.listings.booking.extranet_property_id);
+  assert.equal(a.reads.length, 3); assert.ok(a.reads.every(r => r.full && r.to === addDay(IST(env), 399)));
+  const b = agent('agent.pull'); assert.equal(b.res_reads.length, 0, 'not again at once'); assert.equal(b.reads.filter(r => r.full).length, 0);
+  env.clock.advance(5 * 60000); assert.equal(agent('agent.pull').res_reads.length, 3);
+});
+test('a new reservation queues closures for the next pull ahead of other work; the same list again re-runs nothing', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); const from = addDay(IST(env), 5), to = addDay(IST(env), 7);
+  env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: addDay(IST(env), 20), to: addDay(IST(env), 20), channels: ['booking'], set: { min_stay: 2 } } });
+  const rows = [{ reservation_id: 'BK77', villa: 'ap-suite', checkin: from, checkout: to, amount: 9000, status: 'confirmed' }];
+  const r = agent('agent.reservations', { channel: 'booking', rows }); assert.equal(r.result.ledger, 1); assert.ok(r.result.availability.closed >= 2);
+  const p = agent('agent.pull'), first = p.jobs.slice(0, 2); assert.ok(first.every(j => j.type === 'close' && j.reason === 'booking_elsewhere')); assert.deepEqual(first.map(j => j.channel).sort(), ['airbnb', 'mmt']);
+  const again = agent('agent.reservations', { channel: 'booking', rows }); assert.equal(again.result.ledger, 0); assert.equal(again.result.availability, undefined);
+});
+test('reconciler: a booked night still open is closed at once in every mode, even after a dry-run closure; nights with no fresh read are not judged', async () => {
+  const { env, token, agent } = await ready(); env.api({ action: 'f.data', token });
+  const t = IST(env), d = addDay(t, 10);
+  agent('agent.reservations', { channel: 'mmt', rows: [{ reservation_id: 'M1', villa: 'ap-suite', checkin: d, checkout: addDay(d, 1), amount: 9000, status: 'confirmed' }] });   // channels are in dry-run: the closure is only photographed
+  for (const j of agent('agent.pull').jobs) agent('agent.report', { job_id: j.job_id, result: 'dry_run' });
+  ['mmt', 'booking', 'airbnb'].forEach(c => env.api({ action: 'f.cm.settings.set', token, settings: { channel: c, dry_run: false, mode: c === 'booking' ? 0 : 1 } }));
+  readAll(agent, 'booking', t, 30);
+  const r = recon(env, token); assert.equal(r.closed, 1); assert.equal(r.checked, 30); assert.ok(r.unread > 700);
+  const j = env.tab('ChannelJobs').filter(x => x.approved_by === 'reconciler'); assert.equal(j.length, 1); assert.deepEqual([j[0].type, j[0].state, j[0].channel, j[0].date_from], ['close', 'queued', 'booking', d]);
+  assert.equal(recon(env, token).closed, 0, 'a close already in flight is left alone');
+});
+test('reconciler: drift follows the mode (Observe notes, Propose asks, Auto-band re-sends), an unknown closed night is never opened, the kill switch stops it', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); const t = IST(env), d = addDay(t, 12);
+  const set = (c, m) => env.api({ action: 'f.cm.settings.set', token, settings: { channel: c, mode: m } });
+  env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: d, to: d, channels: ['booking'], set: { min_stay: 3 } } }); approveAll(env, token);
+  const jobs = agent('agent.pull').jobs.filter(j => j.type === 'min_stay'); assert.equal(jobs.length, 1);
+  agent('agent.report', { job_id: jobs[0].job_id, result: 'done', read_back: '3' });
+  const drifted = () => readAll(agent, 'booking', t, 20, x => x === d ? { min_stay: 1 } : x === addDay(t, 15) ? { available: false } : {});
+  set('booking', 0); drifted(); let r = recon(env, token); assert.deepEqual([r.drift, r.observed, r.queued, r.proposed], [1, 1, 0, 0]);
+  set('booking', 1); drifted(); r = recon(env, token); assert.equal(r.proposed, 1);
+  const prop = env.tab('ChannelJobs').find(j => j.approved_by === '' && j.reason === 'reconcile'); assert.deepEqual([prop.type, Number(prop.new_value), prop.state], ['min_stay', 3, 'proposed']);
+  env.api({ action: 'f.cm.jobs.cancel', token, job_ids: [prop.job_id], ids: [prop.job_id], job_id: prop.job_id });
+  set('booking', 2); drifted(); r = recon(env, token); assert.equal(r.queued, 1); assert.ok(!env.tab('ChannelJobs').some(j => j.type === 'open'), 'a night closed on the channel with no record is left closed: it may be a booking');
+  env.api({ action: 'f.cm.killswitch', token, on: true }); r = recon(env, token); assert.deepEqual(r.skipped, ['kill switch on']);
+});
+test('reconciler runs once a day from the hourly job at 02:00 IST and reports in the portal bundle', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); readAll(agent, 'booking', IST(env), 5);
+  const hour = () => new Date(env.clock.now() + 330 * 60000).getUTCHours();
+  while (hour() !== 1) env.clock.advance(3600000);
+  readAll(agent, 'booking', IST(env), 5);
+  env.fo.foCmHourly_(); assert.equal(env.props.get('FO_CM_RECON_DAY') || null, null);
+  env.clock.advance(3600000); readAll(agent, 'booking', IST(env), 5); env.fo.foCmHourly_(); const at = env.props.get('FO_CM_RECON'); assert.ok(at);
+  env.clock.advance(3600000); env.fo.foCmHourly_(); assert.equal(env.props.get('FO_CM_RECON'), at, 'once a day');
+  assert.equal(env.api({ action: 'f.data', token: await env.login() }).channel_manager.reconcile.checked, 5);
+});
+test('session expiry: heartbeat pauses, emails the sign-in link once, and an ok session resumes by itself; CAPTCHA does not', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token);
+  assert.equal(env.api({ action: 'f.cm.signin.set', token, url: 'javascript:alert(1)' }).ok, false);
+  env.api({ action: 'f.cm.signin.set', token, url: 'http://agent-vm:6080/vnc.html' });
+  const n = () => env.mails.filter(m => /action needed on Airbnb/.test(m.subject)).length, s = () => env.tab('ChannelSettings').find(r => r.channel === 'airbnb');
+  agent('agent.heartbeat', { sessions: { airbnb: 'login' } }); agent('agent.heartbeat', { sessions: { airbnb: 'login' } });
+  assert.equal(n(), 1); assert.equal(s().paused, 'yes'); assert.match(env.mails.at(-1).body, /agent-vm:6080/);
+  assert.equal(agent('agent.pull').switches.channels.airbnb.session_pause, true); assert.ok(agent('agent.pull').listings.airbnb, 'the paused channel can still be checked');
+  agent('agent.heartbeat', { sessions: { airbnb: 'ok' } }); assert.equal(s().paused, '');
+  env.cache.clear(); agent('agent.heartbeat', { sessions: { airbnb: 'captcha' } }); assert.equal(s().paused, 'yes');
+  agent('agent.heartbeat', { sessions: { airbnb: 'ok' } }); assert.equal(s().paused, 'yes', 'a CAPTCHA needs a human Resume');
+});
+test('owner pause is never undone by the agent', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token);
+  env.api({ action: 'f.cm.killswitch', token, scope: 'booking', on: true }); agent('agent.heartbeat', { sessions: { booking: 'ok' } });
+  assert.equal(env.tab('ChannelSettings').find(r => r.channel === 'booking').paused, 'yes');
+});
+test('recipe break: writes stop, one repair task opens, Resume is manual; two blank read-backs count as a break', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); const t = IST(env), s = () => env.tab('ChannelSettings').find(r => r.channel === 'booking');
+  agent('agent.heartbeat', { sessions: { booking: 'recipe_break' } }); agent('agent.heartbeat', { sessions: { booking: 'unknown_screen' } });
+  assert.equal(s().paused, 'yes'); assert.equal(env.tab('CrmTasks').filter(x => /Repair the Booking\.com/.test(x.title)).length, 1);
+  assert.ok(env.mails.some(m => /changed its pages/.test(m.body)));
+  agent('agent.heartbeat', { sessions: { booking: 'ok' } }); assert.equal(s().paused, 'yes');
+  env.api({ action: 'f.cm.killswitch', token, scope: 'booking', on: false }); assert.equal(s().paused, '');
+  ['2', '3'].forEach(v => { env.api({ action: 'f.cm.bulk', token, bulk: { villas: ['ap-suite'], from: addDay(t, 30), to: addDay(t, 30), channels: ['booking'], set: { min_stay: Number(v) } } }); approveAll(env, token); const j = agent('agent.pull').jobs.find(x => x.type === 'min_stay'); agent('agent.report', { job_id: j.job_id, result: 'done', read_back: '' }); });
+  assert.equal(s().paused, 'yes'); assert.match(s().pause_reason, /recipe break/);
+});
+test('agent offline: the hourly job alerts once within the alert window', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); agent('agent.heartbeat', { sessions: {} });
+  env.clock.advance(31 * 60000); env.fo.foCmHourly_(); env.fo.foCmHourly_();
+  assert.equal(env.mails.filter(m => /has not reported/.test(m.body)).length, 1);
+});
+test('an OTA date change closes the new nights at once and offers the old ones; a cancellation applies; money still waits for review', async () => {
+  const { env, token, agent } = await ready(); liveAll(env, token); const t = IST(env), a = addDay(t, 40), res = o => agent('agent.reservations', { channel: 'booking', rows: [Object.assign({ reservation_id: 'BK5', villa: 'ap-suite', checkin: a, checkout: addDay(a, 2), amount: 9000, status: 'confirmed' }, o)] });
+  res({}); const bk = () => env.tab('Bookings').find(b => b.external_id === 'BK5');
+  const r = res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'modified' }); assert.equal(r.result.ledger, 1);
+  assert.deepEqual([bk().checkin, bk().checkout], [addDay(a, 5), addDay(a, 7)]);
+  assert.ok(env.tab('ChannelJobs').some(j => j.type === 'close' && j.state === 'queued' && j.date_from === addDay(a, 5)), 'new nights closed');
+  assert.ok(env.tab('ChannelJobs').some(j => j.type === 'open' && j.state === 'proposed' && j.date_from === a), 'old nights wait for approval');
+  assert.equal(res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'modified' }).result.ledger, 0, 'read again: nothing new');
+  res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'modified', amount: 7000 }); assert.equal(Number(bk().gross_amount), 9000); assert.ok(env.tab('Exceptions').some(e => e.type === 'amount_discrepancy'));
+  res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'cancelled', amount: 7000 }); assert.equal(bk().status, 'cancelled'); assert.ok(env.mails.some(m => /cancelled by the guest/.test(m.body)));
+});

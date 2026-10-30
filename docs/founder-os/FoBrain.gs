@@ -535,7 +535,7 @@ function foActLookup_(f, D, today, user) {
   if (f.what === 'ipos') { if (!user || user.role !== 'founder') return done('', []); const list = foRows_('InvIpos').filter(x => x.status === 'open' || x.status === 'upcoming'); return done('IPOs on your board:', list.map(x => [x.name + ' · ' + x.status, x.sub_total !== '' ? x.sub_total + ' times subscribed' : (x.close ? 'closes ' + foDate_(x.close) : '')])); }
   if (f.what === 'blogs') {
     const list = foRows_('SeoTopics').filter(x => ['queued', 'in_progress'].indexOf(x.status) >= 0).map(x => [x.title || x.keyword, x.status === 'queued' ? 'queued, written on a coming daily run' : 'being written']);
-    let prs = null; try { const r = UrlFetchApp.fetch('https://api.github.com/repos/apvillasandresorts/AP-villa-and-resorts-website/pulls?state=open&per_page=20', { muteHttpExceptions: true, headers: { Accept: 'application/vnd.github+json' } }); if (r.getResponseCode() === 200) prs = JSON.parse(r.getContentText()).filter(x => (x.labels || []).some(l => l.name === 'blog-post')); } catch (e) {}
+    const prs = foBlogDrafts_();
     (prs || []).forEach(x => list.unshift(['Draft #' + x.number + ': ' + x.title, 'ready for your review']));
     const out = done(prs === null ? 'Blog queue (drafts could not be read from GitHub just now):' : 'Blog pipeline:', list);
     out.question = (list.length ? out.question : 'No drafts or queued topics right now.') + ' A draft goes live only when you run /publish with its number in the Claude Code console, so nothing public changes from here.';

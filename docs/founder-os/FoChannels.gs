@@ -10,6 +10,9 @@
  * - Modes per channel: 0 Observe (read only), 1 Propose (owner approves), 2 Auto-band (auto-approve small moves inside the band).
  * - A booking anywhere (any channel, direct, e-check-in, an owner block) closes that villa's nights on every other channel at once:
  *   those closures skip approval and are handed to the agent first. Per-villa iCal feeds are the official safety net.
+ * - Reservations are read every 5 minutes. Every night the agent reads 400 days and the reconciler (02:00 IST) re-sends what drifted.
+ * - A login or OTP screen pauses the channel and emails a sign-in link; the channel resumes by itself once the session is back.
+ *   A page the recipe no longer fits pauses the channel and opens a repair task. Writes stay off until someone presses Resume.
  * - The agent has its own key (scope "agent", stored as a digest): it can pull jobs and report reads, never read guests or bookings.
  *   Reservations it reports are cut to an allowlist (no names, phones or emails) here as well as in the agent.
  * No passwords, sessions, selectors or extranet secrets live here. Evidence screenshots go to a private Drive folder (kept 30 days).
@@ -20,11 +23,11 @@ const FO_CM = {
   LEDGER: { mmt: 'MakeMyTrip', booking: 'Booking.com', airbnb: 'Airbnb' },
   TYPES: ['rate', 'open', 'close', 'min_stay', 'max_stay', 'cta', 'ctd', 'stop_sell', 'inventory'], NUM: ['rate', 'min_stay', 'max_stay', 'inventory'], ONOFF: ['cta', 'ctd', 'stop_sell'],
   LABEL: { rate: 'Price', open: 'Open', close: 'Close', min_stay: 'Min stay', max_stay: 'Max stay', cta: 'Closed to arrival', ctd: 'Closed to departure', stop_sell: 'Stop-sell', inventory: 'Units to sell' },
-  REASONS: ['pricing', 'booking_elsewhere', 'manual'],
+  REASONS: ['pricing', 'booking_elsewhere', 'manual', 'reconcile'],
   OPEN: ['proposed', 'approved', 'queued', 'running', 'verifying', 'failed', 'needs_human'], FINAL: ['done', 'rejected', 'cancelled'],
-  LEASE_MIN: 10, RETRY_MIN: 10, HORIZON: 90, PULL_MAX: 12, BAND: 0.10, DRY_DAYS: 3, READ_EVERY_H: 3,
+  LEASE_MIN: 10, RETRY_MIN: 10, HORIZON: 90, PULL_MAX: 12, BAND: 0.10, DRY_DAYS: 3, READ_EVERY_H: 3, RES_EVERY_MIN: 5, FULL_DAYS: 400, RECON_HOUR: 2, RECON_FRESH_H: 26, RECON_MAX: 60, OFFLINE_MIN: 30,
   RES_FIELDS: ['reservation_id', 'villa', 'checkin', 'checkout', 'amount', 'currency', 'channel', 'status'],
-  STOPS: ['login', 'otp', 'captcha', 'unusual_activity', 'unknown_screen'],
+  STOPS: ['login', 'otp', 'captcha', 'unusual_activity', 'unknown_screen', 'recipe_break'], SESSION: ['login', 'otp'], BREAKS: ['unknown_screen', 'recipe_break'],
 };
 
 // ---------------------------------------------------------------- settings ----------------
@@ -37,7 +40,7 @@ function foCmSettings_(readOnly) {
     if (!readOnly) { rows.forEach(r => foAppend_('ChannelSettings', r)); rows = foRows_('ChannelSettings'); }
   }
   const out = {}, today = foToday_();
-  rows.forEach(r => { out[r.channel] = { channel: r.channel, enabled: r.enabled === 'yes', mode: Math.max(0, Math.min(2, Number(r.mode) || 0)), dryRun: r.dry_run === 'yes' && (!r.dry_until || today < String(r.dry_until)),
+  rows.forEach(r => { out[r.channel] = { channel: r.channel, enabled: r.enabled === 'yes', mode: Math.max(0, Math.min(2, Number(r.mode) || 0)), dryRun: r.dry_run === 'yes',
     dry_until: r.dry_until, paused: r.paused === 'yes', pause_reason: r.pause_reason, commission: Math.max(0, Math.min(50, foNum_(r.commission_pct))) / 100, markup: Math.max(-30, Math.min(30, foNum_(r.markup_pct))) / 100, _row: r._row }; });
   return out;
 }
@@ -448,14 +451,11 @@ function foCmAssistAlert_() {
  * without approval (reason booking_elsewhere). A cancellation proposes re-opening (owner approves). Idempotent: run hourly and on every
  * reservation report.
  */
-function foCmSyncAvailability_(actor) {
-  const D = foDataLoad_(), jobs = foRows_('ChannelJobs'), today = foToday_(), end = FoMetrics.addDays(today, FO_CM.HORIZON), out = { closed: 0, reopen: 0 };
-  const taken = {};   // villa|night → source channel ('' for direct/blocks)
+function foCmTaken_(D, today, end) {
+  const taken = {}, multi = {};   // villa|night → source channel ('' for direct/blocks); villa|night → units left on multi-unit villas
   (D.bookings || []).forEach(b => { if (['confirmed', 'tentative'].indexOf(b.status) < 0 || !b.property_id) return; for (let d = b.checkin; d < b.checkout; d = FoMetrics.addDays(d, 1)) if (d >= today && d < end) taken[b.property_id + '|' + d] = FoCmChannelOf_(b.channel); });
   (D.blocks || []).forEach(b => { for (let d = b.start; d < b.end; d = FoMetrics.addDays(d, 1)) if (d >= today && d < end) taken[b.property_id + '|' + d] = ''; });
-  const closedBy = {}; jobs.filter(j => j.type === 'close' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) closedBy[j.villa + '|' + j.channel + '|' + d] = j; });
-  const opened = {}; jobs.filter(j => j.type === 'open' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) opened[j.villa + '|' + j.channel + '|' + d] = j.created_at; });
-  const villas = (D.properties || []).map(p => p.property_id), multi = {};
+  const villas = (D.properties || []).map(p => p.property_id);
   // multi-unit villas (more than 1 unit to sell): every channel gets the number of units LEFT instead of open/close
   const blocked = {}; (D.blocks || []).forEach(b => { for (let d = b.start; d < b.end; d = FoMetrics.addDays(d, 1)) blocked[b.property_id + '|' + d] = 1; });
   villas.forEach(villa => {
@@ -466,6 +466,12 @@ function foCmSyncAvailability_(actor) {
       else if (cap <= 0 && taken[villa + '|' + d] === undefined) taken[villa + '|' + d] = '';   // owner set 0 units: closed everywhere
     }
   });
+  return { taken, multi, villas };
+}
+function foCmSyncAvailability_(actor) {
+  const D = foDataLoad_(), jobs = foRows_('ChannelJobs'), today = foToday_(), end = FoMetrics.addDays(today, FO_CM.HORIZON), out = { closed: 0, reopen: 0 }, { taken, multi, villas } = foCmTaken_(D, today, end);
+  const closedBy = {}; jobs.filter(j => j.type === 'close' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) closedBy[j.villa + '|' + j.channel + '|' + d] = j; });
+  const opened = {}; jobs.filter(j => j.type === 'open' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) opened[j.villa + '|' + j.channel + '|' + d] = j.created_at; });
   const lastInv = {}; jobs.filter(j => j.type === 'inventory' && ['rejected', 'cancelled', 'failed', 'needs_human'].indexOf(j.state) < 0).sort((a, b) => a.created_at < b.created_at ? -1 : 1)
     .forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) lastInv[j.villa + '|' + j.channel + '|' + d] = foNum_(j.new_value); });
   out.inventory = 0;
@@ -514,8 +520,9 @@ function foAgentApi_(b) {
   const fn = FO_AGENT_ROUTES[String(b.action || '')]; if (!fn) return { ok: false, error: 'Not allowed for the agent.' };
   const out = fn(b) || {}; foFlush_(); if (out.ok === undefined) out.ok = true; return out;
 }
+const foCmSessionPause_ = why => FO_CM.SESSION.some(c => String(why || '') === 'agent stopped: ' + c);
 function foCmSwitches_() {
-  const s = foCmSettings_(), ch = {}; Object.keys(s).forEach(k => { ch[k] = { enabled: s[k].enabled, mode: s[k].mode, dryRun: s[k].dryRun, paused: s[k].paused }; });
+  const s = foCmSettings_(), ch = {}; Object.keys(s).forEach(k => { ch[k] = { enabled: s[k].enabled, mode: s[k].mode, dryRun: s[k].dryRun, paused: s[k].paused, session_pause: foCmSessionPause_(s[k].pause_reason) }; });
   return { global: foCmGlobalPaused_(), channels: ch };
 }
 /**
@@ -531,7 +538,7 @@ function foCmPull_(b) {
       if ((j.state === 'running' || j.state === 'verifying') && j.lease_until && Date.parse(j.lease_until) < now) { j.state = 'failed'; j.error_code = 'lease_expired'; j.failed_at = nowIso; save(j); }
       if (j.state === 'failed' && j.failed_at && now - Date.parse(j.failed_at) >= FO_CM.RETRY_MIN * 60000) { if (foNum_(j.attempts) < 2) { j.state = 'queued'; j.claimed_by = ''; } else { j.state = 'needs_human'; foCmAlert_('needs_human', j); } save(j); }
     });
-    const out = { switches: sw, jobs: [], reads: [], watch: [], server_time: nowIso };
+    const out = { switches: sw, jobs: [], reads: [], res_reads: [], listings: {}, watch: [], server_time: nowIso };
     if (sw.global) return out;
     const live = ch => s[ch] && s[ch].enabled && !s[ch].paused;
     const ready = all.filter(j => j.state === 'queued' && live(j.channel))
@@ -546,14 +553,22 @@ function foCmPull_(b) {
         rate_plan: j.rate_plan || '', rate_plan_ext: j.rate_plan ? (() => { const p = foRows_('RatePlans').find(x => x.plan_id === j.rate_plan); try { return (JSON.parse((p && p.ext_ids) || '{}'))[j.channel] || ''; } catch (e) { return ''; } })() : '',
         listing: { platform: own.platform, extranet_property_id: own.extranet_property_id, extranet_room_id: own.extranet_room_id, url: own.url_clean } });
     });
-    // reads: each enabled channel's own listings every 3 hours (or when the agent asks)
+    // reads: each enabled channel's own listings every 3 hours (or when the agent asks), the full 400 days once a day, reservations every 5 minutes
+    const props = PropertiesService.getScriptProperties(), stamps = k => { try { return JSON.parse(props.getProperty(k) || '{}'); } catch (e) { return {}; } }, full = stamps('FO_CM_FULL'), resAt = stamps('FO_CM_RES_AT'), today = foToday_();
     const lastRead = {}; foRows_('ChannelState').forEach(r => { const k = r.channel + '|' + r.villa; if (!lastRead[k] || r.read_at > lastRead[k]) lastRead[k] = r.read_at; });
     foRows_('Listings').filter(r => r.role === 'own' && r.status === 'active').forEach(r => {
-      const ch = r.platform === 'goibibo' ? 'mmt' : r.platform; if (!s[ch] || !s[ch].enabled || s[ch].paused) return;
-      const k = ch + '|' + r.villa; if (!b.force_reads && lastRead[k] && now - Date.parse(lastRead[k]) < FO_CM.READ_EVERY_H * 3600000) return;
+      const ch = r.platform === 'goibibo' ? 'mmt' : r.platform, listing = { platform: r.platform, extranet_property_id: r.extranet_property_id, extranet_room_id: r.extranet_room_id, url: r.url_clean };
+      if (s[ch] && s[ch].enabled && !out.listings[ch]) out.listings[ch] = listing;   // a paused channel still needs its session checked
+      if (!s[ch] || !s[ch].enabled || s[ch].paused) return;
+      const k = ch + '|' + r.villa, isFull = full[k] !== today;
+      if (now - (resAt[k] || 0) >= FO_CM.RES_EVERY_MIN * 60000 - 15000 && !out.res_reads.some(x => x.channel === ch && x.villa === r.villa)) { resAt[k] = now; out.res_reads.push({ channel: ch, villa: r.villa, listing }); }
+      if (!isFull && !b.force_reads && lastRead[k] && now - Date.parse(lastRead[k]) < FO_CM.READ_EVERY_H * 3600000) return;
       if (out.reads.some(x => x.channel === ch && x.villa === r.villa)) return;
-      out.reads.push({ channel: ch, villa: r.villa, from: foToday_(), to: FoMetrics.addDays(foToday_(), FO_CM.HORIZON - 1), listing: { platform: r.platform, extranet_property_id: r.extranet_property_id, extranet_room_id: r.extranet_room_id, url: r.url_clean } });
+      if (isFull) full[k] = today;
+      out.reads.push({ channel: ch, villa: r.villa, from: today, to: FoMetrics.addDays(today, (isFull ? FO_CM.FULL_DAYS : FO_CM.HORIZON) - 1), full: isFull, listing });
     });
+    if (out.res_reads.length) props.setProperty('FO_CM_RES_AT', JSON.stringify(resAt));
+    if (out.reads.some(x => x.full)) props.setProperty('FO_CM_FULL', JSON.stringify(full));
     // public listing watch (own + competitors) on schedule: what guests see, for parity and the market engines
     const lastObs = {}; foRows_('MarketRates').forEach(r => { if (r.listing_id && (!lastObs[r.listing_id] || r.observed_at > lastObs[r.listing_id])) lastObs[r.listing_id] = r.observed_at; });
     foRows_('Listings').filter(r => r.status === 'active').forEach(r => {
@@ -575,28 +590,38 @@ function foCmReport_(b) {
     const j = foRows_('ChannelJobs').find(x => x.job_id === b.job_id); if (!j) return { ok: false, error: 'Unknown job.' };
     if (['running', 'verifying'].indexOf(j.state) < 0) return { ok: false, error: 'Job is ' + j.state + ', not running.' };
     if (b.agent_id && j.claimed_by && foClean_(b.agent_id, 40) !== j.claimed_by) return { ok: false, error: 'Job is leased to another agent.' };
+    let blank = false;
     const now = foNow_(), result = String(b.result || ''); j.error_code = ''; j.message = foClean_(b.message, 300); j.evidence_ref = foClean_(b.evidence_ref, 80) || j.evidence_ref;
     if (result === 'done' || result === 'dry_run') {
       const rb = String(b.read_back == null ? '' : b.read_back).trim(), want = String(j.new_value), match = FO_CM.NUM.indexOf(j.type) >= 0 ? foHasNum_(rb) && Math.abs(foNum_(rb) - foNum_(want)) < 1 : rb.toLowerCase() === want.toLowerCase();
       if (result === 'dry_run') { j.state = 'done'; j.read_back = 'dry_run'; j.done_at = now; j.message = 'Dry run: form filled and photographed, not submitted. ' + j.message; }
       else if (match) { j.state = 'done'; j.read_back = rb; j.done_at = now; foCmStateFromJob_(j); }
-      else { j.state = 'failed'; j.read_back = rb; j.error_code = 'readback_mismatch'; j.failed_at = now; j.message = 'Wrote ' + want + ', channel shows ' + (rb || 'nothing'); }
+      else { j.state = 'failed'; j.read_back = rb; j.error_code = 'readback_mismatch'; j.failed_at = now; j.message = 'Wrote ' + want + ', channel shows ' + (rb || 'nothing'); blank = !rb; }
     } else if (result === 'blocked') {
       const code = FO_CM.STOPS.indexOf(b.error_code) >= 0 ? b.error_code : 'unknown_screen';
       j.state = 'needs_human'; j.error_code = code; j.claimed_by = ''; j.lease_until = '';
-      foCmPauseChannel_(j.channel, code); foCmAlert_('blocked', j);
+      if (FO_CM.BREAKS.indexOf(code) >= 0) foCmRecipeBreak_(j.channel, 'the page no longer matches during a ' + FO_CM.LABEL[j.type].toLowerCase() + ' change'); else { foCmPauseChannel_(j.channel, code); foCmAlert_('blocked', j); }
       // other jobs this agent holds for the paused channel were never attempted past the block: back to the queue, attempt not counted
       foRows_('ChannelJobs').filter(x => x.job_id !== j.job_id && x.channel === j.channel && (x.state === 'running' || x.state === 'verifying')).forEach(x => {
         x.state = 'queued'; x.claimed_by = ''; x.lease_until = ''; x.attempts = Math.max(0, foNum_(x.attempts) - 1); const xr = x._row; delete x._row; foUpdate_('ChannelJobs', xr, x); });
     } else if (result === 'verifying') { j.state = 'verifying'; j.lease_until = new Date(Date.now() + FO_CM.LEASE_MIN * 60000).toISOString(); }
     else { j.state = 'failed'; j.error_code = foClean_(b.error_code, 40) || 'failed'; j.failed_at = now; }
     const r = j._row; delete j._row; foUpdate_('ChannelJobs', r, j); foTouch_();
+    // two saves in a day that show nothing when read back: the save or the read page changed, so writing blind must stop
+    if (blank && foRows_('ChannelJobs').filter(x => x.channel === j.channel && x.error_code === 'readback_mismatch' && x.read_back === '' && Date.now() - Date.parse(x.failed_at) < 864e5).length >= 2) foCmRecipeBreak_(j.channel, 'saved changes could not be read back');
     return { job: { job_id: j.job_id, state: j.state, error_code: j.error_code } };
   } finally { lock.releaseLock(); }
 }
 function foCmPauseChannel_(ch, why) {
   const row = foRows_('ChannelSettings').find(r => r.channel === ch); if (!row || row.paused === 'yes') return;
-  const rec = Object.assign({}, row, { paused: 'yes', pause_reason: 'agent stopped: ' + why }); delete rec._row; foUpdate_('ChannelSettings', row._row, rec);
+  const rec = Object.assign({}, row, { paused: 'yes', pause_reason: /^recipe break/.test(why) ? why : 'agent stopped: ' + why }); delete rec._row; foUpdate_('ChannelSettings', row._row, rec);
+}
+/** The extranet no longer matches the recipe: writes stop (paused until Resume) and one repair task stays open until it is done. */
+function foCmRecipeBreak_(ch, why) {
+  foCmPauseChannel_(ch, 'recipe break: ' + why); foCmAlert_('recipe_break', { channel: ch, message: why });
+  const title = 'Repair the ' + FO_CM.NAMES[ch] + ' bot recipe';
+  if (foRows_('CrmTasks').some(t => t.title === title && !t.done)) return;
+  foAppend_('CrmTasks', { task_id: foId_('TASK'), title, due: foToday_(), contact_type: '', contact_id: '', done: '', notes: 'Writes are stopped on this channel: ' + why + '. Run discovery on the agent machine, update the recipe, then press Resume in Channel Manager.', created_at: foNow_(), updated_at: foNow_(), updated_by: 'channel agent' });
 }
 /** Successful writes update what we believe the channel shows. */
 function foCmStateFromJob_(j) {
@@ -632,7 +657,8 @@ function foCmState_(b) {
   const rows = (Array.isArray(b.rows) ? b.rows : []).slice(0, 400).map(r => ({ villa, channel: ch, date: foDate_(r.date), rate: foHasNum_(r.rate) ? foNum_(r.rate) : '', available: r.available === true || r.available === 'yes' ? 'yes' : r.available === false || r.available === 'no' ? 'no' : '',
     min_stay: foHasNum_(r.min_stay) ? foNum_(r.min_stay) : '', stop_sell: r.stop_sell ? 'yes' : '', max_stay: foHasNum_(r.max_stay) ? foNum_(r.max_stay) : '', cta: r.cta ? 'yes' : '', ctd: r.ctd ? 'yes' : '',
     inventory: foHasNum_(r.inventory) ? foNum_(r.inventory) : '', read_at: now })).filter(r => r.date);
-  rows.forEach(r => { const last = foCmLastValue_(jobs.filter(j => j.state === 'done'), villa, ch, r.date, 'rate'); if (last != null && r.rate !== '' && Math.abs(r.rate - last) >= 1) drift.push(r.date + ' ₹' + r.rate + ' (we set ₹' + last + ')'); });
+  const doneJobs = jobs.filter(j => j.state === 'done' && j.type === 'rate' && j.villa === villa && j.channel === ch);
+  rows.forEach(r => { const last = foCmLastValue_(doneJobs, villa, ch, r.date, 'rate'); if (last != null && r.rate !== '' && Math.abs(r.rate - last) >= 1) drift.push(r.date + ' ₹' + r.rate + ' (we set ₹' + last + ')'); });
   const n = foCmUpsertState_(rows);
   if (drift.length) foCmAlert_('drift', { channel: ch, villa, message: drift.slice(0, 10).join(', ') });
   foTouch_(); return { result: { saved: n, drift: drift.length } };
@@ -657,8 +683,9 @@ function foCmReservations_(b) {
     const res = foIngest_({ origin: 'channel_agent', origin_ref: k, channel: FO_CM.LEDGER[ch], external_id: r.reservation_id, property_name: villaName, checkin: r.checkin, checkout: r.checkout,
       status: r.status === 'cancelled' ? 'cancelled' : r.status === 'no_show' ? 'no_show' : 'confirmed', gross_amount: r.amount, guest: {}, created_basis: 'channel' }, ctx);
     if (res !== 'unchanged' && res !== 'failed') out.ledger++;
+    if (res === 'changed') foCmAlert_('res_change', { channel: ch, villa: villaName + ' ' + r.reservation_id + (r.status === 'cancelled' ? ' (cancelled)' : ''), message: r.status === 'cancelled' ? 'cancelled by the guest or the channel. Re-opening those nights is waiting for your approval.' : 'now ' + r.checkin + ' to ' + r.checkout + '. The new nights are being closed on the other channels.' });
   });
-  if (out.saved) { foTouch_(); FO_MEMO.dirty = true; out.availability = foCmSyncAvailability_('channel-agent'); }
+  if (out.saved) { foTouch_(); FO_MEMO.dirty = true; if (out.ledger) out.availability = foCmSyncAvailability_('channel-agent'); }   // read every 5 minutes: only a real change re-runs the sync
   return { result: out };
 }
 /** agent.observations: public prices for registered listings → MarketRates (the market engines read them as before). */
@@ -701,7 +728,26 @@ function foCmHeartbeat_(b) {
   const hb = { at: foNow_(), agent_id: foClean_(b.agent_id, 40), version: foClean_(b.version, 20), sessions: {} };
   FO_CM.CHANNELS.forEach(c => { const v = b.sessions && b.sessions[c]; if (v) hb.sessions[c] = foClean_(v, 20); });
   PropertiesService.getScriptProperties().setProperty('FO_CM_HEARTBEAT', JSON.stringify(hb));
+  foCmSessionWatch_(hb.sessions);
   return { switches: foCmSwitches_() };
+}
+/** Sessions the agent reported: a stop screen pauses the channel and alerts; a recipe break stops writes; a session back to ok resumes. */
+function foCmSessionWatch_(sessions) {
+  const s = foCmSettings_();
+  Object.keys(sessions).forEach(ch => {
+    const v = sessions[ch]; if (!s[ch] || !s[ch].enabled) return;
+    if (FO_CM.BREAKS.indexOf(v) >= 0) foCmRecipeBreak_(ch, 'the page no longer matches');
+    else if (FO_CM.STOPS.indexOf(v) >= 0) { foCmPauseChannel_(ch, v); foCmAlert_('blocked', { channel: ch, error_code: v }); }
+    else if (/^ok/.test(v) && s[ch].paused && foCmSessionPause_(s[ch].pause_reason)) {
+      const row = foRows_('ChannelSettings').find(r => r.channel === ch), rec = Object.assign({}, row, { paused: '', pause_reason: '' }); delete rec._row; foUpdate_('ChannelSettings', row._row, rec);
+      foAudit_('channel-agent', 'cm_resumed', ch + ' session is back', 'ok'); foTouch_();
+    }
+  });
+}
+function foCmSigninUrl_() { return PropertiesService.getScriptProperties().getProperty('FO_CM_SIGNIN_URL') || ''; }
+function foCmSigninSet_(b, user) {
+  const u = String(b.url || '').trim(); if (u && !/^https?:\/\/[^\s]+$/.test(u)) return { ok: false, error: 'Paste a full link starting with http.' };
+  PropertiesService.getScriptProperties().setProperty('FO_CM_SIGNIN_URL', u); foAudit_(user.email, 'cm_signin_url', u ? 'set' : 'cleared', 'ok'); foTouch_(); return { url: u };
 }
 function foCmHeartbeatGet_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('FO_CM_HEARTBEAT') || 'null'); } catch (e) { return null; } }
 
@@ -712,13 +758,63 @@ function foCmAlert_(kind, j) {
     const key = 'FO_CM_AL_' + kind + '_' + (j.channel || '') + '_' + (j.villa || ''), c = CacheService.getScriptCache(); if (c.get(key)) return; c.put(key, '1', 21600);
     const ch = FO_CM.NAMES[j.channel] || j.channel, v = j.villa || '';
     const text = {
-      blocked: ch + ' needs you: the agent stopped at a ' + String(j.error_code).replace('_', ' ') + ' screen and paused this channel. Sign in on the agent machine (noVNC from your phone), then press Resume in Channel Manager.',
+      blocked: ch + ' needs you: the agent stopped at a ' + String(j.error_code).replace('_', ' ') + ' screen and paused this channel. ' + (foCmSigninUrl_() ? 'Tap to sign in on the agent machine: ' + foCmSigninUrl_() : 'Sign in on the agent machine (noVNC from your phone).') + (FO_CM.SESSION.indexOf(j.error_code) >= 0 ? ' The channel resumes by itself once the session is back.' : ' Then press Resume in Channel Manager.'),
+      recipe_break: ch + ' changed its pages, so the bot stopped writing there: ' + (j.message || '') + '. A repair task is open in CRM. Prices and closures on this channel need Phone assist until it is fixed.',
+      res_change: 'Booking ' + v + ' on ' + ch + ': ' + (j.message || ''),
+      offline: 'The channel agent has not reported since ' + (j.message || 'earlier') + '. No channel is being updated. Check the agent machine; Phone assist and the calendar feeds still work.',
+      reconcile: 'Nightly check: ' + (j.message || ''),
       needs_human: 'A ' + j.type + ' change for ' + v + ' on ' + ch + ' (' + j.date_from + (j.date_to !== j.date_from ? '→' + j.date_to : '') + ') failed twice: ' + (j.error_code || '') + '. Open Channel Manager → Jobs to retry or cancel.',
       drift: 'Rates on ' + ch + ' for ' + v + ' differ from what AP Villas set (changed by hand or by the channel?): ' + (j.message || ''),
       parity: 'Price parity: ' + (j.message || ''),
     }[kind] || kind;
-    MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Channel Manager · ' + (kind === 'blocked' ? 'action needed on ' + ch : kind.replace('_', ' ') + ' · ' + ch), body: text + '\n\nhttps://www.apvillasandresorts.in/founder/#/channels' });
+    MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Channel Manager · ' + (kind === 'blocked' || kind === 'recipe_break' ? 'action needed on ' + ch : kind.replace('_', ' ') + ' · ' + ch), body: text + '\n\nhttps://www.apvillasandresorts.in/founder/#/channels' });
   } catch (e) {}
+}
+
+// ---------------------------------------------------------------- nightly reconciler ----------------
+/**
+ * Compares what each channel showed in the last read (up to 400 days) with what should be there and re-sends the difference.
+ * A booked night still open is closed at once, in every mode. Other drift follows the channel's mode: Observe counts it, Propose asks,
+ * Auto-band re-sends. Nights with no fresh read are never judged; a night with a change already in flight is left alone.
+ */
+function foCmReconcile_(actor) {
+  const D = foDataLoad_(), jobs = foRows_('ChannelJobs'), s = foCmSettings_(), today = foToday_(), end = FoMetrics.addDays(today, FO_CM.FULL_DAYS), { taken, multi, villas } = foCmTaken_(D, today, end);
+  const out = { at: foNow_(), checked: 0, unread: 0, drift: 0, closed: 0, queued: 0, proposed: 0, observed: 0, skipped: [], capped: 0 };
+  const save = () => { PropertiesService.getScriptProperties().setProperty('FO_CM_RECON', JSON.stringify(out)); foTouch_(); return out; };
+  if (foCmGlobalPaused_()) { out.skipped.push('kill switch on'); return save(); }
+  const stateOf = {}; foRows_('ChannelState').forEach(r => { stateOf[r.villa + '|' + r.channel + '|' + String(r.date).slice(0, 10)] = r; });
+  const busy = {}, last = {}, kind = t => t === 'open' || t === 'close' ? 'avail' : t;
+  jobs.filter(j => !j.rate_plan).sort((a, b) => String(a.done_at) < String(b.done_at) ? -1 : 1).forEach(j => {
+    const live = FO_CM.OPEN.indexOf(j.state) >= 0, done = j.state === 'done' && j.read_back !== 'dry_run'; if (!live && !done) return;
+    for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) { const k = j.villa + '|' + j.channel + '|' + d + '|' + kind(j.type); if (live) busy[k] = 1; else last[k] = j; }
+  });
+  const fresh = Date.now() - FO_CM.RECON_FRESH_H * 3600000;
+  villas.forEach(villa => FO_CM.CHANNELS.forEach(ch => {
+    if (!foCmOwn_(villa, ch)) return; const c = s[ch];
+    if (!c || !c.enabled || c.paused) { if (out.skipped.indexOf(ch) < 0) out.skipped.push(ch); return; }
+    const need = {}, add = (type, date, value, j) => { const k = type + '|' + (j ? j.band_lo + '|' + j.band_hi : ''); (need[k] = need[k] || { type, lo: j && j.band_lo !== '' ? foNum_(j.band_lo) : null, hi: j && j.band_hi !== '' ? foNum_(j.band_hi) : null, nights: [] }).nights.push({ date, value, lo: null, hi: null }); out.drift++; };
+    for (let d = today; d < end; d = FoMetrics.addDays(d, 1)) {
+      const k = villa + '|' + ch + '|' + d, st = stateOf[k], at = villa + '|' + d; if (!st || Date.parse(st.read_at) < fresh) { out.unread++; continue; }
+      out.checked++;
+      const free = t => !busy[k + '|' + t], lastOf = t => last[k + '|' + t];
+      if (multi[at] !== undefined) { if (st.inventory !== '' && foNum_(st.inventory) !== multi[at] && free('inventory')) add('inventory', d, multi[at]); }
+      else if (taken[at] !== undefined) { if (taken[at] !== ch && st.available === 'yes' && free('avail')) add('close', d, 'close'); }
+      else if (st.available === 'no' && free('avail') && lastOf('avail') && lastOf('avail').type === 'open') add('open', d, 'open');
+      const lr = lastOf('rate'); if (lr && st.rate !== '' && Math.abs(foNum_(st.rate) - foNum_(lr.new_value)) >= 1 && free('rate')) add('rate', d, foNum_(lr.new_value), lr);
+      ['min_stay', 'max_stay'].forEach(t => { const j = lastOf(t); if (j && st[t] !== '' && foNum_(st[t]) !== foNum_(j.new_value) && free(t)) add(t, d, foNum_(j.new_value)); });
+      FO_CM.ONOFF.forEach(t => { const j = lastOf(t); if (j && String(j.new_value) === 'off' && st[t] === 'yes' && free(t)) add(t, d, 'off'); });   // "on" cannot be judged: an unread flag and an off flag look the same
+    }
+    Object.keys(need).forEach(k => {
+      const n = need[k], safety = n.type === 'close' || (n.type === 'inventory' && c.mode > 0), state = safety || c.mode === 2 ? 'queued' : c.mode === 1 ? 'proposed' : '';
+      foCmRanges_(n.nights).forEach(r => {
+        if (!state) { out.observed++; return; } if (out.closed + out.queued + out.proposed >= FO_CM.RECON_MAX) { out.capped++; return; }
+        const res = foCmCreate_({ type: n.type, villa, channel: ch, date_from: r.from, date_to: r.to, new_value: r.value, lo: n.lo, hi: n.hi, reason: safety ? 'booking_elsewhere' : 'reconcile', state, approved_by: 'reconciler' }, actor, jobs);
+        if (res.job) { if (n.type === 'close') out.closed++; else out[state === 'queued' ? 'queued' : 'proposed']++; }
+      });
+    });
+  }));
+  if (out.drift) foCmAlert_('reconcile', { message: out.drift + ' nights differ across ' + (out.closed + out.queued + out.proposed + out.observed) + ' ranges: ' + out.closed + ' closed at once, ' + out.queued + ' re-sent, ' + out.proposed + ' waiting for your approval, ' + out.observed + ' only noted (Observe).' });
+  return save();
 }
 
 // ---------------------------------------------------------------- parity ----------------
@@ -745,7 +841,7 @@ function foCmBundle_() {
   const strip = r => { delete r._row; return r; };
   return { settings, global_paused: foCmGlobalPaused_(), heartbeat: foCmHeartbeatGet_(), agent_key: !!PropertiesService.getScriptProperties().getProperty('FO_AGENT_KEY'),
     listings: foRows_('Listings').map(strip), jobs: foRows_('ChannelJobs').filter(j => FO_CM.OPEN.indexOf(j.state) >= 0 || String(j.created_at) >= FoMetrics.addDays(today, -14)).slice(-800).map(strip),
-    state: foRows_('ChannelState').filter(r => String(r.date).slice(0, 10) >= today).map(strip), reservations: foRows_('ChannelReservations').filter(r => String(r.checkout) >= FoMetrics.addDays(today, -30)).map(strip),
+    state: foRows_('ChannelState').filter(r => String(r.date).slice(0, 10) >= today && String(r.date).slice(0, 10) < FoMetrics.addDays(today, 366)).map(strip), signin_url: foCmSigninUrl_(), reconcile: (() => { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('FO_CM_RECON') || 'null'); } catch (e) { return null; } })(), reservations: foRows_('ChannelReservations').filter(r => String(r.checkout) >= FoMetrics.addDays(today, -30)).map(strip),
     ical: foCmIcalUrls_(), agent_online: foCmAgentOnline_(), rate_plans: foRows_('RatePlans').map(strip),
     ari: foRows_('InventoryCalendar').filter(r => String(r.date).slice(0, 10) >= today).map(strip),
     links: (() => { const o = {}; foRows_('Properties').forEach(p => FO_CM.CHANNELS.forEach(c => { const u = foCmExtranetLink_(p.property_id, c); if (u) o[p.property_id + '|' + c] = u; })); return o; })() };
@@ -781,7 +877,9 @@ function foCmIcal_(e) {
 /** foHourly: availability sync every hour; pricing proposals once a day (after the 07:00 desk run) for the next 30 nights. */
 function foCmHourly_() {
   if (!foRows_('Listings').some(r => r.role === 'own')) return 'no own listings yet';
-  const out = { availability: foCmSyncAvailability_('system') }, p = PropertiesService.getScriptProperties(), today = foToday_();
+  const out = { availability: foCmSyncAvailability_('system') }, p = PropertiesService.getScriptProperties(), today = foToday_(), hb = foCmHeartbeatGet_(), hour = Number(Utilities.formatDate(new Date(), FO.TZ, 'H'));
+  if (hb && Date.now() - Date.parse(hb.at) > FO_CM.OFFLINE_MIN * 60000) foCmAlert_('offline', { message: hb.at });
+  if (p.getProperty('FO_CM_RECON_DAY') !== today && hour >= FO_CM.RECON_HOUR) { out.reconcile = foCmReconcile_('reconciler'); p.setProperty('FO_CM_RECON_DAY', today); }
   if (p.getProperty('FO_CM_PROPOSED') !== today && Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) >= 7) { out.pricing = foCmProposeFromDesk_('system', { days: 30 }); p.setProperty('FO_CM_PROPOSED', today); }
   out.assist = foCmAssistAlert_();
   return JSON.stringify(out);
