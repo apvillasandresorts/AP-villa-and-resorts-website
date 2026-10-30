@@ -417,7 +417,7 @@ function foBrainAct_(b, user) {
     'You turn the owner\'s message (or a pasted OTA booking voucher / confirmation) into ONE action for AP Villas & Resorts, Ujjain. Reply with ONLY JSON, no prose:',
     '{"intent": one of ' + JSON.stringify(FO_ACT_INTENTS) + ', "fields": {...}, "note": "one short sentence for the owner"}',
     'If the message asks for several separate changes, reply {"actions": [{"intent":...,"fields":{...}}, ...]} with at most 5 items.',
-    'Today is ' + today + ', a ' + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(today + 'T00:00:00Z').getUTCDay()] + ' (Asia/Kolkata). The weekend means Friday and Saturday nights. Dates as YYYY-MM-DD. Money as plain numbers in rupees (no symbols or commas). Only fill what the text says; never guess names, phones, amounts or dates.',
+    'Today is ' + today + ', a ' + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(today + 'T00:00:00Z').getUTCDay()] + ' (Asia/Kolkata). The next 8 days: ' + [0, 1, 2, 3, 4, 5, 6, 7].map(n => { const d = FoMetrics.addDays(today, n); return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(d + 'T00:00:00Z').getUTCDay()] + ' ' + d; }).join(', ') + '. A weekday name means the next one in this list. The weekend means Friday and Saturday nights. Dates as YYYY-MM-DD. Money as plain numbers in rupees (no symbols or commas). Only fill what the text says; never guess names, phones, amounts or dates.',
     'add_booking fields: property_id (one of: ' + villas + '), guest_name, guest_phone, guest_email, checkin, checkout, adults, children, channel (one of: ' + chans + '), external_id (OTA booking number), gross_amount (total the guest pays), commission, taxes, status (confirmed|tentative), notes.',
     'add_expense fields: date, category (one of: ' + cats + '), amount, property_id (a villa id or "all"), vendor, note.',
     'record_salary fields: emp_id (one of: ' + staff + ', or the role word if only a role is given), amount, paid_on, period (YYYY-MM), mode (upi|cash|bank|other), kind (salary|advance|bonus|stipend|deduction), ref.',
@@ -432,12 +432,12 @@ function foBrainAct_(b, user) {
     'A single date means from and to are the same date. Say nothing about notes unless the owner gave one.',
     'block_dates (maintenance or owner stay, the villa cannot be used) fields: property_id, start, end, reason. end = the last blocked day. "Close" or "open" on channels is channel_change, not block_dates.',
     'blog_topic (a specific blog post to write) fields: title, keyword, intent (informational|commercial|local|festival), priority (high|normal|low), notes. Asking for ideas is "none".',
-    'seo_keyword (watch a search term) fields: keyword, target_page. campaign (a tracked link) fields: name, channel (whatsapp|instagram|facebook|google_business|google_ads|email|other), landing_url.',
+    'seo_keyword (watch a search term) fields: keyword, target_page. campaign (a tracked link) fields: name (a short name taken from the message), channel (whatsapp|instagram|facebook|google_business|google_ads|email|other), landing_url.',
     'budget fields: month (YYYY-MM), category (one of: ' + cats + ', revenue), amount, property_id, note. event (festival or demand date) fields: name, start, end, kind (festival|holiday|mega|custom).',
     'setting fields: brain_daily (on|off), only for the daily AP Brain email.',
     'paper_order (practice trade, never real money) fields: symbol (NSE symbol, e.g. INFY for Infosys), side (buy|sell), qty, account. watch_add fields: symbol (NSE symbol).',
     'message_guest (write a WhatsApp to a guest) fields: guest_name, booking_ref, message (the words the owner gave, else leave out).',
-    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price|blogs|issues|salaries|expenses|ipos), guest_name, booking_ref, guest_phone, property_id, from, to.',
+    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price|blogs|issues|salaries|expenses|ipos), guest_name, booking_ref, guest_phone, property_id, from, to (for one date, both the same date).',
     'Questions about what is pending or who owes money are lookup. Publishing a blog or asking about blog drafts is lookup with what=blogs. Asking to resolve data issues is lookup with what=issues. "What is the price for AP Suite on Saturday?" is lookup with what=price. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
     'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
@@ -656,7 +656,7 @@ function foActPlan_(intent, f, D, today) {
     need('keyword', 'the keyword'); lines.push(['Watch', f.keyword || '—'], ['Page', f.target_page || 'any page']);
     route = 'f.seo.keyword.save'; payload = { record: { keyword: f.keyword, target_page: f.target_page || '', notes: 'added by AP Brain' } };
   } else if (intent === 'campaign') {
-    need('name', 'the campaign name'); f.channel = FO_CAMPAIGN_CHANNELS[f.channel] ? f.channel : 'other';
+    f.name = f.name || (f.channel ? f.channel + ' campaign' : ''); need('name', 'the campaign name'); f.channel = FO_CAMPAIGN_CHANNELS[f.channel] ? f.channel : 'other';
     lines.push(['Campaign', f.name || '—'], ['Channel', f.channel], ['Link to', f.landing_url || 'home page']);
     route = 'f.campaign.save'; payload = { record: { name: f.name, channel: f.channel, landing_url: f.landing_url || '' } };
   } else if (intent === 'budget') {
