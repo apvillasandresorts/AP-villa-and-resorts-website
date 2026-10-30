@@ -19,7 +19,7 @@ const FO_BRAIN_SYSTEM = [
   'Rules: figures only from the summary or the web research; cite web facts as [1], [2] matching the sources; if something is missing say which data would answer it. Never invent revenue, occupancy, competitor prices or market numbers. Label estimates as ESTIMATE. Money in Indian rupees (₹, Indian digit grouping). Reply in English. Use Hindi only when the question itself is written in Hindi (Devanagari script); an Indian name or a Hindi word is not a reason to switch.',
   'Accuracy: start from FINDINGS, per_villa and receivables_by_villa, which are already worked out from the ledger. Name the villa, the exact date and the ₹ figure in every point, and compare it with something (last 30 days, the market median, another villa). Say "your records", never "the summary". Finish with one line: Confidence: High, Medium or Low, and why in a few words.',
   'Quality bar: lead with the answer, no filler, no restating the question, no generic advice that would fit any hotel. Tie every point to a date, villa or figure from the data. If the data cannot answer, say so in one line and name what is missing. Answer only what was asked; for a simple question skip the Why/Do this/Watch sections.',
-  'When you recommend a change to prices or availability, or a follow-up, put a last line starting exactly with ACTIONS: followed by a JSON array of at most 3 items, each {"intent":"channel_change" or "add_task","fields":{...}}. channel_change fields: property_id (villa id from the summary, or "all"), type (rate|pct|recommended|close|open|min_stay), value, from, to (YYYY-MM-DD), weekdays (optional comma list 0-6, Sunday=0). add_task fields: title, due. The owner gets a confirm button for each, so use only figures your answer already justifies. Leave the line out when you recommend no change.',
+  'When you recommend a change to prices or availability, or a follow-up, put a last line starting exactly with ACTIONS: followed by a JSON array of at most 3 items, each {"intent":"channel_change", "add_task" or "blog_topic","fields":{...}}. channel_change fields: property_id (villa id from the summary, or "all"), type (rate|pct|recommended|close|open|min_stay), value, from, to (YYYY-MM-DD), weekdays (optional comma list 0-6, Sunday=0). add_task fields: title, due. blog_topic fields: title, keyword, intent, priority. The owner gets a confirm button for each, so use only figures your answer already justifies. Leave the line out when you recommend no change.',
   'This chat only advises; saving is done by a separate step. If the owner asks to record or change something, say in one line that it has not been saved and ask for the guest, booking or amount that is missing. Never give example amounts or made-up steps. The Pricing Desk price is the starting point: explain it, and only suggest a different price with a reason from the data.',
 ].join('\n');
 const FO_BRAIN_PLANNER = 'You decide whether a question about a holiday-villa business in Ujjain (India) needs fresh information from Google that is not in its own data: competitor launches or prices, new hotels, Simhastha 2028 or temple updates, events, travel (trains, flights, roads), traveller trends, regulations, or anything about the wider market. Reply with ONLY JSON: {"search": ["query 1", "query 2"]} with 0 to 2 short Google queries (English or Hindi), or {"search": []} when the business data is enough. Never include personal data in queries.';
@@ -68,7 +68,7 @@ function foBrainVague_(text, q) {
 function foBrainProposals_(text, user) {
   const m = String(text).match(/\n?\s*ACTIONS:\s*(\[[\s\S]*\])\s*$/); if (!m) return { text: String(text).replace(/\n?\s*ACTIONS:\s*$/, ''), proposals: [] };
   let list = []; try { list = JSON.parse(m[1]); } catch (e) {}
-  const D = foDataLoad_(), today = foToday_(), proposals = (Array.isArray(list) ? list : []).slice(0, 3).filter(a => a && ['channel_change', 'add_task'].indexOf(a.intent) >= 0).map(a => foActDraft_(a.intent, foActClean_(a.fields || {}), D, today, user)).filter(a => a.ready);
+  const D = foActData_(), today = foToday_(), proposals = (Array.isArray(list) ? list : []).slice(0, 3).filter(a => a && ['channel_change', 'add_task', 'blog_topic'].indexOf(a.intent) >= 0).map(a => foActDraft_(a.intent, foActClean_(a.fields || {}), D, today, user)).filter(a => a.ready);
   return { text: String(text).slice(0, m.index).trim(), proposals };
 }
 
@@ -391,16 +391,16 @@ function foBrainTestResearch() {
  * Privacy: vouchers contain guest details, so they go only to providers that do not train on API data (Groq, Cerebras, Mistral),
  * never to the Gemini free tier or OpenRouter; ID numbers (Aadhaar-style 12 digits) are masked; the log keeps only the action type.
  */
-const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'record_payment', 'update_booking', 'add_task', 'complete_task', 'update_lead', 'lookup', 'none'];
+const FO_ACT_INTENTS = ['add_booking', 'add_expense', 'record_salary', 'add_employee', 'add_lead', 'channel_change', 'record_payment', 'update_booking', 'add_task', 'complete_task', 'update_lead', 'block_dates', 'blog_topic', 'seo_keyword', 'campaign', 'budget', 'event', 'setting', 'paper_order', 'watch_add', 'message_guest', 'lookup', 'none'];
 function foBrainAct_(b, user) {
   const text = String(b.text || '').replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[id-number]').trim().slice(0, 6000);
   if (!text) return { ok: false, error: 'Type or paste the details first.' };
   if (foCounter_('FO_BRAIN_' + foHmac_(user.email).slice(0, 12), 86400) > FO_BRAIN.PER_DAY) return { ok: false, error: 'AP Brain has answered ' + FO_BRAIN.PER_DAY + ' requests in the last 24 hours. Please try again tomorrow.' };
-  const D = foDataLoad_(), today = foToday_(), draft = b.draft && FO_ACT_INTENTS.indexOf(b.draft.intent) >= 0 ? b.draft : null;
+  const D = foActData_(), today = foToday_(), draft = b.draft && FO_ACT_INTENTS.indexOf(b.draft.intent) >= 0 ? b.draft : null;
   const quick = draft ? null : foActQuick_(text, today);
   if (quick) {
     foBrainLog_(user.email, '[action] ' + quick.intent, { ok: true, provider: 'rules', model: '' }, 0);
-    return { result: Object.assign(quick.intent === 'lookup' ? foActLookup_(quick.fields, D, today) : foActDraft_(quick.intent, quick.fields, D, today, user), { intent: quick.intent, provider: 'rules' }) };
+    return { result: Object.assign(quick.intent === 'lookup' ? foActLookup_(quick.fields, D, today, user) : foActDraft_(quick.intent, quick.fields, D, today, user), { intent: quick.intent, provider: 'rules' }) };
   }
   const villas = (D.properties || []).map(p => p.property_id + ' = ' + p.name).join('; ');
   const staff = (D.employees || []).filter(e => e.status === 'active').map(e => e.emp_id + ' = ' + e.name + ' (' + e.role + ', ' + (e.salary_amount || '?') + ')').join('; ') || 'none yet';
@@ -421,8 +421,15 @@ function foBrainAct_(b, user) {
     'add_task (a reminder or to-do) fields: title, due, notes. complete_task (a to-do is done) fields: title.',
     'update_lead (an existing enquiry moved on) fields: name, phone, stage (new|contacted|quoted|won|lost), next_followup, lost_reason, value_inr, notes.',
     'Statements such as "Ravi Kumar completed all pending payments, update it" or "mark Ravi fully paid" are record_payment, not questions.',
-    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price), guest_name, booking_ref, guest_phone, property_id, from, to.',
-    'Questions about what is pending or who owes money are lookup. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
+    'block_dates (maintenance or owner stay, villa not sold) fields: property_id, start, end, reason. end = the first free day.',
+    'blog_topic (a specific blog post to write) fields: title, keyword, intent (informational|commercial|local|festival), priority (high|normal|low), notes. Asking for ideas is "none".',
+    'seo_keyword (watch a search term) fields: keyword, target_page. campaign (a tracked link) fields: name, channel (whatsapp|instagram|facebook|google_business|google_ads|email|other), landing_url.',
+    'budget fields: month (YYYY-MM), category (one of: ' + cats + ', revenue), amount, property_id, note. event (festival or demand date) fields: name, start, end, kind (festival|holiday|mega|custom).',
+    'setting fields: brain_daily (on|off), only for the daily AP Brain email.',
+    'paper_order (practice trade, never real money) fields: symbol (NSE symbol, e.g. INFY for Infosys), side (buy|sell), qty, account. watch_add fields: symbol (NSE symbol).',
+    'message_guest (write a WhatsApp to a guest) fields: guest_name, booking_ref, message (the words the owner gave, else leave out).',
+    'lookup (show records: who owes money, a guest\'s bookings, arrivals, departures, who is staying, open tasks, open enquiries, the price set for a date) fields: what (pending_payments|guest|arrivals|departures|in_house|tasks|leads|price|blogs|issues|salaries|expenses|ipos), guest_name, booking_ref, guest_phone, property_id, from, to.',
+    'Questions about what is pending or who owes money are lookup. Publishing a blog or asking about blog drafts is lookup with what=blogs. Asking to resolve data issues is lookup with what=issues. "What is the price for AP Suite on Saturday?" is lookup with what=price. Advice such as "should I raise prices?" or "what price should I set?" is "none". A direct order such as "raise AP Suite 10% this weekend" is channel_change.',
     'Write the note in English unless the message is in Devanagari script.',
     'If the message is a question or chat, not something to record, use intent "none".',
     draft ? 'The owner is completing this draft; keep its intent and fields unless the new message changes them: ' + JSON.stringify({ intent: draft.intent, fields: draft.fields }) : '',
@@ -440,8 +447,13 @@ function foBrainAct_(b, user) {
   if (intent === 'none' && draft) intent = draft.intent;
   if (intent === 'none') return { result: { intent: 'none' } };
   const fields = Object.assign({}, draft && draft.intent === intent ? draft.fields : {}, foActClean_(j.fields || {}));
-  if (intent === 'lookup') return { result: Object.assign(foActLookup_(fields, D, today), { intent, provider: r.provider }) };
+  if (intent === 'lookup') return { result: Object.assign(foActLookup_(fields, D, today, user), { intent, provider: r.provider }) };
   return { result: Object.assign(foActDraft_(intent, fields, D, today, user), { intent, provider: r.provider }) };
+}
+/** Only the tabs a draft needs, read straight from the sheets: the full portal bundle takes about 15 s to load. */
+function foActData_() {
+  const t = n => foRows_(n);
+  return { properties: t('Properties'), employees: t('Employees'), crm_tasks: t('CrmTasks'), crm_leads: t('CrmLeads'), exceptions: t('Exceptions').filter(e => e.status === 'open'), salary_payments: t('SalaryPayments'), expenses: t('Expenses') };
 }
 /** The common requests, understood without a model: faster, free, and they work when every provider is busy. English and Hinglish. */
 function foActQuick_(text, today) {
@@ -454,6 +466,12 @@ function foActQuick_(text, today) {
     if (/\b(staying|in[- ]house)\b/.test(t)) return { intent: 'lookup', fields: { what: 'in_house', from: day, to: day } };
   }
   if (/\b(open|pending|my|show|list)\s+(tasks?|to-?dos?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'tasks' } };
+  if (/\b(open|show|list|pending|my)\s+(enquir(y|ies)|inquir(y|ies)|leads?)\b/.test(t)) return { intent: 'lookup', fields: { what: 'leads' } };
+  if (/\b(data )?issues\b/.test(t) && !/\bwhy\b/.test(t)) return { intent: 'lookup', fields: { what: 'issues' } };
+  if (/\b(blog|post)s?\b/.test(t) && /\b(publish|draft|drafts|status|pending|waiting|queued|latest)\b/.test(t) && !/\b(write|about|on)\b/.test(t)) return { intent: 'lookup', fields: { what: 'blogs' } };
+  if (/\bsalar(y|ies)\b/.test(t) && /\b(list|show|who|this month|paid so far)\b/.test(t) && !/\d/.test(t)) return { intent: 'lookup', fields: { what: 'salaries' } };
+  if (/\bipos?\b/.test(t) && /\b(open|which|show|list|current)\b/.test(t)) return { intent: 'lookup', fields: { what: 'ipos' } };
+  if (/\b(whatsapp|message|send|tell|sms|call|email|cancel\w*|refund\w*|move|shift|note)\b/.test(t)) return null;   // an order about a guest, for the model
   const guest = foActGuestIn_(t); if (!guest) return null;
   const paid = /\b(paid|pays|completed?|cleared?|settled?|chuka\w*|de diya|jama)\b/.test(t), all = /\b(all|full|fully|pending|dues?|balance|everything|poora|pura|baa?ki)\b/.test(t);
   if (paid && all && !/\d/.test(t) && !/\?\s*$/.test(t) && !/^(has|did|kya)\b/.test(t)) return { intent: 'record_payment', fields: { guest_name: guest } };
@@ -484,7 +502,7 @@ function foActDraft_(intent, fields, D, today, user) {
   return out;
 }
 /** Reads records for the owner. Built here and shown only in the portal: guest details from a lookup never go to a model. */
-function foActLookup_(f, D, today) {
+function foActLookup_(f, D, today, user) {
   const props = D.properties || [], name = id => (props.find(p => p.property_id === id) || {}).name || id, inr = v => '₹' + Math.round(foNum_(v)).toLocaleString('en-IN'), live = x => ['confirmed', 'no_show'].indexOf(x.status) >= 0;
   const pid = f.property_id && f.property_id !== 'all' ? (props.find(p => p.property_id === f.property_id || foActNameMatch_(f.property_id, p.name)) || {}).property_id : '', from = foDate_(f.from) || today, to = foDate_(f.to) || from;
   const rows = foRows_('Bookings').filter(x => !pid || x.property_id === pid), pays = foRows_('Payments'), stay = x => name(x.property_id) + ' · ' + foDate_(x.checkin) + ' → ' + foDate_(x.checkout), lines = [];
@@ -502,10 +520,22 @@ function foActLookup_(f, D, today) {
     const list = rows.filter(x => ['confirmed', 'tentative'].indexOf(x.status) >= 0 && on(x)).sort((a, b) => foDate_(a.checkin) < foDate_(b.checkin) ? -1 : 1);
     return done({ arrivals: 'Arrivals', departures: 'Departures', in_house: 'Staying' }[f.what] + ' ' + from + (to !== from ? ' → ' + to : '') + ':', list.map(x => [x.guest_name, stay(x)]));
   }
+  if (f.what === 'issues') return done((D.exceptions || []).length + ' open data issues (resolve each in Operations Center, so nothing is closed unseen):', (D.exceptions || []).map(e => [e.message || e.type || e.exception_id, e.severity || '']));
+  if (f.what === 'salaries') { const m = (foDate_(f.from) || today).slice(0, 7), list = (D.salary_payments || []).filter(x => String(x.period).slice(0, 7) === m); return done('Pay recorded for ' + m + ', ' + inr(list.reduce((t, x) => t + foNum_(x.amount), 0)) + ' in all:', list.map(x => [x.emp_name + ' · ' + x.kind, inr(x.amount)])); }
+  if (f.what === 'expenses') { const m = (foDate_(f.from) || today).slice(0, 7), list = (D.expenses || []).filter(x => String(foDate_(x.date)).slice(0, 7) === m); return done('Expenses in ' + m + ', ' + inr(list.reduce((t, x) => t + foNum_(x.amount), 0)) + ' in all:', list.map(x => [foDate_(x.date) + ' · ' + x.category + (x.vendor ? ' · ' + x.vendor : ''), inr(x.amount)])); }
+  if (f.what === 'ipos') { if (!user || user.role !== 'founder') return done('', []); const list = foRows_('InvIpos').filter(x => x.status === 'open' || x.status === 'upcoming'); return done('IPOs on your board:', list.map(x => [x.name + ' · ' + x.status, x.sub_total !== '' ? x.sub_total + ' times subscribed' : (x.close ? 'closes ' + foDate_(x.close) : '')])); }
+  if (f.what === 'blogs') {
+    const list = foRows_('SeoTopics').filter(x => ['queued', 'in_progress'].indexOf(x.status) >= 0).map(x => [x.title || x.keyword, x.status === 'queued' ? 'queued, written on a coming daily run' : 'being written']);
+    let prs = null; try { const r = UrlFetchApp.fetch('https://api.github.com/repos/apvillasandresorts/AP-villa-and-resorts-website/pulls?state=open&per_page=20', { muteHttpExceptions: true, headers: { Accept: 'application/vnd.github+json' } }); if (r.getResponseCode() === 200) prs = JSON.parse(r.getContentText()).filter(x => (x.labels || []).some(l => l.name === 'blog-post')); } catch (e) {}
+    (prs || []).forEach(x => list.unshift(['Draft #' + x.number + ': ' + x.title, 'ready for your review']));
+    const out = done(prs === null ? 'Blog queue (drafts could not be read from GitHub just now):' : 'Blog pipeline:', list);
+    out.question = (list.length ? out.question : 'No drafts or queued topics right now.') + ' A draft goes live only when you run /publish with its number in the Claude Code console, so nothing public changes from here.';
+    return out;
+  }
   if (f.what === 'tasks') return done('Open tasks:', (D.crm_tasks || []).filter(t => !t.done).sort((a, b) => String(a.due || '9') < String(b.due || '9') ? -1 : 1).map(t => [t.title, t.due || 'no date']));
   if (f.what === 'leads') return done('Open enquiries:', (D.crm_leads || []).filter(l => ['won', 'lost'].indexOf(l.stage) < 0).map(l => [l.name || l.phone || l.email, l.stage + (l.next_followup ? ' · follow up ' + l.next_followup : '')]));
   if (f.what === 'price') {
-    const list = []; (pid ? [pid] : props.map(p => p.property_id)).forEach(v => { const night = (foCmDesk_(D, v, 90) || []).filter(n => n.date >= from && n.date <= to), ari = foCmAri_(v); night.slice(0, 7).forEach(n => { const set = foNum_((ari[n.date] || {}).price_net); list.push([name(v) + ' · ' + n.date, inr(set || n.rec_net) + (set ? ' (set by you)' : ' (recommended)') + ' · you keep']); }); });
+    const list = [], full = foDataLoad_(); (pid ? [pid] : props.map(p => p.property_id)).forEach(v => { const night = (foCmDesk_(full, v, 90) || []).filter(n => n.date >= from && n.date <= to), ari = foCmAri_(v); night.slice(0, 7).forEach(n => { const set = foNum_((ari[n.date] || {}).price_net); list.push([name(v) + ' · ' + n.date, inr(set || n.rec_net) + (set ? ' (set by you)' : ' (recommended)') + ' · you keep']); }); });
     return done('Prices:', list);
   }
   return Object.assign(done('', []), { question: 'Tell me what to look up: pending payments, a guest, arrivals, departures, tasks, enquiries or a price.' });
@@ -602,6 +632,53 @@ function foActPlan_(intent, f, D, today) {
     if (items.length) { lines.unshift(['Guest', found[0].guest_name]); lines.push(['Type', f.type + ' · ' + f.date + (f.method ? ' · ' + f.method : '') + (f.reference ? ' · ' + f.reference : '')]); }
     route = 'f.payment.settle'; payload = { payment: { type: f.type, date: f.date, method: f.method || '', reference: f.reference || '', items } };
     if (closed) return { fields: f, missing, question: 'Nothing is pending for ' + found[0].guest_name + ', so I changed nothing.', lines, route: '', payload: {}, ready: false, closed: true };
+  } else if (intent === 'block_dates') {
+    f.start = foDate_(f.start) || ''; f.end = foDate_(f.end) || ''; f.reason = f.reason || 'Maintenance';
+    need('property_id', 'which villa'); need('start', 'first blocked day'); need('end', 'the first free day after it');
+    if (f.start && f.end && f.end <= f.start) missing.push({ key: 'end', label: 'an end date after the start' });
+    lines.push(['Villa', f.property_id ? (prop(f.property_id) || {}).name : '—'], ['Blocked', (f.start || '?') + ' → ' + (f.end || '?')], ['Reason', f.reason], ['Channels', 'closed on your listings on save']);
+    route = 'f.block.save'; payload = { property_id: f.property_id, start: f.start, end: f.end, reason: f.reason };
+  } else if (intent === 'blog_topic') {
+    if (!f.title && !f.keyword) missing.push({ key: 'title', label: 'the topic' });
+    lines.push(['Topic', f.title || '—'], ['Keyword', f.keyword || '—'], ['Priority', f.priority || 'normal'], ['Next', 'the daily blog run writes it as a draft for your review; nothing is public until you publish']);
+    route = 'f.seo.topic.save'; payload = { record: { title: f.title || '', keyword: f.keyword || '', intent: f.intent || '', priority: f.priority || 'normal', notes: f.notes || '', source: 'manual' } };
+  } else if (intent === 'seo_keyword') {
+    need('keyword', 'the keyword'); lines.push(['Watch', f.keyword || '—'], ['Page', f.target_page || 'any page']);
+    route = 'f.seo.keyword.save'; payload = { record: { keyword: f.keyword, target_page: f.target_page || '', notes: 'added by AP Brain' } };
+  } else if (intent === 'campaign') {
+    need('name', 'the campaign name'); f.channel = FO_CAMPAIGN_CHANNELS[f.channel] ? f.channel : 'other';
+    lines.push(['Campaign', f.name || '—'], ['Channel', f.channel], ['Link to', f.landing_url || 'home page']);
+    route = 'f.campaign.save'; payload = { record: { name: f.name, channel: f.channel, landing_url: f.landing_url || '' } };
+  } else if (intent === 'budget') {
+    const m = String(f.month || '').slice(0, 7), ok = FoInsights.EXPENSE_CATEGORIES.map(c => c[0]).concat(['revenue']); f.month = /^\d{4}-\d{2}$/.test(m) ? m : ''; if (ok.indexOf(f.category) < 0) f.category = '';
+    need('month', 'which month'); need('category', 'the category'); need('amount', 'the amount');
+    lines.push(['Month', f.month || '—'], ['Category', f.category || '—'], ['Budget', f.amount ? inr(f.amount) : '—'], ['Villa', f.property_id && f.property_id !== 'all' ? (prop(f.property_id) || {}).name : 'All']);
+    route = 'f.budget.save'; payload = { budget: { month: f.month, category: f.category, amount: f.amount, property_id: f.property_id || 'all', note: f.note || '' } };
+  } else if (intent === 'event') {
+    f.start = foDate_(f.start) || ''; f.end = foDate_(f.end) || f.start; need('name', 'the event name'); need('start', 'the date');
+    lines.push(['Event', f.name || '—'], ['Dates', (f.start || '?') + (f.end && f.end !== f.start ? ' → ' + f.end : '')], ['Effect', 'the Pricing Desk treats these as event nights']);
+    route = 'f.event.save'; payload = { event: { name: f.name, start: f.start, end: f.end, kind: f.kind || 'custom', source: 'added by AP Brain' } };
+  } else if (intent === 'setting') {
+    f.brain_daily = /off|stop|no/i.test(String(f.brain_daily)) ? 'off' : 'on';
+    lines.push(['Daily AP Brain email', f.brain_daily]);
+    route = 'f.settings.save'; payload = { settings: { brain_daily: f.brain_daily } };
+  } else if (intent === 'paper_order') {
+    const accs = foRows_('InvAccounts').filter(a => a.status !== 'closed' && ['autopilot', 'rules'].indexOf(a.strategy) < 0), acc = accs.length === 1 ? accs[0] : accs.find(a => f.account && foActNameMatch_(f.account, a.name));
+    f.symbol = String(f.symbol || '').toUpperCase().replace(/[^A-Z0-9&-]/g, ''); f.side = f.side === 'sell' ? 'sell' : 'buy'; f.qty = Math.floor(foNum_(f.qty)) || '';
+    need('symbol', 'the NSE symbol'); need('qty', 'how many shares'); if (!acc) missing.push({ key: 'account', label: 'which paper account (' + (accs.map(a => a.name).join(', ') || 'none open') + ')' });
+    lines.push(['Practice trade', f.side + ' ' + (f.qty || '?') + ' ' + (f.symbol || '?') + ' at market'], ['Account', acc ? acc.name : '—'], ['Money', 'paper only, no real order. Educational model output for paper trading. Not investment advice.']);
+    route = 'f.inv.order.place'; payload = { order: { account_id: acc ? acc.account_id : '', symbol: f.symbol, side: f.side, type: 'market', qty: f.qty, validity: 'day', origin: 'manual' } };
+  } else if (intent === 'watch_add') {
+    f.symbol = String(f.symbol || '').toUpperCase().replace(/[^A-Z0-9&-]/g, ''); need('symbol', 'the NSE symbol'); lines.push(['Add to watchlist', f.symbol || '—']);
+    route = 'f.inv.watch.add'; payload = { symbol: f.symbol, kind: 'symbol' };
+  } else if (intent === 'message_guest') {
+    const found = foActBookings_(f), people = found.map(x => foActTokens_(x.guest_name).join(' ')).filter((n, i, a) => a.indexOf(n) === i), pays = foRows_('Payments');
+    if (!found.length) return { fields: f, missing, question: 'I found no booking for "' + (f.guest_name || f.booking_ref || '?') + '".', lines, route: '', payload: {}, ready: false, closed: true };
+    if (people.length > 1) { found.forEach(x => lines.push([x.guest_name, x.checkin])); return { fields: f, missing: [{ key: 'guest_name', label: 'which guest' }], question: 'To finish this I still need: which of these guests.', lines, route: '', payload: {}, ready: false }; }
+    const x = found.sort((a, b) => String(a.checkin) < String(b.checkin) ? 1 : -1)[0], g = foRows_('Guests').find(q => q.guest_id === x.guest_id) || {}, digits = String(g.phone || '').replace(/\D/g, '').slice(-10), due = foBookingDue_(x, pays);
+    const text = f.message || 'Namaste ' + String(x.guest_name).split(' ')[0] + ' ji, this is Apoorv from AP Villas about your stay at ' + (prop(x.property_id) || {}).name + ' from ' + x.checkin + '.' + (due > 0.5 ? ' The balance is ' + inr(due) + '. Please let me know when it suits you.' : '');
+    lines.push(['To', x.guest_name + (digits ? '' : ' (no phone on file)')], ['Message', text]);
+    return { fields: f, missing, question: 'Here is the message. WhatsApp opens with it filled in; you press send.', lines, route: '', payload: {}, ready: false, closed: true, link: digits.length === 10 ? { label: 'Open in WhatsApp', url: 'https://wa.me/91' + digits + '?text=' + encodeURIComponent(text) } : null };
   } else if (intent === 'update_booking') {
     let found = foActBookings_(f); const upcoming = found.filter(x => String(x.checkout) >= today);
     if (found.length > 1 && upcoming.length === 1) found = upcoming;

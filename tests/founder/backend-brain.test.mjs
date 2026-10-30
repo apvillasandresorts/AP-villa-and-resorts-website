@@ -394,3 +394,33 @@ test('answers have room to finish: Gemini counts its thinking inside the output 
   env.api({ action: 'f.brain.ask', token, question: 'Tonight?', web: false });
   assert.equal(JSON.parse(env.net.calls.find(c => /generateContent/.test(c.url)).payload).generationConfig.maxOutputTokens, 4096);
 });
+
+test('every dashboard area has an action: blocks, blog topics, keywords, campaigns, budgets, events, settings, watchlist', async () => {
+  let reply;
+  const { env, token } = await actEnv(() => reply), go = (intent, fields) => { reply = { intent, fields }; return env.api({ action: 'f.brain.act', token, text: 'do it' }).result; };
+  const check = (intent, fields, tab) => { const r = go(intent, fields); assert.equal(r.ready, true, intent + ': ' + r.question); const j = save(env, token, r); assert.equal(j.ok, true, intent + ': ' + j.error); if (tab) assert.ok(env.tab(tab).length >= 1, tab); };
+  const pid = env.tab('Properties')[0].property_id;
+  check('block_dates', { property_id: pid, start: '2026-12-01', end: '2026-12-03', reason: 'Painting' }, 'Blocks');
+  check('blog_topic', { title: 'Kartik mela guide', keyword: 'kartik mela ujjain', priority: 'high' }, 'SeoTopics');
+  check('seo_keyword', { keyword: 'villa near mahakal' }, 'SeoKeywords');
+  check('campaign', { name: 'Diwali offer', channel: 'instagram' }, 'Campaigns');
+  check('budget', { month: '2026-11', category: env.fo.foBrainTestCat_ ? env.fo.foBrainTestCat_() : 'utilities', amount: 20000 }, 'Budgets');
+  check('event', { name: 'Kartik Purnima', start: '2026-11-05' }, 'Events');
+  check('setting', { brain_daily: 'off' });
+  check('watch_add', { symbol: 'infy' }, 'InvWatch');
+  assert.equal(env.tab('InvWatch')[0].symbol, 'INFY');
+  assert.match(go('paper_order', { symbol: 'INFY', qty: 10, side: 'buy' }).question, /paper account/);
+});
+
+test('blog pipeline, issues and guest messages: nothing public or sent from AP Brain', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'none' }));
+  const blogs = env.api({ action: 'f.brain.act', token, text: 'publish the latest blog post' }).result;
+  assert.equal(blogs.intent, 'lookup'); assert.equal(blogs.ready, false); assert.match(blogs.question, /\/publish/);
+  assert.equal(env.api({ action: 'f.brain.act', token, text: 'show data issues' }).result.closed, true);
+});
+
+test('a message draft opens WhatsApp for the owner to send', async () => {
+  const { env, token } = await actEnv(() => ({ intent: 'message_guest', fields: { guest_name: 'Priya Sharma' } }));
+  const r = env.api({ action: 'f.brain.act', token, text: 'whatsapp Priya Sharma about her balance' }).result;
+  assert.equal(r.ready, false, 'nothing to save'); assert.match(r.link.url, /^https:\/\/wa\.me\/919876543210\?text=/); assert.match(decodeURIComponent(r.link.url), /₹11,500/);
+});
