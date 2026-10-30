@@ -392,6 +392,14 @@
       "intent": "festival",
       "cluster": "where-to-stay",
       "status": "published"
+    },
+    {
+      "slug": "mahakal-sham-ki-aarti-kitne-baje-hoti-hai",
+      "title": "Mahakal Ki Sham Ki Aarti Kitne Baje Hoti Hai? Sandhya Aarti Time",
+      "keyword": "mahakal ki sham ki aarti kitne baje hoti hai",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "published"
     }
   ]
 }
