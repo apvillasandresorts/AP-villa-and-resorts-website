@@ -235,6 +235,7 @@ function foSearchKwImport_(b) {
  * emails, notes, payment references or vendors. Off until the owner adds FO_CLOUD_URL, FO_CLOUD_KEY and FO_CLOUD_ORG to Script Properties.
  */
 const FO_CLOUD = {
+  APP: 'https://ap-apeiron.pages.dev',
   BOOKING: ['booking_id', 'property_id', 'external_id', 'channel', 'checkin', 'checkout', 'nights', 'adults', 'children', 'status', 'gross_amount', 'discount', 'taxes', 'commission', 'commission_basis', 'retained_amount', 'created_at'],
   PAYMENT: ['payment_id', 'booking_id', 'date', 'type', 'amount', 'method'], EXPENSE: ['expense_id', 'property_id', 'date', 'category', 'amount', 'basis'], BLOCK: ['block_id', 'property_id', 'start', 'end'],
   PROPERTY: ['property_id', 'name', 'bedrooms', 'sleeps'], DATES: ['checkin', 'checkout', 'date', 'start', 'end'], NUMS: ['nights', 'adults', 'children', 'gross_amount', 'discount', 'taxes', 'commission', 'retained_amount', 'amount', 'bedrooms', 'sleeps'],
@@ -273,6 +274,19 @@ function foCloudSave_(b, user) {
 }
 function foCloudClear_(b, user) { const p = PropertiesService.getScriptProperties(); ['FO_CLOUD_KEY', 'FO_CLOUD_SAVED'].forEach(k => p.deleteProperty(k)); foAudit_(user.email, 'cloud_key_removed', '', 'ok'); foTouch_(); return {}; }
 function foCloudRun_(b, user) { foAudit_(user.email, 'cloud_copy_run', '', 'ok'); const detail = foCloudSyncIfDue_(true); foTouch_(); return { detail }; }
+/** Portal → AP Apeiron: a one-time sign-in for the owner of the hotel set in Script Properties. Nothing from the browser picks the hotel or the account. Supabase mints the token, spends it once and expires it; it is never stored or logged here. */
+function foCloudSso_(b, user) {
+  const p = PropertiesService.getScriptProperties(), org = p.getProperty('FO_CLOUD_ORG'), key = p.getProperty('FO_CLOUD_KEY');
+  if (!key || !p.getProperty('FO_CLOUD_URL') || !org) return { ok: false, error: 'AP Apeiron is not connected yet: save the key in Channel Manager → Settings.' };
+  try {
+    const email = foCloudCall_(p, 'sso_owner_email', { org_slug: org }); if (!email) return { ok: false, error: 'AP Apeiron has no owner for this hotel yet.' };
+    const r = UrlFetchApp.fetch(p.getProperty('FO_CLOUD_URL') + '/auth/v1/admin/generate_link', { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { apikey: key, Authorization: 'Bearer ' + key }, payload: JSON.stringify({ type: 'magiclink', email }) });
+    const token = r.getResponseCode() < 300 ? (JSON.parse(r.getContentText() || '{}').hashed_token || '') : '';
+    if (!/^[0-9a-f]{20,}$/.test(token)) { foAudit_(user.email, 'apeiron_sso', org, 'failed ' + r.getResponseCode()); return { ok: false, error: 'AP Apeiron did not answer. Please try again.' }; }
+    foAudit_(user.email, 'apeiron_sso', org, 'ok');
+    return { url: FO_CLOUD.APP + '/t/' + encodeURIComponent(org), token };
+  } catch (e) { foAudit_(user.email, 'apeiron_sso', org, 'failed'); return { ok: false, error: 'AP Apeiron did not answer. Please try again.' }; }
+}
 function foCloudStatus_() {
   const p = PropertiesService.getScriptProperties(), last = foRows_('Jobs').filter(j => j.job === 'cloud_copy').pop();
   return { set: !!p.getProperty('FO_CLOUD_KEY'), saved_at: p.getProperty('FO_CLOUD_SAVED') || '', last: last ? { at: last.finished, status: last.status, detail: String(last.detail).slice(0, 300) } : null };

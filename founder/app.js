@@ -93,6 +93,16 @@
       if (quiet && location.hash === keepView && keepY) window.scrollTo(0, keepY);   // stay where you were after a save
     }).catch(function (e) { if (e.message !== 'signed out') { if (!S.data) root.innerHTML = '<div class="fo-loading"><b>Could not load data.</b><div>' + esc(e.message) + '</div><button class="btn btn--primary" id="fo-retry">Try again</button></div>'; var b = $('#fo-retry'); if (b) b.onclick = function () { load(); }; toast(e.message, true); } });
   }
+  // One click signs the owner into AP Apeiron. The tab must open during the click; the one-time token goes in the fragment, so no server sees it.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#fo-apeiron'); if (!b) return;
+    var w = window.open('about:blank', '_blank'); b.disabled = true;
+    window.FoUI.api('f.cloud.sso', {}).then(function (j) {
+      b.disabled = false;
+      if (!j.ok) { if (w) w.close(); return window.FoUI.toast(j.error, true); }
+      if (w) { w.opener = null; w.location.replace(j.url + '#sso=' + j.token); } else window.FoUI.toast('Allow pop-ups for this site, then try again.', true);
+    }).catch(function () { b.disabled = false; if (w) w.close(); });
+  });
   function signedOut(msg) { S.token = null; S.user = null; S.data = null; ss('del', 'fo_t'); ss('del', 'fo_u'); renderLogin(msg); }
 
   // idle sign-out (server also expires idle sessions)
@@ -222,7 +232,7 @@
         if (m.founderOnly && !(S.user && S.user.role === 'founder')) return '';   // personal finance: founder only
         var c = m.count ? m.count() : 0;
         return '<a href="#/' + m.id + '" class="' + (m.id === S.view ? 'is-on' : '') + '" data-ic="' + esc(m.ic) + '" title="' + esc(m.label) + '">' + icon(m.ic) + '<span>' + esc(m.label) + '</span>' + (c ? '<em class="count">' + c + '</em>' : m.phase ? '<em class="soon">phase ' + m.phase + '</em>' : '') + '</a>';
-      }).join('') + '</nav><div class="fo-side__foot">Data: Google Sheets ledger · times in IST<br>Signed in as ' + esc(S.user && S.user.email) + '</div></aside>' +
+      }).join('') + '</nav>' + (S.user && S.user.role === 'founder' ? '<button class="btn btn--sm btn--primary" id="fo-apeiron" type="button">Open AP Apeiron</button>' : '') + '<div class="fo-side__foot">Data: Google Sheets ledger · times in IST<br>Signed in as ' + esc(S.user && S.user.email) + '</div></aside>' +
       '<div class="fo-main"><header class="fo-top">' +
       '<button class="fo-iconbtn" id="fo-collapse" aria-label="Toggle menu">' + icon('menu') + '</button>' +
       '<div class="fo-search">' + icon('search') + '<input class="fo-input" id="fo-q" placeholder="Search guest, booking ID, phone…" autocomplete="off"><div class="fo-search__res" hidden></div></div>' +

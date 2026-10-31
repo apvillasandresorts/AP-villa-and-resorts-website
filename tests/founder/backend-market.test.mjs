@@ -129,3 +129,20 @@ test('paste box: founder only, checks the key, never returns or logs it; Run now
   env.setUserRole('manager'); assert.match(env.api({ action: 'f.cloud.save', token: await env.login(), key: KEY }).error, /role/); env.setUserRole('founder');
   env.api({ action: 'f.cloud.clear', token: await env.login() }); assert.equal(env.fo.foCloudSyncIfDue_(), 'off');
 });
+
+test('portal to AP Apeiron: founders only; the hotel and account come from the server, never the browser; the token is never stored; failures say so', async () => {
+  const calls = []; let replies = {};
+  const env = makeEnv({ http: r => { calls.push(r); return /sso_owner_email/.test(r.url) ? (replies.owner || { code: 200, body: JSON.stringify('owner@hotel.test') }) : (replies.link || { code: 200, body: JSON.stringify({ hashed_token: 'abcdef0123456789abcdef0123', action_link: 'https://x/verify?token=long' }) }); } });
+  env.fo.foSetup(); const token = await env.login(); const sso = b => env.api(Object.assign({ action: 'f.cloud.sso', token }, b));
+  assert.match(sso().error, /not connected/); assert.equal(calls.length, 0);
+  env.props.set('FO_CLOUD_URL', 'https://x.supabase.co'); env.props.set('FO_CLOUD_KEY', 'test-key'); env.props.set('FO_CLOUD_ORG', 'ap-villasandresorts');
+  const r = sso({ org_slug: 'other-hotel', email: 'attacker@example.com', org: 'other-hotel' });
+  assert.equal(r.ok, true, r.error); assert.equal(r.url, 'https://ap-apeiron.pages.dev/t/ap-villasandresorts'); assert.equal(r.token, 'abcdef0123456789abcdef0123'); assert.equal(r.action_link, undefined);
+  assert.equal(JSON.parse(calls[0].payload).org_slug, 'ap-villasandresorts'); assert.deepEqual(JSON.parse(calls[1].payload), { type: 'magiclink', email: 'owner@hotel.test' }, 'the browser chose nothing');
+  assert.match(calls[1].url, /\/auth\/v1\/admin\/generate_link$/);
+  ['AuditLog', 'Audit', 'Jobs'].forEach(t => { try { assert.doesNotMatch(JSON.stringify(env.tab(t)), /abcdef0123456789/, t); } catch (e) { if (e.code === 'ERR_ASSERTION') throw e; } });
+  replies = { owner: { code: 200, body: 'null' } }; assert.match(sso().error, /no owner/);
+  replies = { link: { code: 500, body: 'boom' } }; assert.match(sso().error, /did not answer/);
+  replies = { link: { code: 200, body: JSON.stringify({ hashed_token: 'short' }) } }; assert.match(sso().error, /did not answer/);
+  replies = {}; const n = calls.length; env.setUserRole('manager'); assert.match(sso().error, /role/); env.setUserRole('viewer'); assert.match(sso().error, /role/); assert.equal(calls.length, n, 'nothing is asked for a non-founder');
+});
