@@ -19,6 +19,7 @@ test('every public page keeps canonical (www), shared script, footer and the Adm
     assert.match(s, /assets\/js\/main\.js\?v=[0-9a-f]{8}"/, p + ' main.js');
     assert.match(s, /<footer/, p + ' footer');
     assert.match(s, /class="footer__admin" href="\/founder\/" rel="nofollow">Admin</, p + ' admin link');
+    assert.match(s, /Admin<\/a> · <a class="footer__admin" href="https:\/\/ap-apeiron\.pages\.dev\/" rel="nofollow">AP Apeiron</, p + ' AP Apeiron beside Admin');
   }
 });
 
