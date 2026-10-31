@@ -278,13 +278,26 @@ function foCloudStatus_() {
   return { set: !!p.getProperty('FO_CLOUD_KEY'), saved_at: p.getProperty('FO_CLOUD_SAVED') || '', last: last ? { at: last.finished, status: last.status, detail: String(last.detail).slice(0, 300) } : null };
 }
 /** Once a day after 03:00 IST. A failed or mismatched run is emailed; the portal never depends on it. */
+/** Stay-date metrics per villa and month through the metric dictionary (void and cancelled left out), so AP Apeiron's figures are checked, not only its rows. */
+function foCloudMetrics_() {
+  const r2 = n => Math.round(n * 100) / 100, D = foDataLoad_(), o = {}, stays = (D.bookings || []).filter(b => b.checkin && b.checkout);
+  if (!stays.length) return o;
+  const from = stays.reduce((a, b) => (b.checkin < a ? b.checkin : a), stays[0].checkin), to = stays.reduce((a, b) => (b.checkout > a ? b.checkout : a), stays[0].checkout);
+  FoMetrics.nights(D, from, to).forEach(n => { const k = n.booking.property_id + '|' + n.date.slice(0, 7), x = o[k] = o[k] || { occupied: 0, revenue: 0 }; x.occupied++; x.revenue += n.revenue; });
+  Object.keys(o).forEach(k => {
+    const [villa, m] = k.split('|'), x = o[k], p = (D.properties || []).find(q => q.property_id === villa), last = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5)), 0)).toISOString().slice(0, 10);
+    x.units = !p || String(p.active) === 'no' ? 0 : Math.max(1, Math.round(foNum_(p.units) || 1)); x.available = FoMetrics.available(D, m + '-01', last, { property: villa });
+    x.adr = r2(x.revenue / x.occupied); x.occupancy = x.available ? Math.round(x.occupied / x.available * 10000) / 10000 : null; x.revenue = r2(x.revenue);
+  });
+  return o;
+}
 function foCloudSyncIfDue_(force) {
   const p = PropertiesService.getScriptProperties(), today = foToday_();
   if (!p.getProperty('FO_CLOUD_KEY') || !p.getProperty('FO_CLOUD_URL') || !p.getProperty('FO_CLOUD_ORG')) return 'off';
   if (!force && (p.getProperty('FO_CLOUD_DAY') === today || Number(Utilities.formatDate(new Date(), FO.TZ, 'H')) < 3)) return 'not due';
   p.setProperty('FO_CLOUD_DAY', today);
   let detail = '', ok = false;
-  try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) { const m = foCloudCall_(p, 'check_months', { org_slug: p.getProperty('FO_CLOUD_ORG'), source: foCloudMonths_() }); ok = !!m.matched; detail += ' · months ' + (ok ? 'matched' : 'MISMATCH ' + m.mismatches + ': ' + JSON.stringify(m.lines).slice(0, 400)); foCloudCall_(p, 'refresh_learning', {}); } }
+  try { const r = foCloudCall_(p, 'import_ledger', { payload: foCloudPayload_(p) }); ok = !!r.matched; detail = (ok ? 'matched: ' : 'MISMATCH: ') + JSON.stringify(r.db).slice(0, 300); if (ok) { const m = foCloudCall_(p, 'check_months', { org_slug: p.getProperty('FO_CLOUD_ORG'), source: foCloudMonths_() }); ok = !!m.matched; detail += ' · months ' + (ok ? 'matched' : 'MISMATCH ' + m.mismatches + ': ' + JSON.stringify(m.lines).slice(0, 400)); const x = foCloudCall_(p, 'check_metrics', { org_slug: p.getProperty('FO_CLOUD_ORG'), source: foCloudMetrics_() }); ok = ok && !!x.matched; detail += ' · metrics ' + (x.matched ? 'matched' : 'MISMATCH ' + x.mismatches + ': ' + JSON.stringify(x.lines).slice(0, 400)); foCloudCall_(p, 'refresh_learning', {}); } }
   catch (e) { detail = String(e.message || e).slice(0, 300); }
   foAppend_('Jobs', { job: 'cloud_copy', started: foNow_(), finished: foNow_(), status: ok ? 'ok' : 'failed', detail });
   if (!ok) { try { MailApp.sendEmail({ to: foDeskRecipient_(), subject: 'AP Apeiron · nightly copy needs a look', body: detail }); } catch (e) {} }

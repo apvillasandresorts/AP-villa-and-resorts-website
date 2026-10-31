@@ -107,7 +107,8 @@ test('nightly copy to AP Apeiron: off without a key; only allowlisted fields lea
   env.clock.advance(3600000); assert.match(env.fo.foCloudSyncIfDue_(), /^matched/);
   const body = calls[0].payload; assert.doesNotMatch(body, /Asha|9876543210|example\.com|allergic|guest_name|guest_id/);
   const sent = JSON.parse(body).payload; assert.equal(sent.bookings.length, env.tab('Bookings').length); assert.equal(sent.totals.gross, 10000);
-  assert.ok(sent.bookings.every(b => Object.keys(b).length === 17)); assert.match(calls[1].url, /check_months/); assert.deepEqual(Object.values(JSON.parse(calls[1].payload).source)[0], { bookings: 1, nights: 2, gross: 10000, retained: Object.values(JSON.parse(calls[1].payload).source)[0].retained }); assert.doesNotMatch(calls[1].payload, /Asha|9876543210/); assert.match(calls[2].url, /refresh_learning/);
+  assert.ok(sent.bookings.every(b => Object.keys(b).length === 17)); assert.match(calls[1].url, /check_months/); assert.deepEqual(Object.values(JSON.parse(calls[1].payload).source)[0], { bookings: 1, nights: 2, gross: 10000, retained: Object.values(JSON.parse(calls[1].payload).source)[0].retained }); assert.doesNotMatch(calls[1].payload, /Asha|9876543210/); assert.match(calls[3].url, /refresh_learning/);
+  assert.match(calls[2].url, /check_metrics/); assert.deepEqual(Object.entries(JSON.parse(calls[2].payload).source), [['ap-suite|2026-11', { occupied: 2, revenue: 10000, units: 1, available: 30, adr: 5000, occupancy: 0.0667 }]]);
   assert.equal(env.fo.foCloudSyncIfDue_(), 'not due', 'once a day'); assert.equal(calls[0].headers.apikey, 'test-key');
   env.clock.advance(864e5); reply = { code: 200, body: JSON.stringify({ matched: false, db: {} }) }; assert.match(env.fo.foCloudSyncIfDue_(), /MISMATCH/); assert.ok(env.mails.some(m => /nightly copy/.test(m.subject)));
   env.clock.advance(864e5); reply = { code: 500, body: 'boom' }; assert.match(env.fo.foCloudSyncIfDue_(), /500/);

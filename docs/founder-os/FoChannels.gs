@@ -554,7 +554,8 @@ function foCmPull_(b) {
     const out = { switches: sw, jobs: [], reads: [], res_reads: [], listings: {}, watch: [], server_time: nowIso };
     if (sw.global) return out;
     const live = ch => s[ch] && s[ch].enabled && !s[ch].paused;
-    const ready = all.filter(j => j.state === 'queued' && live(j.channel) && foCmMayRun_(j, s))
+    const only = Array.isArray(b.only) ? b.only.map(String) : null;   // a locked agent names the jobs it may take (usually none), so held jobs are never claimed and never time out
+    const ready = all.filter(j => j.state === 'queued' && live(j.channel) && foCmMayRun_(j, s) && (!only || only.indexOf(j.job_id) >= 0))
       .sort((a, c) => (a.reason === 'booking_elsewhere' ? 0 : 1) - (c.reason === 'booking_elsewhere' ? 0 : 1) || (a.date_from < c.date_from ? -1 : 1)).slice(0, FO_CM.PULL_MAX);
     const lease = new Date(now + FO_CM.LEASE_MIN * 60000).toISOString();
     ready.forEach(j => {

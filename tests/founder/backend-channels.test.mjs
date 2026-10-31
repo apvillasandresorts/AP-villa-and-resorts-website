@@ -431,3 +431,12 @@ test('automatic price button: off means every channel waits for approval, on mea
   assert.equal(env.api({ action: 'f.cm.jobs.propose', token, villa: 'ap-suite', days: 5 }).result.auto, 0);
   const res = env.api({ action: 'f.cm.jobs.approve', token, job_ids: [autoJob.job_id] }); assert.equal(res.ok, true);
 });
+
+test('a locked agent claims nothing: held jobs stay queued, never time out and never reach needs_human; a named job still runs', async () => {
+  const { env, token, agent } = await ready();
+  const ids = env.api({ action: 'f.cm.jobs.propose', token, approve: true, manual: { villa: 'ap-suite', type: 'close', from: '2026-11-25', to: '2026-11-25', channels: ['mmt', 'booking'] } }).result.created;
+  for (let i = 0; i < 4; i++) { assert.equal(agent('agent.pull', { only: [] }).jobs.length, 0); env.clock.advance(11 * 60000); }
+  ids.forEach(id => { assert.equal(job(env, id).state, 'queued'); assert.equal(Number(job(env, id).attempts), 0); });
+  assert.deepEqual(agent('agent.pull', { only: [ids[1]] }).jobs.map(j => j.job_id), [ids[1]]);
+  assert.equal(job(env, ids[0]).state, 'queued');
+});
