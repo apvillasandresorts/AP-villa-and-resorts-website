@@ -50,8 +50,8 @@
   function wd(d) { return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(d + 'T00:00:00Z').getUTCDay()]; }
 
   function view(page) {
-    var T = U.tabs('channels', [['today', 'Today'], ['calendar', 'Calendar'], ['rates', 'Rate desk'], ['jobs', 'Jobs'], ['res', 'Reservations'], ['plans', 'Rate plans'], ['perf', 'Performance'], ['parity', 'Parity'], ['listings', 'Listings'], ['settings', 'Settings']]);
-    page.innerHTML = U.hello('Channel Manager', 'One place for MakeMyTrip / Goibibo, Booking.com and Airbnb: prices, open and closed nights, minimum stays and bookings. Every change is run by your channel agent, read back from the extranet and proven with a screenshot.') + T.html + '<div id="cm"></div>';
+    var T = U.tabs('channels', [['today', 'Today'], ['calendar', 'Calendar'], ['rates', 'Prices'], ['res', 'Bookings'], ['jobs', 'Activity'], ['parity', 'Price match'], ['perf', 'Performance'], ['plans', 'Rate plans'], ['listings', 'Listings'], ['settings', 'Settings']]);
+    page.innerHTML = U.hello('Channel Manager', 'One place for MakeMyTrip / Goibibo, Booking.com and Airbnb: prices, open and closed nights, minimum stays and bookings. Every change is run by your channel agent, read back from the OTA site and proven with a screenshot.') + T.html + '<div id="cm"></div>';
     U.wireTabs(page, 'channels');
     var CAL = window.FoChannelsCal;
     ({ today: today, calendar: CAL.view, avail: CAL.view, rates: rates, jobs: jobs, res: reservations, plans: CAL.plans, perf: CAL.performance, parity: parity, listings: listings, settings: settings }[T.cur] || today)($('#cm'));
@@ -70,7 +70,7 @@
       (setupLeft.length ? card('Finish setting up', '', '<ol class="fo-steps">' + setupLeft.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>') : '') +
       (!c.agent_online ? assistCard(c) : '') +
       '<div class="fo-grid fo-grid--kpi">' +
-      kpi('Channel agent', agentOk ? 'Online' : hb ? 'Offline' : 'Not connected', hb ? 'last seen ' + (age < 1 ? 'just now' : age + ' min ago') + (hb.version ? ' · v' + esc(hb.version) : '') : 'no heartbeat yet', agentOk ? 'up' : 'down') +
+      kpi('Channel agent', agentOk ? 'Online' : hb ? 'Offline' : 'Not connected', hb ? 'last seen ' + (age < 1 ? 'just now' : age + ' min ago') + (hb.version ? ' · v' + esc(hb.version) : '') : 'not seen yet', agentOk ? 'up' : 'down') +
       kpi('Waiting for you', String(count('proposed')), count('proposed') ? 'price changes to approve' : 'nothing to approve') +
       kpi('Running now', String(count('queued') + count('running') + count('verifying')), closures.length ? closures.length + ' booking closures first' : 'queue') +
       kpi('Needs you', String(count('needs_human')), count('needs_human') ? 'sign-in, OTP or a failed write' : 'all clear', count('needs_human') ? 'down' : '') + '</div>' +
@@ -110,7 +110,7 @@
   function assistCard(c) {
     var todo = (c.jobs || []).filter(function (j) { return ['approved', 'queued', 'failed', 'needs_human'].indexOf(j.state) >= 0; })
       .sort(function (a, b) { return (a.reason === 'booking_elsewhere' ? 0 : 1) - (b.reason === 'booking_elsewhere' ? 0 : 1) || (a.date_from < b.date_from ? -1 : 1); });
-    var body = '<p class="fo-hint">No channel agent is running, so changes are made by you in each extranet (it takes a minute on the phone). Booking closures come first and are emailed to you the moment a booking arrives. Calendar feeds keep Airbnb and Booking.com closed automatically once you add them.</p>';
+    var body = '<p class="fo-hint">No channel agent is running, so changes are made by you in each OTA site (it takes a minute on the phone). Booking closures come first and are emailed to you the moment a booking arrives. Calendar feeds keep Airbnb and Booking.com closed automatically once you add them.</p>';
     if (!todo.length) return card('Phone assist', 'nothing to do', body + '<div class="fo-empty">All channels are up to date.</div>');
     return card('Phone assist', todo.length + ' to do', body + '<div class="cm-tasks">' + todo.slice(0, 60).map(function (j) {
       var link = (c.links || {})[j.villa + '|' + j.channel], urgent = j.reason === 'booking_elsewhere';
@@ -143,7 +143,7 @@
     loadDesk(body, function () {
       var picked = Object.keys(desk.picked).filter(function (d) { return desk.picked[d]; });
       body.innerHTML = '<div class="fo-toolbar">' + villaBar('rd-v') + (founder() ? '<button class="btn btn--primary" id="rd-propose">Propose prices from the desk</button><button class="btn" id="rd-set"' + (picked.length ? '' : ' disabled') + '>Set price for ' + picked.length + ' night' + (picked.length === 1 ? '' : 's') + '</button>' : '') +
-        '<span class="fo-hint">Recommended = the Live Pricing Desk\'s price that sells, plus each channel\'s commission, rounded to ₹50 and kept inside your floor and ceiling. Live = what the agent last read on the extranet.</span></div>' +
+        '<span class="fo-hint">Recommended = the Live Pricing Desk\'s price that sells, plus each channel\'s commission, rounded to ₹50 and kept inside your floor and ceiling. Live = what the agent last read on the OTA site.</span></div>' +
         table(['', 'Night', 'You keep', 'Chance'].concat(CH.map(function (c) { return esc(SHORT[c]) + '<br><small>live · recommended</small>'; })), desk.rows.map(function (n) {
           var cells = CH.map(function (c) {
             var x = n.channels[c]; if (!x) return '—';
@@ -212,7 +212,7 @@
   function reservations(body) {
     var rs = (C().reservations || []).slice().sort(function (a, b) { return a.checkin < b.checkin ? -1 : 1; });
     var bk = D().bookings || [];
-    body.innerHTML = '<p class="fo-hint">Read from each extranet by the agent. Only the reservation number, villa, dates, amount and status are kept (never guest names, phones or emails); each one is in your booking ledger and closes the other channels.</p>' +
+    body.innerHTML = '<p class="fo-hint">Read from each OTA site by the agent. Only the reservation number, villa, dates, amount and status are kept (never guest names, phones or emails); each one is in your booking ledger and closes the other channels.</p>' +
       table(['Channel', 'Reservation', 'Villa', 'Stay', 'Amount', 'Status', 'Ledger'], rs.map(function (r) {
         var inLedger = bk.some(function (b) { return String(b.external_id) === String(r.reservation_id); });
         return [esc(SHORT[r.channel]), esc(r.reservation_id), esc(vname(r.villa)), dm(r.checkin) + ' → ' + dm(r.checkout), r.amount !== '' ? inr(num(r.amount)) : '—', badge(r.status, r.status === 'cancelled' ? 'fo-badge--bad' : 'fo-badge--ok'), inLedger ? '✓' : badge('check', 'fo-badge--warn')];
@@ -271,7 +271,7 @@
         f ? '<button class="btn btn--sm" data-save="' + ch + '">Save</button>' : ''];
     })) + '<p class="fo-hint"><b>Observe</b>: the agent only reads. <b>Propose</b>: price changes wait for your tap. <b>Auto-band</b>: changes inside your floor and ceiling, within 10% of the last price, at most once a day per night and never within a day of a booking go automatically. Dry-run: the agent fills the form and takes a screenshot but does not save. It stays on until you turn it off.</p>') +
       (!c.heartbeat ? card('Agent machine', 'set up later', '<p>The channel agent changes prices for you automatically. It needs a small always-on computer: free on Oracle Cloud (needs a card check, never charged) plus the free Tailscale app for a private remote screen on your phone. Until then <b>Phone assist</b> (Today tab) and the calendar feeds keep every channel right.</p>' +
-        '<ol class="fo-steps"><li><a href="https://signup.cloud.oracle.com/" target="_blank" rel="noopener">Create the Oracle Cloud Free Tier account</a> (region India South or India West)</li><li><a href="https://login.tailscale.com/start" target="_blank" rel="noopener">Create a Tailscale account</a> and install the Tailscale app on your phone</li><li>Tell Claude in the console: it creates the machine settings, installs the agent and walks you through signing in to each extranet once.</li></ol>') : '') +
+        '<ol class="fo-steps"><li><a href="https://signup.cloud.oracle.com/" target="_blank" rel="noopener">Create the Oracle Cloud Free Tier account</a> (region India South or India West)</li><li><a href="https://login.tailscale.com/start" target="_blank" rel="noopener">Create a Tailscale account</a> and install the Tailscale app on your phone</li><li>Tell Claude in the console: it creates the machine settings, installs the agent and walks you through signing in to each OTA site once.</li></ol>') : '') +
       card('Channel agent', c.heartbeat ? 'last seen ' + when(c.heartbeat.at) : 'not connected', '<p>' + (c.agent_key ? 'An agent key is active.' : 'No agent key yet.') + ' The key lets the agent pull jobs and report what it reads; it cannot see guests or bookings. It is shown once: put it in the agent machine\'s .env file, never in a repository.</p>' +
         (f ? '<div class="fo-toolbar"><button class="btn btn--primary" id="ag-new">' + (c.agent_key ? 'Replace the agent key' : 'Create the agent key') + '</button>' + (c.agent_key ? '<button class="btn btn--danger" id="ag-rev">Revoke</button>' : '') + '</div><div id="ag-out"></div>' : '')) +
       (f ? card('Sign-in link', 'for session alerts', '<p>When a channel asks for a new sign-in, the email and the Today tab show this link to the agent machine\'s screen.</p>' + input('cm-signin', c.signin_url || '', 'url', ' style="width:100%" placeholder="http://agent-machine:6080/vnc.html"') + '<div class="fo-toolbar"><button class="btn" id="cm-signin-save">Save link</button></div>') : '') +

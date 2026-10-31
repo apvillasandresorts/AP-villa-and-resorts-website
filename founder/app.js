@@ -19,7 +19,7 @@
     token: ss('get', 'fo_t'), user: JSON.parse(ss('get', 'fo_u') || 'null'), data: null, loadedAt: null,
     view: 'overview', tab: {}, range: 'last30', from: '', to: '', property: 'all', grain: 'month',
     list: { q: '', status: 'active', channel: 'all', mode: 'all', from: '', to: '', sort: 'checkin', dir: -1, page: 0 },
-    exFilter: 'open', calMonth: '', lastActive: Date.now(),
+    exFilter: 'open', calMonth: '', lastActive: Date.now(), navOpen: {},
   };
   function ss(op, k, v) { try { if (op === 'get') return sessionStorage.getItem(k); if (op === 'set') sessionStorage.setItem(k, v); else sessionStorage.removeItem(k); } catch (e) { return null; } }
   function ls(op, k, v) { try { if (op === 'get') return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -176,35 +176,62 @@
   }
 
   // ------------------------------------------------------------ modules ------------------------------------------------------------
+  // Seven workspaces plus Admin (TASKS U-03). Ids are the routes and never change; labels are plain words.
   var MODULES = [
-    { g: 'Today' },
-    { id: 'overview', label: 'Executive Overview', ic: 'overview' },
-    { id: 'ops', label: 'Operations Center', ic: 'ops' },
-    { g: 'Bookings' },
-    { id: 'bookings', label: 'Booking Management', ic: 'bookings', count: function () { return openEx().length; } },
-    { g: 'Revenue & pricing' },
-    { id: 'pricing', label: 'Pricing & Market', ic: 'tag' },
-    { id: 'channels', label: 'Channel Manager', ic: 'channels', count: function () { var c = S.data && S.data.channel_manager; return c ? (c.jobs || []).filter(function (j) { return j.state === 'proposed' || j.state === 'needs_human'; }).length : 0; } },
-    { id: 'finance', label: 'Finance & Accounts', ic: 'money' },
+    { g: 'Today', ic: 'overview' },
+    { id: 'overview', label: 'Overview', ic: 'overview' },
+    { id: 'ops', label: 'Next 7 days', ic: 'ops' },
+    { g: 'Front desk', ic: 'bookings' },
+    { id: 'bookings', label: 'Bookings', ic: 'bookings', count: function () { return actionable(); } },
+    { g: 'Revenue', ic: 'tag' },
+    { id: 'pricing', label: 'Prices & market', ic: 'tag' },
+    { id: 'channels', label: 'Channels', ic: 'channels', count: function () { var c = S.data && S.data.channel_manager; return c ? (c.jobs || []).filter(function (j) { return j.state === 'proposed' || j.state === 'needs_human'; }).length : 0; } },
+    { g: 'Operations', ic: 'people' },
+    { id: 'hr', label: 'Team', ic: 'people' },
+    { g: 'Money', ic: 'money' },
+    { id: 'finance', label: 'Money & accounts', ic: 'money' },
+    { g: 'Growth', ic: 'crm' },
+    { id: 'crm', label: 'Guests & messages', ic: 'crm' },
+    { id: 'seo', label: 'Search & marketing', ic: 'search' },
+    { id: 'website', label: 'Website visitors', ic: 'web' },
+    { g: 'Insights', ic: 'chart' },
+    { id: 'analytics', label: 'Booking trends', ic: 'chart' },
+    { id: 'properties', label: 'Villa performance', ic: 'home' },
+    { id: 'guests', label: 'Guest insights', ic: 'guest' },
+    { id: 'trends', label: 'Trends & events', ic: 'trend' },
+    { id: 'forecast', label: 'Forecast', ic: 'forecast' },
+    { id: 'strategy', label: 'Suggestions', ic: 'idea' },
+    { id: 'reports', label: 'Reports', ic: 'report' },
+    { g: 'Admin', ic: 'lock' },
+    { id: 'integrations', label: 'Connections', ic: 'plug' },
+    { id: 'settings', label: 'Settings & security', ic: 'lock' },
+    { g: 'Private', ic: 'invest', founderOnly: true },
     { id: 'investments', label: 'Investments', ic: 'invest', founderOnly: true },
-    { g: 'People & guests' },
-    { id: 'crm', label: 'CRM', ic: 'crm' },
-    { id: 'hr', label: 'People & HR', ic: 'people' },
-    { g: 'Analytics' },
-    { id: 'analytics', label: 'Booking Analytics', ic: 'chart' },
-    { id: 'properties', label: 'Property Performance', ic: 'home' },
-    { id: 'guests', label: 'Guest Intelligence', ic: 'guest' },
-    { id: 'website', label: 'Website Analytics', ic: 'web' },
-    { id: 'seo', label: 'SEO & Marketing', ic: 'search' },
-    { id: 'trends', label: 'Trends & Events', ic: 'trend' },
-    { id: 'forecast', label: 'Forecasting & Scenarios', ic: 'forecast' },
-    { g: 'Decisions & reports' },
-    { id: 'strategy', label: 'Recommendations', ic: 'idea' },
-    { id: 'reports', label: 'Reports & Exports', ic: 'report' },
-    { g: 'Admin' },
-    { id: 'integrations', label: 'Integrations & Automation', ic: 'plug' },
-    { id: 'settings', label: 'Settings & Security', ic: 'lock' },
   ];
+  /** Only issues that need a person this week earn a badge; 202 low-priority notes would just alarm. */
+  function actionable() { return openEx().filter(function (e) { return e.severity === 'high'; }).length; }
+  /** Pages whose figures follow the date and villa filters; other pages don't show them. */
+  var FILTERED = { overview: 1, bookings: 1, analytics: 1, properties: 1, website: 1, finance: 1, seo: 1, ops: 1 };
+  function workspaces() {
+    var out = [], cur = null;
+    MODULES.forEach(function (m) {
+      if (m.founderOnly && !(S.user && S.user.role === 'founder')) return;
+      if (m.g) { cur = { g: m.g, ic: m.ic, items: [] }; out.push(cur); } else cur.items.push(m);
+    });
+    return out;
+  }
+  function navLink(m, sub) {
+    var c = m.count ? m.count() : 0;
+    return '<a href="#/' + m.id + '" class="' + (sub ? 'fo-nav__sub ' : '') + (m.id === S.view ? 'is-on' : '') + '"' + (m.id === S.view ? ' aria-current="page"' : '') + ' title="' + esc(m.label) + '">' + icon(m.ic) + '<span>' + esc(m.label) + '</span>' + (c ? '<em class="count" aria-label="' + c + ' to act on">' + c + '</em>' : '') + '</a>';
+  }
+  function navHtml() {
+    return workspaces().map(function (w) {
+      if (w.items.length === 1) { var one = Object.assign({}, w.items[0], { label: w.items[0].id === 'bookings' ? 'Front desk' : w.g === 'Money' || w.g === 'Private' ? w.items[0].label : w.g }); return navLink(one); }
+      var active = w.items.some(function (m) { return m.id === S.view; }), open = S.navOpen[w.g] != null ? S.navOpen[w.g] : active;
+      return '<div class="fo-nav__ws' + (active ? ' has-on' : '') + '"><button type="button" class="fo-nav__head" data-ws="' + esc(w.g) + '" aria-expanded="' + open + '" title="' + esc(w.g) + '">' + icon(w.ic) + '<span>' + esc(w.g) + '</span><i aria-hidden="true"></i></button>' +
+        '<div class="fo-nav__items"' + (open ? '' : ' hidden') + '>' + w.items.map(function (m) { return navLink(m, 1); }).join('') + '</div></div>';
+    }).join('');
+  }
   function openEx() { return (S.data && S.data.exceptions || []).filter(function (e) { return e.status === 'open'; }); }
 
   function currentRange() {
@@ -225,58 +252,77 @@
     var r = currentRange(), ex = openEx(), high = ex.filter(function (e) { return e.severity === 'high'; }).length;
     var initials = ((S.user && S.user.name) || 'AS').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     root.className = '';
-    root.innerHTML = '<div class="fo-shell' + (S.collapsed ? ' is-collapsed' : '') + '">' +
-      '<aside class="fo-side"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span class="fo-prod"><img src="/founder/apeiron-logo-192.png" alt="">AP APEIRON</span></div></div><nav class="fo-nav">' +
-      MODULES.map(function (m) {
-        if (m.g) return '<div class="fo-nav__group">' + esc(m.g) + '</div>';
-        if (m.founderOnly && !(S.user && S.user.role === 'founder')) return '';   // personal finance: founder only
-        var c = m.count ? m.count() : 0;
-        return '<a href="#/' + m.id + '" class="' + (m.id === S.view ? 'is-on' : '') + '" data-ic="' + esc(m.ic) + '" title="' + esc(m.label) + '">' + icon(m.ic) + '<span>' + esc(m.label) + '</span>' + (c ? '<em class="count">' + c + '</em>' : m.phase ? '<em class="soon">phase ' + m.phase + '</em>' : '') + '</a>';
-      }).join('') + '</nav>' + (S.user && S.user.role === 'founder' ? '<button class="btn btn--sm btn--primary" id="fo-apeiron" type="button">Open AP Apeiron</button>' : '') + '<div class="fo-side__foot">Data: Google Sheets ledger · times in IST<br>Signed in as ' + esc(S.user && S.user.email) + '</div></aside>' +
+    var brainOk = S.user && S.user.role !== 'viewer', filtered = !!FILTERED[S.view];
+    root.innerHTML = '<div class="fo-shell' + (S.collapsed ? ' is-collapsed' : '') + '"><button type="button" class="fo-skip" id="fo-skip">Skip to content</button>' +
+      '<aside class="fo-side" aria-label="Main menu"><div class="fo-side__brand"><img src="/assets/brand/logo-emblem-512.webp" alt=""><div><b>AP Villas</b><span class="fo-prod"><img src="/founder/apeiron-logo-192.png" alt="">AP APEIRON</span></div></div><nav class="fo-nav">' +
+      navHtml() + '</nav>' + (S.user && S.user.role === 'founder' ? '<button class="btn btn--sm btn--primary" id="fo-apeiron" type="button">Open AP Apeiron</button>' : '') + '<div class="fo-side__foot">Times in IST<br>' + esc(S.user && S.user.email) + '</div></aside><div class="fo-scrim" id="fo-scrim"></div>' +
       '<div class="fo-main"><header class="fo-top">' +
-      '<button class="fo-iconbtn" id="fo-collapse" aria-label="Toggle menu">' + icon('menu') + '</button>' +
-      '<div class="fo-search">' + icon('search') + '<input class="fo-input" id="fo-q" placeholder="Search guest, booking ID, phone…" autocomplete="off"><div class="fo-search__res" hidden></div></div>' +
-      '<div class="fo-filters">' +
+      '<button class="fo-iconbtn fo-only-wide" id="fo-collapse" aria-label="Show or hide the menu">' + icon('menu') + '</button>' +
+      '<a class="fo-top__brand" href="#/overview" aria-label="AP Villas, overview"><img src="/assets/brand/logo-emblem-512.webp" alt=""><b>AP Villas</b></a>' +
+      '<div class="fo-search">' + icon('search') + '<input class="fo-input" id="fo-q" type="search" placeholder="Search guest, booking ID, phone…" aria-label="Search bookings" autocomplete="off"><div class="fo-search__res" hidden></div></div>' +
+      '<div class="fo-top__tools">' +
+      '<button class="fo-iconbtn fo-only-phone" id="fo-searchbtn" aria-label="Search" aria-expanded="false">' + icon('search') + '</button>' +
+      (brainOk ? '<button class="fo-iconbtn fo-brainbtn fo-brainpill fo-only-wide" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain: questions about your business, answered by AI"><span class="fo-brainemoji" aria-hidden="true">🧠</span><b>Ask AP Brain</b></button>' : '') +
+      '<button class="fo-iconbtn" id="fo-bell" aria-label="Notifications' + (high ? ', ' + high + ' urgent' : '') + '">' + icon('bell') + (high ? '<span class="dot" aria-hidden="true">' + high + '</span>' : '') + '</button>' +
+      '<button class="fo-iconbtn fo-only-wide" id="fo-theme" aria-label="Light or dark">' + icon('moon') + '</button>' +
+      '<button type="button" class="fo-profile" id="fo-prof" aria-label="Your account"><span class="fo-avatar">' + esc(initials) + '</span><span class="fo-only-wide">' + esc((S.user && S.user.name || 'Founder').split(' ')[0]) + '</span></button>' +
+      '</div></header><div class="fo-body' + (filtered ? ' has-filters' : '') + '"><div class="fo-filters"' + (filtered ? '' : ' hidden') + '>' +
       '<select id="fo-range" aria-label="Date range">' + [['today', 'Today'], ['yesterday', 'Yesterday'], ['last7', 'Last 7 days'], ['last30', 'Last 30 days'], ['this_month', 'This month'], ['prev_month', 'Previous month'], ['qtd', 'Quarter to date'], ['ytd', 'Year to date'], ['last12m', 'Last 12 months'], ['next30', 'Next 30 days (on the books)'], ['next90', 'Next 90 days (on the books)'], ['custom', 'Custom…']]
         .map(function (o) { return '<option value="' + o[0] + '"' + (S.range === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
-      '<span id="fo-custom"' + (S.range === 'custom' ? '' : ' hidden') + '><input type="date" id="fo-from" value="' + esc(r.from) + '"> – <input type="date" id="fo-to" value="' + esc(r.to) + '"></span>' +
+      '<span id="fo-custom"' + (S.range === 'custom' ? '' : ' hidden') + '><input type="date" id="fo-from" aria-label="From" value="' + esc(r.from) + '"> – <input type="date" id="fo-to" aria-label="To" value="' + esc(r.to) + '"></span>' +
       '<select id="fo-prop" aria-label="Villa"><option value="all">All villas</option>' + S.data.properties.map(function (p) { return '<option value="' + esc(p.property_id) + '"' + (S.property === p.property_id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
-      (S.user && S.user.role !== 'viewer' ? '<button class="fo-iconbtn fo-brainbtn fo-brainpill" id="fo-brain" aria-label="Ask AP Brain" title="Ask AP Brain: questions about your business, answered by AI"><span class="fo-brainemoji" aria-hidden="true">🧠</span><b>Ask AP Brain</b></button>' : '') +
-      '<button class="fo-iconbtn" id="fo-bell" aria-label="Notifications">' + icon('bell') + (ex.length ? '<span class="dot">' + (high || ex.length) + '</span>' : '') + '</button>' +
-      '<button class="fo-iconbtn" id="fo-theme" aria-label="Light or dark">' + icon('moon') + '</button>' +
-      '<div class="fo-profile" id="fo-prof" tabindex="0"><span class="fo-avatar">' + esc(initials) + '</span><span>' + esc((S.user && S.user.name || 'Founder').split(' ')[0]) + '</span></div>' +
-      '</div></header><main class="fo-page" id="fo-page"></main></div></div>';
+      '</div><main class="fo-page" id="fo-page" tabindex="-1"></main></div>' +
+      '<nav class="fo-bottom" aria-label="Quick menu">' + bottomNav(brainOk) + '</nav></div></div>';
 
-    $('#fo-collapse').onclick = function () { if (innerWidth <= 820) $('.fo-shell').classList.toggle('is-mobile-open'); else { S.collapsed = !S.collapsed; savePrefs(); $('.fo-shell').classList.toggle('is-collapsed', S.collapsed); } };
+    var side = function (open) { $('.fo-shell').classList.toggle('is-mobile-open', open); };
+    $('#fo-collapse').onclick = function () { S.collapsed = !S.collapsed; savePrefs(); $('.fo-shell').classList.toggle('is-collapsed', S.collapsed); };
+    $('#fo-more').onclick = function () { side(!$('.fo-shell').classList.contains('is-mobile-open')); };
+    $('#fo-scrim').onclick = function () { side(false); };
+    $('#fo-skip').onclick = function () { $('#fo-page').focus(); };
+    $('#fo-searchbtn').onclick = function () { var t = $('.fo-top'), on = t.classList.toggle('is-search'); this.setAttribute('aria-expanded', on); if (on) $('#fo-q').focus(); };
+    $$('.fo-nav__head').forEach(function (b) { b.onclick = function () { var g = b.dataset.ws, open = b.getAttribute('aria-expanded') !== 'true'; S.navOpen[g] = open; b.setAttribute('aria-expanded', open); b.nextElementSibling.hidden = !open; }; });
     $$('.fo-nav a').forEach(function (a) { a.addEventListener('click', function () { $('.fo-shell').classList.remove('is-mobile-open'); }); });
     $('#fo-range').onchange = function () { S.range = this.value; savePrefs(); if (S.range === 'custom') { $('#fo-custom').hidden = false; var x = currentRange(); S.from = x.from; S.to = x.to; } renderPage(); };
     $('#fo-from').onchange = function () { S.from = this.value; S.range = 'custom'; renderPage(); };
     $('#fo-to').onchange = function () { S.to = this.value; S.range = 'custom'; renderPage(); };
     $('#fo-prop').onchange = function () { S.property = this.value; renderPage(); };
-    var bb = $('#fo-brain'); if (bb) bb.onclick = brainPanel;
-    $('#fo-theme').onclick = function () { var d = document.documentElement, dark = d.dataset.theme === 'dark' || (!d.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); d.dataset.theme = dark ? 'light' : 'dark'; savePrefs(); renderPage(); };
+    $$('[data-brain]').concat($$('#fo-brain')).forEach(function (bb) { bb.onclick = brainPanel; });
+    $('#fo-theme').onclick = toggleTheme;
     $('#fo-bell').onclick = function (e) { e.stopPropagation(); menu('bell'); };
     $('#fo-prof').onclick = function (e) { e.stopPropagation(); menu('profile'); };
     wireSearch();
+    if (S.lastView !== S.view) { window.scrollTo(0, 0); S.lastView = S.view; }
     renderPage();
+    if (S.shellDrawn && document.activeElement === document.body) $('#fo-page').focus({ preventScroll: true });   // after a route change, not on first load
+    S.shellDrawn = true;
+  }
+  function toggleTheme() { var d = document.documentElement, dark = d.dataset.theme === 'dark' || (!d.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); d.dataset.theme = dark ? 'light' : 'dark'; savePrefs(); renderPage(); }
+  /** Phone menu: the five things used most, in thumb reach (report 7.5). */
+  function bottomNav(brainOk) {
+    var on = function (v, tab) { return S.view === v && (!tab || S.tab[v] === tab); };
+    var link = function (href, label, ic, cur) { return '<a href="' + href + '"' + (cur ? ' aria-current="page"' : '') + '>' + icon(ic) + '<span>' + label + '</span></a>'; };
+    return link('#/overview', 'Today', 'overview', on('overview') || on('ops')) + link('#/channels/calendar', 'Calendar', 'channels', on('channels', 'calendar')) + link('#/bookings', 'Bookings', 'bookings', on('bookings')) +
+      (brainOk ? '<button type="button" data-brain><span class="fo-brainemoji" aria-hidden="true">🧠</span><span>Brain</span></button>' : link('#/pricing', 'Prices', 'tag', on('pricing'))) +
+      '<button type="button" id="fo-more">' + icon('menu') + '<span>More</span></button>';
   }
   function menu(kind) {
     var old = $('.fo-menu'); if (old) { var same = old.dataset.kind === kind; old.remove(); if (same) return; }
     var m = document.createElement('div'); m.className = 'fo-menu'; m.dataset.kind = kind;
     if (kind === 'profile') {
       m.innerHTML = '<div class="fo-menu__head"><b>' + esc(S.user.name || '') + '</b><br>' + esc(S.user.email) + ' · ' + esc(S.user.role) + '</div>' +
-        '<a href="#/settings">Settings &amp; security</a><button data-a="reload">Refresh data</button><button data-a="out">Sign out</button><button data-a="all">Sign out on every device</button>';
+        '<a href="#/settings">Settings &amp; security</a><button data-a="theme">Light or dark</button><button data-a="reload">Refresh data</button><button data-a="out">Sign out</button><button data-a="all">Sign out on every device</button>';
     } else {
       var ex = openEx().sort(function (a, b) { return sevRank(b.severity) - sevRank(a.severity); }).slice(0, 8);
       var stale = staleNote();
-      m.innerHTML = '<div class="fo-menu__head"><b>Notifications</b></div>' + (stale ? '<a href="#/integrations">⚠ ' + esc(stale) + '</a>' : '') +
-        (ex.length ? ex.map(function (e) { return '<a href="#/bookings/reconcile"><span class="fo-badge ' + sevClass(e.severity) + '">' + esc(e.severity) + '</span> ' + esc(exLabel(e.type)) + '<br><small class="fo-hint">' + esc(e.detail.slice(0, 90)) + '</small></a>'; }).join('') + '<a href="#/bookings/reconcile"><b>Open the reconciliation center →</b></a>'
+      m.innerHTML = '<div class="fo-menu__head"><b>Notifications</b></div>' + (stale ? '<a href="#/integrations"><span class="fo-badge fo-badge--warn">check</span> ' + esc(stale) + '</a>' : '') +
+        (ex.length ? ex.map(function (e) { return '<a href="#/bookings/reconcile"><span class="fo-badge ' + sevClass(e.severity) + '">' + esc(e.severity) + '</span> ' + esc(exLabel(e.type)) + '<br><small class="fo-hint">' + esc(e.detail.slice(0, 90)) + '</small></a>'; }).join('') + '<a href="#/bookings/reconcile"><b>See everything that needs checking →</b></a>'
           : '<div style="padding:10px 12px" class="fo-hint">Nothing needs your attention.</div>');
     }
     document.body.appendChild(m);
     m.onclick = function (e) {
       var a = e.target.closest('[data-a]'); if (!a) { if (e.target.closest('a')) m.remove(); return; }
       m.remove();
+      if (a.dataset.a === 'theme') toggleTheme();
       if (a.dataset.a === 'reload') load(true).then(function () { toast('Data refreshed'); });
       if (a.dataset.a === 'out') { api('f.logout').catch(function () {}).then(function () { signedOut('You are signed out.'); }); }
       if (a.dataset.a === 'all') { if (confirm('Sign out on every device, including this one?')) api('f.logout.all').then(function () { signedOut('Signed out on every device.'); }).catch(function () {}); }
@@ -307,28 +353,88 @@
   }
   function freshness() {
     var st = staleNote();
-    return '<div class="fo-fresh">Data loaded ' + ago(new Date(S.loadedAt).toISOString()) + ' · e-check-in synced ' + ago(S.data.lastSync) + (st ? ' · <span class="stale">⚠ ' + esc(st) + '</span>' : '') + ' <button class="btn btn--sm" data-act="refresh">Refresh</button></div>';
+    return '<div class="fo-fresh"><span>Updated ' + ago(new Date(S.loadedAt).toISOString()) + '</span>' + (st ? '<span class="stale" role="status"><span class="fo-badge fo-badge--warn">out of date</span> ' + esc(st) + '</span>' : '') + ' <button class="btn btn--sm" data-act="refresh">Refresh</button></div>';
   }
+  /** One-line page title with freshness; the longer description waits behind the info button. */
   function hello(title, sub) {
-    return '<div class="fo-hello"><div><h1>' + esc(title) + '</h1><p>' + sub + '</p></div>' + freshness() + '</div>';
+    var mod = MODULES.filter(function (m) { return m.id === S.view; })[0]; if (mod && S.view !== 'overview') title = mod.label;   // the title matches the menu word
+    return '<div class="fo-title"><div class="fo-title__row"><h1>' + esc(title) + '</h1>' + (sub ? '<button type="button" class="fo-info" data-info aria-expanded="false" aria-controls="fo-sub" aria-label="About this page">i</button>' : '') + freshness() + '</div>' + (sub ? '<p id="fo-sub" class="fo-title__sub" hidden>' + sub + '</p>' : '') + '</div>';
   }
   function renderPage() {
     var page = $('#fo-page'); if (!page) return;
     var fn = VIEWS[S.view] || viewSoon;
     try { fn(page); } catch (e) { page.innerHTML = '<div class="fo-card"><b>This view hit an error.</b><p class="fo-hint">' + esc(e.message) + '</p></div>'; console.error(e); }
     animatePage(page);
+    polish(page); watchPage(page);
     $$('[data-act=print]', page).forEach(function (b) { b.onclick = function () { window.print(); }; });
     $$('[data-act=refresh]', page).forEach(function (b) { b.onclick = function () { b.disabled = true; load(true).then(function () { toast('Data refreshed'); }); }; });
   }
-  /** Page entrance and count-up of headline figures (skipped when the visitor prefers reduced motion). */
+  /** Tabs each busy page shows directly; the rest sit under Advanced (U-05, U-06). */
+  var TAB_KEEP = { pricing: ['today', 'comp', 'desk'], channels: ['today', 'calendar', 'rates', 'res'], investments: ['dash', 'mine', 'paper', 'ipo'], seo: ['ujjain', 'search', 'keywords', 'content'], finance: ['summary', 'expenses', 'gst', 'statements'], settings: ['security', 'channels'] };
+  function groupTabs(page) {
+    $$('.fo-tabs:not([data-grouped])', page).forEach(function (bar) {
+      bar.dataset.grouped = '1';
+      var btns = $$('[data-tab]', bar), keep = TAB_KEEP[S.view] || (btns.length > 6 ? btns.slice(0, 5).map(function (b) { return b.dataset.tab; }) : null);
+      btns.forEach(function (b) { b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', b.classList.contains('is-on')); });
+      if (!keep) return;
+      var extra = btns.filter(function (b) { return keep.indexOf(b.dataset.tab) < 0; }); if (!extra.length) return;
+      var cur = extra.filter(function (b) { return b.classList.contains('is-on'); })[0], wrap = document.createElement('div'); wrap.className = 'fo-tabs__more';
+      wrap.innerHTML = '<button type="button" class="fo-tabs__mbtn' + (cur ? ' is-on' : '') + '" aria-haspopup="true" aria-expanded="false">' + esc(cur ? cur.textContent : 'Advanced') + '<i aria-hidden="true"></i></button><div class="fo-tabs__menu" hidden></div>';
+      var menu = wrap.lastChild, mb = wrap.firstChild; extra.forEach(function (b) { menu.appendChild(b); });
+      bar.appendChild(wrap); bar.classList.add('is-grouped');
+      var set = function (o) { menu.hidden = !o; mb.setAttribute('aria-expanded', o); };
+      mb.onclick = function (e) { e.stopPropagation(); set(menu.hidden); if (!menu.hidden) menu.firstChild.focus(); };
+      menu.addEventListener('keydown', function (e) { if (e.key === 'Escape') { set(false); mb.focus(); } });
+      document.addEventListener('click', function close(e) { if (!document.body.contains(wrap)) return document.removeEventListener('click', close); if (!wrap.contains(e.target)) set(false); });
+    });
+  }
+  var GLOSSARY = { ADR: ['Average price per night', 'average daily rate, revenue divided by nights sold'], RevPAR: ['Earned per available night', 'revenue per available room night, including empty nights'] };
+  function polish(page) {
+    groupTabs(page);
+    $$('table.fo-table:not([data-p])', page).forEach(function (t) {
+      t.dataset.p = '1';
+      var first = t.tHead ? t.tHead.rows[0] : t.rows[0]; if (!first || !first.querySelector('th')) return;
+      var heads = Array.prototype.map.call(first.cells, function (c) { return c.textContent.trim(); });
+      if (heads.length < 4 || t.classList.contains('fo-stmt') || t.closest('.fo-cal')) return;
+      t.classList.add('fo-cards');
+      Array.prototype.forEach.call(t.tBodies.length ? t.tBodies[0].rows : t.rows, function (r) { if (r === first) { r.classList.add('fo-cards__head'); return; } Array.prototype.forEach.call(r.cells, function (c, i) { if (!c.colSpan || c.colSpan === 1) c.dataset.label = heads[i] || ''; }); });
+    });
+    $$('.fo-kpi__label, th', page).forEach(function (el) {   // plain words on screen, the expert term in the tooltip
+      var n = el.firstChild; if (!n || n.nodeType !== 3) return; var w = n.nodeValue.trim(); if (!GLOSSARY[w]) return;
+      n.nodeValue = GLOSSARY[w][0]; if (!el.title) el.title = w + ': ' + GLOSSARY[w][1];
+    });
+    $$('input:not([type=hidden]):not([aria-label]), select:not([aria-label]), textarea:not([aria-label])', document.body).forEach(function (el) {   // every control has a name
+      if (el.labels && el.labels.length || el.placeholder) return;
+      var tr = el.closest('tr'), kind = { month: 'Month', date: 'Date', checkbox: 'Select' }[el.type], row = tr && tr.cells[0] && !tr.cells[0].contains(el) ? tr.cells[0].textContent.trim().slice(0, 40) : '';
+      el.setAttribute('aria-label', [kind || 'Value', row].filter(Boolean).join(' ') || el.id);
+    });
+    $$('tr.fo-row, .fo-kpi[data-goto], .fo-kpi[data-drill]:not([data-drill=""]), th[data-sort], .fo-cal td.bk', page).forEach(function (el) { if (!el.hasAttribute('tabindex')) el.tabIndex = 0; });
+  }
+  var pageWatch;
+  function watchPage(page) {
+    if (pageWatch || !window.MutationObserver) return;
+    var queued = false;
+    pageWatch = new MutationObserver(function () { if (queued) return; queued = true; requestAnimationFrame(function () { queued = false; var p = $('#fo-page'); if (p) polish(p); }); });
+    pageWatch.observe(document.body, { childList: true, subtree: true });
+  }
+  // Enter or Space on a clickable row or card does what a click does; the info button opens the page description.
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('tr[tabindex], .fo-kpi[tabindex], th[tabindex], td[tabindex]')) { e.preventDefault(); e.target.click(); }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-info]'); if (!b) return;
+    var sub = $('#fo-sub'), open = sub.hidden; sub.hidden = !open; b.setAttribute('aria-expanded', open);
+  });
+  /** Page entrance; headline figures count up only the first time a page is seen (skipped when the visitor prefers reduced motion). */
   function animatePage(page) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     page.classList.remove('fo-enter'); void page.offsetWidth; page.classList.add('fo-enter');
+    S.seen = S.seen || {}; if (S.seen[S.view]) return; S.seen[S.view] = 1;
     $$('.fo-kpi__value', page).forEach(function (el, i) {
       if (el.children.length) return;
       var txt = el.textContent, m = txt.match(/^(\D*?)(-?[\d,]+(?:\.\d+)?)(.*)$/); if (!m) return;
       var target = Number(m[2].replace(/,/g, '')), dec = (m[2].split('.')[1] || '').length; if (!isFinite(target) || Math.abs(target) < 2) return;
-      var t0 = null, dur = 650 + Math.min(i, 8) * 40, fmt = function (v) { return m[1] + (dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')) + m[3]; };
+      var t0 = null, dur = 420, fmt = function (v) { return m[1] + (dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')) + m[3]; };
       el.textContent = fmt(0);
       requestAnimationFrame(function step(ts) { if (!t0) t0 = ts; var k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(target * e); if (k < 1) requestAnimationFrame(step); else el.textContent = txt; });
     });
@@ -351,7 +457,7 @@
     var t = today(); return b.checkout <= t ? 'completed' : b.checkin <= t ? 'in house' : 'upcoming';
   }
   function statusBadge(b) {
-    var s = stage(b), cls = { upcoming: '', 'in house': 'fo-badge--gold', completed: 'fo-badge--muted', tentative: 'fo-badge--warn', cancelled: 'fo-badge--bad', no_show: 'fo-badge--bad', void: 'fo-badge--muted' }[s];
+    var s = stage(b), cls = { upcoming: 'fo-badge--info', 'in house': 'fo-badge--ok', completed: 'fo-badge--muted', tentative: 'fo-badge--warn', cancelled: 'fo-badge--bad', no_show: 'fo-badge--bad', void: 'fo-badge--muted' }[s];
     return '<span class="fo-badge ' + (cls || '') + '">' + esc(s.replace('_', '-')) + '</span>';
   }
   function sevRank(s) { return { high: 3, medium: 2, low: 1 }[s] || 0; }
@@ -398,13 +504,15 @@
       var fin = window.FoInsights.finance(D, r.from, r.to, f);
       cards.push(kpiCard('contribution_margin', 'Contribution margin', fin.contribution, 'inr', 'stay', {}, { drill: '', note: fin.status === 'complete' ? '' : fin.status_note }));
     }
+    var heroCards = [cards[3], cards[1], '<div class="fo-card fo-kpi fo-kpi--hero" data-goto="#/finance"><div class="fo-kpi__label">Money to collect<span class="fo-badge">today</span></div><div class="fo-kpi__value">' + inr(cur.outstanding_receivables) + '</div><div class="fo-kpi__cmp"><span class="flat">' + cur.outstanding_bookings + ' bookings with a balance</span></div></div>'], restCards = cards.filter(function (x, i) { return i !== 3 && i !== 1; });
     page.innerHTML = hello('Welcome back, ' + ((S.user.name || 'Apoorv').split(' ')[0]) + '.', esc(dmy(r.from)) + ' – ' + esc(dmy(r.to)) + (S.property !== 'all' ? ' · ' + esc(propName(S.property)) : ' · all villas') + ' · compared with ' + esc(dmy(pr.from)) + ' – ' + esc(dmy(pr.to)) + ' and the same dates last year') +
-      '<div class="fo-grid fo-grid--kpi">' + cards.join('') + '</div>' +
-      '<p class="fo-hint" style="margin:8px 2px 18px">“booked” cards count bookings by the date they were made; “stay” cards count the nights guests stay. Booking value is not revenue, and neither is cash: see Financial figures below. Hover a card for its formula; click it for the bookings behind it.</p>' +
-      '<div class="fo-grid fo-grid--2">' + briefing() + '<div class="fo-card"><h3>Money in this period <small>payment dates</small></h3>' +
+      '<div class="fo-grid fo-grid--hero">' + heroCards.join('') + '</div>' +
+      '<div class="fo-grid fo-grid--2 fo-after-hero">' + briefing() + '<div class="fo-card"><h3>Money in this period <small>payment dates</small></h3>' +
       kv('Cash collected', inr(cur.cash_collected)) + kv('Refunds paid', inr(cur.refunds)) + kv('Outstanding receivables (today)', inr(cur.outstanding_receivables) + ' · ' + cur.outstanding_bookings + ' bookings') +
       kv('OTA commission on bookings made', inr(cur.commission_cost) + commissionNote(cur.commission_basis)) + kv('Revenue after commission (stay)', inr(cur.revenue_after_commission)) +
       kv('Cancellation fees kept', inr(cur.retained_fees)) + kv('Average length of stay', cur.alos == null ? '—' : n1(cur.alos) + ' nights · ' + cur.arrivals + ' arrivals') + '</div></div>' +
+      '<details class="fo-more"><summary>All ' + restCards.length + ' figures</summary><div class="fo-grid fo-grid--kpi">' + restCards.join('') + '</div>' +
+      '<p class="fo-hint">“booked” figures count bookings by the date they were made; “stay” figures count the nights guests stay. Booking value is not revenue, and neither is cash. Hover a figure for its formula; click it for the bookings behind it.</p></details>' +
       '<div class="fo-card" style="margin-top:14px"><h3>Revenue and occupancy by stay date <small id="ov-grain"></small><span class="fo-card__tools"><button class="btn btn--sm" data-x="svg">SVG</button><button class="btn btn--sm" data-x="csv">CSV</button></span></h3><div class="fo-chartbox" id="ov-chart"></div></div>';
     var grain = M.days(r.from, r.to) <= 45 ? 'day' : M.days(r.from, r.to) <= 200 ? 'week' : 'month';
     var s = M.series(D, r.from, r.to, grain, f);
@@ -505,7 +613,7 @@
       (rows.length ? '<div class="fo-tablewrap"><table class="fo-table"><thead><tr><th>Deleted</th><th>Booking</th><th>What</th><th>Reason</th><th>By</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="nw">' + when(r.deleted_at) + '</td><td>' + esc(r.record_id) + '</td><td>' + esc(r.summary) + '</td><td>' + esc(r.reason || '—') + '</td><td>' + esc(r.deleted_by) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="fo-empty">Nothing deleted yet.</div>');
   }
   function viewBookings(page) {
-    var T = tabs('bookings', [['list', 'All bookings'], ['calendar', 'Calendar'], ['reconcile', 'Reconciliation center (' + openEx().length + ')'], ['import', 'Import & sync'], ['blocks', 'Maintenance blocks'], ['deleted', 'Deleted records']]);
+    var T = tabs('bookings', [['list', 'All bookings'], ['calendar', 'Calendar'], ['reconcile', 'Needs checking' + (actionable() ? ' (' + actionable() + ')' : '')], ['import', 'Import & sync'], ['blocks', 'Maintenance blocks'], ['deleted', 'Deleted records']]);
     page.innerHTML = hello('Booking management', 'One ledger for every channel: e-check-in, OTA exports, WhatsApp and phone bookings.') + T.html + '<div id="bk-body"></div>';
     wireTabs(page, 'bookings');
     var body = $('#bk-body');
@@ -673,10 +781,21 @@
   // ---------- booking detail ----------
   function drawer(html) {
     var d = document.createElement('div'); d.className = 'fo-drawer'; d.innerHTML = '<div class="fo-drawer__panel" role="dialog" aria-modal="true">' + html + '</div>';
+    var from = document.activeElement, panel = d.firstChild; panel.tabIndex = -1;
     document.body.appendChild(d);
+    var h = panel.querySelector('h2'); if (h) panel.setAttribute('aria-label', h.textContent);
+    panel.focus();
     d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.remove(); });
-    document.addEventListener('keydown', function k(e) { if (e.key === 'Escape') { d.remove(); document.removeEventListener('keydown', k); } });
-    return d.firstChild;
+    document.addEventListener('keydown', function k(e) {
+      if (!document.body.contains(d)) return document.removeEventListener('keydown', k);
+      if (e.key === 'Escape') { d.remove(); document.removeEventListener('keydown', k); return; }
+      if (e.key !== 'Tab') return;
+      var els = $$('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)', panel).filter(function (x) { return x.offsetParent; }); if (!els.length) return;
+      var a = els[0], z = els[els.length - 1], cur = document.activeElement;
+      if (e.shiftKey && (cur === a || cur === panel)) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && cur === z) { e.preventDefault(); a.focus(); }
+    });
+    if (window.MutationObserver) { var mo = new MutationObserver(function () { if (!document.body.contains(d)) { mo.disconnect(); if (from && document.body.contains(from)) from.focus(); } }); mo.observe(document.body, { childList: true }); }
+    return panel;
   }
   function openBooking(id) {
     var b = S.data.bookings.filter(function (x) { return x.booking_id === id; })[0]; if (!b) return toast('Booking not found', true);
@@ -863,7 +982,7 @@
   function importView(body) {
     body.innerHTML = (S.importNote ? '<div class="fo-note" style="margin-bottom:14px"><b>Last import</b> · ' + esc(S.importNote) + ' <a href="#/bookings/reconcile">Review flags →</a></div>' : '') + '<div class="fo-grid fo-grid--2"><div class="fo-card"><h3>E-check-in sheet <small>automatic, hourly</small></h3><p>Every guest e-check-in becomes (or matches) a booking. Last sync: <b>' + ago(S.data.lastSync) + '</b>.</p><button class="btn btn--primary" id="im-sync">Sync now</button>' +
       '<p class="fo-hint" style="margin-top:10px">The check-in form does not ask when the booking was made, so those bookings use the check-in submission time as a stand-in (marked “≈ e-check-in”) and are left out of lead-time figures.</p></div>' +
-      '<div class="fo-card"><h3>OTA export (CSV) <small>Booking.com, Airbnb, MakeMyTrip…</small></h3><p class="fo-hint">There is no live connection to the booking platforms (their APIs need partner approval). Download the reservations export from the extranet and import it here: re-importing the same file never creates duplicates.</p>' +
+      '<div class="fo-card"><h3>OTA export (CSV) <small>Booking.com, Airbnb, MakeMyTrip…</small></h3><p class="fo-hint">There is no live connection to the booking platforms (their APIs need partner approval). Download the reservations export from the OTA site and import it here: re-importing the same file never creates duplicates.</p>' +
       '<div class="fo-form"><label class="fo-field">Platform<select id="im-ch">' + ['Booking.com', 'Airbnb', 'MakeMyTrip', 'Goibibo', 'Agoda', 'Other'].map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></label><label class="fo-field">Account label (optional)<input id="im-acc" placeholder="e.g. Divinestay listing" maxlength="60"></label>' +
       '<label class="fo-field full">CSV file<input type="file" id="im-file" accept=".csv,text/csv"></label></div></div></div><div id="im-map" style="margin-top:14px"></div>';
     $('#im-sync').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Syncing…'; api('f.sync').then(function (j) { b.disabled = false; b.textContent = 'Sync now'; if (!j.ok) return toast(j.error, true); var r = j.result; toast(r.created + ' new, ' + r.matched + ' matched, ' + r.unchanged + ' unchanged'); load(true); }); };
@@ -918,7 +1037,7 @@
       '<label class="fo-field">Villa<select id="bk-p">' + S.data.properties.map(function (p) { return '<option value="' + esc(p.property_id) + '">' + esc(p.name) + '</option>'; }).join('') + '</select></label>' +
       '<label class="fo-field">Reason<input id="bk-r" value="Maintenance" maxlength="120"></label><label class="fo-field">From (first blocked night)<input type="date" id="bk-s"></label><label class="fo-field">Until (first free night)<input type="date" id="bk-e"></label></div>' +
       '<div class="fo-msg" id="bk-msg"></div><button class="btn btn--primary" id="bk-add">Add block</button><p class="fo-hint">Blocked nights are taken out of available villa-nights, so occupancy and RevPAR stay honest.</p></div>' +
-      '<div class="fo-card"><h3>Blocks</h3>' + (bl.length ? '<div class="fo-tablewrap"><table class="fo-table"><tr><th>Villa</th><th>Dates</th><th>Reason</th><th></th></tr>' + bl.map(function (x) { return '<tr><td>' + esc(propName(x.property_id)) + '</td><td>' + dm(x.start) + ' → ' + dm(x.end) + '</td><td>' + esc(x.reason) + '</td><td><button class="btn btn--sm btn--danger" data-del="' + esc(x.block_id) + '">Remove</button></td></tr>'; }).join('') + '</table></div>' : '<div class="fo-empty">No blocks.</div>') + '</div></div>';
+      '<div class="fo-card"><h3>Blocks</h3>' + (bl.length ? '<div class="fo-tablewrap"><table class="fo-table"><tr><th>Villa</th><th>Dates</th><th>Reason</th><th></th></tr>' + bl.map(function (x) { return '<tr><td>' + esc(propName(x.property_id)) + '</td><td>' + dm(x.start) + ' → ' + dm(x.end) + '</td><td>' + esc(x.reason) + '</td><td><button class="btn btn--sm btn--danger" data-del="' + esc(x.block_id) + '">Remove</button></td></tr>'; }).join('') + '</table></div>' : '<div class="fo-empty">No blocks. Add one when a villa is closed for repairs or family use.</div>') + '</div></div>';
     $('#bk-add').onclick = function () {
       var b = this; b.disabled = true;
       api('f.block.save', { property_id: $('#bk-p').value, start: $('#bk-s').value, end: $('#bk-e').value, reason: $('#bk-r').value }).then(function (j) {

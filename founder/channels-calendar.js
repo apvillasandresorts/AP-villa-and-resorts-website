@@ -115,7 +115,7 @@
       html += '<button class="cm-day cm-day--' + st.cls + (out ? ' is-out' : '') + (past ? ' is-past' : '') + (inSel(d) ? ' is-sel' : '') + (d === t ? ' is-today' : '') + '"' + (past || !n ? ' disabled' : ' data-day="' + d + '"') + ' aria-label="' + d + ' ' + esc(st.t) + '">' +
         '<span class="cm-day__n">' + Number(d.slice(8)) + '</span>' +
         (n ? '<span class="cm-day__p">₹' + k(n.net) + (n.override ? '•' : '') + '</span>' + (n.units > 1 ? '<span class="cm-day__u">' + n.left + '/' + n.units + '</span>' : '') +
-          (tags(n).length ? '<span class="cm-day__t">' + esc(tags(n).join(' ')) + '</span>' : '') + '<i class="cm-dot cm-dot--' + st.cls + '"></i>' : '') + '</button>';
+          (tags(n).length ? '<span class="cm-day__t">' + esc(tags(n).join(' ')) + '</span>' : '') + '<i class="cm-dot cm-dot--' + st.cls + '" role="img" aria-label="' + esc(st.t) + '" title="' + esc(st.t) + '"></i>' : '') + '</button>';
     }
     return html + '</div></div>';
   }
@@ -126,7 +126,7 @@
     var html = '<div class="cm-grid"><table><thead><tr><th class="cm-grid__lab">' + esc(vname(cal.villa)) + '</th>' + days.map(function (d) {
       return '<th class="' + (inSel(d) ? 'is-sel' : '') + '"><button class="cm-colhead" data-day="' + d + '">' + WD[new Date(d + 'T00:00:00Z').getUTCDay()].slice(0, 2) + '<br><b>' + Number(d.slice(8)) + '</b><br><small>' + MON[Number(d.slice(5, 7)) - 1].slice(0, 3) + '</small></button></th>';
     }).join('') + '</tr></thead><tbody>' +
-      row('Status', function (n) { var s = statusOf(n); return '<i class="cm-dot cm-dot--' + s.cls + '" title="' + esc(s.t) + '"></i>'; }) +
+      row('Status', function (n) { var s = statusOf(n); return '<i class="cm-dot cm-dot--' + s.cls + '" role="img" aria-label="' + esc(s.t) + '" title="' + esc(s.t) + '"></i>'; }) +
       row('Units left', function (n) { return n.left + '/' + n.units; }) +
       row('You keep', function (n) { return '₹' + k(n.net) + (n.override ? '•' : ''); }, 'cm-grid__strong') +
       row('Chance to sell', function (n) { return n.chance != null ? n.chance + '%' : ''; });
@@ -201,7 +201,7 @@
       (res.length ? '<p><b>Booked:</b> ' + res.map(function (b) { return esc(b.channel || 'Direct') + (b.external_id ? ' #' + esc(b.external_id) : ''); }).join(', ') + '</p>' : '') +
       '<div class="fo-tablewrap"><table class="fo-table"><thead><tr><th>Channel</th><th class="num">Target</th><th class="num">Live</th><th>Open</th><th>Min</th><th>Max</th><th>CTA</th><th>CTD</th><th>Stop</th><th>Units</th></tr></thead><tbody>' +
       CH.map(function (c) { var x = n.channels[c] || {}; return '<tr><td><b>' + SHORT[c] + '</b></td><td class="num">' + (x.list ? inr(x.list) : '—') + '</td><td class="num">' + (x.live != null ? inr(x.live) : '—') + '</td><td>' + (x.available || '?') + '</td><td>' + (x.min_stay || '') + '</td><td>' + (x.max_stay || '') + '</td><td>' + (x.cta ? '✓' : '') + '</td><td>' + (x.ctd ? '✓' : '') + '</td><td>' + (x.stop_sell ? '✓' : '') + '</td><td>' + (x.inventory !== '' && x.inventory != null ? x.inventory : '') + '</td></tr>'; }).join('') +
-      '</tbody></table></div><p class="fo-hint">Live values are what the channel agent last read on each extranet (empty until the agent runs).</p>' +
+      '</tbody></table></div><p class="fo-hint">Live values are what the channel agent last read on each OTA site (empty until the agent runs).</p>' +
       '<h3 style="margin-top:14px">Your settings for this night</h3><p>' + (tags(n).length || n.ari.closed || n.ari.stop_sell ? esc([n.ari.closed ? 'Closed' : '', n.ari.stop_sell ? 'Stop-sell' : ''].concat(tags(n)).filter(Boolean).join(' · ')) : 'None (open, no restrictions).') + (n.ari.note ? '<br><i>' + esc(n.ari.note) + '</i>' : '') + '</p>' +
       '<h3>History</h3>' + (hist.length ? '<ul class="cm-hist">' + hist.slice(0, 25).map(function (j) { return '<li><b>' + SHORT[j.channel] + '</b> ' + esc(LABEL[j.type] || j.type) + ' ' + esc(j.type === 'rate' ? inr(num(j.new_value)) : String(j.new_value)) + (j.rate_plan ? ' (plan)' : '') + ' · ' + esc(j.state.replace('_', ' ')) + (j.read_back ? ' · read back ' + esc(j.read_back) : '') + ' · <small>' + when(j.done_at || j.approved_at || j.created_at) + '</small></li>'; }).join('') + '</ul>' : '<div class="fo-empty">No changes for this night yet.</div>') +
       (founder() ? '<div class="fo-toolbar"><button class="btn btn--primary" id="dd-edit">Edit this night</button></div>' : ''));
@@ -231,7 +231,7 @@
       field('Channels', '<div class="fo-checks">' + CH.map(function (c) { return '<label><input type="checkbox" data-rc="' + c + '"' + (chans.indexOf(c) >= 0 ? ' checked' : '') + '> ' + esc(NAMES[c]) + '</label>'; }).join(' ') + '</div>', true) +
       field('% vs Standard (−50 to +100)', input('rp-p', x.adjust_pct || 0, 'number', ' step="1"')) + field('₹ vs Standard', input('rp-a', x.adjust_amt || 0, 'number', ' step="50"')) +
       field('Meals', sel('rp-m', MEAL, x.meal || 'none')) + field('Cancellation', sel('rp-r', [['flexible', 'Flexible'], ['non_refundable', 'Non-refundable']], x.refund || 'flexible')) +
-      CH.map(function (c) { return field(SHORT[c] + ' rate plan id (from the extranet)', input('rp-x-' + c, ext[c] || '', 'text', ' placeholder="the agent fills this at setup"')); }).join('') +
+      CH.map(function (c) { return field(SHORT[c] + ' rate plan id (from the OTA site)', input('rp-x-' + c, ext[c] || '', 'text', ' placeholder="the agent fills this at setup"')); }).join('') +
       field('Active', '<label><input type="checkbox" id="rp-on"' + (x.active === '' ? '' : ' checked') + '> send this plan to the channels</label>', true) + '</div>' +
       '<div class="fo-toolbar"><button class="btn btn--primary" id="rp-go">Save</button>' + (x.plan_id ? '<button class="btn btn--danger" id="rp-del">Delete</button>' : '') + '</div>');
     $('#rp-go', p).onclick = function () {
