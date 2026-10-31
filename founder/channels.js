@@ -74,6 +74,7 @@
       kpi('Waiting for you', String(count('proposed')), count('proposed') ? 'price changes to approve' : 'nothing to approve') +
       kpi('Running now', String(count('queued') + count('running') + count('verifying')), closures.length ? closures.length + ' booking closures first' : 'queue') +
       kpi('Needs you', String(count('needs_human')), count('needs_human') ? 'sign-in, OTP or a failed write' : 'all clear', count('needs_human') ? 'down' : '') + '</div>' +
+      autoCard(c) +
       card('Channels', 'session and switches', table(['Channel', 'Listings', 'Mode', 'Session', 'Status', ''], CH.map(function (ch) {
         var s = c.settings[ch] || {}, sess = hb && hb.sessions && hb.sessions[ch], own = c.listings.filter(function (l) { return l.role === 'own' && (l.platform === ch || (ch === 'mmt' && l.platform === 'goibibo')); }).length;
         var status = !s.enabled ? badge('off') : s.paused ? badge('paused: ' + (s.pause_reason || ''), 'fo-badge--bad') : s.dryRun ? badge('dry-run', 'fo-badge--gold') : badge('live', 'fo-badge--ok');
@@ -87,10 +88,22 @@
       (founder() ? '<div class="fo-toolbar"><button class="btn btn--danger" id="cm-kill">' + (c.global_paused ? 'Resume everything' : 'Kill switch: pause every channel') + '</button><button class="btn" id="cm-sync">Re-check bookings and closures now</button></div>' : '');
     wireAssist(body);
     var k = $('#cm-kill'); if (k) k.onclick = function () { if (c.global_paused || confirm('Pause every channel now? The agent will stop reading and writing until you resume.')) save('f.cm.killswitch', { on: !c.global_paused }, c.global_paused ? 'Resumed' : 'Everything paused'); };
+    var ap = $('#cm-auto-prices'); if (ap) ap.onclick = function () { var on = ap.dataset.on === '1'; if (on || confirm('Turn on automatic price changes? The agent will make small moves inside your band without asking.')) save('f.cm.settings.set', { auto: { prices: !on } }, on ? 'Automatic price changes off' : 'Automatic price changes on'); };
+    var ar = $('#cm-auto-rooms'); if (ar) ar.onclick = function () { var on = ar.dataset.on === '1'; if (on || confirm('Turn on automatic room updates? A new booking will change rooms and close nights on your channels without asking.')) save('f.cm.settings.set', { auto: { rooms: !on } }, on ? 'Automatic room updates off' : 'Automatic room updates on'); };
     var ra = $('#cm-resume-all'); if (ra) ra.onclick = function () { save('f.cm.killswitch', { on: false }, 'Resumed'); };
-    var sy = $('#cm-sync'); if (sy) sy.onclick = function () { save('f.cm.sync', {}).then(function (j) { if (j.ok) toast(j.result.closed + ' closures queued · ' + j.result.reopen + ' re-openings proposed'); }); };
+    var sy = $('#cm-sync'); if (sy) sy.onclick = function () { save('f.cm.sync', {}).then(function (j) { if (j.ok) toast(j.result.held ? 'Automatic room updates are off: nothing was sent' : j.result.closed + ' closures queued · ' + j.result.reopen + ' re-openings proposed'); }); };
     $$('[data-pause]', body).forEach(function (b) { b.onclick = function () { save('f.cm.killswitch', { scope: b.dataset.pause, on: true }, 'Paused'); }; });
     $$('[data-resume]', body).forEach(function (b) { b.onclick = function () { save('f.cm.killswitch', { scope: b.dataset.resume, on: false }, 'Resumed'); }; });
+  }
+
+  /** The owner's on/off buttons for what may change on the channels without a tap. */
+  function autoCard(c) {
+    var prices = CH.some(function (ch) { var s = c.settings[ch] || {}; return s.enabled && s.mode === 2; }), rooms = c.auto_rooms !== false;
+    var row = function (id, label, on, help) { return ['<b>' + esc(label) + '</b><br><small class="fo-hint">' + esc(help) + '</small>', badge(on ? 'On' : 'Off', on ? 'fo-badge--ok' : ''), founder() ? '<button class="btn btn--sm' + (on ? '' : ' btn--primary') + '" id="' + id + '" data-on="' + (on ? 1 : 0) + '">Turn ' + (on ? 'off' : 'on') + '</button>' : '']; };
+    return card('Automatic updates', 'your changes in the Channel Manager always go through', table(['What', 'Now', ''], [
+      row('cm-auto-prices', 'Automatic price changes', prices, 'On: small moves inside your band go out by themselves. Off: prices wait for your approval.'),
+      row('cm-auto-rooms', 'Automatic room updates', rooms, 'On: a booking updates rooms and closes nights on your channels by itself. Off: nothing changes until you change it; the nightly check tells you what differs.')
+    ]));
   }
 
   /** Phone assist: while no agent machine is online, every approved change is a task: open the extranet, make it, tap Done. */

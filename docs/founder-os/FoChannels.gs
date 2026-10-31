@@ -45,7 +45,19 @@ function foCmSettings_(readOnly) {
   return out;
 }
 function foCmGlobalPaused_() { return PropertiesService.getScriptProperties().getProperty('FO_CM_KILL') === 'yes'; }
+/** Owner's switch for automatic room and availability updates (a booking closing the other channels, the nightly re-send). Prices follow the channel mode. */
+function foCmAutoRooms_() { return PropertiesService.getScriptProperties().getProperty('FO_CM_AUTO_ROOMS') !== 'no'; }
+/** A job reaches the agent when a person approved it, or when the automation that made it is switched on. */
+function foCmMayRun_(j, s) { return /@/.test(String(j.approved_by || '')) || (j.type === 'rate' ? !!s[j.channel] && s[j.channel].mode === 2 : foCmAutoRooms_()); }
+/** The two buttons on Today: automatic price changes (Auto-band on every channel, or back to Propose) and automatic room updates. */
+function foCmAutoSet_(a, user) {
+  if (a.rooms !== undefined) PropertiesService.getScriptProperties().setProperty('FO_CM_AUTO_ROOMS', a.rooms ? 'yes' : 'no');
+  if (a.prices !== undefined) foCmSettings_() && foRows_('ChannelSettings').forEach(r => { const rec = Object.assign({}, r, { mode: a.prices ? 2 : Math.min(1, foNum_(r.mode)) }); delete rec._row; foUpdate_('ChannelSettings', r._row, rec); });
+  foAudit_(user.email, 'cm_auto', JSON.stringify(a).slice(0, 80), 'ok'); foTouch_();
+  return { result: { rooms: foCmAutoRooms_() } };
+}
 function foCmSettingsSet_(b, user) {
+  if (b.auto) return foCmAutoSet_(b.auto, user);
   const s = foCmSettings_(), x = b.settings || {}, ch = String(x.channel || ''); if (!s[ch]) return { ok: false, error: 'Unknown channel.' };
   const row = foRows_('ChannelSettings').find(r => r.channel === ch), rec = Object.assign({}, row);
   if (x.enabled !== undefined) rec.enabled = x.enabled ? 'yes' : '';
@@ -469,6 +481,7 @@ function foCmTaken_(D, today, end) {
   return { taken, multi, villas };
 }
 function foCmSyncAvailability_(actor) {
+  if (!foCmAutoRooms_()) return { closed: 0, reopen: 0, inventory: 0, held: true };
   const D = foDataLoad_(), jobs = foRows_('ChannelJobs'), today = foToday_(), end = FoMetrics.addDays(today, FO_CM.HORIZON), out = { closed: 0, reopen: 0 }, { taken, multi, villas } = foCmTaken_(D, today, end);
   const closedBy = {}; jobs.filter(j => j.type === 'close' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) closedBy[j.villa + '|' + j.channel + '|' + d] = j; });
   const opened = {}; jobs.filter(j => j.type === 'open' && j.state !== 'rejected' && j.state !== 'cancelled').forEach(j => { for (let d = j.date_from; d <= j.date_to; d = FoMetrics.addDays(d, 1)) opened[j.villa + '|' + j.channel + '|' + d] = j.created_at; });
@@ -541,7 +554,7 @@ function foCmPull_(b) {
     const out = { switches: sw, jobs: [], reads: [], res_reads: [], listings: {}, watch: [], server_time: nowIso };
     if (sw.global) return out;
     const live = ch => s[ch] && s[ch].enabled && !s[ch].paused;
-    const ready = all.filter(j => j.state === 'queued' && live(j.channel))
+    const ready = all.filter(j => j.state === 'queued' && live(j.channel) && foCmMayRun_(j, s))
       .sort((a, c) => (a.reason === 'booking_elsewhere' ? 0 : 1) - (c.reason === 'booking_elsewhere' ? 0 : 1) || (a.date_from < c.date_from ? -1 : 1)).slice(0, FO_CM.PULL_MAX);
     const lease = new Date(now + FO_CM.LEASE_MIN * 60000).toISOString();
     ready.forEach(j => {
@@ -805,7 +818,7 @@ function foCmReconcile_(actor) {
       FO_CM.ONOFF.forEach(t => { const j = lastOf(t); if (j && String(j.new_value) === 'off' && st[t] === 'yes' && free(t)) add(t, d, 'off'); });   // "on" cannot be judged: an unread flag and an off flag look the same
     }
     Object.keys(need).forEach(k => {
-      const n = need[k], safety = n.type === 'close' || (n.type === 'inventory' && c.mode > 0), state = safety || c.mode === 2 ? 'queued' : c.mode === 1 ? 'proposed' : '';
+      const n = need[k], safety = n.type === 'close' || (n.type === 'inventory' && c.mode > 0), state = n.type !== 'rate' && !foCmAutoRooms_() ? '' : safety || c.mode === 2 ? 'queued' : c.mode === 1 ? 'proposed' : '';
       foCmRanges_(n.nights).forEach(r => {
         if (!state) { out.observed++; return; } if (out.closed + out.queued + out.proposed >= FO_CM.RECON_MAX) { out.capped++; return; }
         const res = foCmCreate_({ type: n.type, villa, channel: ch, date_from: r.from, date_to: r.to, new_value: r.value, lo: n.lo, hi: n.hi, reason: safety ? 'booking_elsewhere' : 'reconcile', state, approved_by: 'reconciler' }, actor, jobs);
@@ -839,7 +852,7 @@ function foCmRatedesk_(b) { return foCmCalendar_(Object.assign({}, b, { days: b.
 function foCmBundle_() {
   const today = foToday_(), s = foCmSettings_(true), settings = {}; Object.keys(s).forEach(k => { settings[k] = Object.assign({}, s[k]); delete settings[k]._row; });
   const strip = r => { delete r._row; return r; };
-  return { settings, global_paused: foCmGlobalPaused_(), heartbeat: foCmHeartbeatGet_(), agent_key: !!PropertiesService.getScriptProperties().getProperty('FO_AGENT_KEY'),
+  return { settings, auto_rooms: foCmAutoRooms_(), global_paused: foCmGlobalPaused_(), heartbeat: foCmHeartbeatGet_(), agent_key: !!PropertiesService.getScriptProperties().getProperty('FO_AGENT_KEY'),
     listings: foRows_('Listings').map(strip), jobs: foRows_('ChannelJobs').filter(j => FO_CM.OPEN.indexOf(j.state) >= 0 || String(j.created_at) >= FoMetrics.addDays(today, -14)).slice(-800).map(strip),
     state: foRows_('ChannelState').filter(r => String(r.date).slice(0, 10) >= today && String(r.date).slice(0, 10) < FoMetrics.addDays(today, 366)).map(strip), signin_url: foCmSigninUrl_(), cloud: foCloudStatus_(), reconcile: (() => { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('FO_CM_RECON') || 'null'); } catch (e) { return null; } })(), reservations: foRows_('ChannelReservations').filter(r => String(r.checkout) >= FoMetrics.addDays(today, -30)).map(strip),
     ical: foCmIcalUrls_(), agent_online: foCmAgentOnline_(), rate_plans: foRows_('RatePlans').map(strip),

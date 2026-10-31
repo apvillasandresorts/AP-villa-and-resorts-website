@@ -389,3 +389,45 @@ test('an OTA date change closes the new nights at once and offers the old ones; 
   res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'modified', amount: 7000 }); assert.equal(Number(bk().gross_amount), 9000); assert.ok(env.tab('Exceptions').some(e => e.type === 'amount_discrepancy'));
   res({ checkin: addDay(a, 5), checkout: addDay(a, 7), status: 'cancelled', amount: 7000 }); assert.equal(bk().status, 'cancelled'); assert.ok(env.mails.some(m => /cancelled by the guest/.test(m.body)));
 });
+
+test('automatic room updates off: a booking queues nothing, the nightly check only reports, a change you make still goes out', async () => {
+  const { env, token, agent } = await ready();
+  const set = auto => env.api({ action: 'f.cm.settings.set', token, auto });
+  assert.equal(set({ rooms: false }).ok, true);
+  assert.equal(env.api({ action: 'f.data', token }).channel_manager.auto_rooms, false);
+  env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'Walk In', checkin: '2026-11-20', checkout: '2026-11-22', status: 'confirmed', gross_amount: 9000, channel: 'Direct' } });
+  assert.equal(env.tab('ChannelJobs').length, 0, 'no automatic closure');
+  assert.equal(env.api({ action: 'f.cm.sync', token }).result.held, true);
+  assert.equal(env.api({ action: 'f.cm.reconcile', token }).result.closed, 0);
+  assert.equal(env.tab('ChannelJobs').length, 0, 'nightly check creates nothing');
+  const mine = env.api({ action: 'f.cm.jobs.propose', token, approve: true, manual: { villa: 'ap-suite', type: 'close', from: '2026-11-25', to: '2026-11-25', channels: ['mmt'] } });
+  assert.equal(mine.result.created.length, 1, mine.error);
+  const pull = agent('agent.pull'); assert.deepEqual(pull.jobs.map(j => j.job_id), mine.result.created, 'your change is handed out');
+  set({ rooms: true });
+  env.api({ action: 'f.cm.sync', token });
+  assert.ok(env.tab('ChannelJobs').some(j => j.reason === 'booking_elsewhere'), 'back on: bookings close channels again');
+});
+
+test('held jobs: anything already queued by automation stays out of the agent\'s hands while its switch is off', async () => {
+  const { env, token, agent } = await ready();
+  env.api({ action: 'f.booking.save', token, booking: { property_id: 'ap-suite', guest_name: 'Walk In', checkin: '2026-11-20', checkout: '2026-11-22', status: 'confirmed', gross_amount: 9000, channel: 'Direct' } });
+  assert.ok(env.tab('ChannelJobs').filter(j => j.state === 'queued').length >= 3);
+  env.api({ action: 'f.cm.settings.set', token, auto: { rooms: false } });
+  assert.equal(agent('agent.pull').jobs.length, 0);
+  env.api({ action: 'f.cm.settings.set', token, auto: { rooms: true } });
+  assert.ok(agent('agent.pull').jobs.length >= 3);
+});
+
+test('automatic price button: off means every channel waits for approval, on means Auto-band; an auto move queued earlier is held', async () => {
+  const { env, token, agent } = await ready();
+  const set = auto => env.api({ action: 'f.cm.settings.set', token, auto }), modes = () => env.tab('ChannelSettings').map(r => Number(r.mode));
+  set({ prices: true }); assert.deepEqual(modes(), [2, 2, 2]);
+  const desk = env.api({ action: 'f.cm.ratedesk', token, villa: 'ap-suite', days: 5 }).desk;
+  agent('agent.state', { channel: 'mmt', villa: 'ap-suite', rows: desk.map(n => ({ date: n.date, rate: n.channels.mmt.list + 100, available: true })) });
+  assert.ok(env.api({ action: 'f.cm.jobs.propose', token, villa: 'ap-suite', days: 5 }).result.auto >= 1);
+  const autoJob = env.tab('ChannelJobs').find(j => j.approved_by === 'auto-band'); assert.ok(autoJob);
+  set({ prices: false }); assert.deepEqual(modes(), [1, 1, 1]);
+  assert.ok(!agent('agent.pull').jobs.some(j => j.job_id === autoJob.job_id), 'not handed out once switched off');
+  assert.equal(env.api({ action: 'f.cm.jobs.propose', token, villa: 'ap-suite', days: 5 }).result.auto, 0);
+  const res = env.api({ action: 'f.cm.jobs.approve', token, job_ids: [autoJob.job_id] }); assert.equal(res.ok, true);
+});
