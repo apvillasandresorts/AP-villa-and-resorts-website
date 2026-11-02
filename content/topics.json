@@ -400,6 +400,14 @@
       "intent": "informational",
       "cluster": "mahakal-darshan",
       "status": "published"
+    },
+    {
+      "slug": "mahakal-bhasm-aarti-experience",
+      "title": "Mahakal Bhasm Aarti: What the Live Experience Is Really Like",
+      "keyword": "mahakal bhasm aarti",
+      "intent": "informational",
+      "cluster": "mahakal-darshan",
+      "status": "published"
     }
   ]
 }
