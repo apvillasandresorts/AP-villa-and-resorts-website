@@ -441,6 +441,24 @@
         "https://newsable.asianetnews.com/india/new-dress-code-for-devotees-visiting-mahakaleshwar-temple-s10xk4",
         "https://www.outlooktraveller.com/destinations/india/things-to-know-before-visiting-the-mahakaleshwar-temple-in-ujjain"
       ]
+    },
+    {
+      "slug": "delhi-to-ujjain",
+      "title": "Delhi to Ujjain: Train, Bus, Flight and Road Guide",
+      "url": "blog/delhi-to-ujjain.html",
+      "date": "2026-11-04",
+      "cluster": "travel",
+      "keyword": "delhi to ujjain",
+      "source": "ai-pipeline",
+      "hero": "images/blog/delhi-to-ujjain/ujjain-junction-railway-station-ujn.jpg",
+      "sources": [
+        "https://www.ixigo.com/by-train-rail/delhi-to-ujjain-by-train",
+        "https://www.holidify.com/places/ujjain/how-to-reach/delhi-to-ujjain-1739.html",
+        "https://www.holidify.com/places/ujjain/how-to-reach/indore-to-ujjain-1740.html",
+        "https://www.zingbus.com/distance/distance-from-delhi-to-ujjain",
+        "https://adanione.com/domestic-flights/delhi-to-indore-flights",
+        "https://www.airportoverview.com/routes/DEL/IDR"
+      ]
     }
   ]
 }

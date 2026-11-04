@@ -408,6 +408,14 @@
       "intent": "informational",
       "cluster": "mahakal-darshan",
       "status": "published"
+    },
+    {
+      "slug": "delhi-to-ujjain",
+      "title": "Delhi to Ujjain: Train, Bus, Flight and Road Guide",
+      "keyword": "delhi to ujjain",
+      "intent": "informational",
+      "cluster": "travel",
+      "status": "published"
     }
   ]
 }

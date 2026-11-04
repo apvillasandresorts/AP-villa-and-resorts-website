@@ -1315,6 +1315,25 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Utcursch / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/delhi-to-ujjain/ujjain-junction-railway-station-ujn.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "railway",
+        "station",
+        "train"
+      ],
+      "alt": "Front of Ujjain Junction railway station (UJN), the main railway station of Ujjain",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_Junction_Railway_Station_(UJN).jpg",
+      "author": "Apurba Biswas",
+      "license": "CC0",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "credit": "Photo: Apurba Biswas / Wikimedia Commons, CC0"
     }
   ]
 }
