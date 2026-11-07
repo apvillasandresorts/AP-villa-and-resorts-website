@@ -71,10 +71,11 @@ test('topic requests: the blog pipeline takes the next one (high priority first)
   assert.equal(b.topic.keyword, 'ujjain in december', 'in-progress topics are not handed out twice');
   assert.equal(env.api({ action: 'f.m.seo.next', key }).topic, null);
   env.api({ action: 'f.m.seo.done', key, topic_id: a.topic.topic_id, slug: 'mahakal-evening-aarti-time' });
-  env.api({ action: 'f.m.seo.done', key, topic_id: b.topic.topic_id, status: 'failed' });
+  env.api({ action: 'f.m.seo.done', key, topic_id: b.topic.topic_id, status: 'failed', reason: 'Expected exactly one new file in blog/' });
   const t = env.tab('SeoTopics');
   assert.equal(t.find(x => x.topic_id === a.topic.topic_id).status, 'published');
-  assert.equal(t.find(x => x.topic_id === b.topic.topic_id).status, 'queued', 'a failed run returns the topic to the queue');
+  const fb = t.find(x => x.topic_id === b.topic.topic_id); assert.equal(fb.status, 'failed', 'a failed run stays failed: no silent retry');
+  assert.match(fb.notes, /^Last attempt failed: Expected exactly one new file in blog\//); assert.equal(env.api({ action: 'f.m.seo.next', key }).topic, null, 'not handed out again');
   assert.match(env.api({ action: 'f.seo.topic.save', key, record: { title: 'x' } }).error, /not allowed/);
 });
 
@@ -193,4 +194,13 @@ test('blog engine: topics in open drafts are left out, a stale idea is removed, 
   const r2 = env.api({ action: 'f.blog.suggest', token }); assert.equal(r2.result.health.drafts.ok, false); assert.match(titles(), /kartik/);
   gh = { code: 200, body: JSON.stringify([{ number: 11, title: 'New post: Mahashivratri Darshan Ujjain', labels: [{ name: 'blog-post' }], head: { ref: 'blog/mahashivratri-darshan' } }]) };
   env.api({ action: 'f.blog.suggest', token }); assert.doesNotMatch(titles(), /mahashivratri/, 'an idea that became a draft is removed');
+});
+
+test('blog engine: a source site\'s name is never a topic; place names from a source still are', async () => {
+  const { env, token } = await ready(() => ({ code: 500, body: '' }));
+  const save = (name, start, source) => env.api({ action: 'f.event.save', token, event: { name, start, end: start, kind: 'festival', source } });
+  save('Hindutone', '2026-11-20', 'https://hindutone.com/festivals/kartik-purnima'); save('Kartik Purnima', '2026-11-24', 'https://hindutone.com/festivals/kartik-purnima'); save('Ujjain Mela', '2026-11-26', 'https://ujjain.nic.in/events');
+  const list = env.fo.foBlogCandidates_('2026-10-16', {}).map(c => c.keyword);
+  assert.ok(!list.some(k => /hindutone/.test(k)), JSON.stringify(list)); assert.ok(list.some(k => /kartik purnima/.test(k)), JSON.stringify(list)); assert.ok(list.some(k => /ujjain mela/.test(k)), 'a place in a source address is not a publisher');
+  assert.ok(env.fo.foBlogPublisher_('makemytrip ujjain hotels', env.fo.foBlogPublishers_()));
 });

@@ -128,7 +128,9 @@ function foSeoTopicDone_(b) {
   const t = foRows_('SeoTopics').find(x => x.topic_id === b.topic_id); if (!t) return { ok: false, error: 'Topic not found.' };
   // accepted topics are only live once the publish agent has merged them: done = written, then live or review
   const auto = t.auto === 'yes';
-  t.status = b.status === 'live' ? 'published' : b.status === 'review' ? 'review' : b.status === 'failed' ? (auto ? 'failed' : 'queued') : auto ? 'written' : 'published'; t.slug = foClean_(b.slug, 120) || t.slug; t.updated_at = foNow_(); t.updated_by = 'automation';
+  // a failed run stays failed with the writer's reason, so it never retries silently; Try again on the Blog page queues it again
+  t.status = b.status === 'live' ? 'published' : b.status === 'review' ? 'review' : b.status === 'failed' ? 'failed' : auto ? 'written' : 'published';
+  if (b.status === 'failed') t.notes = ('Last attempt failed: ' + (foClean_(b.reason, 300) || 'the writer made no post file') + '\n' + String(t.notes || '').replace(/^Last attempt failed:[^\n]*\n?/, '')).slice(0, 1000); t.slug = foClean_(b.slug, 120) || t.slug; t.updated_at = foNow_(); t.updated_by = 'automation';
   foUpdate_('SeoTopics', t._row, t); return { status: t.status };
 }
 
@@ -140,6 +142,18 @@ function foSeoTopicDone_(b) {
  */
 const FO_BLOG = { KEEP: 8, MIN_SCORE: 45, PLACE: /ujjain|mahakal|omkareshwar|simhastha|kumbh|harsiddhi|kaal ?bhairav|ram ghat|bhasma|shipra|mangalnath|sandipani|chintaman/i,
   FIT: /\b(stay|hotel|villa|room|resort|dharamshala|darshan|aarti|bhasma|temple|yatra|trip|tour|itinerary|reach|distance|train|bus|flight|parking|timing|booking)\b/i, STOP: ['ujjain', 'the', 'and', 'for', 'with', 'from', 'guide', 'best', 'complete', 'how', 'what', 'when', 'your', 'near', '2025', '2026', '2027'] };
+/** Names of the sites the engine reads from (event and signal sources, and known publishers): a site's name is never a topic. Place and
+ *  travel words never count, so a source like ujjain.nic.in does not block real Ujjain topics. */
+const FO_BLOG_PUBLISHERS = ['hindutone', 'drikpanchang', 'prokerala', 'timesofindia', 'hindustantimes', 'indiatoday', 'ndtv', 'jagran', 'bhaskar', 'amarujala', 'patrika', 'tripadvisor', 'makemytrip', 'goibibo', 'airbnb', 'agoda', 'wikipedia', 'wikimedia'];
+function foBlogPublishers_() {
+  const roots = FO_BLOG_PUBLISHERS.slice(), add = v => String(v || '').split(/[\s,;]+/).forEach(x => {
+    const m = x.match(/^(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+)\.[a-z.]{2,}/i), r = m && m[1].toLowerCase();
+    if (r && r.length >= 4 && !FO_BLOG.PLACE.test(r) && !FO_BLOG.FIT.test(r) && roots.indexOf(r) < 0) roots.push(r);
+  });
+  foRows_('Events').forEach(e => add(e.source)); foRows_('Signals').forEach(x => { add(x.source_url); add(x.source); });
+  return roots;
+}
+function foBlogPublisher_(k, pubs) { const w = String(k).toLowerCase().split(/[^a-z0-9]+/); return pubs.some(p => w.indexOf(p) >= 0); }
 function foBlogWords_(s) { return foActTokens_(s).filter(w => w.length > 2 && FO_BLOG.STOP.indexOf(w) < 0); }
 function foBlogSame_(a, b) { const x = foBlogWords_(a), y = foBlogWords_(b); if (!x.length || !y.length) return false; const n = x.filter(w => y.indexOf(w) >= 0).length; return n / Math.min(x.length, y.length) >= 0.75; }
 function foBlogCandidates_(today, health) {
@@ -187,7 +201,8 @@ function foBlogCandidates_(today, health) {
         if (hit && hit.sessions) { c.demand = Math.min(50, c.demand + Math.min(12, 3 + Math.round(hit.sessions / 5))); c.why += ' Your post ' + hit.landingPage + ' already brought ' + hit.sessions + ' sessions in 28 days, so readers want this.'; } }
     } else health.ga4 = { ok: false, reason: (ga && ga.reason) || 'No Analytics data.' };
   } catch (e) { health.ga4 = { ok: false, reason: String(e.message || e).slice(0, 160) }; }
-  return out;
+  const pubs = foBlogPublishers_();
+  return out.filter(c => !foBlogPublisher_(c.keyword, pubs));
 }
 /** People on the website this minute (GA4 realtime, last 30 minutes). */
 function foBlogLive_() {

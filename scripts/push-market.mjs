@@ -35,7 +35,7 @@ try {
   else if (a.includes('--seo-next')) { const t = (await call('f.m.seo.next', {})).topic; write(opt('seo-next'), t || {}); console.log(t ? 'Requested topic: ' + (t.title || t.keyword) : 'No requested topics queued.'); }
   else if (a.includes('--blog-check')) { write(opt('blog-check'), (await call('f.m.blog.check', {})).result); }   // local only: aggregates, never in public CI logs
   else if (a.includes('--seo-peek')) { const r = await call('f.m.seo.peek', {}); console.log('waiting=' + r.waiting); }
-  else if (a.includes('--seo-done')) { const i = a.indexOf('--seo-done'); const r = await call('f.m.seo.done', { topic_id: a[i + 1], slug: a[i + 2] === '-' ? '' : a[i + 2], status: ['failed', 'live', 'review'].indexOf(a[i + 3]) >= 0 ? a[i + 3] : 'done' }); console.log('Topic marked ' + r.status); }
+  else if (a.includes('--seo-done')) { const i = a.indexOf('--seo-done'); const r = await call('f.m.seo.done', { reason: String(process.env.SEO_REASON || '').slice(0, 300), topic_id: a[i + 1], slug: a[i + 2] === '-' ? '' : a[i + 2], status: ['failed', 'live', 'review'].indexOf(a[i + 3]) >= 0 ? a[i + 3] : 'done' }); console.log('Topic marked ' + r.status); }
   else if (a.includes('--ga4')) { const i = a.indexOf('--ga4'); write(a[i + 3], (await call('f.m.ga4', { from: a[i + 1], to: a[i + 2] })).ga); }
   else {
     const file = a.find(x => x.endsWith('.json')) || 'research/market.json', d = JSON.parse(readFileSync(file, 'utf8'));
