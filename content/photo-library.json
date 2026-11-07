@@ -1334,6 +1334,43 @@
       "license": "CC0",
       "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "credit": "Photo: Apurba Biswas / Wikimedia Commons, CC0"
+    },
+    {
+      "path": "images/blog/indore-airport-to-ujjain/indoreairport-frontview.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "indore",
+        "airport",
+        "travel"
+      ],
+      "alt": "Front view of Devi Ahilyabai Holkar Airport terminal in Indore, the airport for Ujjain",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:IndoreAirport_FrontView.JPG",
+      "author": "Cpbaherwani (talk)",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Cpbaherwani (talk) / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/indore-airport-to-ujjain/ujjain-indore-highway.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "highway",
+        "indore",
+        "ujjain",
+        "road"
+      ],
+      "alt": "A stretch of the Ujjain-Indore road (State Highway 27) between Indore and Ujjain",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_Indore_Highway.jpg",
+      "author": "Roshan08.08",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Roshan08.08 / Wikimedia Commons, CC BY-SA 4.0"
     }
   ]
 }

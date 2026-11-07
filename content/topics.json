@@ -146,12 +146,12 @@
       "status": "queued"
     },
     {
-      "slug": "indore-to-ujjain-travel-guide",
-      "title": "Indore Airport to Ujjain: Travel Options, Time and Cost",
-      "keyword": "indore to ujjain",
+      "slug": "indore-airport-to-ujjain",
+      "title": "Indore Airport to Ujjain: Taxi, Bus, Train, Time and Fare",
+      "keyword": "indore airport to ujjain",
       "intent": "informational",
       "cluster": "itineraries",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "ujjain-weekend-trip-from-bhopal",

@@ -459,6 +459,24 @@
         "https://adanione.com/domestic-flights/delhi-to-indore-flights",
         "https://www.airportoverview.com/routes/DEL/IDR"
       ]
+    },
+    {
+      "slug": "indore-airport-to-ujjain",
+      "title": "Indore Airport to Ujjain: Taxi, Bus, Train, Time and Fare",
+      "url": "blog/indore-airport-to-ujjain.html",
+      "date": "2026-11-07",
+      "cluster": "travel",
+      "keyword": "indore airport to ujjain",
+      "source": "ai-pipeline",
+      "hero": "images/blog/indore-airport-to-ujjain/indoreairport-frontview.jpg",
+      "sources": [
+        "https://www.ujjaindarshan.com/?p=35",
+        "https://www.ujjaindarshan.com/?p=82",
+        "https://www.rome2rio.com/s/Indore/Ujjain",
+        "https://ujjaindivisionmp.nic.in/en/how-to-reach/",
+        "https://www.trawell.in/madhya-pradesh/ujjain/how-to-reach",
+        "https://cabbazar.com/blog/indore-to-ujjain-distance-route-and-travel-time-complete-guide-for-smooth-taxi-journeys/"
+      ]
     }
   ]
 }
