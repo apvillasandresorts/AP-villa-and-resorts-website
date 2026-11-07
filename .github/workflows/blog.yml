@@ -111,6 +111,7 @@ jobs:
             --model ${{ env.BLOG_MODEL }}
             --max-turns 80
             --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*)"
+            --permission-mode acceptEdits
 
       - name: Photo agent
         if: steps.guard.outputs.skip != 'true'
@@ -129,6 +130,7 @@ jobs:
             --model ${{ env.BLOG_MODEL }}
             --max-turns 30
             --allowedTools "Read,Edit,Glob,Grep,Bash(node:*)"
+            --permission-mode acceptEdits
 
       - name: Detect new post and push branch
         id: detect
