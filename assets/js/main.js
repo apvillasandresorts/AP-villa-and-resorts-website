@@ -258,7 +258,7 @@ const KB = [
     answer: 'We publish guides on Mahakaleshwar, Ujjain attractions, history, and Omkareshwar. Visit our <a href="blog.html">Journal</a> for the full list.',
     quick: ['Open journal','Show villas'] },
   { keys: ['founder','about','apoorv','owner'],
-    answer: 'AP Villas is founded and operated by <b>Apoorv</b>, in business for 3 years and serving 600+ pilgrim families across 50+ cities and 8+ ethnicities. Read more on our <a href="about.html">About page</a>.',
+    answer: 'AP Villas is founded and operated by <b>Apoorv</b>, in business since 2021 (5 years) and serving 600+ pilgrim families across 50+ cities and 8+ ethnicities. Read more on our <a href="about.html">About page</a>.',
     quick: ['Read about','Show villas'] },
   { keys: ['payment','pay','upi','card','razorpay'],
     answer: 'We accept UPI, bank transfer, Razorpay (cards), and platform payments via Airbnb / Booking.com / MakeMyTrip. <b>50% to confirm</b>, balance on arrival (standard dates). 100% advance for festival dates.',
