@@ -1736,3 +1736,8 @@ body:has(.hero) .nav:not(.scrolled) .nav__menu a.nav__checkin { border-color: #E
 /* Footer: discreet link to the private founder portal */
 .footer__admin { color: inherit; opacity: .55; text-decoration: none; font-size: .92em; border-bottom: 1px dotted currentColor; }
 .footer__admin:hover { opacity: 1; }
+/* Blog: "watch before you go" video links (no embeds: the site CSP allows no frames) */
+.watch-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.watch-list li { padding: 12px 14px; border: 1px solid var(--line, #e6dccb); border-radius: 12px; background: rgba(255,255,255,.6); }
+.watch-list a { font-weight: 600; text-decoration: none; }
+.watch-list small { display: block; margin-top: 2px; color: var(--muted, #6b6258); }
