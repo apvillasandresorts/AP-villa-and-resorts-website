@@ -74,7 +74,14 @@ Readers should see the real place or event the post is about, e.g. a Navratri po
    - `node scripts/commons-photo.mjs get "File:<exact title>" <slug> "<honest alt: what the photo shows and where>" "<tags>"`. This downloads to `images/blog/<slug>/` and adds the library entry with author/licence. Use the printed credit in the caption.
    - Never claim a photo shows something it doesn't (e.g. a Harsiddhi photo is not "Mahakaleshwar"; a 2010 photo is not "this year").
 3. Only if nothing relevant exists: a villa photo, captioned honestly as our villa.
-Use 1–2 Commons photos per post (hero + optionally one *different* photo in the body; never repeat the hero), plus the Rudrangan Suites photo in "Where to stay". Every Commons photo must be inside `<figure class="post-figure">` with a `<figcaption>` that contains the credit.
+Use 3–4 sharp, high-quality real photos per post (owner request 11 Nov 2026): a hero plus 2–3 *different* topic photos spread through the body (never repeat one), plus the Rudrangan Suites photo in "Where to stay". Prefer photos ≥1200px that show people, lamps, the street or the event over empty buildings. Every Commons photo must be inside `<figure class="post-figure">` with a `<figcaption>` that contains the credit.
+
+## Videos ("Watch before you go", owner request 11 Nov 2026)
+Where it helps the reader (darshan, routes, festivals, a temple walk), add one `<h2>` section titled "Watch before you go: …" before the choosing/planning section, with one short paragraph and a list:
+- Find 2–4 YouTube videos that show exactly what the post describes (route, corridor, aarti, festival). Prefer official channels (temple, MP Tourism, government) over vlogs; recent over old.
+- Check every video exists and get its real title and channel: `curl -s "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=<id>&format=json"`. Drop any that fail. Never invent a video ID or title.
+- Markup (no iframes or thumbnails: the site CSP allows neither): `<ul class="watch-list"><li><a href="https://www.youtube.com/watch?v=<id>" target="_blank" rel="noopener">▶ <plain title></a> <small>YouTube · <channel>. <one line on what it shows></small></li></ul>`. Add the temple's official live darshan page (https://www.shrimahakaleshwar.mp.gov.in/live-darshan) when the post is about Mahakal.
+- Say in the paragraph that they are independent creators' videos, so fares and timings are as on the day they filmed.
 
 ### JSON-LD
 Put one object with an `@graph` array:
