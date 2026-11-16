@@ -103,7 +103,7 @@
       "keyword": "mahakal lok timings",
       "intent": "informational",
       "cluster": "mahakal-darshan",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "mahakal-quick-darshan-options",
