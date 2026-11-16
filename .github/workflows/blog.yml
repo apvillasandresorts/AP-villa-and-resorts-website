@@ -129,7 +129,7 @@ jobs:
           claude_args: >-
             --model ${{ env.BLOG_MODEL }}
             --max-turns 30
-            --allowedTools "Read,Edit,Glob,Grep,Bash(node:*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(node:*),Bash(curl:*)"
             --permission-mode acceptEdits
 
       - name: Detect new post and push branch
@@ -157,6 +157,7 @@ jobs:
           [ -f "blog/narration/$slug.hi.json" ] && git add "blog/narration/$slug.hi.json"   # the Hindi "Listen" text (was left out before, so posts arrived without it)
           [ -d "images/blog/$slug" ] && git add "images/blog/$slug"
           git commit -m "New post: $slug"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"   # the Claude action clears git credentials when it finishes
           git push origin "$branch"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
@@ -260,6 +261,7 @@ jobs:
           [ -d "images/blog/${{ needs.write.outputs.slug }}" ] && git add "images/blog/${{ needs.write.outputs.slug }}"
           git diff --cached --quiet && { echo "No changes from auto-fix"; exit 0; }
           git commit -m "Auto-fix review issues: ${{ needs.write.outputs.slug }}"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"   # the Claude action clears git credentials when it finishes
           git push origin HEAD:${{ needs.write.outputs.branch }}
 
       - name: Validate again
