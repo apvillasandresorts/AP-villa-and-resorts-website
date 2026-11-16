@@ -1371,6 +1371,63 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Roshan08.08 / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/mahakal-lok-visit-guide/mahakal-lok-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakal lok",
+        "corridor",
+        "ujjain",
+        "sculpture"
+      ],
+      "alt": "Sandstone pillars and sculpture along the Mahakal Lok corridor near Mahakaleshwar Temple, Ujjain, photographed in October 2022",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mahakal_Lok_ujjain.jpg",
+      "author": "Krishnakant",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Krishnakant / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/mahakal-lok-visit-guide/saptarishi-sculpture.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakal lok",
+        "saptarishi",
+        "sculpture",
+        "ujjain"
+      ],
+      "alt": "Saptarishi sculpture in the Mahakal Lok corridor, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Saptarishi_sculpture.jpg",
+      "author": "Theshiningsoul",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Theshiningsoul / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/mahakal-lok-visit-guide/lord-kartikeya.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakal lok",
+        "kartikeya",
+        "sculpture",
+        "ujjain"
+      ],
+      "alt": "Sculpture of Lord Kartikeya in Mahakal Lok, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Lord_kartikeya.jpg",
+      "author": "Theshiningsoul",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Theshiningsoul / Wikimedia Commons, CC BY-SA 4.0"
     }
   ]
 }
