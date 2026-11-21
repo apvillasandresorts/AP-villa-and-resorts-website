@@ -416,6 +416,14 @@
       "intent": "informational",
       "cluster": "travel",
       "status": "published"
+    },
+    {
+      "slug": "mahakal-darshan-new-year-2027",
+      "title": "Mahakal Darshan New Year 2027: Crowds, Booking and Planning",
+      "keyword": "mahakal darshan new year 2027",
+      "intent": "informational",
+      "cluster": "festivals",
+      "status": "published"
     }
   ]
 }
