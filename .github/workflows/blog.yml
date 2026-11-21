@@ -65,6 +65,8 @@ jobs:
           pending=$(gh pr list --state open --search "head:blog/" --json number --jq 'length')
           echo "Published by pipeline this month: $published, open blog PRs: $pending, cap: $MAX_POSTS_PER_MONTH"
           echo "pending_slugs=$pending_slugs" >> "$GITHUB_OUTPUT"
+          pending_titles=$(gh pr list --state open --search "head:blog/" --json title --jq '[.[].title | sub("^New post: ";"")] | join(" | ")' | tr -d '"')
+          echo "pending_titles=$pending_titles" >> "$GITHUB_OUTPUT"
           skip=false
           if [ $((published + pending)) -ge "$MAX_POSTS_PER_MONTH" ]; then
             echo "::notice::Monthly cap of $MAX_POSTS_PER_MONTH posts reached. Skipping."
@@ -99,6 +101,7 @@ jobs:
             Today's date (IST): ${{ steps.guard.outputs.today }}
             Topic override from the owner (empty means pick one yourself): "${{ github.event.inputs.topic || steps.req.outputs.topic }}"
             Slugs already waiting in open pull requests (do not reuse or duplicate these): "${{ steps.guard.outputs.pending_slugs }}"
+            Titles of posts already drafted and waiting (never write the same topic or search intent again, even under another title): "${{ steps.guard.outputs.pending_titles }}"
 
             Hard rules: property claims only from content/business-facts.json; only photos from
             content/photo-library.json; every timing/price/date sourced; no git commands; edit only
