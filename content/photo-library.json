@@ -1428,6 +1428,78 @@
       "license": "CC BY-SA 4.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
       "credit": "Photo: Theshiningsoul / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/harsiddhi-mata-temple-guide/deep-jyoti-stambh-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "harsiddhi",
+        "deepmala",
+        "ujjain"
+      ],
+      "alt": "Deep Jyoti Stambh lamp tower at Harsiddhi Temple, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Deep_Jyoti_Stambh,_Ujjain.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/harsiddhi-mata-temple-guide/harsiddhi-temple-ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "harsiddhi",
+        "temple",
+        "ujjain"
+      ],
+      "alt": "Harsiddhi Temple, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Harsiddhi_Temple,_Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/harsiddhi-mata-temple-guide/harsiddhi-temple-ujjain-04.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "harsiddhi",
+        "temple",
+        "ujjain"
+      ],
+      "alt": "Harsiddhi Temple, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Harsiddhi_Temple,_Ujjain_04.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/harsiddhi-mata-temple-guide/deep-jyoti-stambh-ujjain-detail.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "harsiddhi",
+        "deepmala",
+        "ujjain"
+      ],
+      "alt": "Detail of a Deep Jyoti Stambh lamp tower, Ujjain",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Deep_Jyoti_Stambh,_Ujjain_-_detail.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }
