@@ -1500,6 +1500,44 @@
       "license": "CC BY-SA 3.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
       "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/how-to-reach-ujjain/ujjain-junction.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "railway",
+        "station",
+        "train"
+      ],
+      "alt": "Ujjain Junction railway station building and platform, Ujjain, photographed in 2012",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_Junction.jpg",
+      "author": "Superfast1111",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Superfast1111 / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/how-to-reach-ujjain/ujjain-junction-railway-station-ujn.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ujjain",
+        "railway",
+        "station",
+        "train"
+      ],
+      "alt": "Ujjain Junction (UJN) railway station, photographed in December 2021",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_Junction_Railway_Station_(UJN).jpg",
+      "author": "Apurba Biswas",
+      "license": "CC0",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "credit": "Photo: Apurba Biswas / Wikimedia Commons, CC0"
     }
   ]
 }
