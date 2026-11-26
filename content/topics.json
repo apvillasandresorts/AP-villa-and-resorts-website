@@ -127,7 +127,7 @@
       "keyword": "ujjain 2 day itinerary",
       "intent": "informational",
       "cluster": "itineraries",
-      "status": "queued"
+      "status": "published"
     },
     {
       "slug": "ujjain-1-day-itinerary",
