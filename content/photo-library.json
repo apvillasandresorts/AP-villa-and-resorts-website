@@ -1639,6 +1639,94 @@
       "license": "CC BY-SA 3.0",
       "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
       "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-omkareshwar-3-day-itinerary/omkareshwar-05.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "omkareshwar",
+        "narmada",
+        "boats",
+        "ghat"
+      ],
+      "alt": "Boats on the Narmada river at Omkareshwar, seen from the ghat",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Omkareshwar_05.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-omkareshwar-3-day-itinerary/gomukh-ghat-omkareshwar-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "omkareshwar",
+        "narmada",
+        "ghat"
+      ],
+      "alt": "Gomukh ghat on the Narmada river at Omkareshwar",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Gomukh_ghat,_Omkareshwar_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-omkareshwar-3-day-itinerary/18-omkareshwar-0009450-shreeomkarmandhata.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "omkareshwar",
+        "narmada",
+        "temple"
+      ],
+      "alt": "Shree Omkar Mandhata temple and the Narmada river at Omkareshwar",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:18-Omkareshwar-0009450-ShreeOmkarMandhata.jpg",
+      "author": "YashiWong",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: YashiWong / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/ujjain-omkareshwar-3-day-itinerary/mahakal-lok-ujjain.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "mahakal-lok"
+      ],
+      "alt": "Evening walkers on the Mahakal Lok corridor, Ujjain, in September 2023",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:MAHAKAL_LOK_UJJAIN.jpg",
+      "author": "Prateek Priyadeep",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: Prateek Priyadeep / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/ujjain-omkareshwar-3-day-itinerary/ujjain-ram-ghat-9840921865.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "ram-ghat",
+        "shipra"
+      ],
+      "alt": "Ram Ghat on the Shipra River, Ujjain, in December 2012",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain,_Ram_Ghat_(9840921865).jpg",
+      "author": "Arian Zwegers from Brussels, Belgium",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0",
+      "credit": "Photo: Arian Zwegers / Wikimedia Commons, CC BY 2.0"
     }
   ]
 }
