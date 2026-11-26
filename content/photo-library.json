@@ -1591,23 +1591,54 @@
       "credit": "Photo: Superfast1111 / Wikimedia Commons, CC BY-SA 3.0"
     },
     {
-      "path": "images/blog/how-to-reach-ujjain/ujjain-junction-railway-station-ujn.jpg",
+      "path": "images/blog/how-to-reach-ujjain/random-stations.jpg",
       "villa": "none",
       "villa_name": "Not an AP Villas property",
       "tags": [
-        "ujjain",
-        "railway",
-        "station",
-        "train"
+        "ujjain-junction",
+        "railway"
       ],
-      "alt": "Ujjain Junction (UJN) railway station, photographed in December 2021",
+      "alt": "Ujjain Junction station sign beside the tracks, with passengers on the platform, in June 2013",
       "shows_temple": false,
       "source": "wikimedia-commons",
-      "source_page": "https://commons.wikimedia.org/wiki/File:Ujjain_Junction_Railway_Station_(UJN).jpg",
-      "author": "Apurba Biswas",
-      "license": "CC0",
-      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-      "credit": "Photo: Apurba Biswas / Wikimedia Commons, CC0"
+      "source_page": "https://commons.wikimedia.org/wiki/File:Random_stations.jpg",
+      "author": "Shubham kumar singh",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Shubham kumar singh / Wikimedia Commons, CC BY-SA 3.0"
+    },
+    {
+      "path": "images/blog/how-to-reach-ujjain/indore-airport-terminal-16-5-2018.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "indore-airport"
+      ],
+      "alt": "Indore airport terminal building seen from an aerobridge",
+      "shows_temple": false,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Indore_Airport_Terminal_16_5_2018.jpg",
+      "author": "VishuN",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Photo: VishuN / Wikimedia Commons, CC BY-SA 4.0"
+    },
+    {
+      "path": "images/blog/how-to-reach-ujjain/harsiddhi-marg-ujjain-01.jpg",
+      "villa": "none",
+      "villa_name": "Not an AP Villas property",
+      "tags": [
+        "street",
+        "ujjain"
+      ],
+      "alt": "Pedestrians and autos on Harsiddhi Marg in the old city of Ujjain, in December 2013",
+      "shows_temple": true,
+      "source": "wikimedia-commons",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Harsiddhi_Marg,_Ujjain_01.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Photo: Bernard Gagnon / Wikimedia Commons, CC BY-SA 3.0"
     }
   ]
 }
